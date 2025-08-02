@@ -41,13 +41,13 @@ RemotePlayer::~RemotePlayer() {
     m_player2->removeFromParent();
 }
 
-void RemotePlayer::update(const PlayerState& state) {
+void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState) {
     m_state = state;
 
-    m_player1->updateFromData(m_state.player1, m_state);
+    m_player1->updateFromData(m_state.player1, m_state, camState);
 
     if (m_state.player2) {
-        m_player2->updateFromData(*m_state.player2, m_state);
+        m_player2->updateFromData(*m_state.player2, m_state, camState);
     } else {
         m_player2->setVisible(false);
     }

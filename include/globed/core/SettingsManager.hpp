@@ -73,8 +73,6 @@ public:
     /// which happens at the end of the loading phase when the core is initialized.
     void registerSetting(
         std::string_view key,
-        std::string_view name,
-        std::string_view description,
         matjson::Value defaultVal
         // TODO: limits
     );

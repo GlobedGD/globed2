@@ -3,15 +3,18 @@
 #include <Geode/Geode.hpp>
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
+#include <globed/core/game/PlayerStatusIcons.hpp>
+#include <ui/misc/NameLabel.hpp>
 
 namespace globed {
 
 class RemotePlayer;
+struct GameCameraState;
 
 class VisualPlayer : public PlayerObject {
 public:
     static VisualPlayer* create(GJBaseGameLayer* gameLayer, bool isSecond);
-    void updateFromData(const PlayerObjectData& data, const PlayerState& state);
+    void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState);
     void cleanupObjectLayer();
 
     void updateDisplayData(const PlayerDisplayData& icons);
@@ -21,7 +24,9 @@ private:
 
     RemotePlayer* m_remotePlayer = nullptr;
     PlayerIconData m_icons;
-    cocos2d::ccColor3B m_color1, m_color2{};
+    cocos2d::ccColor3B m_color1{}, m_color2{};
+    geode::Ref<NameLabel> m_nameLabel;
+    geode::Ref<PlayerStatusIcons> m_statusIcons;
 
 #ifdef GLOBED_DEBUG_INTERPOLATION
     geode::Ref<cocos2d::CCDrawNode> m_playerTrajectory = nullptr;
@@ -62,6 +67,7 @@ private:
     void showRobotFire();
 
     void updatePlayerObjectIcons(bool skipFrames);
+    bool isPlayerNearby(const PlayerObjectData& data, const GameCameraState& camState);
 };
 
 }

@@ -1,6 +1,7 @@
 #include "GJBaseGameLayer.hpp"
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/PlayerCacheManager.hpp>
+#include <globed/core/SettingsManager.hpp>
 #include <globed/util/algo.hpp>
 #include <core/CoreImpl.hpp>
 #include <core/PreloadManager.hpp>
@@ -131,11 +132,10 @@ void GlobedGJBGL::selUpdateProxy(float dt) {
 }
 
 void GlobedGJBGL::selUpdate(float tsdt) {
-    float dt = tsdt / CCScheduler::get()->getTimeScale();
-
     auto& fields = *m_fields.self();
     auto& pcm = PlayerCacheManager::get();
 
+    float dt = tsdt / CCScheduler::get()->getTimeScale();
     fields.m_timeCounter += dt;
 
     float p1x = m_player1->getPosition().x;
@@ -147,6 +147,8 @@ void GlobedGJBGL::selUpdate(float tsdt) {
 
     fields.m_unknownPlayers.clear();
 
+    auto camState = this->getCameraState();
+
     for (auto& it : fields.m_players) {
         int playerId = it.first;
         auto& player = it.second;
@@ -157,7 +159,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         }
 
         auto& vstate = fields.m_interpolator.getPlayerState(playerId);
-        player->update(vstate);
+        player->update(vstate, camState);
 
         // if the player has left the level, remove them
         if (fields.m_interpolator.isPlayerStale(playerId, fields.m_lastServerUpdate)) {
@@ -393,6 +395,28 @@ GlobedGJBGL* GlobedGJBGL::get(GJBaseGameLayer* base) {
 
 bool GlobedGJBGL::active() {
     return m_fields->m_active;
+}
+
+CameraDirection GlobedGJBGL::getCameraDirection() {
+    float angle = -m_gameState.m_cameraAngle;
+
+    float radians = angle * M_PI / 180.f;
+    CCPoint vec{std::sin(radians), std::cos(radians)};
+
+    return CameraDirection{
+        .vector = vec,
+        .angle = angle,
+    };
+}
+
+GameCameraState GlobedGJBGL::getCameraState() {
+    GameCameraState state{};
+    state.visibleOrigin = CCPoint{0.f, 0.f};
+    state.visibleCoverage = cachedSingleton<CCDirector>()->getWinSize();
+    state.cameraOrigin = m_gameState.m_cameraPosition;
+    state.zoom = m_objectLayer->getScale();
+
+    return state;
 }
 
 void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {

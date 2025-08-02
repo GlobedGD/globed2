@@ -20,13 +20,30 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, bool isSecond) {
     m_isEditor = gameLayer->m_isEditor;
     m_isPlatformer = gameLayer->m_level->isPlatformer();
 
-    // TODO: name label, icons, status icons
-
     // preload the cube icon so the passengers are correct
     this->updateIconType(PlayerIconType::Cube);
     m_prevMode = PlayerIconType::Cube;
 
     this->updateOpacity();
+
+    // create the name label
+    bool showName = setting<bool>("core.player.show-names") && (!isSecond || setting<bool>("core.player.dual-name"));
+
+    m_nameLabel = Build<NameLabel>::create("")
+        .visible(showName)
+        .pos(0.f, 25.f)
+        .parent(this)
+        .store(m_nameLabel);
+
+    if (!isSecond && setting<bool>("core.player.status-icons")) {
+        float opacity = static_cast<unsigned char>(setting<float>("core.player.opacity") * 255.f);
+        m_statusIcons = Build<PlayerStatusIcons>::create(opacity)
+            .scale(0.8f)
+            .anchorPoint(0.5f, 0.f)
+            .pos(0.f, showName ? 40.f : 25.f)
+            .parent(this)
+            .id("status-icons"_spr);
+    }
 
 #ifdef GLOBED_DEBUG_INTERPOLATION
     Build<CCDrawNode>::create()
@@ -40,7 +57,7 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, bool isSecond) {
     return true;
 }
 
-void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerState& state) {
+void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState) {
 #ifdef GLOBED_DEBUG_INTERPOLATION
     if (m_playerTrajectory) {
         m_playerTrajectory->drawSegment(
@@ -75,8 +92,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     m_prevRotating = data.isRotating;
     m_prevPosition = data.position;
 
-    // TODO
-    bool isNearby = true;
+    bool isNearby = this->isPlayerNearby(data, camState);
 
     bool cameNearby = isNearby && !m_prevNearby;
     m_prevNearby = isNearby;
@@ -107,12 +123,25 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     auto gjbgl = GLOBED_LAZY(GlobedGJBGL::get());
 
     if (shouldBeVisible) {
-        // TODO camera stuff ??
         this->setPosition(data.position);
         this->setRotation(data.rotation);
         m_mainLayer->setRotation(innerRot);
 
-        // TODO: name label idk
+        // rotate the name label together with the camera
+        bool rotateNames = setting<bool>("core.player.rotate-names");
+        CameraDirection dir{};
+
+        if (rotateNames && *gjbgl) {
+            dir = gjbgl->getCameraDirection();
+        }
+
+        m_nameLabel->setPosition(dir.vector * 25.f);
+        m_nameLabel->setRotation(dir.angle);
+
+        if (m_statusIcons) {
+            m_statusIcons->setPosition(dir.vector * (m_nameLabel->isVisible() ? 40.f : 25.f));
+            m_statusIcons->setRotation(dir.angle);
+        }
     }
 
     if (data.isRotating || distanceTo90deg > 1.f) {
@@ -159,7 +188,16 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         updatedOpacity = true;
     }
 
-    // TODO: status icons
+    if (m_statusIcons && shouldBeVisible) {
+        PlayerStatusFlags flags = {};
+        flags.paused = state.isPaused;
+        flags.practicing = state.isPracticing;
+        flags.speakingMuted = false;
+        flags.editing = state.isInEditor;
+        // flags.speaking = ;
+        // flags.loudness = ;
+        m_statusIcons->updateStatus(flags);
+    }
 
     // TODO: dashing
 
@@ -263,7 +301,7 @@ void VisualPlayer::updateOpacity() {
 
     // set name opacity as well if hide nearby is enabled
     if (hideNearby) {
-        // TODO: no name label yet xd
+        m_nameLabel->updateOpacity(opacity);
     }
 }
 
@@ -428,7 +466,8 @@ void VisualPlayer::cleanupObjectLayer() {
 void VisualPlayer::updateDisplayData(const PlayerDisplayData& data) {
     auto gm = cachedSingleton<GameManager>();
 
-    // TODO: name label stuff
+    m_nameLabel->updateData(data.username);
+    m_nameLabel->updateOpacity(globed::setting<float>("core.player.name-opacity"));
 
     // TODO: i dont know why this was here
     this->togglePlatformerMode(m_gameLayer->m_level->isPlatformer());
@@ -477,6 +516,29 @@ void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
 
     // set opacities
     this->updateOpacity();
+}
+
+bool VisualPlayer::isPlayerNearby(const PlayerObjectData& data, const GameCameraState& camState) {
+    // always render them in editor (cause im lazy)
+    if (m_isEditor) return true;
+
+    // check if they are inside a grid of 3x3 screens
+    float fullScaleMult = 3.f;
+    float originMoveMult = (fullScaleMult - 1.f) / 2.f; // magic
+
+    CCSize origCoverage = camState.cameraCoverage();
+    CCSize cameraCoverage = origCoverage * fullScaleMult;
+    CCPoint cameraOrigin = camState.cameraOrigin - origCoverage * originMoveMult;
+
+    float cameraLeft = cameraOrigin.x;
+    float cameraRight = cameraOrigin.x + cameraCoverage.width;
+    float cameraBottom = cameraOrigin.y;
+    float cameraTop = cameraOrigin.y + cameraCoverage.height;
+
+    auto& pos = data.position;
+
+    return pos.x >= cameraLeft && pos.x <= cameraRight &&
+           pos.y >= cameraBottom && pos.y <= cameraTop;
 }
 
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, bool isSecond) {

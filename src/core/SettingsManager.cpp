@@ -8,91 +8,26 @@ namespace globed {
 
 SettingsManager::SettingsManager() {
     // Preload
-    this->registerSetting(
-        "core.preload.enabled",
-        "Preload Assets",
-        "Whether to preload assets during game loading. Helps tremendously with in-game performance, but increases loading time. May cause issues on very low-end devices.",
-        true
-    );
-
-    this->registerSetting(
-        "core.preload.defer",
-        "Defer Preloading",
-        "Skips asset preloading until you join an online level. This is useful if you don't use the mod often, but want to keep it enabled.",
-        false
-    );
+    this->registerSetting("core.preload.enabled", true);
+    this->registerSetting("core.preload.defer", false);
 
     // Player settings
-    this->registerSetting(
-        "core.player.opacity",
-        "Player Opacity",
-        "The opacity of other players.",
-        0.8f
-    );
-
-    this->registerSetting(
-        "core.player.name-opacity",
-        "Name Opacity",
-        "The opacity of other players' names.",
-        0.8f
-    );
-
-    this->registerSetting(
-        "core.player.force-visibility",
-        "Force Player Visibility",
-        "Whether to force player visibility, even if they are not visible in the level.",
-        false
-    );
-
-    this->registerSetting(
-        "core.player.hide-nearby",
-        "Hide Nearby Players",
-        "Whether to reduce opacity of players that are nearby.",
-        false
-    );
-
-    this->registerSetting(
-        "core.player.hide-practicing",
-        "Hide Practice Players",
-        "Whether to hide players that are in practice mode.",
-        false
-    );
-
-    this->registerSetting(
-        "core.player.death-effects",
-        "Death Effects",
-        "Whether to play death effects for other players.",
-        true
-    );
-
-    this->registerSetting(
-        "core.player.default-death-effects",
-        "Default Death Effects",
-        "Whether to use the default death effects for other players.",
-        false
-    );
+    this->registerSetting("core.player.opacity", 1.0f);
+    this->registerSetting("core.player.show-names", true);
+    this->registerSetting("core.player.dual-name", true);
+    this->registerSetting("core.player.name-opacity", 1.0f);
+    this->registerSetting("core.player.force-visibility", false);
+    this->registerSetting("core.player.hide-nearby", false);
+    this->registerSetting("core.player.hide-practicing", false);
+    this->registerSetting("core.player.status-icons", true);
+    this->registerSetting("core.player.rotate-names", true);
+    this->registerSetting("core.player.death-effects", true);
+    this->registerSetting("core.player.default-death-effects", false);
 
     // Developer settings
-    this->registerSetting(
-        "core.dev.packet-loss-sim",
-        "Packet Loss Simulation",
-        "Simulates packet loss for testing purposes, 0% means no loss, 100% means all packets are lost. Only works for UDP/QUIC connections, reconnect to the server to apply.",
-        0.0f
-    );
-
-    this->registerSetting(
-        "core.dev.net-debug-logs",
-        "Network Debug Logs",
-        "Enables debug logs from qunet.",
-        false
-    );
-
-    this->registerSetting(
-        "core.dev.fake-data",
-        "Fake Data",
-        "Enables fake data for testing purposes. In some places, fake data will be used instead of actual server responses.",
-        false
-    );
+    this->registerSetting("core.dev.packet-loss-sim", 0.0f);
+    this->registerSetting("core.dev.net-debug-logs", false);
+    this->registerSetting("core.dev.fake-data", false);
 }
 
 void SettingsManager::freeze() {
@@ -155,8 +90,6 @@ static std::string_view matjsonTypeToStr(matjson::Type t) {
 
 void SettingsManager::registerSetting(
     std::string_view key,
-    std::string_view name,
-    std::string_view description,
     matjson::Value defaultVal
 ) {
     if (m_frozen) {

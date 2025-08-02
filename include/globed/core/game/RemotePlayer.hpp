@@ -5,12 +5,14 @@
 
 namespace globed {
 
+struct GameCameraState;
+
 class RemotePlayer {
 public:
     RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, cocos2d::CCNode* parentNode);
     ~RemotePlayer();
 
-    void update(const PlayerState& state);
+    void update(const PlayerState& state, const GameCameraState& camState);
     bool isDataInitialized() const;
     void initData(const PlayerDisplayData& data);
 

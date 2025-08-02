@@ -9,6 +9,22 @@
 
 namespace globed {
 
+struct CameraDirection {
+    cocos2d::CCPoint vector;
+    float angle;
+};
+
+struct GameCameraState {
+    cocos2d::CCPoint cameraOrigin;
+    cocos2d::CCPoint visibleOrigin;
+    cocos2d::CCSize visibleCoverage;
+    float zoom;
+
+    inline cocos2d::CCSize cameraCoverage() const {
+        return visibleCoverage / std::abs(zoom);
+    }
+};
+
 struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     struct Fields {
         bool m_active = false;
@@ -68,6 +84,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     // Functions for the outside :tm:
     static GlobedGJBGL* get(GJBaseGameLayer* base = nullptr);
     bool active();
+    CameraDirection getCameraDirection();
+    GameCameraState getCameraState();
 
 private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);
