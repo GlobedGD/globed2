@@ -32,6 +32,25 @@ struct GameServer {
     void updateLatency(uint32_t latency);
 };
 
+// Struct for fields that are the same across one connection but are cleared on disconnect
+struct ConnectionInfo {
+    std::string m_knownArgonUrl;
+    uint32_t m_gameTickrate = 0;
+    bool m_waitingForArgon = false;
+    bool m_established;
+
+    std::unordered_map<std::string, GameServer> m_gameServers;
+
+    std::atomic<qn::ConnectionState> m_gameConnState;
+    std::string m_gameServerUrl;
+    std::optional<std::pair<std::string, SessionId>> m_gsDeferredConnectJoin;
+    std::optional<SessionId> m_gsDeferredJoin;
+    std::queue<Event> m_gameEventQueue;
+    bool m_gameEstablished = false;
+
+    asp::Notify m_finishedClosingNotify;
+};
+
 class NetworkManagerImpl {
 public:
     NetworkManagerImpl();
@@ -97,22 +116,16 @@ public:
 
 private:
     qn::Connection m_centralConn;
-    std::atomic<qn::ConnectionState> m_centralConnState;
-    std::string m_centralUrl;
-    std::string m_knownArgonUrl;
-    bool m_waitingForArgon = false;
-    bool m_established = false;
-
     qn::Connection m_gameConn;
-    std::atomic<qn::ConnectionState> m_gameConnState;
-    std::string m_gameServerUrl;
-    std::optional<std::pair<std::string, SessionId>> m_gsDeferredConnectJoin;
-    std::optional<SessionId> m_gsDeferredJoin;
-    std::queue<Event> m_gameEventQueue;
-    bool m_gameEstablished = false;
-    uint32_t m_gameTickrate = 0;
 
-    asp::Mutex<std::unordered_map<std::string, GameServer>> m_gameServers;
+    std::string m_centralUrl;
+    std::atomic<qn::ConnectionState> m_centralConnState;
+    asp::Mutex<std::optional<ConnectionInfo>, true> m_connInfo;
+
+    asp::Mutex<std::string> m_pendingConnectUrl;
+    asp::Notify m_pendingConnectNotify;
+    asp::Notify m_disconnectNotify;
+    asp::AtomicBool m_disconnectRequested;
 
     // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
     asp::Mutex<std::unordered_map<std::type_index, std::vector<void*>>, true> m_listeners;
@@ -143,6 +156,9 @@ private:
 
     // Handlers for messages
     void handleLoginFailed(schema::main::LoginFailedReason reason);
+
+    // Thread functions
+    void thrPingGameServers();
 
     template <typename T>
     void invokeListeners(T&& message) {

@@ -83,6 +83,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
 
     m_centralConn.setConnectionStateCallback([this](qn::ConnectionState state) {
         m_centralConnState = state;
+
         if (state == qn::ConnectionState::Connected) {
             this->onCentralConnected();
         } else if (state == qn::ConnectionState::Disconnected) {
@@ -105,32 +106,42 @@ NetworkManagerImpl::NetworkManagerImpl() {
     });
 
     m_gameConn.setConnectionStateCallback([this](qn::ConnectionState state) {
-        m_gameConnState = state;
+        auto lock = m_connInfo.lock();
+
+        // we assert that a game connection can only happen within the context of a central connection,
+        // and this callback must never be invoked if we are not connected to a central server
+        if (!lock->has_value()) {
+            log::error("game connection state callback invoked without a central connection established!");
+            return;
+        }
+
+        auto& connInfo = **lock;
+
+        connInfo.m_gameConnState = state;
         if (state == qn::ConnectionState::Connected) {
-            log::debug("connected to game server at {}", m_gameServerUrl);
-            m_gameEstablished = true;
-            this->resetGameVars();
+            log::debug("connected to game server at {}", connInfo.m_gameServerUrl);
+            connInfo.m_gameEstablished = true;
 
             // if there was a deferred join, try to login with session, otherwise just login
-            if (m_gsDeferredJoin) {
-                this->sendGameLoginJoinRequest(*m_gsDeferredJoin);
+            if (connInfo.m_gsDeferredJoin) {
+                this->sendGameLoginJoinRequest(*connInfo.m_gsDeferredJoin);
             } else {
                 this->sendGameLoginRequest();
             }
         } else if (state == qn::ConnectionState::Disconnected) {
-            log::debug("disconnected from game server at {}", m_gameServerUrl);
-            m_gameEstablished = false;
-            m_gameServerUrl.clear();
+            log::debug("disconnected from game server at {}", connInfo.m_gameServerUrl);
+            connInfo.m_gameEstablished = false;
+            connInfo.m_gameServerUrl.clear();
 
             // if there was a deferred join, try to connect now
-            if (m_gsDeferredConnectJoin) {
+            if (connInfo.m_gsDeferredConnectJoin) {
                 m_gameConn.setDebugOptions(getConnOpts());
-                auto res = m_gameConn.connect(m_gsDeferredConnectJoin->first);
-                m_gameServerUrl = m_gsDeferredConnectJoin->first;
+                auto res = m_gameConn.connect(connInfo.m_gsDeferredConnectJoin->first);
+                connInfo.m_gameServerUrl = connInfo.m_gsDeferredConnectJoin->first;
 
                 if (!res) {
-                    log::error("Failed to connect to game server {}: {}", m_gsDeferredConnectJoin->first, res.unwrapErr().message());
-                    m_gameServerUrl.clear();
+                    log::error("Failed to connect to game server {}: {}", connInfo.m_gsDeferredConnectJoin->first, res.unwrapErr().message());
+                    connInfo.m_gameServerUrl.clear();
                 }
             }
         }
@@ -152,46 +163,65 @@ NetworkManagerImpl::NetworkManagerImpl() {
 
     m_workerThread.setName("NetworkManager worker");
     m_workerThread.setLoopFunction([this](asp::StopToken<>& stopToken) {
-        // check if any game servers need to be pinged
-        if (this->isConnected()) {
-            auto servers = m_gameServers.lock();
+        switch (m_centralConnState.load()) {
+            case qn::ConnectionState::Disconnected: {
+                m_connInfo.lock()->reset();
 
-            for (auto& [srvkey, server] : *servers) {
-                if (server.lastPingTime.elapsed() > getPingInterval(server.sentPings)) {
-                    server.sentPings++;
-                    server.lastPingTime = Instant::now();
+                // wait for a connection..
+                m_pendingConnectNotify.wait();
+                auto url = *m_pendingConnectUrl.lock();
 
-                    // send a ping to the server
-                    auto res = qn::Pinger::get().pingUrl(server.url, [this, srvkey](qn::PingResult res) {
-                        if (res.timedOut) {
-                            log::debug("Ping to server {} timed out!", srvkey);
-                            return;
-                        }
+                auto connInfo = m_connInfo.lock();
+                connInfo->emplace();
+                m_centralUrl = std::string(url);
 
-                        // update the server latency
-                        auto servers = m_gameServers.lock();
-                        auto it = servers->find(srvkey);
-                        if (it != servers->end()) {
-                            auto lat = (uint32_t)res.responseTime.millis();
-                            it->second.updateLatency(lat);
-                            log::debug("Ping to server {} arrived, latency: {}ms avg, {}ms last", srvkey, it->second.avgLatency, it->second.lastLatency);
-                        }
+                m_centralConn.setDebugOptions(getConnOpts());
+
+                auto res = m_centralConn.connect(url);
+                if (!res) {
+                    log::error("Failed to connect to central server at '{}': {}", url, res.unwrapErr().message());
+                }
+            } break;
+
+            case qn::ConnectionState::DnsResolving:
+            case qn::ConnectionState::Pinging:
+            case qn::ConnectionState::Connecting:
+            case qn::ConnectionState::Reconnecting:
+            case qn::ConnectionState::Closing: {
+                // do nothing!
+                asp::time::sleep(Duration::fromMillis(10));
+            } break;
+
+            case qn::ConnectionState::Connected: {
+                this->thrPingGameServers();
+
+                if (m_disconnectNotify.wait(Duration::fromMillis(10), [&] {
+                    return m_disconnectRequested.load();
+                })) {
+                    // disconnect was requested, abort connection
+                    (void) m_centralConn.disconnect();
+                    m_gameConn.cancelConnection();
+                    (void) m_gameConn.disconnect();
+
+                    (**m_connInfo.lock()).m_finishedClosingNotify.wait(Duration::zero(), [&] {
+                        return m_centralConnState.load() != qn::ConnectionState::Connected;
                     });
 
-                    if (!res) {
-                        log::warn("Failed to ping game server {} ({}, id {}): {}", server.url, server.name, (int)server.id, res.unwrapErr());
-                        continue;
+                    // if a game connection is still closing, wait
+                    while (!m_gameConn.disconnected()) {
+                        log::debug("waiting for game connection to terminate..");
+                        asp::time::sleep(Duration::fromMillis(25));
                     }
                 }
-            }
+            } break;
         }
-
-        asp::time::sleep(Duration::fromMillis(100));
     });
+
     m_workerThread.start();
 }
 
 NetworkManagerImpl::~NetworkManagerImpl() {
+    m_pendingConnectNotify.notifyAll();
     m_workerThread.stopAndWait();
 }
 
@@ -199,49 +229,89 @@ NetworkManagerImpl& NetworkManagerImpl::get() {
     return *NetworkManager::get().m_impl;
 }
 
-void NetworkManagerImpl::resetGameVars() {
-    m_gameTickrate = 0;
-    m_gameEventQueue = {};
+void NetworkManagerImpl::thrPingGameServers() {
+    auto connInfo = m_connInfo.lock();
+    auto& servers = (*connInfo)->m_gameServers;
+
+    for (auto& [srvkey, server] : servers) {
+        if (server.lastPingTime.elapsed() > getPingInterval(server.sentPings)) {
+            server.sentPings++;
+            server.lastPingTime = Instant::now();
+
+            // send a ping to the server
+            auto res = qn::Pinger::get().pingUrl(server.url, [this, srvkey](qn::PingResult res) {
+                if (res.timedOut) {
+                    log::debug("Ping to server {} timed out!", srvkey);
+                    return;
+                }
+
+                // update the server latency
+                auto connInfo = m_connInfo.lock();
+                auto& servers = (*connInfo)->m_gameServers;
+                auto it = servers.find(srvkey);
+                if (it != servers.end()) {
+                    auto lat = (uint32_t)res.responseTime.millis();
+                    it->second.updateLatency(lat);
+                    log::debug("Ping to server {} arrived, latency: {}ms avg, {}ms last", srvkey, it->second.avgLatency, it->second.lastLatency);
+                }
+            });
+
+            if (!res) {
+                log::warn("Failed to ping game server {} ({}, id {}): {}", server.url, server.name, (int)server.id, res.unwrapErr());
+                continue;
+            }
+        }
+    }
 }
 
 Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
-    if (m_centralConn.connected()) {
+    if (!m_centralConn.disconnected()) {
         return Err("Already connected to central server");
     }
 
-    m_centralUrl = std::string(url);
-    m_knownArgonUrl.clear();
+    *m_pendingConnectUrl.lock() = std::string(url);
+    m_pendingConnectNotify.notifyOne();
 
-    m_centralConn.setDebugOptions(getConnOpts());
-
-    return m_centralConn.connect(url).mapErr([](auto&& err) {
-        return err.message();
-    });
+    return Ok();
 }
 
 Result<> NetworkManagerImpl::disconnectCentral() {
-    if (m_waitingForArgon) {
-        return Err("cannot disconnect while waiting for Argon auth");
+    auto connInfo = m_connInfo.lock();
+
+    if (!*connInfo) {
+        return Err("Not connected to central server");
     }
 
-    (void) m_centralConn.disconnect();
+    m_disconnectRequested.store(true);
+    m_disconnectNotify.notifyOne();
 
     return Ok();
 }
 
 qn::ConnectionState NetworkManagerImpl::getConnState(bool game) {
-    return game ? m_gameConnState.load() : m_centralConnState.load();
+    auto connInfo = m_connInfo.lock();
+
+    if (game && *connInfo) {
+        return (*connInfo)->m_gameConnState.load();
+    } else if (game) {
+        return qn::ConnectionState::Disconnected;
+    } else {
+        return m_centralConnState.load();
+    }
 }
 
 std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
-    if (!m_established) {
+    auto lock = m_connInfo.lock();
+    if (!*lock) {
         return std::nullopt;
     }
 
-    auto servers = m_gameServers.lock();
+    auto& connInfo = **lock;
+
+    auto& servers = connInfo.m_gameServers;
 
     if (auto value = globed::value<std::string>("core.net.preferred-server")) {
-        for (auto& srv : *servers) {
+        for (auto& srv : servers) {
             if (srv.second.stringId == *value) {
                 return srv.second.id;
             }
@@ -249,8 +319,8 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
     }
 
     // fallback to the server with the lowest latency
-    if (!servers->empty()) {
-        auto it = std::min_element(servers->begin(), servers->end(),
+    if (!servers.empty()) {
+        auto it = std::min_element(servers.begin(), servers.end(),
             [](const auto& a, const auto& b) {
                 return a.second.lastLatency < b.second.lastLatency;
             });
@@ -261,7 +331,7 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
 }
 
 bool NetworkManagerImpl::isConnected() const {
-    return m_established;
+    return (**m_connInfo.lock()).m_established;
 }
 
 Duration NetworkManagerImpl::getGamePing() {
@@ -273,13 +343,13 @@ Duration NetworkManagerImpl::getCentralPing() {
 }
 
 uint32_t NetworkManagerImpl::getGameTickrate() {
-    return m_gameTickrate;
+    auto lock = m_connInfo.lock();
+    return *lock ? (*lock)->m_gameTickrate : 0;
 }
 
 void NetworkManagerImpl::onCentralConnected() {
     log::debug("connection to central server established, trying to log in");
 
-    m_established = false;
     this->tryAuth();
 }
 
@@ -287,6 +357,14 @@ void NetworkManagerImpl::tryAuth() {
     auto gam = GJAccountManager::get();
     int accountId = gam->m_accountID;
     int userId = GameManager::get()->m_playerUserID;
+
+    auto lock = m_connInfo.lock();
+    if (!*lock) {
+        log::error("Cannot authenticate, not connected to central server");
+        return;
+    }
+
+    auto& connInfo = **lock;
 
     if (auto stoken = this->getUToken()) {
         (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
@@ -296,23 +374,24 @@ void NetworkManagerImpl::tryAuth() {
             loginUToken.setAccountId(accountId);
             data::encodeIconData(gatherIconData(), loginUToken.initIcons());
         });
-    } else if (!m_knownArgonUrl.empty()) {
-        m_waitingForArgon = true;
+    } else if (!connInfo.m_knownArgonUrl.empty()) {
+        (void) argon::setServerUrl(connInfo.m_knownArgonUrl);
+        connInfo.m_waitingForArgon = true;
+        lock.unlock();
 
-        (void) argon::setServerUrl(m_knownArgonUrl);
         auto res = argon::startAuth([&](Result<std::string> res) {
-            m_waitingForArgon = false;
+            (**m_connInfo.lock()).m_waitingForArgon = false;
 
             if (!res) {
                 this->abortConnection(fmt::format("failed to complete Argon auth: {}", res.unwrapErr()));
                 return;
             }
 
-            this->doArgonAuth(*res);
+            this->doArgonAuth(std::move(*res));
         });
 
         if (!res) {
-            m_waitingForArgon = false;
+            (**m_connInfo.lock()).m_waitingForArgon = false;
             this->abortConnection(fmt::format("failed to start Argon auth: {}", res.unwrapErr()));
             return;
         }
@@ -349,16 +428,24 @@ void NetworkManagerImpl::onCentralDisconnected() {
 
     CoreImpl::get().onServerDisconnected();
 
-    m_established = false;
-    m_gameServers.lock()->clear();
-    m_knownArgonUrl.clear();
+    auto lock = m_connInfo.lock();
+    auto& connInfo = *lock;
+
+    if (connInfo) connInfo->m_finishedClosingNotify.notifyAll();
+
+    // in case this is an abnormal closure, also notify the disconnect notify
+    m_disconnectRequested.store(true);
+    m_disconnectNotify.notifyAll();
 }
 
 void NetworkManagerImpl::sendJoinSession(SessionId id) {
-    if (!m_established) {
+    auto lock = m_connInfo.lock();
+    if (!*lock) {
         log::error("Cannot join session, not connected to central server");
         return;
     }
+
+    auto& connInfo = **lock;
 
     log::debug("Joining session with ID {}", id.asU64());
 
@@ -369,7 +456,7 @@ void NetworkManagerImpl::sendJoinSession(SessionId id) {
 
     // find the game server
     uint8_t serverId = id.serverId();
-    for (auto& srv : *m_gameServers.lock()) {
+    for (auto& srv : connInfo.m_gameServers) {
         if (srv.second.id == serverId) {
             this->joinSessionWith(srv.second.url, id);
             return;
@@ -392,11 +479,19 @@ void NetworkManagerImpl::sendLeaveSession() {
 
 void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId id) {
     // if already connected to another game server, disconnect and wait for the connection to close
+    auto lock = m_connInfo.lock();
+    if (!*lock) {
+        log::error("Trying to join a session while not connected to a central server!");
+        return;
+    }
+
+    auto& connInfo = **lock;
+
     if (m_gameConn.connected()) {
-        if (m_gameServerUrl != serverUrl) {
-            m_gsDeferredConnectJoin = std::make_pair(std::string(serverUrl), id);
+        if (connInfo.m_gameServerUrl != serverUrl) {
+            connInfo.m_gsDeferredConnectJoin = std::make_pair(std::string(serverUrl), id);
             (void) m_gameConn.disconnect();
-        } else if (m_gameEstablished) {
+        } else if (connInfo.m_gameEstablished) {
             // same server, just send the join request
             this->sendGameJoinRequest(id);
         } else {
@@ -404,14 +499,14 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
         }
     } else {
         // not connected, connect to the game server and join later
-        m_gsDeferredJoin = id;
-        m_gameServerUrl = std::string(serverUrl);
+        connInfo.m_gsDeferredJoin = id;
+        connInfo.m_gameServerUrl = std::string(serverUrl);
         m_gameConn.setDebugOptions(getConnOpts());
         auto res = m_gameConn.connect(serverUrl);
         if (!res) {
             log::error("Failed to connect to {}: {}", serverUrl, res.unwrapErr().message());
-            m_gameServerUrl.clear();
-            m_gsDeferredJoin.reset();
+            connInfo.m_gameServerUrl.clear();
+            connInfo.m_gsDeferredJoin.reset();
         }
     }
 }
@@ -445,6 +540,14 @@ void NetworkManagerImpl::sendGameJoinRequest(SessionId id) {
 }
 
 void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests) {
+    auto lock = m_connInfo.lock();
+    if (!*lock || !(**lock).m_gameEstablished) {
+        log::warn("Cannot send player state, not connected to game server");
+        return;
+    }
+
+    auto& connInfo = **lock;
+
     (void) this->sendToGame([&](GameMessage::Builder& msg) {
         auto playerData = msg.initPlayerData();
         auto data = playerData.initData();
@@ -455,23 +558,26 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
             reqs.set(i, dataRequests[i]);
         }
 
-        auto evs = playerData.initEvents(std::min<size_t>(m_gameEventQueue.size(), 64));
+        auto evs = playerData.initEvents(std::min<size_t>(connInfo.m_gameEventQueue.size(), 64));
         for (size_t i = 0; i < evs.size(); i++) {
-            auto& event = m_gameEventQueue.front();
+            auto& event = connInfo.m_gameEventQueue.front();
 
             auto ev = evs[i];
             ev.setType(event.type);
             ev.setData({(kj::byte*) event.data.data(), event.data.size()});
 
-            m_gameEventQueue.pop();
+            connInfo.m_gameEventQueue.pop();
         }
-    }, !m_gameEventQueue.empty());
+    }, !connInfo.m_gameEventQueue.empty());
 }
 
 void NetworkManagerImpl::queueGameEvent(Event&& event) {
-    if (!m_gameEstablished) return;
+    auto lock = m_connInfo.lock();
+    if (!*lock) {
+        return;
+    }
 
-    m_gameEventQueue.push(std::move(event));
+    (**lock).m_gameEventQueue.push(std::move(event));
 }
 
 void NetworkManagerImpl::sendRoomStateCheck() {
@@ -577,6 +683,9 @@ static void updateServers(std::unordered_map<std::string, GameServer>& servers, 
 Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) {
     switch (msg.which()) {
         case CentralMessage::LOGIN_OK: {
+            auto lock = m_connInfo.lock();
+            auto& connInfo = **lock;
+
             auto loginOk = msg.getLoginOk();
 
             if (loginOk.hasNewToken()) {
@@ -586,10 +695,11 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
             if (loginOk.hasServers()) {
                 auto servers = loginOk.getServers();
-                updateServers(*m_gameServers.lock(), servers);
+                updateServers(connInfo.m_gameServers, servers);
             }
 
-            m_established = true;
+            connInfo.m_established = true;
+
             CoreImpl::get().onServerConnected();
         } break;
 
@@ -605,7 +715,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
                 return Err("Login required message does not contain Argon URL");
             }
 
-            m_knownArgonUrl = loginRequired.getArgonUrl();
+            (**m_connInfo.lock()).m_knownArgonUrl = loginRequired.getArgonUrl();
             this->clearUToken();
             this->tryAuth();
         } break;
@@ -676,10 +786,13 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
     switch (msg.which()) {
         case GameMessage::LOGIN_OK: {
+            auto lock = m_connInfo.lock();
+            auto& connInfo = **lock;
+
             auto loginOk = msg.getLoginOk();
 
-            m_gameEstablished = true;
-            m_gameTickrate = loginOk.getTickrate();
+            connInfo.m_gameEstablished = true;
+            connInfo.m_gameTickrate = loginOk.getTickrate();
             log::debug("Successfully logged in to game server");
         } break;
 
@@ -760,7 +873,7 @@ void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reaso
 
         case ARGON_NOT_SUPPORTED: {
             log::warn("Login failed: Argon is not supported by the server, falling back to plain login");
-            m_knownArgonUrl.clear();
+            (**m_connInfo.lock()).m_knownArgonUrl.clear();
             this->tryAuth();
         } break;
 
