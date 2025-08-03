@@ -3,6 +3,7 @@
 #include "generated.hpp"
 #include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/data/Messages.hpp>
+#include <globed/core/data/UserRole.hpp>
 
 namespace globed::data {
 
@@ -341,6 +342,51 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
     }
 
     return outMsg;
+}
+
+/// User roles
+
+inline UserRole decodeUserRole(const schema::shared::UserRole::Reader& reader, size_t idx) {
+    UserRole role{};
+    role.id = idx;
+    role.stringId = reader.getStringId();
+    role.icon = reader.getIcon();
+    role.nameColor = reader.getNameColor();
+    return role;
+}
+
+/// Central login ok message
+
+inline msg::CentralLoginOkMessage decodeCentralLoginOk(const schema::main::LoginOkMessage::Reader& reader) {
+    msg::CentralLoginOkMessage msg{};
+
+    if (reader.hasNewToken()) {
+        msg.newToken = reader.getNewToken();
+    }
+
+    if (reader.hasAllRoles()) {
+        auto roles = reader.getAllRoles();
+        msg.allRoles.reserve(roles.size());
+
+        size_t idx = 0;
+        for (auto role : roles) {
+            msg.allRoles.push_back(decodeUserRole(role, idx++));
+        }
+    }
+
+    if (reader.hasUserRoles()) {
+        auto userRoles = reader.getUserRoles();
+        msg.userRoles.reserve(userRoles.size());
+        for (uint8_t id : userRoles) {
+            if (id < msg.allRoles.size()) {
+                msg.userRoles.push_back(msg.allRoles[id]);
+            } else {
+                geode::log::warn("Received invalid user role ID: {}", id);
+            }
+        }
+    }
+
+    return msg;
 }
 
 }

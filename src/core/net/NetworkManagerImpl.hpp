@@ -5,6 +5,7 @@
 #include <globed/core/SessionId.hpp>
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/RoomSettings.hpp>
+#include <globed/core/data/UserRole.hpp>
 #include <globed/core/data/Event.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <typeindex>
@@ -35,7 +36,6 @@ struct GameServer {
 // Struct for fields that are the same across one connection but are cleared on disconnect
 struct ConnectionInfo {
     std::string m_knownArgonUrl;
-    uint32_t m_gameTickrate = 0;
     bool m_waitingForArgon = false;
     bool m_established;
 
@@ -47,8 +47,11 @@ struct ConnectionInfo {
     std::optional<SessionId> m_gsDeferredJoin;
     std::queue<Event> m_gameEventQueue;
     bool m_gameEstablished = false;
-
     asp::Notify m_finishedClosingNotify;
+
+    uint32_t m_gameTickrate = 0;
+    std::vector<UserRole> m_allRoles;
+    std::vector<UserRole> m_userRoles;
 };
 
 class NetworkManagerImpl {
@@ -76,6 +79,8 @@ public:
 
     /// Returns the tickrate to the connected game server, or 0 if not connected
     uint32_t getGameTickrate();
+    std::vector<UserRole> getAllRoles();
+    std::vector<UserRole> getUserRoles();
 
     // Message sending functions
 

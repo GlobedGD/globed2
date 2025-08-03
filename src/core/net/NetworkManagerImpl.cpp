@@ -347,6 +347,16 @@ uint32_t NetworkManagerImpl::getGameTickrate() {
     return *lock ? (*lock)->m_gameTickrate : 0;
 }
 
+std::vector<UserRole> NetworkManagerImpl::getAllRoles() {
+    auto lock = m_connInfo.lock();
+    return *lock ? (*lock)->m_allRoles : std::vector<UserRole>{};
+}
+
+std::vector<UserRole> NetworkManagerImpl::getUserRoles() {
+    auto lock = m_connInfo.lock();
+    return *lock ? (*lock)->m_userRoles : std::vector<UserRole>{};
+}
+
 void NetworkManagerImpl::onCentralConnected() {
     log::debug("connection to central server established, trying to log in");
 
@@ -688,19 +698,19 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
             auto loginOk = msg.getLoginOk();
 
-            if (loginOk.hasNewToken()) {
-                std::string newToken = loginOk.getNewToken();
-                this->setUToken(newToken);
-            }
-
             if (loginOk.hasServers()) {
                 auto servers = loginOk.getServers();
                 updateServers(connInfo.m_gameServers, servers);
             }
 
+            auto msg = data::decodeCentralLoginOk(loginOk);
+            connInfo.m_allRoles = msg.allRoles;
+            connInfo.m_userRoles = msg.userRoles;
             connInfo.m_established = true;
 
             CoreImpl::get().onServerConnected();
+
+            this->invokeListeners(msg);
         } break;
 
         case CentralMessage::LOGIN_FAILED: {

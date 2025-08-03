@@ -4,9 +4,18 @@
 #include "PlayerState.hpp"
 #include "PlayerDisplayData.hpp"
 #include "RoomListingInfo.hpp"
+#include "UserRole.hpp"
 #include "Event.hpp"
 
 namespace globed::msg {
+
+// Login
+
+struct CentralLoginOkMessage {
+    std::string newToken;
+    std::vector<UserRole> allRoles;
+    std::vector<UserRole> userRoles;
+};
 
 // Rooms
 
