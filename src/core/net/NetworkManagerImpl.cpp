@@ -203,7 +203,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
                     m_gameConn.cancelConnection();
                     (void) m_gameConn.disconnect();
 
-                    (**m_connInfo.lock()).m_finishedClosingNotify.wait(Duration::zero(), [&] {
+                    m_finishedClosingNotify.wait(Duration::zero(), [&] {
                         return m_centralConnState.load() != qn::ConnectionState::Connected;
                     });
 
@@ -438,10 +438,7 @@ void NetworkManagerImpl::onCentralDisconnected() {
 
     CoreImpl::get().onServerDisconnected();
 
-    auto lock = m_connInfo.lock();
-    auto& connInfo = *lock;
-
-    if (connInfo) connInfo->m_finishedClosingNotify.notifyAll();
+    m_finishedClosingNotify.notifyAll();
 
     // in case this is an abnormal closure, also notify the disconnect notify
     m_disconnectRequested.store(true);
@@ -511,6 +508,10 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
         // not connected, connect to the game server and join later
         connInfo.m_gsDeferredJoin = id;
         connInfo.m_gameServerUrl = std::string(serverUrl);
+
+        (void) m_gameConn.cancelConnection();
+        (void) m_gameConn.disconnect();
+
         m_gameConn.setDebugOptions(getConnOpts());
         auto res = m_gameConn.connect(serverUrl);
         if (!res) {

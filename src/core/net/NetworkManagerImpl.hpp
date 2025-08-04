@@ -47,7 +47,6 @@ struct ConnectionInfo {
     std::optional<SessionId> m_gsDeferredJoin;
     std::queue<Event> m_gameEventQueue;
     bool m_gameEstablished = false;
-    asp::Notify m_finishedClosingNotify;
 
     uint32_t m_gameTickrate = 0;
     std::vector<UserRole> m_allRoles;
@@ -131,6 +130,7 @@ private:
     asp::Notify m_pendingConnectNotify;
     asp::Notify m_disconnectNotify;
     asp::AtomicBool m_disconnectRequested;
+    asp::Notify m_finishedClosingNotify;
 
     // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
     asp::Mutex<std::unordered_map<std::type_index, std::vector<void*>>, true> m_listeners;
