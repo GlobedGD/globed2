@@ -19,6 +19,7 @@ option(GLOBED_VOICE_SUPPORT "Enable voice chat support" ON)
 option(GLOBED_DEBUG "Enable debug mode" OFF)
 option(GLOBED_DEBUG_INTERPOLATION "Enable interpolation debugging, adds a TON of extra logs, and some visual elements" OFF)
 option(GLOBED_MODULE_GLOBAL_TRIGGERS "Global triggers module" OFF)
+option(GLOBED_MODULE_SCRIPTING "Scripting module" OFF)
 
 # Configure platform sources
 if (ANDROID)
@@ -39,6 +40,11 @@ set(MODULE_SOURCES "")
 if (GLOBED_MODULE_GLOBAL_TRIGGERS)
     file(GLOB_RECURSE GLOBAL_TRIGGERS_SOURCES CONFIGURE_DEPENDS "src/modules/global-triggers/*.cpp")
     list(APPEND MODULE_SOURCES ${GLOBAL_TRIGGERS_SOURCES})
+endif()
+
+if (GLOBED_MODULE_SCRIPTING)
+    file(GLOB_RECURSE SCRIPTING_SOURCES CONFIGURE_DEPENDS "src/modules/scripting/*.cpp")
+    list(APPEND MODULE_SOURCES ${SCRIPTING_SOURCES})
 endif()
 
 # Configure rest of sources

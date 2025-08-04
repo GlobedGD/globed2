@@ -4,7 +4,6 @@
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include "hooks/GJBaseGameLayer.hpp"
-#include "Ids.hpp"
 
 using namespace geode::prelude;
 
@@ -12,23 +11,9 @@ namespace globed {
 
 GlobalTriggersModule::GlobalTriggersModule() {}
 
-GlobalTriggersModule& GlobalTriggersModule::get() {
-    if (!g_instance) {
-        auto res = Core::get().addModule(GlobalTriggersModule{});
-
-        if (!res) {
-            geode::utils::terminate(fmt::format("Failed to initialize global triggers module: {}", res.unwrapErr()));
-        }
-
-        auto instance = res.unwrap();
-        instance->setAutoEnableMode(AutoEnableMode::Level);
-
-        GlobalTriggersModule::setInstance(instance);
-
-        log::info("Global Triggers module initialized");
-    }
-
-    return *g_instance;
+void GlobalTriggersModule::onModuleInit() {
+    log::info("Global triggers module initialized");
+    this->setAutoEnableMode(AutoEnableMode::Server);
 }
 
 void GlobalTriggersModule::queueCounterChange(const CounterChange& change) {

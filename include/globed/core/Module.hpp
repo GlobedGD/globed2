@@ -158,15 +158,5 @@ private:
 
 // static_assert(sizeof(Module) == 80);
 
-// template <typename Derived>
-// class ModuleCrtpBase : public Module {
-// public:
-//     using Module::Module;
-
-//     static Derived& get() {
-//         static std::shared_ptr<Derived> instance;
-//         return *instance;
-//     }
-// };
 
 }

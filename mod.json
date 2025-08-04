@@ -12,7 +12,8 @@
     },
     "description": "Feature-rich multiplayer mod",
     "dependencies": {
-        "geode.node-ids": ">=v1.10.0"
+        "geode.node-ids": ">=v1.10.0",
+        "alphalaneous.editortab_api": ">=1.0.17"
     },
     "incompatibilities": {},
     "links": {
