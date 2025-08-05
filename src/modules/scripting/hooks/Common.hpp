@@ -14,7 +14,7 @@ void onCreateObject(ItemTriggerGameObject* obj, ScriptObjectType type);
 
 static constexpr auto ALL_SCRIPT_OBJECT_TYPES = std::to_array<ScriptObjectType>({
     ScriptObjectType::FireServer,
-    // ScriptObjectType::ListenEvent,
+    ScriptObjectType::ListenEvent,
 });
 
 }

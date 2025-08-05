@@ -4,6 +4,7 @@
 #include "Common.hpp"
 
 #include <alphalaneous.editortab_api/include/EditorTabs.hpp>
+#include <cue/Util.hpp>
 #include <Geode/Geode.hpp>
 #include <Geode/modify/EditorUI.hpp>
 
@@ -73,8 +74,12 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorUIHook : geode::Modify<SCEditorUIHook,
 CCMenuItemToggler* createObjButton(ScriptObjectType type) {
     auto tex = textureForScriptObject(type);
 
-    auto onSprite = CCSprite::create(tex);
-    auto offSprite = CCSprite::create(tex);
+    auto onSprite = ButtonSprite::create(CCSprite::create(tex), 40.f, 0, 40.f, 1.0f, false, "GJ_button_04.png", false);
+    auto offSprite = ButtonSprite::create(CCSprite::create(tex), 40.f, 0, 40.f, 1.0f, false, "GJ_button_04.png", false);
+
+    cue::rescaleToMatch(onSprite, {40.f, 40.f});
+    cue::rescaleToMatch(offSprite, {40.f, 40.f});
+
     onSprite->setColor(ccc3(100, 100, 100));
 
     if (!onSprite || !offSprite) {
