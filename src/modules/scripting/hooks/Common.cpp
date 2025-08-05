@@ -71,6 +71,10 @@ bool onAddObject(GameObject* original, bool editor) {
             (void) vtable_cast<FireServerObject*>(original);
         } break;
 
+        case ScriptObjectType::ListenEvent: {
+            (void) vtable_cast<ListenEventObject*>(original);
+        } break;
+
         default: {
             log::warn("Ignoring unknown script object type: {}", (int)ty);
             return false;
@@ -95,6 +99,10 @@ bool onEditObject(GameObject* obj) {
             SetupFireServerPopup::create(static_cast<FireServerObject*>(obj))->show();
         } break;
 
+        case ScriptObjectType::ListenEvent: {
+            // TODO
+        } break;
+
         default: {
             log::warn("Cannot edit unknown script object type: {}", (int)type);
         } break;
@@ -111,6 +119,8 @@ const char* textureForScriptObject(ScriptObjectType type) {
     switch (type) {
         case ScriptObjectType::FireServer:
             return "trigger-fire-server.png"_spr;
+        case ScriptObjectType::ListenEvent:
+            return "trigger-listen-event.png"_spr;
         default:
             return "globed-gold-icon.png"_spr;
     }
@@ -123,27 +133,12 @@ void onCreateObject(ItemTriggerGameObject* obj, ScriptObjectType type) {
     switch (type) {
         case ScriptObjectType::FireServer: {
             auto object = vtable_cast<FireServerObject*>(obj);
+            object->encodePayload({});
+        } break;
 
-            // TODO: temporary payload
-            // object->encodePayload({});
-            object->encodePayload({
-                .eventId = 123,
-                .argCount = 3,
-                .args = {{
-                    FireServerArg{
-                        .type = FireServerArgType::Static,
-                        .value = 42,
-                    },
-                    FireServerArg{
-                        .type = FireServerArgType::Item,
-                        .value = 2,
-                    },
-                    FireServerArg{
-                        .type = FireServerArgType::Timer,
-                        .value = 3,
-                    }
-                }},
-            });
+        case ScriptObjectType::ListenEvent: {
+            auto object = vtable_cast<ListenEventObject*>(obj);
+            object->encodePayload({0, 0});
         } break;
 
         default: break;
