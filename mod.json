@@ -28,7 +28,8 @@
     "resources": {
         "sprites": [
             "resources/misc/*.png",
-            "resources/menu/*.png"
+            "resources/menu/*.png",
+            "resources/editor/*.png"
         ]
     }
 }

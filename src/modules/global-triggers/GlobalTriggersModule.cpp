@@ -13,7 +13,7 @@ GlobalTriggersModule::GlobalTriggersModule() {}
 
 void GlobalTriggersModule::onModuleInit() {
     log::info("Global triggers module initialized");
-    this->setAutoEnableMode(AutoEnableMode::Server);
+    this->setAutoEnableMode(AutoEnableMode::Level);
 }
 
 void GlobalTriggersModule::queueCounterChange(const CounterChange& change) {

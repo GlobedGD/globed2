@@ -49,6 +49,8 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCPlayLayerHook : geode::Modify<SCPlayLayerHoo
             } break;
         }
 
+        m_fields->m_hasScriptObjects = true;
+
         PlayLayer::addObject(obj);
     }
 

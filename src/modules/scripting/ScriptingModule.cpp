@@ -8,7 +8,7 @@ ScriptingModule::ScriptingModule() {}
 
 void ScriptingModule::onModuleInit() {
     log::info("Scripting module initialized");
-    this->setAutoEnableMode(AutoEnableMode::Server);
+    this->setAutoEnableMode(AutoEnableMode::Level);
 }
 
 }

@@ -12,9 +12,7 @@ struct FireServerArg {
     FireServerArgType type;
 
     union {
-        int itemId;
         int value;
-        float timer;
 
         uint32_t rawValue;
     };
@@ -22,8 +20,8 @@ struct FireServerArg {
 
 struct FireServerPayload {
     uint16_t eventId;
+    uint8_t argCount;
     std::array<FireServerArg, 8> args;
-    size_t argCount;
 };
 
 class FireServerObject : public ItemTriggerGameObject {

@@ -3,6 +3,7 @@
 #include <Geode/modify/GameManager.hpp>
 #include <globed/config.hpp>
 #include <globed/util/scary.hpp>
+#include <globed/util/assert.hpp>
 #include <modules/scripting/ScriptingModule.hpp>
 #include <modules/scripting/objects/FireServerObject.hpp>
 #include <modules/scripting/objects/Ids.hpp>
@@ -32,6 +33,8 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorHook : geode::Modify<SCEditorHook, Lev
             auto [iobj, ty] = classifyObject(obj);
 
             if (ty != ScriptObjectType::None) {
+                GLOBED_ASSERT(iobj);
+
                 this->addScriptObjectInplace(iobj, ty);
             }
         }
@@ -74,7 +77,27 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorHook : geode::Modify<SCEditorHook, Lev
         switch (type) {
             case ScriptObjectType::FireServer: {
                 auto object = vtable_cast<FireServerObject*>(obj);
-                object->encodePayload({});
+
+                // TODO: temporary payload
+                // object->encodePayload({});
+                object->encodePayload({
+                    .eventId = 123,
+                    .argCount = 3,
+                    .args = {{
+                        FireServerArg{
+                            .type = FireServerArgType::Static,
+                            .value = 42,
+                        },
+                        FireServerArg{
+                            .type = FireServerArgType::Item,
+                            .value = 2,
+                        },
+                        FireServerArg{
+                            .type = FireServerArgType::Timer,
+                            .value = 3,
+                        }
+                    }},
+                });
             } break;
 
             default: break;

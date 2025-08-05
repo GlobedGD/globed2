@@ -61,7 +61,7 @@ inline void setObjectAttrs(ItemTriggerGameObject* obj, ScriptObjectType type) {
 inline const char* textureForScriptObject(ScriptObjectType type) {
     switch (type) {
         case ScriptObjectType::FireServer:
-            return "pencil.png"_spr;
+            return "trigger-fire-server.png"_spr;
         default:
             return "globed-gold-icon.png"_spr;
     }
@@ -69,6 +69,11 @@ inline const char* textureForScriptObject(ScriptObjectType type) {
 
 inline void setObjectTexture(GameObject* obj, ScriptObjectType type) {
     auto tex = cocos2d::CCTextureCache::get()->addImage(textureForScriptObject(type), false);
+    if (!tex) {
+        geode::log::error("Failed to load texture for script object type {}", (int)type);
+        return;
+    }
+
     obj->setTexture(tex);
 
     cocos2d::CCRect rect{};
