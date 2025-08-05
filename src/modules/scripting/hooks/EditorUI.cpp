@@ -78,7 +78,7 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorUIHook : geode::Modify<SCEditorUIHook,
     void customEditObject(ItemTriggerGameObject* obj, ScriptObjectType type) {
         switch (type) {
             case ScriptObjectType::FireServer: {
-                SetupFireServerPopup::create(obj)->show();
+                SetupFireServerPopup::create(static_cast<FireServerObject*>(obj))->show();
             } break;
 
             default: {

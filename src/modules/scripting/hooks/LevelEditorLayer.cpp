@@ -11,14 +11,6 @@ using namespace geode::prelude;
 
 namespace globed {
 
-struct GLOBED_MODIFY_ATTR SCHookedGameManager : geode::Modify<SCHookedGameManager, GameManager> {
-    gd::string stringForCustomObject(int ty) {
-        auto str = GameManager::stringForCustomObject(ty);
-        log::debug("type: {}, string: {}", ty, str);
-        return str;
-    }
-};
-
 struct GLOBED_NOVTABLE GLOBED_DLL SCEditorHook : geode::Modify<SCEditorHook, LevelEditorLayer> {
     struct Fields {
         bool m_hasScriptObjects = false;
@@ -64,8 +56,6 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorHook : geode::Modify<SCEditorHook, Lev
     GameObject* createObject(int objectIdRaw, CCPoint p1, bool p2) {
         uint32_t objectId = objectIdRaw;
 
-        log::debug("Hi {}", objectId);
-
         if ((objectId & ~SCRIPT_OBJECT_TYPE_MASK) == SCRIPT_OBJECT_IDENT_MASK) {
             ScriptObjectType type = static_cast<ScriptObjectType>(objectId & SCRIPT_OBJECT_TYPE_MASK);
             return this->onCustomCreateObject(type, p1, p2);
@@ -84,6 +74,7 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorHook : geode::Modify<SCEditorHook, Lev
         switch (type) {
             case ScriptObjectType::FireServer: {
                 auto object = vtable_cast<FireServerObject*>(obj);
+                object->encodePayload({});
             } break;
 
             default: break;
