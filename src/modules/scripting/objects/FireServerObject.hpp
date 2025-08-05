@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Geode/Geode.hpp>
+#include "ExtendedObjectBase.hpp"
 
 namespace globed {
 
@@ -24,7 +24,7 @@ struct FireServerPayload {
     std::array<FireServerArg, 8> args;
 };
 
-class FireServerObject : public ItemTriggerGameObject {
+class FireServerObject : public ExtendedObjectBase {
 public:
     FireServerObject();
 

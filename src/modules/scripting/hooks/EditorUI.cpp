@@ -1,13 +1,11 @@
-#include <Geode/Geode.hpp>
-#include <Geode/modify/EditorUI.hpp>
 #include <globed/config.hpp>
-#include <globed/util/scary.hpp>
 #include <modules/scripting/ScriptingModule.hpp>
-#include <modules/scripting/objects/FireServerObject.hpp>
 #include <modules/scripting/objects/Ids.hpp>
-#include <modules/scripting/ui/SetupFireServerPopup.hpp>
+#include "Common.hpp"
 
 #include <alphalaneous.editortab_api/include/EditorTabs.hpp>
+#include <Geode/Geode.hpp>
+#include <Geode/modify/EditorUI.hpp>
 
 using namespace geode::prelude;
 
@@ -35,14 +33,13 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorUIHook : geode::Modify<SCEditorUIHook,
         if (!EditorUI::init(layer)) return false;
 
         auto arr = CCArray::create();
-        auto add = [&](ScriptObjectType type) {
+
+        for (auto type : ALL_SCRIPT_OBJECT_TYPES) {
             if (auto btn = createObjButton(type)) {
                 btn->setTag(static_cast<int>(type));
                 arr->addObject(btn);
             }
-        };
-
-        add(ScriptObjectType::FireServer);
+        }
 
         m_fields->m_buttonBar = EditorTabUtils::createEditButtonBar(arr, this);
 
@@ -67,23 +64,8 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorUIHook : geode::Modify<SCEditorUIHook,
 
     $override
     void editObject(CCObject* sender) {
-        auto [iobj, type] = classifyObject(m_selectedObject);
-        if (type == ScriptObjectType::None) {
+        if (!globed::onEditObject(m_selectedObject)) {
             return EditorUI::editObject(sender);
-        }
-
-        this->customEditObject(iobj, type);
-    }
-
-    void customEditObject(ItemTriggerGameObject* obj, ScriptObjectType type) {
-        switch (type) {
-            case ScriptObjectType::FireServer: {
-                SetupFireServerPopup::create(static_cast<FireServerObject*>(obj))->show();
-            } break;
-
-            default: {
-                log::warn("Cannot edit unknown script object type: {}", (int)type);
-            } break;
         }
     }
 };

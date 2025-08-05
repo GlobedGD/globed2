@@ -5,6 +5,8 @@
 #include <modules/scripting/ScriptingModule.hpp>
 #include <modules/scripting/objects/FireServerObject.hpp>
 #include <modules/scripting/objects/Ids.hpp>
+#include "Common.hpp"
+
 
 using namespace geode::prelude;
 
@@ -26,32 +28,11 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCPlayLayerHook : geode::Modify<SCPlayLayerHoo
 
     $override
     void addObject(GameObject* p0) {
-        auto [iobj, ty] = classifyObject(p0);
-        if (ty != ScriptObjectType::None) {
-            this->addScriptObject(iobj, ty);
-            return;
-        } else {
-            PlayLayer::addObject(p0);
-        }
-    }
-
-    void addScriptObject(ItemTriggerGameObject* original, ScriptObjectType type) {
-        GameObject* obj = original;
-
-        switch (type) {
-            case ScriptObjectType::FireServer: {
-                obj = vtable_cast<FireServerObject*>(original);
-            } break;
-
-            default: {
-                log::warn("Ignoring unknown script object type: {}", (int)type);
-                return;
-            } break;
+        if (globed::onAddObject(p0, false)) {
+            m_fields->m_hasScriptObjects = true;
         }
 
-        m_fields->m_hasScriptObjects = true;
-
-        PlayLayer::addObject(obj);
+        PlayLayer::addObject(p0);
     }
 
     $override

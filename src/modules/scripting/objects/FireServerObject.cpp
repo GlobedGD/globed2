@@ -1,10 +1,6 @@
 #include "FireServerObject.hpp"
 #include <globed/util/assert.hpp>
-#include <globed/util/format.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
-
-#include <qunet/buffers/HeapByteWriter.hpp> // TODO: ByteWriter instead when implemented
-#include <qunet/buffers/ByteReader.hpp>
 
 using namespace geode::prelude;
 
@@ -13,9 +9,6 @@ namespace globed {
 FireServerObject::FireServerObject() {}
 
 void FireServerObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, gd::vector<int> const* p2) {
-    // EffectGameObject::triggerObject(p0, p1, p2);
-    log::debug("firing!");
-
     auto res = this->decodePayload();
     if (!res) {
         log::warn("Failed to decode FireServerObject payload! {}", this);
@@ -78,14 +71,6 @@ void FireServerObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, gd::vector<
     });
 }
 
-static uint8_t computeChecksum(std::span<const uint8_t> data) {
-    uint32_t sum = 0;
-    for (auto byte : data) {
-        sum += byte;
-    }
-
-    return ~sum & 0xff;
-}
 
 static Result<FireServerPayload, qn::ByteReaderError> decodePayload(qn::ByteReader& reader) {
     FireServerPayload out{};
@@ -146,108 +131,27 @@ static void encodePayload(const FireServerPayload& payload, qn::HeapByteWriter& 
 }
 
 std::optional<FireServerPayload> FireServerObject::decodePayload() {
-    qn::HeapByteWriter writer;
+    return ExtendedObjectBase::decodePayloadOpt<FireServerPayload>([&](qn::ByteReader& reader) -> Result<FireServerPayload> {
+        auto payload = READER_UNWRAP(::globed::decodePayload(reader));
 
-    // could add other props if not enough space :p
-    writer.writeU32(std::bit_cast<uint32_t>(m_item1Mode));
-    writer.writeU32(std::bit_cast<uint32_t>(m_item2Mode));
-    writer.writeU32(std::bit_cast<uint32_t>(m_resultType1));
-    writer.writeU32(std::bit_cast<uint32_t>(m_resultType2));
-    writer.writeU32(std::bit_cast<uint32_t>(m_roundType1));
-    writer.writeU32(std::bit_cast<uint32_t>(m_roundType2));
-    writer.writeU32(std::bit_cast<uint32_t>(m_signType1));
-    writer.writeU32(std::bit_cast<uint32_t>(m_signType2));
-    auto written = writer.written();
+        // validate the payload
+        for (size_t i = 0; i < payload.argCount; i++) {
+            auto& arg = payload.args[i];
 
-    log::debug("Decoding payload: {}", hexEncode(written.data(), written.size()));
-
-    qn::ByteReader reader{written};
-
-    auto res = ::globed::decodePayload(reader);
-    if (!res) {
-        log::error("failed to decode FireServerObject args: {}", res.unwrapErr().message());
-        return std::nullopt;
-    }
-
-    // validate the payload
-    auto payload = res.unwrap();
-    for (size_t i = 0; i < payload.argCount; i++) {
-        auto& arg = payload.args[i];
-
-        if (arg.type == FireServerArgType::None) {
-            log::error("FireServerObject has an argument with type None at index {}", i);
-            return std::nullopt;
+            if (arg.type == FireServerArgType::None) {
+                return Err("FireServerObject has an argument with type None at index {}", i);
+            }
         }
-    }
 
-    // check the checksum (last byte)
-    auto csumres = reader.readU8();
-    if (!csumres) {
-        log::error("failed to read checksum from FireServerObject args: {}", csumres.unwrapErr().message());
-        return std::nullopt;
-    }
-
-    auto csum = csumres.unwrap();
-    auto data = written.subspan(0, reader.position() - 1);
-
-    auto expected = computeChecksum(data);
-    if (csum != expected) {
-        log::error("failed to validate checksum in FireServerObject args, expected {}, got {}", expected, csum);
-        return std::nullopt;
-    }
-
-    return payload;
+        return Ok(std::move(payload));
+    });
 }
 
 void FireServerObject::encodePayload(const FireServerPayload& args) {
-    qn::HeapByteWriter writer;
-    ::globed::encodePayload(args, writer);
-
-    // compute the checksum
-    auto data = writer.written();
-    auto csum = computeChecksum(data);
-    writer.writeU8(csum);
-
-    // write the data to the object
-
-    data = writer.written();
-
-    qn::ByteReader reader{data};
-
-    log::debug("Encoding payload: {}", hexEncode(data.data(), data.size()));
-
-    auto locations = std::to_array<void*>({
-        &m_item1Mode,
-        &m_item2Mode,
-        &m_resultType1,
-        &m_resultType2,
-        &m_roundType1,
-        &m_roundType2,
-        &m_signType1,
-        &m_signType2
+    ExtendedObjectBase::encodePayload([&](qn::HeapByteWriter& writer) {
+        ::globed::encodePayload(args, writer);
+        return true;
     });
-
-    if (reader.remainingSize() > sizeof(uint32_t) * locations.size()) {
-        log::error("Not enough data to fill all fields in FireServerObject! need >= {} bytes of space", reader.remainingSize());
-        return;
-    }
-
-    for (auto locptr : locations) {
-        uint32_t* loc = static_cast<uint32_t*>(locptr);
-
-        if (reader.remainingSize() >= sizeof(uint32_t)) {
-            *loc = *reader.readU32();
-        } else if (reader.remainingSize() > 0) {
-            reader.readBytes(reinterpret_cast<uint8_t*>(loc), reader.remainingSize()).unwrap();
-        } else {
-            // fill the rest with 0s
-            *loc = 0;
-        }
-    }
 }
 
 }
-
-// a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbeb9
-// a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbeb9
-// a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbeb9
