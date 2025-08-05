@@ -253,7 +253,6 @@ void GTriggersGJBGL::updateItems(float dt) {
 
 void GTriggersGJBGL::handleEvent(const Event& event) {
     if (event.type != EVENT_COUNTER_CHANGE) {
-        log::warn("Received event with unknown type {}", event.type);
         return;
     }
 

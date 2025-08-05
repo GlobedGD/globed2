@@ -5,8 +5,8 @@
 #include <modules/scripting/ScriptingModule.hpp>
 #include <modules/scripting/objects/FireServerObject.hpp>
 #include <modules/scripting/objects/Ids.hpp>
+#include "GJBaseGameLayer.hpp"
 #include "Common.hpp"
-
 
 using namespace geode::prelude;
 
@@ -44,6 +44,9 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCPlayLayerHook : geode::Modify<SCPlayLayerHoo
             (void) ScriptingModule::get().disable();
             return;
         }
+
+        auto layer = SCBaseGameLayer::get(this);
+        layer->postInit();
     }
 };
 

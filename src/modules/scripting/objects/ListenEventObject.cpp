@@ -1,4 +1,5 @@
 #include "ListenEventObject.hpp"
+#include <modules/scripting/hooks/GJBaseGameLayer.hpp>
 
 using namespace geode::prelude;
 
@@ -6,8 +7,14 @@ namespace globed {
 
 ListenEventObject::ListenEventObject() {}
 
-void ListenEventObject::triggerObject(GJBaseGameLayer* p0, int p1, gd::vector<int> const* p2) {
-    // TODO
+void ListenEventObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, gd::vector<int> const* p2) {
+    auto bgl = SCBaseGameLayer::get(gjbgl);
+
+    if (auto payload = this->decodePayload()) {
+        bgl->addEventListener(*payload);
+    } else {
+        log::warn("Failed to decode ListenEventObject payload! {}", this);
+    }
 }
 
 std::optional<ListenEventPayload> ListenEventObject::decodePayload() {
