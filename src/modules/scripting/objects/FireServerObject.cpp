@@ -135,6 +135,10 @@ std::optional<FireServerPayload> FireServerObject::decodePayload() {
         auto payload = READER_UNWRAP(::globed::decodePayload(reader));
 
         // validate the payload
+        if (payload.eventId >= EVENT_GLOBED_BASE) {
+            return Err("FireServerObject has an invalid event ID: {}", payload.eventId);
+        }
+
         for (size_t i = 0; i < payload.argCount; i++) {
             auto& arg = payload.args[i];
 

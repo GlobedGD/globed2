@@ -71,9 +71,9 @@ bool onAddObject(GameObject* original, bool editor) {
             (void) vtable_cast<FireServerObject*>(original);
         } break;
 
-        case ScriptObjectType::ListenEvent: {
-            (void) vtable_cast<ListenEventObject*>(original);
-        } break;
+        // case ScriptObjectType::ListenEvent: {
+        //     (void) vtable_cast<ListenEventObject*>(original);
+        // } break;
 
         default: {
             log::warn("Ignoring unknown script object type: {}", (int)ty);
@@ -99,9 +99,9 @@ bool onEditObject(GameObject* obj) {
             SetupFireServerPopup::create(static_cast<FireServerObject*>(obj))->show();
         } break;
 
-        case ScriptObjectType::ListenEvent: {
-            // TODO
-        } break;
+        // case ScriptObjectType::ListenEvent: {
+        //
+        // } break;
 
         default: {
             log::warn("Cannot edit unknown script object type: {}", (int)type);
@@ -136,10 +136,10 @@ void onCreateObject(ItemTriggerGameObject* obj, ScriptObjectType type) {
             object->encodePayload({});
         } break;
 
-        case ScriptObjectType::ListenEvent: {
-            auto object = vtable_cast<ListenEventObject*>(obj);
-            object->encodePayload({0, 0});
-        } break;
+        // case ScriptObjectType::ListenEvent: {
+        //     auto object = vtable_cast<ListenEventObject*>(obj);
+        //     object->encodePayload({0, 0});
+        // } break;
 
         default: break;
     }

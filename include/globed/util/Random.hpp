@@ -26,6 +26,12 @@ public:
         return dist(m_engine);
     }
 
+    template <std::floating_point T>
+    T random(T min, T max) {
+        std::uniform_real_distribution<T> dist(min, max);
+        return dist(m_engine);
+    }
+
     bool randomRatio(double ratio);
     void fillBytes(void* buffer, size_t size);
 
