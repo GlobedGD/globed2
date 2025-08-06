@@ -1,5 +1,6 @@
 #include "SetupFireServerPopup.hpp"
 #include <globed/core/PopupManager.hpp>
+#include <globed/core/data/Event.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -154,6 +155,11 @@ CCNode* SetupFireServerPopup::createInputBox(size_t idx, int value) {
     input->setCommonFilter(CommonFilter::Int);
     input->setString(fmt::to_string(value));
     input->setCallback([this, input, idx](const std::string& str) {
+        if (str.empty()) {
+            this->onPropChange(idx, 0);
+            return;
+        }
+
         auto res = geode::utils::numFromString<int>(str);
         if (!res) {
             input->setString("0");
@@ -240,6 +246,12 @@ void SetupFireServerPopup::onClose(CCObject*) {
         }
     }
 
+    // detect invalid event ID
+    if (m_invalidEventId) {
+        globed::alertFormat("Error", "Please set a valid event ID. It must range from 0 to {}", EVENT_GLOBED_BASE - 1);
+        return;
+    }
+
     BasePopup::onClose(nullptr);
 
     // commit all changes
@@ -249,6 +261,13 @@ void SetupFireServerPopup::onClose(CCObject*) {
 void SetupFireServerPopup::onPropChange(size_t idx, int value) {
     if (idx == 5) {
         // event id
+        if (value < 0 || value >= EVENT_GLOBED_BASE) {
+            log::warn("Invalid event ID {} for FireServerObject", value);
+            m_invalidEventId = true;
+            return;
+        }
+
+        m_invalidEventId = false;
         m_payload.eventId = value;
     } else if (idx < 5) {
         // arg value

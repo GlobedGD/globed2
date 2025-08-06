@@ -21,6 +21,7 @@ private:
     CCMenuItemToggler* m_touchTriggerBtn;
     CCMenuItemToggler* m_multiTriggerBtn;
     CCNode* m_multiTriggerNode;
+    bool m_invalidEventId = false;
 
     void onClose(CCObject*) override;
 
