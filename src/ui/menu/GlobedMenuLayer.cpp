@@ -3,6 +3,7 @@
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/net/NetworkManager.hpp>
+#include <globed/core/ServerManager.hpp>
 #include <globed/core/actions.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
@@ -20,6 +21,8 @@ static constexpr CCSize PLAYER_LIST_MENU_SIZE{420.f, 280.f};
 static constexpr CCSize PLAYER_LIST_SIZE{PLAYER_LIST_MENU_SIZE.width * 0.8f, 180.f};
 static constexpr float CELL_HEIGHT = 27.f;
 static constexpr CCSize CELL_SIZE{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
+
+static constexpr float CONNECT_MENU_WIDTH = 260.f;
 
 namespace globed {
 
@@ -97,23 +100,29 @@ bool GlobedMenuLayer::init() {
     auto winSize = CCDirector::get()->getWinSize();
 
     // create the connection menu
+    auto connectMenuLayout = ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setGap(10.f);
+    connectMenuLayout->ignoreInvisibleChildren(true);
     m_connectMenu = Build<CCMenu>::create()
         .id("connect-menu")
-        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
-        .pos(winSize.width / 2.f, winSize.height * 0.7f)
-        .contentSize(0.f, 80.f)
+        .layout(connectMenuLayout)
+        .pos(winSize.width / 2.f, winSize.height * 0.5f)
+        .contentSize(CONNECT_MENU_WIDTH, 150.f)
         .anchorPoint(0.5f, 0.5f)
         .parent(this);
 
-    auto connectMenuLayout = RowLayout::create()->setAutoScale(false);
-    connectMenuLayout->ignoreInvisibleChildren(true);
+    m_connectMenuBg = cue::attachBackground(m_connectMenu, cue::BackgroundOptions {
+        .opacity = 255,
+        .texture = "GJ_square01.png",
+    });
+
+    auto serverFieldLayout = RowLayout::create()->setAutoScale(false);
+    serverFieldLayout->ignoreInvisibleChildren(true);
     Build<CCMenu>::create()
         .id("server-field")
-        .layout(connectMenuLayout)
+        .layout(serverFieldLayout)
         .child(
-            // TODO: placeholder text
             Build<CCLabelBMFont>::create("Server Name", "goldFont.fnt")
-                .limitLabelWidth(180.f, 0.7f, 0.1f)
+                .store(m_serverNameLabel)
         )
         .child(
             Build<CCSprite>::create("pencil.png"_spr)
@@ -123,11 +132,12 @@ bool GlobedMenuLayer::init() {
                 })
                 .store(m_editServerButton)
         )
-        .contentSize(220.f, 0.f)
+        .contentSize(CONNECT_MENU_WIDTH, 40.f)
         .updateLayout()
         .parent(m_connectMenu);
 
     m_connectButton = Build<ButtonSprite>::create("Connect", "bigFont.fnt", "GJ_button_01.png", 0.7f)
+        .scale(0.9f)
         .intoMenuItem([this] {
             // TODO: yeah
             auto override = globed::value<std::string>("core.dev.override-central-url");
@@ -138,12 +148,32 @@ bool GlobedMenuLayer::init() {
                 return;
             }
         })
+        .scaleMult(1.1f)
         .parent(m_connectMenu);
 
     // connection state label
     m_connStateLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
+        .scale(0.6f)
         .id("conn-state-lbl")
         .parent(m_connectMenu);
+
+    // button menu
+    auto buttonMenu = Build<CCMenu>::create()
+        .contentSize(CONNECT_MENU_WIDTH, 40.f)
+        .layout(RowLayout::create()->setAutoScale(false))
+        .parent(m_connectMenu)
+        .collect();
+
+    Build<CCSprite>::create("icon-settings.png"_spr)
+        .intoMenuItem([this] {
+            this->onSettings();
+        })
+        .scaleMult(1.1f)
+        .parent(buttonMenu);
+
+    // TODO: more buttons here, discord, website, status website, etc.
+
+    buttonMenu->updateLayout();
 
     // player list menu
 
@@ -199,6 +229,8 @@ bool GlobedMenuLayer::init() {
     });
 
     log::debug("Init over");
+
+    this->onServerModified();
 
     this->update(0.f);
     this->scheduleUpdate();
@@ -282,6 +314,24 @@ void GlobedMenuLayer::copyRoomIdToClipboard() {
     geode::utils::clipboard::write(fmt::to_string(m_roomId));
 }
 
+void GlobedMenuLayer::onSettings() {
+
+}
+
+void GlobedMenuLayer::onServerModified() {
+    bool showEditBtn = globed::setting<bool>("core.ui.allow-custom-servers");
+    m_editServerButton->setVisible(showEditBtn);
+
+    // set the name of the server
+    const auto& serverName = ServerManager::get().getActiveServer().name;
+    m_serverNameLabel->setString(serverName.c_str());
+    m_serverNameLabel->limitLabelWidth(180.f, 0.7f, 0.1f);
+
+    m_serverNameLabel->getParent()->updateLayout();
+
+    this->setMenuState(m_state, true);
+}
+
 void GlobedMenuLayer::update(float dt) {
     auto& nm = NetworkManager::get();
     auto connState = nm.getConnectionState();
@@ -304,7 +354,7 @@ void GlobedMenuLayer::update(float dt) {
 
         case ConnectionState::Connecting: {
             newState = MenuState::Connecting;
-            m_connStateLabel->setString("Establishing connection...");
+            m_connStateLabel->setString("Connecting...");
         } break;
 
         case ConnectionState::Authenticating: {
@@ -318,7 +368,7 @@ void GlobedMenuLayer::update(float dt) {
 
         case ConnectionState::Closing: {
             newState = MenuState::Connecting;
-            m_connStateLabel->setString("Closing connection...");
+            m_connStateLabel->setString("Disconnecting...");
         } break;
 
         case ConnectionState::Reconnecting: {
@@ -332,6 +382,8 @@ void GlobedMenuLayer::update(float dt) {
         } break;
     }
 
+    m_connStateLabel->limitLabelWidth(CONNECT_MENU_WIDTH, 0.7f, 0.2f);
+
     this->setMenuState(newState);
 
     if (newState == MenuState::Connected) {
@@ -344,8 +396,13 @@ void GlobedMenuLayer::update(float dt) {
     }
 }
 
-void GlobedMenuLayer::setMenuState(MenuState state) {
+void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
+    if (m_state == state && !force) return;
+    m_state = state;
+
     switch (state) {
+        case MenuState::None: break;
+
         case MenuState::Disconnected: {
             m_connectMenu->setVisible(true);
             m_editServerButton->setEnabled(true);
@@ -368,7 +425,10 @@ void GlobedMenuLayer::setMenuState(MenuState state) {
         } break;
     }
 
+    // yikes
+    m_connectMenuBg->setVisible(false);
     m_connectMenu->updateLayout();
+    m_connectMenuBg->setVisible(true);
 }
 
 void GlobedMenuLayer::keyBackClicked() {

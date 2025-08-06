@@ -11,6 +11,9 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.preload.enabled", true);
     this->registerSetting("core.preload.defer", false);
 
+    // UI settings
+    this->registerSetting("core.ui.allow-custom-servers", false);
+
     // Player settings
     this->registerSetting("core.player.opacity", 1.0f);
     this->registerSetting("core.player.show-names", true);

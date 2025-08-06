@@ -11,6 +11,7 @@
 namespace globed {
 
 enum class MenuState {
+    None,
     Disconnected,
     Connecting,
     Connected
@@ -22,10 +23,12 @@ public:
 
 private:
     cocos2d::CCMenu* m_connectMenu;
+    cocos2d::extension::CCScale9Sprite* m_connectMenuBg;
     CCMenuItemSpriteExtra* m_editServerButton;
+    cocos2d::CCLabelBMFont* m_serverNameLabel;
     CCMenuItemSpriteExtra* m_connectButton;
     cocos2d::CCLabelBMFont* m_connStateLabel;
-    MenuState m_state;
+    MenuState m_state = MenuState::None;
 
     cocos2d::CCNode* m_playerListMenu;
     cue::ListNode* m_playerList;
@@ -38,13 +41,16 @@ private:
 
     bool init() override;
     void update(float dt) override;
-    void setMenuState(MenuState state);
+    void setMenuState(MenuState state, bool force = false);
 
     void keyBackClicked() override;
 
     void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players);
     void initRoomButtons();
     void copyRoomIdToClipboard();
+
+    void onSettings();
+    void onServerModified();
 };
 
 }
