@@ -395,6 +395,47 @@ std::vector<UserRole> NetworkManagerImpl::getUserRoles() {
     return *lock ? (*lock)->m_userRoles : std::vector<UserRole>{};
 }
 
+std::optional<UserRole> NetworkManagerImpl::getUserHighestRole() {
+    auto lock = m_connInfo.lock();
+    if (!*lock) {
+        return std::nullopt;
+    }
+
+    // we assume that roles are sorted by priority, so the first one is the highest
+    auto& roles = (**lock).m_userRoles;
+    return roles.empty() ? std::nullopt : std::make_optional(roles.front());
+}
+
+std::optional<UserRole> NetworkManagerImpl::findRole(uint8_t roleId) {
+    auto lock = m_connInfo.lock();
+    if (!*lock) {
+        return std::nullopt;
+    }
+
+    for (auto& role : (**lock).m_allRoles) {
+        if (role.id == roleId) {
+            return role;
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<UserRole> NetworkManagerImpl::findRole(std::string_view roleId) {
+    auto lock = m_connInfo.lock();
+    if (!*lock) {
+        return std::nullopt;
+    }
+
+    for (auto& role : (**lock).m_allRoles) {
+        if (role.stringId == roleId) {
+            return role;
+        }
+    }
+
+    return std::nullopt;
+}
+
 bool NetworkManagerImpl::isModerator() {
     auto lock = m_connInfo.lock();
     return *lock ? (*lock)->m_isModerator : false;

@@ -29,7 +29,8 @@
         "sprites": [
             "resources/misc/*.png",
             "resources/menu/*.png",
-            "resources/editor/*.png"
+            "resources/editor/*.png",
+            "resources/roles/*.png"
         ]
     }
 }

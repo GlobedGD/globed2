@@ -9,6 +9,8 @@
 #include <core/hooks/GameManager.hpp>
 #include <ui/menu/WarpLoadPopup.hpp>
 #include <ui/menu/GlobedMenuLayer.hpp>
+#include <ui/admin/ModPanelPopup.hpp>
+#include <ui/admin/ModUserPopup.hpp>
 
 using namespace geode::prelude;
 
@@ -84,6 +86,14 @@ void warpToSession(SessionId session, bool openLevel) {
         // custom levels, show a loading popup
         // replace scene if openLevel is true, push scene otherwise
         WarpLoadPopup::create(levelId, openLevel, openLevel)->show();
+    }
+}
+
+void openModPanel(int accountId) {
+    if (accountId == 0) {
+        ModPanelPopup::create()->show();
+    } else {
+        ModUserPopup::create(accountId)->show();
     }
 }
 

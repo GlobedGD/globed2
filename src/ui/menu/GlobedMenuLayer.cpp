@@ -12,6 +12,7 @@
 #include <ui/misc/InputPopup.hpp>
 #include <ui/menu/RoomListingPopup.hpp>
 #include <ui/menu/CreateRoomPopup.hpp>
+#include <ui/misc/Badges.hpp>
 
 #include <cue/RepeatingBackground.hpp>
 #include <UIBuilder.hpp>
@@ -86,6 +87,16 @@ protected:
         return true;
     }
 };
+
+// order of buttons in right side menu
+namespace btnorder {
+    constexpr int Invisibility = 3;
+    constexpr int AdminPanel = 4;
+    constexpr int Search = 5;
+    constexpr int ClearSearch = 6;
+    constexpr int Invite = 7;
+    constexpr int Refresh = 100; // dead last
+}
 
 }
 
@@ -221,6 +232,14 @@ bool GlobedMenuLayer::init() {
         .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, 32.f)
         .parent(m_playerListMenu);
 
+    m_rightSideMenu = Build<CCMenu>::create()
+        .id("right-side-menu")
+        .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
+        .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
+        .pos(PLAYER_LIST_MENU_SIZE - CCSize{4.f, 4.f})
+        .anchorPoint(1.f, 1.f)
+        .parent(m_playerListMenu);
+
     m_roomStateListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
         log::debug("Packet arrived");
         if (msg.roomId != m_roomId) {
@@ -250,6 +269,7 @@ void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const st
 
     this->updateRoom(name, players, settings);
     this->initRoomButtons();
+    this->initSideButtons();
 }
 
 void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings) {
@@ -372,6 +392,38 @@ void GlobedMenuLayer::initRoomButtons() {
     }
 
     m_roomButtonsMenu->updateLayout();
+}
+
+void GlobedMenuLayer::initSideButtons() {
+    m_rightSideMenu->removeAllChildren();
+
+    // TODO: filter button
+
+    // mod panel button
+    if (NetworkManagerImpl::get().isModerator()) {
+        auto badge = globed::createMyBadge();
+        if (!badge) {
+            badge = globed::createBadge("role-unknown.png");
+        }
+
+        if (badge) {
+            Build<EditorButtonSprite>::create(badge, EditorBaseColor::Aqua)
+                .scale(0.95f)
+                .intoMenuItem([this](auto) {
+                    globed::openModPanel();
+                })
+                .zOrder(btnorder::AdminPanel)
+                .scaleMult(1.1f)
+                .id("btn-mod-panel")
+                .parent(m_rightSideMenu);
+
+            badge->setScale(badge->getScale() * 0.85f);
+        } else {
+            log::error("Failed to create mod panel button, badge not found");
+        }
+    }
+
+    m_rightSideMenu->updateLayout();
 }
 
 void GlobedMenuLayer::copyRoomIdToClipboard() {

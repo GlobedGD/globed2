@@ -84,6 +84,9 @@ public:
     uint32_t getGameTickrate();
     std::vector<UserRole> getAllRoles();
     std::vector<UserRole> getUserRoles();
+    std::optional<UserRole> getUserHighestRole();
+    std::optional<UserRole> findRole(uint8_t roleId);
+    std::optional<UserRole> findRole(std::string_view roleId);
     bool isModerator();
 
     /// Force the client to resend user icons to the connected server. Does nothing if not connected.
