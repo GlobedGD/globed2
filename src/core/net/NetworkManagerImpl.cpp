@@ -1,6 +1,7 @@
 #include "NetworkManagerImpl.hpp"
 #include <globed/core/ValueManager.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <globed/core/FriendListManager.hpp>
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
@@ -194,6 +195,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
 
             case qn::ConnectionState::Connected: {
                 this->thrPingGameServers();
+                this->thrMaybeResendOwnData();
 
                 if (m_disconnectNotify.wait(Duration::fromMillis(10), [&] {
                     return m_disconnectRequested.load();
@@ -264,6 +266,40 @@ void NetworkManagerImpl::thrPingGameServers() {
     }
 }
 
+void NetworkManagerImpl::thrMaybeResendOwnData() {
+    auto& flm = FriendListManager::get();
+
+    // check if icons or friend list need to be resent
+    auto connInfo = m_connInfo.lock();
+    bool friendList = !(**connInfo).m_sentFriendList && flm.isLoaded();
+    bool icons = !(**connInfo).m_sentIcons;
+
+    if (!icons && !friendList) {
+        return;
+    }
+
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto update = msg.initUpdateOwnData();
+
+        if (icons) {
+            data::encodeIconData(gatherIconData(), update.initIcons());
+        }
+
+        if (friendList) {
+            auto friends = flm.getFriends();
+
+            auto fl = update.initFriendList(friends.size());
+            size_t i = 0;
+            for (int id : friends) {
+                fl.set(i++, id);
+            }
+        }
+    });
+
+    (**connInfo).m_sentIcons = true;
+    (**connInfo).m_sentFriendList = true;
+}
+
 Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
     if (!m_centralConn.disconnected()) {
         return Err("Already connected to central server");
@@ -271,6 +307,8 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
 
     *m_pendingConnectUrl.lock() = std::string(url);
     m_pendingConnectNotify.notifyOne();
+
+    FriendListManager::get().refresh();
 
     return Ok();
 }
@@ -360,6 +398,20 @@ std::vector<UserRole> NetworkManagerImpl::getUserRoles() {
 bool NetworkManagerImpl::isModerator() {
     auto lock = m_connInfo.lock();
     return *lock ? (*lock)->m_isModerator : false;
+}
+
+void NetworkManagerImpl::invalidateIcons() {
+    auto lock = m_connInfo.lock();
+    if (*lock) {
+        (**lock).m_sentIcons = false;
+    }
+}
+
+void NetworkManagerImpl::invalidateFriendList() {
+    auto lock = m_connInfo.lock();
+    if (*lock) {
+        (**lock).m_sentFriendList = false;
+    }
 }
 
 void NetworkManagerImpl::onCentralConnected() {

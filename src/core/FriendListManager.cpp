@@ -18,10 +18,12 @@ void FriendListManager::refresh(bool force) {
 }
 
 bool FriendListManager::isFriend(int userId) {
+    auto _lock = m_mutex.lock();
     return m_friends.contains(userId);
 }
 
 bool FriendListManager::isBlocked(int userId) {
+    auto _lock = m_mutex.lock();
     return m_blocked.contains(userId);
 }
 
@@ -29,13 +31,22 @@ bool FriendListManager::isLoaded() {
     return m_fetched;
 }
 
+std::unordered_set<int> FriendListManager::getFriends() {
+    auto _lock = m_mutex.lock();
+    return m_friends;
+}
+
 void FriendListManager::getUserListFinished(CCArray* p0, UserListType p1) {
+    auto _lock = m_mutex.lock();
+
     auto& set = p1 == UserListType::Friends ? m_friends : m_blocked;
     set.clear();
 
     for (auto user : CCArrayExt<GJUserScore>(p0)) {
         set.insert(user->m_accountID);
     }
+
+    _lock.unlock();
 
     log::debug("Loaded {} {}", set.size(), p1 == UserListType::Friends ? "friends" : "blocked users");
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <globed/util/singleton.hpp>
+#include <asp/sync/Mutex.hpp>
+#include <asp/sync/Atomic.hpp>
 #include <Geode/Bindings.hpp>
 
 namespace globed {
@@ -14,9 +16,11 @@ public:
     bool isBlocked(int userId);
     bool isLoaded();
 
+    std::unordered_set<int> getFriends();
+
 private:
     friend class SingletonNodeBase;
-    bool m_fetched = false;
+    asp::AtomicBool m_fetched = false;
     enum LoadStep {
         None,
         Friends,
@@ -24,6 +28,7 @@ private:
     } m_loadStep;
     std::unordered_set<int> m_friends;
     std::unordered_set<int> m_blocked;
+    asp::Mutex<> m_mutex;
 
     FriendListManager();
 

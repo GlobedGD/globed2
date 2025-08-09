@@ -52,6 +52,9 @@ struct ConnectionInfo {
     std::vector<UserRole> m_allRoles;
     std::vector<UserRole> m_userRoles;
     bool m_isModerator = false;
+
+    bool m_sentIcons = true; // icons are sent at login
+    bool m_sentFriendList = false;
 };
 
 class NetworkManagerImpl {
@@ -82,6 +85,11 @@ public:
     std::vector<UserRole> getAllRoles();
     std::vector<UserRole> getUserRoles();
     bool isModerator();
+
+    /// Force the client to resend user icons to the connected server. Does nothing if not connected.
+    void invalidateIcons();
+    /// Force the client to resend the friend list to the connected server. Does nothing if not connected.
+    void invalidateFriendList();
 
     // Message sending functions
 
@@ -166,6 +174,7 @@ private:
 
     // Thread functions
     void thrPingGameServers();
+    void thrMaybeResendOwnData();
 
     template <typename T>
     void invokeListeners(T&& message) {
