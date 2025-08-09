@@ -357,6 +357,11 @@ std::vector<UserRole> NetworkManagerImpl::getUserRoles() {
     return *lock ? (*lock)->m_userRoles : std::vector<UserRole>{};
 }
 
+bool NetworkManagerImpl::isModerator() {
+    auto lock = m_connInfo.lock();
+    return *lock ? (*lock)->m_isModerator : false;
+}
+
 void NetworkManagerImpl::onCentralConnected() {
     log::debug("connection to central server established, trying to log in");
 
@@ -708,6 +713,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             connInfo.m_allRoles = msg.allRoles;
             connInfo.m_userRoles = msg.userRoles;
             connInfo.m_established = true;
+            connInfo.m_isModerator = msg.isModerator;
 
             CoreImpl::get().onServerConnected();
 

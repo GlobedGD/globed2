@@ -8,6 +8,10 @@ class Rng {
 public:
     Rng() : m_engine(std::random_device{}()) {}
 
+    std::mt19937_64& engine() {
+        return m_engine;
+    }
+
     template <std::integral T>
     T random() {
         T out;

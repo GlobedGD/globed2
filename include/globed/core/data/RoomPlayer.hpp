@@ -16,6 +16,7 @@ struct RoomPlayer {
     SessionId session = SessionId{};
 
     cue::PlayerIcon* createIcon() const;
+    static RoomPlayer createMyself();
 };
 
 }

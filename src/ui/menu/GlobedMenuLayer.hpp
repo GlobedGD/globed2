@@ -45,7 +45,8 @@ private:
 
     void keyBackClicked() override;
 
-    void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players);
+    void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
+    void updateRoom(const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
     void initRoomButtons();
     void copyRoomIdToClipboard();
 

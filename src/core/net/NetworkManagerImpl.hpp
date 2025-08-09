@@ -51,6 +51,7 @@ struct ConnectionInfo {
     uint32_t m_gameTickrate = 0;
     std::vector<UserRole> m_allRoles;
     std::vector<UserRole> m_userRoles;
+    bool m_isModerator = false;
 };
 
 class NetworkManagerImpl {
@@ -80,6 +81,7 @@ public:
     uint32_t getGameTickrate();
     std::vector<UserRole> getAllRoles();
     std::vector<UserRole> getUserRoles();
+    bool isModerator();
 
     // Message sending functions
 

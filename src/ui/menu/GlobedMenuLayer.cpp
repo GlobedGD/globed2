@@ -5,6 +5,7 @@
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/ServerManager.hpp>
 #include <globed/core/actions.hpp>
+#include <globed/util/Random.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/misc/InputPopup.hpp>
@@ -222,7 +223,9 @@ bool GlobedMenuLayer::init() {
     m_roomStateListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
         log::debug("Packet arrived");
         if (msg.roomId != m_roomId) {
-            this->initNewRoom(msg.roomId, msg.roomName, msg.players);
+            this->initNewRoom(msg.roomId, msg.roomName, msg.players, msg.settings);
+        } else {
+            this->updateRoom(msg.roomName, msg.players, msg.settings);
         }
 
         return ListenerResult::Continue;
@@ -238,18 +241,83 @@ bool GlobedMenuLayer::init() {
     return true;
 }
 
-void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players) {
+void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings) {
     log::debug("Init new room");
 
     m_roomId = id;
     m_roomNameLabel->setString(fmt::format("{} ({})", name, id).c_str());
+
+    this->updateRoom(name, players, settings);
+    this->initRoomButtons();
+}
+
+void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings) {
+    auto scrollPos = m_playerList->getScrollPos();
 
     m_playerList->setAutoUpdate(false);
     m_playerList->clear();
 
     CCSize cellSize{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
 
-    for (auto& player : players) {
+    auto& rm = RoomManager::get();
+    bool randomize = rm.isInGlobal();
+    int roomOwnerId = rm.getRoomOwner();
+    int selfId = cachedSingleton<GJAccountManager>()->m_accountID;
+    std::vector<RoomPlayer> sortedPlayers = players;
+
+    // add ourself
+    sortedPlayers.push_back(RoomPlayer::createMyself());
+
+    // sort all the players
+    std::sort(sortedPlayers.begin(), sortedPlayers.end(), [&](auto& a, auto& b) {
+        // The order is as follows:
+        // 1. Room owner
+        // 2. Local player
+        // 3. Friends (sorted alphabetically)
+        // 4. everyone else, sorted either alphabetically or shuffled
+
+        bool isAOwner = a.accountData.accountId == roomOwnerId;
+        bool isBOwner = b.accountData.accountId == roomOwnerId;
+        if (isAOwner != isBOwner) return isAOwner;
+
+        bool isALocal = a.accountData.accountId == selfId;
+        bool isBLocal = b.accountData.accountId == selfId;
+        if (isALocal != isBLocal) return isALocal;
+
+        // TODO: friends
+        bool isAFriend = false;
+        bool isBFriend = false;
+
+        // proper alphabetical sorting requires copying the usernames and converting them to lowercase,
+        // only do it if we wont end up shuffling at the end
+        if ((isAFriend && isBFriend) || !randomize) {
+            // convert both names to lowercase
+            std::string name1 = a.accountData.username, name2 = b.accountData.username;
+            std::transform(name1.begin(), name1.end(), name1.begin(), ::tolower);
+            std::transform(name2.begin(), name2.end(), name2.begin(), ::tolower);
+
+            return name1 < name2;
+        }
+
+        return a.accountData.userId < b.accountData.userId;
+    });
+
+    if (randomize) {
+        // find first element thats not forced at the top
+        decltype(sortedPlayers)::iterator firstNonFriend = sortedPlayers.end();
+
+        for (auto it = sortedPlayers.begin(); it != sortedPlayers.end(); it++) {
+            if (it->accountData.accountId != roomOwnerId && it->accountData.accountId != selfId /* && !flm.isFriend(it->accountId) */) {
+                firstNonFriend = it;
+                break;
+            }
+        }
+
+        // shuffle everything afterwards
+        std::shuffle(firstNonFriend, sortedPlayers.end(), rng()->engine());
+    }
+
+    for (auto& player : sortedPlayers) {
         m_playerList->addCell(PlayerCell::create(
             player.accountData.accountId,
             player.accountData.userId,
@@ -265,16 +333,9 @@ void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const st
         ));
     }
 
-    // add ourself
-    auto gam = cachedSingleton<GJAccountManager>();
-    m_playerList->addCell(PlayerCell::createMyself(SessionId{}));
-
-    // TODO: sort
-
     m_playerList->setAutoUpdate(true);
     m_playerList->updateLayout();
-
-    this->initRoomButtons();
+    m_playerList->setScrollPos(scrollPos);
 }
 
 void GlobedMenuLayer::initRoomButtons() {

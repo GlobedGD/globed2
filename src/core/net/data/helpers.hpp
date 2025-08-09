@@ -386,6 +386,8 @@ inline msg::CentralLoginOkMessage decodeCentralLoginOk(const schema::main::Login
         }
     }
 
+    msg.isModerator = reader.getIsModerator();
+
     return msg;
 }
 

@@ -16,6 +16,7 @@ public:
     bool isInFollowerRoom();
     bool isOwner();
     uint32_t getRoomId();
+    int getRoomOwner();
     std::optional<uint8_t> pickServerId();
 
 private:

@@ -43,6 +43,10 @@ uint32_t RoomManager::getRoomId() {
     return m_roomId;
 }
 
+int RoomManager::getRoomOwner() {
+    return m_roomOwner;
+}
+
 std::optional<uint8_t> RoomManager::pickServerId() {
     // depending on whether we are in a room or not, we need to either get the room's server ID or our preferred
     if (this->isInGlobal()) {

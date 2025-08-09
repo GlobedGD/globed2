@@ -15,6 +15,7 @@ struct CentralLoginOkMessage {
     std::string newToken;
     std::vector<UserRole> allRoles;
     std::vector<UserRole> userRoles;
+    bool isModerator;
 };
 
 // Rooms
