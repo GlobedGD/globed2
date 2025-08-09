@@ -153,4 +153,32 @@ void alertFormat(
     PopupManager::get().alertFormat(title, fmt, std::forward<Args>(args)...).showInstant();
 }
 
+/// Shows a geode::Notification with a message.
+void toast(geode::NotificationIcon icon, float duration, const std::string& message);
+
+/// Shows a geode::Notification with a formatted message and a specified duration.
+template <class... Args>
+void toast(geode::NotificationIcon icon, float duration, fmt::format_string<Args...> fmt, Args&&... args) {
+    return toast(icon, duration, fmt::format(fmt, std::forward<Args>(args)...));
+}
+
+/// Shows a geode::Notification with a formatted message.
+template <class... Args>
+void toast(geode::NotificationIcon icon, fmt::format_string<Args...> fmt, Args&&... args) {
+    auto msg = fmt::format(fmt, std::forward<Args>(args)...);
+    return toast(icon, 0.35f + msg.size() * 0.025f, msg);
+}
+
+/// Shows a geode::Notification with a formatted message and an error icon.
+template <class... Args>
+void toastError(fmt::format_string<Args...> fmt, Args&&... args) {
+    return toast(geode::NotificationIcon::Error, fmt, std::forward<Args>(args)...);
+}
+
+/// Shows a geode::Notification with a formatted message and a success icon.
+template <class... Args>
+void toastSuccess(fmt::format_string<Args...> fmt, Args&&... args) {
+    return toast(geode::NotificationIcon::Success, fmt, std::forward<Args>(args)...);
+}
+
 }

@@ -4,6 +4,7 @@
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/ServerManager.hpp>
+#include <globed/core/FriendListManager.hpp>
 #include <globed/core/actions.hpp>
 #include <globed/util/Random.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -259,6 +260,7 @@ void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<Room
 
     CCSize cellSize{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
 
+    auto& flm = FriendListManager::get();
     auto& rm = RoomManager::get();
     bool randomize = rm.isInGlobal();
     int roomOwnerId = rm.getRoomOwner();
@@ -284,9 +286,9 @@ void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<Room
         bool isBLocal = b.accountData.accountId == selfId;
         if (isALocal != isBLocal) return isALocal;
 
-        // TODO: friends
-        bool isAFriend = false;
-        bool isBFriend = false;
+        bool isAFriend = flm.isFriend(a.accountData.accountId);
+        bool isBFriend = flm.isFriend(b.accountData.accountId);
+        if (isAFriend != isBFriend) return isAFriend;
 
         // proper alphabetical sorting requires copying the usernames and converting them to lowercase,
         // only do it if we wont end up shuffling at the end
@@ -307,7 +309,8 @@ void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<Room
         decltype(sortedPlayers)::iterator firstNonFriend = sortedPlayers.end();
 
         for (auto it = sortedPlayers.begin(); it != sortedPlayers.end(); it++) {
-            if (it->accountData.accountId != roomOwnerId && it->accountData.accountId != selfId /* && !flm.isFriend(it->accountId) */) {
+            int accountId = it->accountData.accountId;
+            if (accountId != roomOwnerId && accountId != selfId && !flm.isFriend(accountId)) {
                 firstNonFriend = it;
                 break;
             }

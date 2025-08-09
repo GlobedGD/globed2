@@ -261,4 +261,8 @@ void PopupManager::changedScene(CCScene* newScene) {
     }
 }
 
+void toast(geode::NotificationIcon icon, float duration, const std::string& message) {
+    Notification::create(message, icon, duration)->show();
+}
+
 }
