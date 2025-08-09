@@ -27,6 +27,9 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.player.death-effects", true);
     this->registerSetting("core.player.default-death-effects", false);
 
+    // Mod settings
+    this->registerSetting("core.mod.remember-password", false);
+
     // Developer settings
     this->registerSetting("core.dev.packet-loss-sim", 0.0f);
     this->registerSetting("core.dev.net-debug-logs", false);

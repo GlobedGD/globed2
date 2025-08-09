@@ -11,6 +11,7 @@
 #include <ui/menu/GlobedMenuLayer.hpp>
 #include <ui/admin/ModPanelPopup.hpp>
 #include <ui/admin/ModUserPopup.hpp>
+#include <ui/admin/ModLoginPopup.hpp>
 
 using namespace geode::prelude;
 
@@ -90,6 +91,15 @@ void warpToSession(SessionId session, bool openLevel) {
 }
 
 void openModPanel(int accountId) {
+    if (!NetworkManagerImpl::get().isAuthorizedModerator()) {
+        // show a login popup and upon successful login, call this function again
+        ModLoginPopup::create([accountId] {
+            openModPanel(accountId);
+        })->show();
+
+        return;
+    }
+
     if (accountId == 0) {
         ModPanelPopup::create()->show();
     } else {

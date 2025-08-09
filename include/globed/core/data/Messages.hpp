@@ -74,4 +74,11 @@ struct LevelDataMessage {
     std::vector<Event> events;
 };
 
+// Admin
+
+struct AdminResultMessage {
+    bool success;
+    std::string error;
+};
+
 }
