@@ -52,6 +52,7 @@ struct ConnectionInfo {
     std::vector<UserRole> m_allRoles;
     std::vector<UserRole> m_userRoles;
     bool m_isModerator = false;
+    bool m_isAuthorizedModerator = false;
 
     bool m_sentIcons = true; // icons are sent at login
     bool m_sentFriendList = false;
@@ -88,11 +89,13 @@ public:
     std::optional<UserRole> findRole(uint8_t roleId);
     std::optional<UserRole> findRole(std::string_view roleId);
     bool isModerator();
+    bool isAuthorizedModerator();
 
     /// Force the client to resend user icons to the connected server. Does nothing if not connected.
     void invalidateIcons();
     /// Force the client to resend the friend list to the connected server. Does nothing if not connected.
     void invalidateFriendList();
+    void markAuthorizedModerator();
 
     // Message sending functions
 
@@ -104,7 +107,7 @@ public:
     void sendRequestRoomList();
     void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply);
     void sendAdminNoticeEveryone(const std::string& message);
-
+    void sendAdminLogin(const std::string& password);
 
     // Both servers
     void sendJoinSession(SessionId id);

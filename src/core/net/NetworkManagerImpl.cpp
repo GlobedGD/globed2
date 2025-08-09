@@ -177,6 +177,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
                 m_centralUrl = std::string(url);
 
                 m_centralConn.setDebugOptions(getConnOpts());
+                m_disconnectRequested.store(false);
 
                 auto res = m_centralConn.connect(url);
                 if (!res) {
@@ -201,6 +202,9 @@ NetworkManagerImpl::NetworkManagerImpl() {
                     return m_disconnectRequested.load();
                 })) {
                     // disconnect was requested, abort connection
+                    log::debug("disconnect was requested, aborting connection");
+                    m_disconnectRequested.store(false);
+
                     (void) m_centralConn.disconnect();
                     m_gameConn.cancelConnection();
                     (void) m_gameConn.disconnect();
@@ -441,6 +445,11 @@ bool NetworkManagerImpl::isModerator() {
     return *lock ? (*lock)->m_isModerator : false;
 }
 
+bool NetworkManagerImpl::isAuthorizedModerator() {
+    auto lock = m_connInfo.lock();
+    return *lock ? (*lock)->m_isAuthorizedModerator : false;
+}
+
 void NetworkManagerImpl::invalidateIcons() {
     auto lock = m_connInfo.lock();
     if (*lock) {
@@ -452,6 +461,13 @@ void NetworkManagerImpl::invalidateFriendList() {
     auto lock = m_connInfo.lock();
     if (*lock) {
         (**lock).m_sentFriendList = false;
+    }
+}
+
+void NetworkManagerImpl::markAuthorizedModerator() {
+    auto lock = m_connInfo.lock();
+    if (*lock) {
+        (**lock).m_isAuthorizedModerator = true;
     }
 }
 
@@ -743,6 +759,13 @@ void NetworkManagerImpl::sendAdminNoticeEveryone(const std::string& message) {
     });
 }
 
+void NetworkManagerImpl::sendAdminLogin(const std::string& password) {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto adminLogin = msg.initAdminLogin();
+        adminLogin.setPassword(password);
+    });
+}
+
 void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener) {
     std::type_index index{ty};
     auto listeners = m_listeners.lock();
@@ -901,6 +924,19 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::KICKED: {
             // TODO
+        } break;
+
+        case CentralMessage::NOTICE: {
+            // TODO
+        } break;
+
+        case CentralMessage::ADMIN_RESULT: {
+            auto adminResult = msg.getAdminResult();
+
+            this->invokeListeners(msg::AdminResultMessage {
+                .success = adminResult.getSuccess(),
+                .error = adminResult.getError(),
+            });
         } break;
 
         default: {
