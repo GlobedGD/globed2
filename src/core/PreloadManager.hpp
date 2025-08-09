@@ -96,7 +96,7 @@ private:
     void doLoadBatch(std::vector<Item>& items);
     void initSessionState();
 
-    gd::string fullPathForFilename(std::string_view input);
+    gd::string fullPathForFilename(std::string_view input, bool ignoreSuffix = false);
 };
 
 }

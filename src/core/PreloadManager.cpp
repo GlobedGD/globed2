@@ -59,7 +59,7 @@ struct HookedFileUtils : public CCFileUtils {
             file = file.substr(slashPos + 1);
         }
 
-        std::array<char, 256> buf;
+        std::array<char, 1024> buf;
         auto result = fmt::format_to_n(buf.data(), buf.size(), "{}{}{}{}", searchPath, filePath, resolutionDirectory, file);
         if (result.size < buf.size()) {
             buf[result.size] = '\0';
@@ -491,44 +491,50 @@ static void appendQualitySuffix(std::string& out, TextureQuality quality, bool p
 }
 
 // this function scares me
-gd::string PreloadManager::fullPathForFilename(std::string_view input) {
+gd::string PreloadManager::fullPathForFilename(std::string_view input, bool ignoreSuffix) {
     auto& fu = HookedFileUtils::get();
 
     if (input.empty()) {
         return {};
     }
 
-    // add the quality suffix if needed
-    std::string filename;
-
-    bool hasQualitySuffix = input.ends_with("-hd.png") ||
-                            input.ends_with("-uhd.png") ||
-                            input.ends_with("-hd.plist") ||
-                            input.ends_with("-uhd.plist");
-
-    if (!hasQualitySuffix) {
-        if (input.ends_with(".plist")) {
-            filename = input.substr(0, input.find(".plist"));
-            appendQualitySuffix(filename, m_sstate.texQuality, true);
-        } else {
-            filename = input.substr(0, input.find(".png"));
-            appendQualitySuffix(filename, m_sstate.texQuality, false);
-        }
-    }
-
     // if the input is an absolute path, return it as is
     // we try to make this check as cheap as possible, so don't rely on std::filesystem or cocos
 #ifdef GEODE_IS_WINDOWS
-    if (filename.size() >= 3 && std::isalpha(filename[0]) && filename[1] == ':' && (filename[2] == '/' || filename[2] == '\\')) {
-        return filename;
-    } else if (filename.size() >= 2 && filename[0] == '\\' && filename[1] == '\\') {
-        return filename;
+    if (input.size() >= 3 && std::isalpha(input[0]) && input[1] == ':' && (input[2] == '/' || input[2] == '\\')) {
+        return gd::string{input};
+    } else if (input.size() >= 2 && input[0] == '\\' && input[1] == '\\') {
+        return gd::string{input};
     }
 #else
-    if (filename.size() >= 1 && filename[0] == '/') {
-        return filename;
+    if (input.size() >= 1 && input[0] == '/') {
+        return gd::string{input.data(), input.size()};
     }
 #endif
+
+    // add the quality suffix if needed
+    std::string filename;
+
+    if (!ignoreSuffix) {
+        bool hasQualitySuffix = input.ends_with("-hd.png") ||
+                                input.ends_with("-uhd.png") ||
+                                input.ends_with("-hd.plist") ||
+                                input.ends_with("-uhd.plist");
+
+        if (!hasQualitySuffix) {
+            if (input.ends_with(".plist")) {
+                filename = input.substr(0, input.find(".plist"));
+                appendQualitySuffix(filename, getTextureQuality(), true);
+            } else {
+                filename = input.substr(0, input.find(".png"));
+                appendQualitySuffix(filename, getTextureQuality(), false);
+            }
+        }
+    }
+
+    if (filename.empty()) {
+        filename = input;
+    }
 
     // TODO: we disregard CCFileUtils m_pFilenameLookupDict / getNewFilename() here
 
