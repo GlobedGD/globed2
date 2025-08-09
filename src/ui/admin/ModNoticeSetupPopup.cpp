@@ -1,5 +1,6 @@
 #include "ModNoticeSetupPopup.hpp"
 #include <globed/core/PopupManager.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -20,7 +21,7 @@ namespace globed {
 const CCSize ModNoticeSetupPopup::POPUP_SIZE = {320.f, 200.f};
 
 bool ModNoticeSetupPopup::setup() {
-    Build<TextInput>::create(270.f, "Message", "chatFont.fnt")
+    m_messageInput = Build<TextInput>::create(270.f, "Message", "chatFont.fnt")
         .pos(this->fromCenter(0.f, 44.f))
         .parent(m_mainLayer)
         ;
@@ -70,9 +71,10 @@ bool ModNoticeSetupPopup::setup() {
     auto inputsLayout = RowLayout::create()->setAutoScale(false)->setGap(8.f);
     inputsLayout->ignoreInvisibleChildren(true);
 
-    m_inputsContainer = Build<CCNode>::create()
+    m_inputsContainer = Build<CCMenu>::create()
         .layout(inputsLayout)
         .anchorPoint(0.5f, 0.5f)
+        .ignoreAnchorPointForPos(false)
         .contentSize(270.f, 50.f)
         .pos(this->fromCenter(0.f, -20.f))
         .parent(m_mainLayer)
@@ -116,11 +118,51 @@ bool ModNoticeSetupPopup::setup() {
 
 void ModNoticeSetupPopup::submit() {
     bool everyone = m_globalCheckbox->isOn();
+    bool user = m_userCheckbox->isOn();
+    bool room = m_roomCheckbox->isOn();
+    bool level = m_levelCheckbox->isOn();
+
+    int roomId = 0, levelId = 0;
+    std::string userQuery;
+
+    if (user) {
+        userQuery = m_userInput->getString();
+    }
+
+    if (room) {
+        auto res = geode::utils::numFromString<int>(m_roomInput->getString());
+        if (!res || *res < 100000 || *res > 999999) {
+            globed::alert("Error", "Invalid room ID");
+            return;
+        }
+
+        roomId = *res;
+    }
+
+    if (level) {
+        auto res = geode::utils::numFromString<int>(m_levelInput->getString());
+        if (!res || *res < 0) {
+            globed::alert("Error", "Invalid level ID");
+            return;
+        }
+
+        levelId = *res;
+    }
 
     if (everyone) {
-        globed::quickPopup(
-            "Note", ""
-        );
+        // TODO: ask the server how many players are online before proceeding
+    }
+
+    if (!user && !room && !level && !everyone) {
+        globed::alert("Error", "Please select at least one mode");
+        return;
+    }
+
+    auto text = m_messageInput->getString();
+    if (everyone) {
+        NetworkManagerImpl::get().sendAdminNoticeEveryone(text);
+    } else {
+        NetworkManagerImpl::get().sendAdminNotice(text, userQuery, roomId, levelId, m_canReplyCheckbox->isOn());
     }
 }
 

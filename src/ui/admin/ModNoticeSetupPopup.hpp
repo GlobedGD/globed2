@@ -9,6 +9,7 @@ public:
     static const cocos2d::CCSize POPUP_SIZE;
 
 protected:
+    geode::TextInput* m_messageInput;
     CCMenuItemToggler* m_userCheckbox;
     CCMenuItemToggler* m_roomCheckbox;
     CCMenuItemToggler* m_levelCheckbox;

@@ -725,6 +725,24 @@ void NetworkManagerImpl::sendRequestRoomList() {
     });
 }
 
+void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply) {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto adminNotice = msg.initAdminNotice();
+        adminNotice.setMessage(message);
+        adminNotice.setTargetUser(user);
+        adminNotice.setRoomId(roomId);
+        adminNotice.setLevelId(levelId);
+        adminNotice.setCanReply(canReply);
+    });
+}
+
+void NetworkManagerImpl::sendAdminNoticeEveryone(const std::string& message) {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto adminNotice = msg.initAdminNoticeEveryone();
+        adminNotice.setMessage(message);
+    });
+}
+
 void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener) {
     std::type_index index{ty};
     auto listeners = m_listeners.lock();
