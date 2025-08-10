@@ -11,6 +11,7 @@
 #include <argon/argon.hpp>
 #include <qunet/Pinger.hpp>
 #include <qunet/util/algo.hpp>
+#include <qunet/util/hash.hpp>
 #include <asp/time/Duration.hpp>
 #include <asp/time/sleep.hpp>
 
@@ -382,6 +383,33 @@ Duration NetworkManagerImpl::getGamePing() {
 
 Duration NetworkManagerImpl::getCentralPing() {
     return m_centralConn.getLatency();
+}
+
+std::string NetworkManagerImpl::getCentralIdent() {
+    if (m_centralUrl.empty()) return "";
+
+    auto hash = qn::blake3Hash(m_centralUrl).toString();
+    hash.resize(16);
+    return hash;
+}
+
+std::string NetworkManagerImpl::getStoredModPassword() {
+    if (!globed::setting<bool>("core.mod.remember-password")) {
+        return "";
+    }
+
+    auto pwkey = fmt::format("core.mod.last-password-{}", this->getCentralIdent());
+
+    return globed::value<std::string>(pwkey).value_or({});
+}
+
+void NetworkManagerImpl::storeModPassword(const std::string& pw) {
+    auto pwkey = fmt::format("core.mod.last-password-{}", this->getCentralIdent());
+    if (globed::setting<bool>("core.mod.remember-password")) {
+        globed::setValue(pwkey, pw);
+    } else {
+        globed::setValue(pwkey, ""); // explicitly clear for security
+    }
 }
 
 uint32_t NetworkManagerImpl::getGameTickrate() {
@@ -933,6 +961,12 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         case CentralMessage::ADMIN_RESULT: {
             auto adminResult = msg.getAdminResult();
 
+            // this is a bit hacky, but if the result is ok, mark the client as authorized admin
+            // a successful result can only be sent as a response to auth or to an actual admin packet
+            if (adminResult.getSuccess()) {
+                this->markAuthorizedModerator();
+            }
+
             this->invokeListeners(msg::AdminResultMessage {
                 .success = adminResult.getSuccess(),
                 .error = adminResult.getError(),
@@ -1101,15 +1135,15 @@ Result<> NetworkManagerImpl::sendToGame(std::function<void(GameMessage::Builder&
 }
 
 std::optional<std::string> NetworkManagerImpl::getUToken() {
-    return globed::value<std::string>(fmt::format("auth.last-utoken.{}", m_centralUrl));
+    return globed::value<std::string>(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
 }
 
 void NetworkManagerImpl::setUToken(std::string token) {
-    ValueManager::get().set(fmt::format("auth.last-utoken.{}", m_centralUrl), std::move(token));
+    ValueManager::get().set(fmt::format("auth.last-utoken.{}", this->getCentralIdent()), std::move(token));
 }
 
 void NetworkManagerImpl::clearUToken() {
-    ValueManager::get().erase(fmt::format("auth.last-utoken.{}", m_centralUrl));
+    ValueManager::get().erase(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
 }
 
 }

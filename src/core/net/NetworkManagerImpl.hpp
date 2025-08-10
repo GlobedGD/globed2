@@ -81,6 +81,14 @@ public:
     /// Returns the average latency to the central server, or 0 if not connected
     asp::time::Duration getCentralPing();
 
+    /// Returns a unique identifier of the server (generated via hashing the server URL).
+    /// Returns an empty string when not connected.
+    std::string getCentralIdent();
+
+    /// Returns the stored moderator password or an empty string if not connected or no password is stored
+    std::string getStoredModPassword();
+    void storeModPassword(const std::string& pw);
+
     /// Returns the tickrate to the connected game server, or 0 if not connected
     uint32_t getGameTickrate();
     std::vector<UserRole> getAllRoles();

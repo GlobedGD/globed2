@@ -43,9 +43,7 @@ bool ModLoginPopup::setup(std::function<void()> callback) {
                     return;
                 }
 
-                if (globed::setting<bool>("core.mod.remember-password")) {
-                    // TODO: save password
-                }
+                nm.storeModPassword(password);
 
                 m_listener = nm.listen<msg::AdminResultMessage>([this](const auto& result) {
                     if (!result.success) {

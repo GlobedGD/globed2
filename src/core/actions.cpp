@@ -148,9 +148,21 @@ void openUserProfile(const PlayerAccountData& player) {
 }
 
 $on_mod(Loaded) {
-    NetworkManagerImpl::get().listenGlobal<msg::WarpPlayerMessage>([](const auto& msg) {
+    auto& nm = NetworkManagerImpl::get();
+
+    nm.listenGlobal<msg::WarpPlayerMessage>([](const auto& msg) {
         globed::warpToSession(msg.sessionId, true);
         return ListenerResult::Stop;
+    });
+
+    nm.listenGlobal<msg::CentralLoginOkMessage>([&nm](const auto& msg) {
+        // admin login
+        auto password = nm.getStoredModPassword();
+        if (!password.empty()) {
+            nm.sendAdminLogin(password);
+        }
+
+        return ListenerResult::Continue;
     });
 }
 

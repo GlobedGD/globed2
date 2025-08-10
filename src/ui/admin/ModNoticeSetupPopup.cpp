@@ -107,7 +107,7 @@ bool ModNoticeSetupPopup::setup() {
             this->submit();
         })
         .scaleMult(1.1f)
-        .pos(this->fromBottom(21.f))
+        .pos(this->fromBottom(24.f))
         .parent(m_buttonMenu);
 
     this->onSelectMode(btn::User, true);
