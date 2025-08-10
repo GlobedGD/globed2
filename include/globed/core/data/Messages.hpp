@@ -65,6 +65,13 @@ struct WarpPlayerMessage {
     SessionId sessionId;
 };
 
+struct NoticeMessage {
+    int senderId;
+    std::string senderName;
+    std::string message;
+    bool canReply;
+};
+
 // Level data
 
 struct LevelDataMessage {

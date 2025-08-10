@@ -164,6 +164,27 @@ $on_mod(Loaded) {
 
         return ListenerResult::Continue;
     });
+
+    nm.listenGlobal<msg::NoticeMessage>([](const msg::NoticeMessage& msg) {
+        std::string title;
+
+        if (msg.senderId != 0 && !msg.senderName.empty()) {
+            title = fmt::format("Globed Notice from {}", msg.senderName);
+        } else {
+            title = fmt::format("Globed Notice");
+        }
+
+        auto popup = PopupManager::get().alert(title, msg.message);
+        popup.showQueue();
+
+        if (auto title = popup.getInner()->m_mainLayer->getChildByType<CCLabelBMFont>(0)) {
+            title->limitLabelWidth(360.f, 0.9f, 0.5f);
+        }
+
+        // TODO: canReply
+
+        return ListenerResult::Continue;
+    });
 }
 
 }

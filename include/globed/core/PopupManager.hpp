@@ -66,13 +66,15 @@ class PopupManager : public SingletonNodeBase<PopupManager, true> {
     PopupManager();
 
 public:
+    constexpr static float DEFAULT_WIDTH = 370.f;
+
     // Creates a popup with the given title and content (optionally button 1, 2 and width). Does not show the popup to the user.
     PopupRef alert(
         CStr title,
         const std::string& content,
         CStr btn1 = "Ok",
         CStr btn2 = nullptr,
-        float width = 360.f
+        float width = DEFAULT_WIDTH
     );
 
     // Creates a popup with the given title and content (optionally button 1, 2 and width). Does not show the popup to the user.
@@ -83,7 +85,7 @@ public:
         CStr btn1 = "Ok",
         CStr btn2 = nullptr,
         std::function<void (FLAlertLayer*, bool)> callback = {},
-        float width = 360.f
+        float width = DEFAULT_WIDTH
     );
 
     // Creates a popup with the given title and content as a formatted string. Does not show the popup to the user
@@ -121,7 +123,7 @@ inline void alert(
     const std::string& content,
     CStr btn1 = "Ok",
     CStr btn2 = nullptr,
-    float width = 360.f
+    float width = PopupManager::DEFAULT_WIDTH
 ) {
     PopupManager::get().alert(title, content, btn1, btn2, width).showInstant();
 }
@@ -135,7 +137,7 @@ inline void quickPopup(
     CStr btn1 = "Ok",
     CStr btn2 = nullptr,
     std::function<void (FLAlertLayer*, bool)> callback = {},
-    float width = 360.f
+    float width = PopupManager::DEFAULT_WIDTH
 ) {
     PopupManager::get().quickPopup(
         title, content, btn1, btn2, std::move(callback), width

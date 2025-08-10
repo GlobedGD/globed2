@@ -225,6 +225,8 @@ NetworkManagerImpl::NetworkManagerImpl() {
     });
 
     m_workerThread.start();
+
+    argon::initConfigLock();
 }
 
 NetworkManagerImpl::~NetworkManagerImpl() {
@@ -777,6 +779,7 @@ void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::
         adminNotice.setRoomId(roomId);
         adminNotice.setLevelId(levelId);
         adminNotice.setCanReply(canReply);
+        adminNotice.setShowSender(false); // TODO: showSender
     });
 }
 
@@ -955,7 +958,14 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::NOTICE: {
-            // TODO
+            auto notice = msg.getNotice();
+
+            this->invokeListeners(msg::NoticeMessage {
+                .senderId = notice.getSenderId(),
+                .senderName = notice.getSenderName(),
+                .message = notice.getMessage(),
+                .canReply = notice.getCanReply(),
+            });
         } break;
 
         case CentralMessage::ADMIN_RESULT: {
