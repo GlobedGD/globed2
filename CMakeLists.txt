@@ -84,11 +84,11 @@ CPMAddPackage(
             "BUILD_TESTING OFF"
             "WITH_FIBERS OFF"
 )
-# TODO(public): update all these deps at some point xd
-CPMAddPackage("gh:GlobedGD/server-shared#master")
-CPMAddPackage("gh:dankmeme01/qunet#master")
+
+CPMAddPackage("gh:GlobedGD/server-shared#main")
+CPMAddPackage("gh:dankmeme01/qunet-cpp#main")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
-CPMAddPackage("gh:dankmeme01/cue#b8ffad04")
+CPMAddPackage("gh:dankmeme01/cue#main")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 CPMAddPackage("gh:Prevter/sinaps#2541d6d")
 
