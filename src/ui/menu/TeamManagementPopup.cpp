@@ -1,5 +1,6 @@
 #include "TeamManagementPopup.hpp"
 #include <globed/core/PopupManager.hpp>
+#include <globed/core/RoomManager.hpp>
 #include <globed/util/color.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
@@ -16,6 +17,7 @@ static constexpr float CELL_WIDTH = 260.f;
 
 static ccColor4B getDefaultColor(size_t idx) {
     static constexpr ccColor4B colors[] = {
+        colorFromHex("#FFFFFF"),
         colorFromHex("#FF0000"),
         colorFromHex("#00A2FF"),
         colorFromHex("#00FF00"),
@@ -26,15 +28,9 @@ static ccColor4B getDefaultColor(size_t idx) {
         colorFromHex("#00FFFF"),
         colorFromHex("#228B22"),
         colorFromHex("#FF4500"),
-        colorFromHex("#1E90FF"),
-        colorFromHex("#ADFF2F"),
         colorFromHex("#FF69B4"),
         colorFromHex("#9932CC"),
-        colorFromHex("#7FFF00"),
-        colorFromHex("#FFB6C1"),
         colorFromHex("#00CED1"),
-        colorFromHex("#FFA500"),
-        colorFromHex("#9400D3"),
         colorFromHex("#B22222"),
         colorFromHex("#2E8B57"),
         colorFromHex("#F08080"),
@@ -87,10 +83,6 @@ private:
             .parent(this)
             .collect();
 
-        Build<CCLabelBMFont>::create(fmt::format("Team {}", idx + 1).c_str(), "bigFont.fnt")
-            .scale(0.6f)
-            .parent(leftContainer);
-
         Build(ColorChannelSprite::create())
             .with([&](auto spr) { cue::rescaleToMatch(spr, CELL_HEIGHT * 0.85f); })
             .color(cue::into<ccColor3B>(team.color))
@@ -98,6 +90,10 @@ private:
             .intoMenuItem([this] {
                 this->openEditColor();
             })
+            .parent(leftContainer);
+
+        Build<CCLabelBMFont>::create(fmt::format("Team {}", idx + 1).c_str(), "bigFont.fnt")
+            .scale(0.6f)
             .parent(leftContainer);
 
         leftContainer->updateLayout();
@@ -137,6 +133,7 @@ private:
 
 bool TeamManagementPopup::setup() {
     this->setTitle("Team Management");
+    m_showPlus = RoomManager::get().isOwner();
 
     m_list = Build(cue::ListNode::create(
         {CELL_WIDTH, 170.f},
@@ -199,13 +196,15 @@ void TeamManagementPopup::onLoaded(const std::vector<RoomTeam>& teams) {
 void TeamManagementPopup::onTeamCreated(bool success, uint16_t teamCount) {
     this->stopLoad();
 
-    size_t currentCount = m_list->size() - 1; // not counting plus button
+    size_t currentCount = m_list->size() - m_showPlus; // not counting plus button
 
     if (success) {
         // verify if the team count is what we expect it to be
         if (teamCount == currentCount + 1) {
             // good, add new team
-            m_list->removeCell(m_list->size() - 1); // remove the plus cell
+            if (m_showPlus) {
+                m_list->removeCell(m_list->size() - 1); // remove the plus cell
+            }
 
             m_list->addCell(TeamCell::create(RoomTeam {
                 .color = getDefaultColor(teamCount - 1)
@@ -225,6 +224,8 @@ void TeamManagementPopup::onTeamCreated(bool success, uint16_t teamCount) {
 }
 
 void TeamManagementPopup::addPlusButton() {
+    if (!m_showPlus) return;
+
     auto plusBtn = Build<CCSprite>::createSpriteName("GJ_plusBtn_001.png")
         .with([&](auto btn) { cue::rescaleToMatch(btn, CCSize{CELL_HEIGHT, CELL_HEIGHT}); })
         .intoMenuItem([this] {

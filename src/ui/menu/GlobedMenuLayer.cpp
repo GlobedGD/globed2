@@ -428,7 +428,7 @@ void GlobedMenuLayer::initSideButtons() {
 
     /// Left side buttons
 
-    if (RoomManager::get().isOwner()) {
+    if (RoomManager::get().getSettings().teams) {
         makeButton(
             CCSprite::create("icon-person.png"_spr),
             EditorBaseColor::Cyan,
@@ -436,11 +436,7 @@ void GlobedMenuLayer::initSideButtons() {
             LeftBtn::Teams,
             "btn-manage-teams",
             [this] {
-                if (RoomManager::get().getSettings().teams) {
-                    TeamManagementPopup::create()->show();
-                } else {
-                    globed::alert("Error", "Team management is only available if the <cg>Teams setting</c> is enabled in <cy>Room settings</c>");
-                }
+                TeamManagementPopup::create()->show();
             }
         );
     }

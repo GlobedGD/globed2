@@ -19,6 +19,7 @@ protected:
     cue::LoadingCircle* m_loadingCircle = nullptr;
     std::optional<MessageListener<msg::RoomStateMessage>> m_stateListener;
     std::optional<MessageListener<msg::TeamCreationResultMessage>> m_creationListener;
+    bool m_showPlus = false;
 
     bool setup();
     void startLoading();
