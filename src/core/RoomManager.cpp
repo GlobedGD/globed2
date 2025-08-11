@@ -65,11 +65,15 @@ RoomManager::RoomManager() {
     m_roomId = 0;
     m_roomName = "Global Room";
 
-    auto listener = NetworkManagerImpl::get().listenGlobal<msg::RoomStateMessage>([this](const auto& msg) {
+    auto& nm = NetworkManagerImpl::get();
+
+    nm.listenGlobal<msg::RoomStateMessage>([this](const auto& msg) {
         if (msg.roomId != m_roomId) {
             m_roomId = msg.roomId;
             m_roomName = msg.roomName;
             m_roomOwner = msg.roomOwner;
+            m_teamId = 0;
+            m_teamMembers.clear();
 
             // a change in rooms resets the warp context as well
             globed::_clearWarpContext();
@@ -78,8 +82,26 @@ RoomManager::RoomManager() {
         m_settings = msg.settings;
 
         return ListenerResult::Continue;
-    });
-    listener->setPriority(-10000);
+    })->setPriority(-10000);
+
+    nm.listenGlobal<msg::TeamChangedMessage>([this](const auto& msg) {
+        m_teamId = msg.teamId;
+        return ListenerResult::Continue;
+    })->setPriority(-10000);
+
+    nm.listenGlobal<msg::TeamChangedMessage>([this](const auto& msg) {
+        m_teamId = msg.teamId;
+        m_teamMembers.clear();
+        return ListenerResult::Continue;
+    })->setPriority(-10000);
+
+    nm.listenGlobal<msg::TeamMembersMessage>([this](const auto& msg) {
+        for (auto member : msg.members) {
+            m_teamMembers.push_back(member);
+        }
+
+        return ListenerResult::Continue;
+    })->setPriority(-10000);
 }
 
 $on_mod(Loaded) { RoomManager::get(); }

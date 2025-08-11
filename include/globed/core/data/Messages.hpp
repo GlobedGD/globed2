@@ -6,6 +6,7 @@
 #include "RoomListingInfo.hpp"
 #include "UserRole.hpp"
 #include "Event.hpp"
+#include "RoomTeam.hpp"
 
 namespace globed::msg {
 
@@ -26,6 +27,7 @@ struct RoomStateMessage {
     std::string roomName;
     std::vector<RoomPlayer> players;
     RoomSettings settings;
+    std::vector<RoomTeam> teams;
 };
 
 enum class RoomJoinFailedReason : uint16_t {
@@ -57,6 +59,19 @@ struct RoomCreateFailedMessage {
 
 struct RoomListMessage {
     std::vector<RoomListingInfo> rooms;
+};
+
+struct TeamCreationResultMessage {
+    bool success;
+    uint16_t teamCount;
+};
+
+struct TeamChangedMessage {
+    uint16_t teamId;
+};
+
+struct TeamMembersMessage {
+    std::vector<int> members;
 };
 
 // Misc

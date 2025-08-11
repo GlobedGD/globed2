@@ -28,6 +28,10 @@ private:
     int m_roomOwner = 0;
     std::string m_roomName;
     RoomSettings m_settings{};
+
+    uint16_t m_teamId = 0;
+    std::vector<int> m_teamMembers;
+
 };
 
 }

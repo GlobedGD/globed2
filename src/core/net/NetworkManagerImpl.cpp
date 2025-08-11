@@ -880,6 +880,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             connInfo.m_established = true;
             connInfo.m_isModerator = msg.isModerator;
 
+            if (!msg.newToken.empty()) {
+                this->setUToken(msg.newToken);
+            }
+
             CoreImpl::get().onServerConnected();
 
             this->invokeListeners(msg);

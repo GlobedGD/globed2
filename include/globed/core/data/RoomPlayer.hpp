@@ -14,6 +14,7 @@ struct RoomPlayer {
     uint16_t color2 = 0;
     uint16_t glowColor = NO_GLOW;
     SessionId session = SessionId{};
+    uint16_t teamId;
 
     cue::PlayerIcon* createIcon() const;
     static RoomPlayer createMyself();
