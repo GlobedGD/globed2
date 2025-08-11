@@ -18,6 +18,7 @@ public:
     uint32_t getRoomId();
     int getRoomOwner();
     std::optional<uint8_t> pickServerId();
+    RoomSettings& getSettings();
 
 private:
     friend class SingletonLeakBase;

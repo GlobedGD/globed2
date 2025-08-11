@@ -36,6 +36,7 @@ private:
     CCMenuItemSpriteExtra* m_roomNameButton;
     cocos2d::CCMenu* m_roomButtonsMenu;
     cocos2d::CCMenu* m_rightSideMenu = nullptr;
+    cocos2d::CCMenu* m_leftSideMenu = nullptr;
     std::optional<MessageListener<msg::RoomStateMessage>> m_roomStateListener;
     uint32_t m_roomId = -1;
     std::optional<asp::time::Instant> m_lastRoomUpdate;

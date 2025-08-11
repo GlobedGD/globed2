@@ -771,6 +771,42 @@ void NetworkManagerImpl::sendRequestRoomList() {
     });
 }
 
+void NetworkManagerImpl::sendAssignTeam(int accountId, uint16_t teamId) {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto assign = msg.initAssignTeam();
+        assign.setAccountId(accountId);
+        assign.setTeamId(teamId);
+    });
+}
+
+void NetworkManagerImpl::sendCreateTeam(cocos2d::ccColor4B color) {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto create = msg.initCreateTeam();
+        create.setColor(data::encodeColor4(color));
+    });
+}
+
+void NetworkManagerImpl::sendDeleteTeam(uint16_t teamId) {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto del = msg.initDeleteTeam();
+        del.setTeamId(teamId);
+    });
+}
+
+void NetworkManagerImpl::sendUpdateTeam(uint16_t teamId, cocos2d::ccColor4B color) {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto update = msg.initUpdateTeam();
+        update.setTeamId(teamId);
+        update.setColor(data::encodeColor4(color));
+    });
+}
+
+void NetworkManagerImpl::sendGetTeamMembers() {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        msg.initGetTeamMembers();
+    });
+}
+
 void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply) {
     (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto adminNotice = msg.initAdminNotice();
@@ -906,6 +942,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             this->tryAuth();
         } break;
 
+        case CentralMessage::BANNED: {
+            // TODO
+        } break;
+
         case CentralMessage::PLAYER_COUNTS: {
             // TODO
         } break;
@@ -936,6 +976,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             }
         } break;
 
+        case CentralMessage::ROOM_BANNED: {
+            // TODO
+        } break;
+
         case CentralMessage::ROOM_LIST: {
             auto roomList = msg.getRoomList();
 
@@ -944,6 +988,24 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             } else {
                 log::warn("Received invalid room list message");
             }
+        } break;
+
+        case CentralMessage::TEAM_CREATION_RESULT: {
+            auto result = msg.getTeamCreationResult();
+
+            this->invokeListeners(data::decodeTeamCreationResultMessage(result));
+        } break;
+
+        case CentralMessage::TEAM_CHANGED: {
+            auto result = msg.getTeamChanged();
+
+            this->invokeListeners(data::decodeTeamChangedMessage(result));
+        } break;
+
+        case CentralMessage::TEAM_MEMBERS: {
+            auto result = msg.getTeamMembers();
+
+            this->invokeListeners(data::decodeTeamMembersMessage(result));
         } break;
 
         case CentralMessage::JOIN_FAILED: {
@@ -972,6 +1034,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             });
         } break;
 
+        case CentralMessage::WARN: {
+            // TODO
+        } break;
+
         case CentralMessage::ADMIN_RESULT: {
             auto adminResult = msg.getAdminResult();
 
@@ -985,6 +1051,14 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
                 .success = adminResult.getSuccess(),
                 .error = adminResult.getError(),
             });
+        } break;
+
+        case CentralMessage::ADMIN_FETCH_RESPONSE: {
+            // TODO
+        } break;
+
+        case CentralMessage::ADMIN_LOGS_RESPONSE: {
+            // TODO
         } break;
 
         default: {

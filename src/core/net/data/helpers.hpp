@@ -7,6 +7,26 @@
 
 namespace globed::data {
 
+/// Color conversion
+
+inline uint32_t encodeColor4(cocos2d::ccColor4B color) {
+    return (
+        (uint32_t)color.r << 24
+        | (uint32_t)color.g << 16
+        | (uint32_t)color.b << 8
+        | (uint32_t)color.a
+    );
+}
+
+inline cocos2d::ccColor4B decodeColor4(uint32_t color) {
+    return cocos2d::ccColor4B {
+        .r = uint8_t(color >> 24),
+        .g = uint8_t(color >> 16),
+        .b = uint8_t(color >> 8),
+        .a = uint8_t(color),
+    };
+}
+
 /// Player state
 
 inline void encodePlayerState(const PlayerState& state, auto&& data) {
@@ -162,6 +182,7 @@ inline void encodeRoomSettings(const RoomSettings& settings, auto&& data) {
     data.setPrivateInvites(settings.privateInvites);
     data.setIsFollower(settings.isFollower);
     data.setLevelIntegrity(settings.levelIntegrity);
+    data.setTeams(settings.teams);
     data.setCollision(settings.collision);
     data.setTwoPlayerMode(settings.twoPlayerMode);
     data.setDeathlink(settings.deathlink);
@@ -175,6 +196,7 @@ inline RoomSettings decodeRoomSettings(const schema::main::RoomSettings::Reader&
     out.privateInvites = reader.getPrivateInvites();
     out.isFollower = reader.getIsFollower();
     out.levelIntegrity = reader.getLevelIntegrity();
+    out.teams = reader.getTeams();
     out.collision = reader.getCollision();
     out.twoPlayerMode = reader.getTwoPlayerMode();
     out.deathlink = reader.getDeathlink();
@@ -248,6 +270,15 @@ inline msg::RoomStateMessage decodeRoomStateMessage(schema::main::RoomStateMessa
     }
 
     out.settings = data::decodeRoomSettings(reader.getSettings());
+
+    auto teams = reader.getTeams();
+    out.teams.reserve(teams.size());
+
+    for (auto team : teams) {
+        out.teams.push_back(RoomTeam {
+            .color = decodeColor4(team),
+        });
+    }
 
     return out;
 }
@@ -389,6 +420,40 @@ inline msg::CentralLoginOkMessage decodeCentralLoginOk(const schema::main::Login
     msg.isModerator = reader.getIsModerator();
 
     return msg;
+}
+
+/// Team creation result
+
+inline msg::TeamCreationResultMessage decodeTeamCreationResultMessage(const schema::main::TeamCreationResultMessage::Reader& reader) {
+    msg::TeamCreationResultMessage out{};
+
+    out.success = reader.getSuccess();
+    out.teamCount = reader.getTeamCount();
+
+    return out;
+}
+
+/// Team changed
+
+inline msg::TeamChangedMessage decodeTeamChangedMessage(const schema::main::TeamChangedMessage::Reader& reader) {
+    msg::TeamChangedMessage out{};
+    out.teamId = reader.getTeamId();
+    return out;
+}
+
+/// Team members
+
+inline msg::TeamMembersMessage decodeTeamMembersMessage(const schema::main::TeamMembersMessage::Reader& reader) {
+    msg::TeamMembersMessage out{};
+
+    auto members = reader.getMembers();
+    out.members.reserve(members.size());
+
+    for (auto member : members) {
+        out.members.push_back(member);
+    }
+
+    return out;
 }
 
 }

@@ -113,6 +113,11 @@ public:
     void sendJoinRoom(uint32_t id, uint32_t passcode = 0);
     void sendLeaveRoom();
     void sendRequestRoomList();
+    void sendAssignTeam(int accountId, uint16_t teamId);
+    void sendCreateTeam(cocos2d::ccColor4B color);
+    void sendDeleteTeam(uint16_t teamId);
+    void sendUpdateTeam(uint16_t teamId, cocos2d::ccColor4B color);
+    void sendGetTeamMembers();
     void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply);
     void sendAdminNoticeEveryone(const std::string& message);
     void sendAdminLogin(const std::string& password);

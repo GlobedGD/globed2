@@ -12,6 +12,7 @@
 #include <ui/misc/InputPopup.hpp>
 #include <ui/menu/RoomListingPopup.hpp>
 #include <ui/menu/CreateRoomPopup.hpp>
+#include <ui/menu/TeamManagementPopup.hpp>
 #include <ui/misc/Badges.hpp>
 
 #include <cue/RepeatingBackground.hpp>
@@ -89,7 +90,7 @@ protected:
 };
 
 // order of buttons in right side menu
-namespace btnorder {
+namespace RightBtn {
     constexpr int Invisibility = 3;
     constexpr int AdminPanel = 4;
     constexpr int Search = 5;
@@ -97,6 +98,11 @@ namespace btnorder {
     constexpr int Invite = 7;
     constexpr int Refresh = 100; // dead last
 }
+
+namespace LeftBtn {
+    constexpr int Teams = 3;
+}
+
 
 }
 
@@ -232,11 +238,19 @@ bool GlobedMenuLayer::init() {
         .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, 32.f)
         .parent(m_playerListMenu);
 
+    m_leftSideMenu = Build<CCMenu>::create()
+        .id("left-side-menu")
+        .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
+        .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
+        .pos(8.f, PLAYER_LIST_MENU_SIZE.height - 6.f)
+        .anchorPoint(0.f, 1.f)
+        .parent(m_playerListMenu);
+
     m_rightSideMenu = Build<CCMenu>::create()
         .id("right-side-menu")
         .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
         .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
-        .pos(PLAYER_LIST_MENU_SIZE - CCSize{4.f, 4.f})
+        .pos(PLAYER_LIST_MENU_SIZE - CCSize{8.f, 6.f})
         .anchorPoint(1.f, 1.f)
         .parent(m_playerListMenu);
 
@@ -396,6 +410,42 @@ void GlobedMenuLayer::initRoomButtons() {
 
 void GlobedMenuLayer::initSideButtons() {
     m_rightSideMenu->removeAllChildren();
+    m_leftSideMenu->removeAllChildren();
+
+    constexpr static CCSize buttonSize {30.f, 30.f};
+
+    auto makeButton = [this](CCSprite* sprite, EditorBaseColor color, CCNode* parent, int zOrder, const char* id, auto cb) {
+        Build<EditorButtonSprite>::create(sprite, color)
+            .with([&](auto btn) { cue::rescaleToMatch(btn, buttonSize); })
+            .intoMenuItem([cb = std::move(cb)](auto) {
+                cb();
+            })
+            .zOrder(zOrder)
+            .scaleMult(1.1f)
+            .id(id)
+            .parent(parent);
+    };
+
+    /// Left side buttons
+
+    if (RoomManager::get().isOwner()) {
+        makeButton(
+            CCSprite::create("icon-person.png"_spr),
+            EditorBaseColor::Cyan,
+            m_leftSideMenu,
+            LeftBtn::Teams,
+            "btn-manage-teams",
+            [this] {
+                if (RoomManager::get().getSettings().teams) {
+                    TeamManagementPopup::create()->show();
+                } else {
+                    globed::alert("Error", "Team management is only available if the <cg>Teams setting</c> is enabled in <cy>Room settings</c>");
+                }
+            }
+        );
+    }
+
+    /// Right side buttons
 
     // TODO: filter button
 
@@ -407,15 +457,14 @@ void GlobedMenuLayer::initSideButtons() {
         }
 
         if (badge) {
-            Build<EditorButtonSprite>::create(badge, EditorBaseColor::Aqua)
-                .scale(0.95f)
-                .intoMenuItem([this](auto) {
-                    globed::openModPanel();
-                })
-                .zOrder(btnorder::AdminPanel)
-                .scaleMult(1.1f)
-                .id("btn-mod-panel")
-                .parent(m_rightSideMenu);
+            makeButton(
+                badge,
+                EditorBaseColor::Aqua,
+                m_rightSideMenu,
+                RightBtn::AdminPanel,
+                "btn-managemod-panel",
+                [this] { globed::openModPanel(); }
+            );
 
             badge->setScale(badge->getScale() * 0.85f);
         } else {
@@ -424,6 +473,7 @@ void GlobedMenuLayer::initSideButtons() {
     }
 
     m_rightSideMenu->updateLayout();
+    m_leftSideMenu->updateLayout();
 }
 
 void GlobedMenuLayer::copyRoomIdToClipboard() {

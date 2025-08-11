@@ -61,6 +61,10 @@ std::optional<uint8_t> RoomManager::pickServerId() {
     }
 }
 
+RoomSettings& RoomManager::getSettings() {
+    return m_settings;
+}
+
 RoomManager::RoomManager() {
     m_roomId = 0;
     m_roomName = "Global Room";

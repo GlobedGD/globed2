@@ -16,6 +16,7 @@ static constexpr int TAG_CLOSED_INVITES = 1022;
 static constexpr int TAG_COLLISION = 1023;
 static constexpr int TAG_TWO_PLAYER= 1024;
 static constexpr int TAG_DEATHLINK = 1025;
+static constexpr int TAG_TEAMS = 1026;
 
 bool CreateRoomPopup::setup() {
     this->setID("create-room-popup"_spr);
@@ -212,7 +213,8 @@ bool CreateRoomPopup::setup() {
         {"Closed Invites", "closed-invites"_spr, TAG_CLOSED_INVITES, nullptr},
         {"Collision", "collision"_spr, TAG_COLLISION, nullptr},
         {"2-Player Mode", "2-player-mode"_spr, TAG_TWO_PLAYER, &m_twoPlayerBtn},
-        {"Death Link", "deathlink"_spr, TAG_DEATHLINK, &m_deathlinkBtn}
+        {"Death Link", "deathlink"_spr, TAG_DEATHLINK, &m_deathlinkBtn},
+        {"Teams", "teams"_spr, TAG_TEAMS, nullptr},
     });
 
     float totalHeight = 0.f;
@@ -321,6 +323,7 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
         case TAG_CLOSED_INVITES: m_settings.privateInvites = state; break;
         case TAG_PRIVATE: m_settings.hidden = state; break;
         case TAG_DEATHLINK: m_settings.deathlink = state; break;
+        case TAG_TEAMS: m_settings.teams = state; break;
     }
 
     if (isSafeMode && state && !globed::value<bool>("core.flags.seen-room-safe-mode-notice")) {
