@@ -43,6 +43,10 @@ uint32_t RoomManager::getRoomId() {
     return m_roomId;
 }
 
+uint16_t RoomManager::getTeamId() {
+    return m_teamId;
+}
+
 int RoomManager::getRoomOwner() {
     return m_roomOwner;
 }

@@ -183,6 +183,7 @@ inline void encodeRoomSettings(const RoomSettings& settings, auto&& data) {
     data.setIsFollower(settings.isFollower);
     data.setLevelIntegrity(settings.levelIntegrity);
     data.setTeams(settings.teams);
+    data.setLockedTeams(settings.lockedTeams);
     data.setCollision(settings.collision);
     data.setTwoPlayerMode(settings.twoPlayerMode);
     data.setDeathlink(settings.deathlink);
@@ -197,6 +198,7 @@ inline RoomSettings decodeRoomSettings(const schema::main::RoomSettings::Reader&
     out.isFollower = reader.getIsFollower();
     out.levelIntegrity = reader.getLevelIntegrity();
     out.teams = reader.getTeams();
+    out.lockedTeams = reader.getLockedTeams();
     out.collision = reader.getCollision();
     out.twoPlayerMode = reader.getTwoPlayerMode();
     out.deathlink = reader.getDeathlink();

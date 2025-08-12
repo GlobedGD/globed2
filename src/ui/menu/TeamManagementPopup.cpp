@@ -60,6 +60,8 @@ public:
 private:
     TeamManagementPopup* m_popup;
     ColorChannelSprite* m_colorSprite;
+    CCMenuItemSpriteExtra* m_joinBtn = nullptr;
+    CCNode* m_rightContainer;
     ccColor4B m_color;
     ccColor4B m_originalColor;
     size_t m_idx;
@@ -98,7 +100,7 @@ private:
 
         leftContainer->updateLayout();
 
-        auto rightContainer = Build<CCMenu>::create()
+        m_rightContainer = Build<CCMenu>::create()
             .layout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::End))
             .contentSize(CELL_WIDTH * 0.3f, CELL_HEIGHT)
             .anchorPoint(1.f, 1.f)
@@ -111,9 +113,19 @@ private:
             .intoMenuItem([this] {
                 m_popup->deleteTeam(m_idx);
             })
-            .parent(rightContainer);
+            .zOrder(99)
+            .parent(m_rightContainer);
 
-        rightContainer->updateLayout();
+        m_rightContainer->updateLayout();
+
+        auto& rm = RoomManager::get();
+        bool myTeam = m_idx == rm.getTeamId();
+        bool canJoin = !rm.getSettings().lockedTeams || rm.isOwner();
+
+        // button to either join or leave team
+        if (myTeam || canJoin) {
+            this->recreateJoinButton(myTeam);
+        }
 
         return true;
     }
@@ -122,6 +134,33 @@ private:
         auto popup = ColorPickPopup::create(m_color);
         popup->setDelegate(this);
         popup->show();
+    }
+
+    void join() {
+        auto& nm = NetworkManagerImpl::get();
+        nm.sendAssignTeam(0, m_idx);
+
+        for (auto cell : m_popup->m_list->iterChecked<TeamCell>()) {
+            log::debug("{}", cell);
+            cell->recreateJoinButton(cell == this);
+        }
+    }
+
+    void recreateJoinButton(bool joined) {
+        if (m_joinBtn) {
+            m_joinBtn->removeFromParent();
+        }
+
+        m_joinBtn = Build<CCSprite>::createSpriteName(joined ? "GJ_selectSongOnBtn_001.png" : "GJ_playBtn2_001.png")
+            .with([&](auto btn) { cue::rescaleToMatch(btn, CELL_HEIGHT * 0.85f); })
+            .intoMenuItem([this, joined] {
+                if (joined) return;
+
+                this->join();
+            })
+            .parent(m_rightContainer);
+
+        m_rightContainer->updateLayout();
     }
 
     void updateColor(ccColor4B const& color) override {

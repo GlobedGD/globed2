@@ -12,6 +12,7 @@ struct RoomSettings {
     bool isFollower = false;
     bool levelIntegrity = false;
     bool teams = false;
+    bool lockedTeams = false;
 
     bool collision = false;
     bool twoPlayerMode = false;
