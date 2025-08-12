@@ -141,7 +141,6 @@ private:
         nm.sendAssignTeam(0, m_idx);
 
         for (auto cell : m_popup->m_list->iterChecked<TeamCell>()) {
-            log::debug("{}", cell);
             cell->recreateJoinButton(cell == this);
         }
     }
