@@ -95,4 +95,10 @@ void CoreImpl::onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {
     });
 }
 
+void CoreImpl::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onPlayerDeath(gjbgl, player, death);
+    });
+}
+
 }

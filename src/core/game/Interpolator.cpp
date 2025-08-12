@@ -217,8 +217,10 @@ void Interpolator::tick(float dt, float p1xdiff) {
     }
 }
 
-PlayerState& Interpolator::getPlayerState(int playerId) {
-    return m_players.at(playerId).interpolatedState;
+PlayerState& Interpolator::getPlayerState(int playerId, std::optional<PlayerDeath>& outDeath) {
+    auto& player = m_players.at(playerId);
+    outDeath = player.takeDeath();
+    return player.interpolatedState;
 }
 
 PlayerState& Interpolator::getNewerState(int playerId) {

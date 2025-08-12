@@ -159,8 +159,15 @@ void GlobedGJBGL::selUpdate(float tsdt) {
             continue;
         }
 
-        auto& vstate = fields.m_interpolator.getPlayerState(playerId);
+        std::optional<PlayerDeath> death;
+        auto& vstate = fields.m_interpolator.getPlayerState(playerId, death);
         player->update(vstate, camState);
+
+        // if the player just died, handle the death
+        if (death.has_value()) {
+            player->handleDeath(*death);
+            CoreImpl::get().onPlayerDeath(this, player.get(), *death);
+        }
 
         // if the player has left the level, remove them
         if (fields.m_interpolator.isPlayerStale(playerId, fields.m_lastServerUpdate)) {

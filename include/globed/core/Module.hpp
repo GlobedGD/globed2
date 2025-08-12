@@ -3,6 +3,8 @@
 #include <Geode/Result.hpp>
 #include <Geode/utils/terminate.hpp>
 
+#include <core/game/Interpolator.hpp>
+
 #define GLOBED_CLAIM_HOOKS(module, modify, ...) \
     do { \
         decltype(auto) __chmodule = (module);\
@@ -16,6 +18,7 @@
 namespace globed {
 
 class Core;
+class RemotePlayer;
 struct GlobedGJBGL;
 
 enum class AutoEnableMode {
@@ -118,6 +121,8 @@ protected:
     virtual void onPlayerJoin(GlobedGJBGL* gjbgl, int accountId) {}
     /// Called when another player leaves the level. Only called if `onPlayerJoin` was called with this player before.
     virtual void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {}
+    /// Called when another player dies on the level.
+    virtual void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) {}
 
 private:
     friend class Core;

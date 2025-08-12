@@ -2,9 +2,12 @@
 
 #include <globed/core/Module.hpp>
 #include <globed/core/Core.hpp>
+#include <core/game/Interpolator.hpp>
 #include <memory>
 
 namespace globed {
+
+class RemotePlayer;
 
 class CoreImpl {
 public:
@@ -39,6 +42,8 @@ public:
     void onPlayerJoin(GlobedGJBGL* gjbgl, int accountId);
     // Call when another player leaves the level, calls `onPlayerLeave` on each enabled module
     void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId);
+    // Call when another player dies, calls `onPlayerDeath` on each enabled module
+    void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death);
 
 private:
     std::vector<std::shared_ptr<Module>> m_modules;

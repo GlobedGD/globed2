@@ -1,6 +1,8 @@
 #pragma once
 #include "VisualPlayer.hpp"
 #include <globed/core/data/PlayerDisplayData.hpp>
+#include <core/game/Interpolator.hpp>
+
 #include <cocos2d.h>
 
 namespace globed {
@@ -13,6 +15,7 @@ public:
     ~RemotePlayer();
 
     void update(const PlayerState& state, const GameCameraState& camState);
+    void handleDeath(const PlayerDeath& death);
     bool isDataInitialized() const;
     bool isTeamInitialized() const;
     void initData(const PlayerDisplayData& data, uint16_t teamId = 0xffff);

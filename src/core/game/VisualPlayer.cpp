@@ -1,6 +1,7 @@
 #include <globed/core/game/VisualPlayer.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/RoomManager.hpp>
+#include <core/PreloadManager.hpp>
 #include <globed/util/lazy.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 
@@ -498,6 +499,22 @@ void VisualPlayer::updateTeam(uint16_t teamId) {
         m_nameLabel->updateTeam(teamId, team->color);
         m_teamInitialized = true;
     }
+}
+
+void VisualPlayer::playDeathEffect() {
+    auto* gm = globed::cachedSingleton<GameManager>();
+
+    int oldEffect = gm->getPlayerDeathEffect();
+    gm->setPlayerDeathEffect(m_icons.deathEffect);
+
+    // prevent a crash here if somehow death effects arent preloaded
+    if (m_icons.deathEffect != 1 && !PreloadManager::get().deathEffectsLoaded()) {
+        gm->setPlayerDeathEffect(1);
+    }
+
+    PlayerObject::playDeathEffect();
+
+    gm->setPlayerDeathEffect(oldEffect);
 }
 
 void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {

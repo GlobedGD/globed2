@@ -19,6 +19,7 @@ public:
 
     void updateDisplayData(const PlayerDisplayData& icons);
     void updateTeam(uint16_t teamId);
+    void playDeathEffect();
 
 private:
     friend class RemotePlayer;

@@ -1,4 +1,5 @@
 #include <globed/core/game/RemotePlayer.hpp>
+#include <globed/core/SettingsManager.hpp>
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
@@ -50,6 +51,12 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
         m_player2->updateFromData(*m_state.player2, m_state, camState);
     } else {
         m_player2->setVisible(false);
+    }
+}
+
+void RemotePlayer::handleDeath(const PlayerDeath& death) {
+    if (globed::setting<bool>("core.player.death-effects")) {
+        m_player1->playDeathEffect();
     }
 }
 

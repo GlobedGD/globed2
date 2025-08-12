@@ -21,7 +21,7 @@ public:
     void updateNoop(int accountId, float curTimestamp);
     void tick(float dt, float p1xdiff);
 
-    PlayerState& getPlayerState(int playerId);
+    PlayerState& getPlayerState(int playerId, std::optional<PlayerDeath>& outDeath);
     PlayerState& getNewerState(int playerId);
     bool isPlayerStale(int playerId, float curTimestamp);
 
