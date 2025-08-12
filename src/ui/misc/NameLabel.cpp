@@ -13,9 +13,11 @@ bool NameLabel::init(const std::string& name, bool bigFont) {
     m_bigFont = bigFont;
     m_shadow = !bigFont;
 
+    auto bcLayout = RowLayout::create()->setAutoScale(false)->setGap(3.f);
+    bcLayout->ignoreInvisibleChildren(true);
     m_badgeContainer = Build<CCNode>::create()
         .zOrder(99)
-        .layout(RowLayout::create()->setAutoScale(false)->setGap(3.f))
+        .layout(bcLayout)
         .parent(this);
 
     this->setAnchorPoint({0.5f, 0.5f});
@@ -79,6 +81,8 @@ void NameLabel::onClick(CCMenuItemSpriteExtra* btn) {
 }
 
 void NameLabel::updateTeam(size_t idx, cocos2d::ccColor4B color) {
+    // TODO: make this an option, color names instead by default?
+
     if (!m_teamLabel) {
         m_teamLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
             .parent(m_badgeContainer);
@@ -91,9 +95,25 @@ void NameLabel::updateTeam(size_t idx, cocos2d::ccColor4B color) {
     this->updateLayout();
 }
 
-void NameLabel::resizeBadgeContainer() {
-    // TODO: yeah
+void NameLabel::updateNoTeam() {
+    m_teamLabel->setVisible(false);
+    this->resizeBadgeContainer();
+    this->updateLayout();
+}
 
+void NameLabel::resizeBadgeContainer() {
+    size_t elems = 0;
+    float width = 0.f;
+
+    for (auto elem : m_badgeContainer->getChildrenExt()) {
+        if (!elem->isVisible()) continue;
+        elems++;
+        width += elem->getScaledContentWidth();
+    }
+
+    width += (elems - 1) * 3.f;
+
+    m_badgeContainer->setContentWidth(width);
     m_badgeContainer->updateLayout();
 }
 

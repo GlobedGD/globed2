@@ -17,8 +17,8 @@ static constexpr float CELL_WIDTH = 260.f;
 
 static ccColor4B getDefaultColor(size_t idx) {
     static constexpr ccColor4B colors[] = {
-        colorFromHex("#FFFFFF"),
-        colorFromHex("#FF0000"),
+        colorFromHex("#ffffff"),
+        colorFromHex("#fa3939"),
         colorFromHex("#00A2FF"),
         colorFromHex("#00FF00"),
         colorFromHex("#FFD300"),

@@ -12,6 +12,7 @@ public:
     void updateName(const std::string& name);
     void updateName(const char* name);
     void updateTeam(size_t idx, cocos2d::ccColor4B color);
+    void updateNoTeam();
     void updateOpacity(unsigned char opacity);
     void updateOpacity(float opacity);
     void setMultipleBadges(bool multiple);

@@ -17,21 +17,28 @@ bool PlayerListCell::init(
     const cue::Icons& icons,
     CCSize cellSize
 ) {
-    if (!CCMenu::init()) return false;
+    if (!CCNode::init()) return false;
+
+    this->setContentSize(cellSize);
 
     m_accountId = accountId;
     m_userId = userId;
 
-    this->setLayout(
-        RowLayout::create()
+    m_leftContainer = Build<CCNode>::create()
+        .layout(RowLayout::create()
             ->setAutoScale(false)
             ->setAxisAlignment(AxisAlignment::Start)
-            ->setGap(10.f)
-    );
+            ->setGap(5.f)
+        )
+        .contentSize(cellSize.width - 20.f, cellSize.height)
+        .pos(10.f, cellSize.height / 2.f)
+        .anchorPoint(0.f, 0.5f)
+        .parent(this)
+        ;
 
     m_cubeIcon = Build(cue::PlayerIcon::create(icons))
         .id("icon")
-        .parent(this);
+        .parent(m_leftContainer);
 
     cue::rescaleToMatch(m_cubeIcon, cellSize.height * 0.7f);
 
@@ -45,14 +52,12 @@ bool PlayerListCell::init(
             );
         })
         .id("username-btn")
-        .parent(this)
+        .parent(m_leftContainer)
         .collect();
 
-    this->setContentSize({cellSize.width - 20.f, cellSize.height});
-    this->ignoreAnchorPointForPosition(false);
-    this->updateLayout();
-
     m_nameLabel->setPositionY(m_nameLabel->getPositionY() + 1.f);
+
+    m_leftContainer->updateLayout();
 
     m_rightMenu = Build<CCMenu>::create()
         .anchorPoint(1.f, 0.5f)
@@ -64,6 +69,8 @@ bool PlayerListCell::init(
     this->schedule(schedule_selector(PlayerListCell::updateStuff), 1.0f);
 
     this->customSetup();
+
+    this->updateStuff(0.f);
 
     return true;
 }
@@ -93,8 +100,10 @@ void PlayerListCell::updateStuff(float dt) {
     if (auto teamId = rm.getTeamIdForPlayer(m_accountId)) {
         if (auto team = rm.getTeam(*teamId)) {
             m_nameLabel->updateTeam(*teamId, team->color);
+            this->updateLayout();
         }
     }
+
 }
 
 PlayerListCell* PlayerListCell::create(

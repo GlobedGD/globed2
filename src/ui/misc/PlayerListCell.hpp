@@ -6,7 +6,7 @@
 
 namespace globed {
 
-class PlayerListCell : public cocos2d::CCMenu {
+class PlayerListCell : public cocos2d::CCNode {
 public:
     static PlayerListCell* create(
         int accountId,
@@ -23,6 +23,7 @@ protected:
     int m_userId;
     CCMenuItemSpriteExtra* m_usernameBtn;
     cue::PlayerIcon* m_cubeIcon;
+    cocos2d::CCNode* m_leftContainer;
     cocos2d::CCMenu* m_rightMenu;
     NameLabel* m_nameLabel;
 
