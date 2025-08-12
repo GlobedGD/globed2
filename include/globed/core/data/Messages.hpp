@@ -71,7 +71,11 @@ struct TeamChangedMessage {
 };
 
 struct TeamMembersMessage {
-    std::vector<int> members;
+    std::vector<std::pair<int, uint16_t>> members;
+};
+
+struct TeamsUpdatedMessage {
+    std::vector<RoomTeam> teams;
 };
 
 // Misc

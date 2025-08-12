@@ -14,7 +14,9 @@ public:
 
     void update(const PlayerState& state, const GameCameraState& camState);
     bool isDataInitialized() const;
-    void initData(const PlayerDisplayData& data);
+    bool isTeamInitialized() const;
+    void initData(const PlayerDisplayData& data, uint16_t teamId = 0xffff);
+    void updateTeam(uint16_t teamId);
 
 private:
     friend class VisualPlayer;

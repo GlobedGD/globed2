@@ -2,6 +2,7 @@
 
 #include <globed/util/singleton.hpp>
 #include <globed/core/data/RoomSettings.hpp>
+#include <globed/core/data/RoomTeam.hpp>
 
 namespace globed {
 
@@ -16,10 +17,14 @@ public:
     bool isInFollowerRoom();
     bool isOwner();
     uint32_t getRoomId();
-    uint16_t getTeamId();
     int getRoomOwner();
     std::optional<uint8_t> pickServerId();
     RoomSettings& getSettings();
+
+    uint16_t getCurrentTeamId();
+    std::optional<RoomTeam> getCurrentTeam();
+    std::optional<RoomTeam> getTeam(uint16_t id);
+    std::optional<uint16_t> getTeamIdForPlayer(int player);
 
 private:
     friend class SingletonLeakBase;
@@ -32,7 +37,8 @@ private:
     RoomSettings m_settings{};
 
     uint16_t m_teamId = 0;
-    std::vector<int> m_teamMembers;
+    std::unordered_map<uint16_t, std::vector<int>> m_teamMembers;
+    std::vector<RoomTeam> m_teams;
 
 };
 

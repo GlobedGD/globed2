@@ -57,11 +57,20 @@ bool RemotePlayer::isDataInitialized() const {
     return m_dataInitialized;
 }
 
-void RemotePlayer::initData(const PlayerDisplayData& data) {
+bool RemotePlayer::isTeamInitialized() const {
+    return m_player1->m_teamInitialized;
+}
+
+void RemotePlayer::initData(const PlayerDisplayData& data, uint16_t teamId) {
     m_dataInitialized = true;
 
     m_player1->updateDisplayData(data);
     m_player2->updateDisplayData(data);
+}
+
+void RemotePlayer::updateTeam(uint16_t teamId) {
+    m_player1->updateTeam(teamId);
+    m_player2->updateTeam(teamId);
 }
 
 }

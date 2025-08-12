@@ -134,6 +134,7 @@ void GlobedGJBGL::selUpdateProxy(float dt) {
 void GlobedGJBGL::selUpdate(float tsdt) {
     auto& fields = *m_fields.self();
     auto& pcm = PlayerCacheManager::get();
+    auto& rm = RoomManager::get();
 
     float dt = tsdt / CCScheduler::get()->getTimeScale();
     fields.m_timeCounter += dt;
@@ -174,6 +175,12 @@ void GlobedGJBGL::selUpdate(float tsdt) {
             } else {
                 fields.m_unknownPlayers.push_back(playerId);
             }
+        } else if (!player->isTeamInitialized() && rm.getSettings().teams) {
+            if (auto teamId = rm.getTeamIdForPlayer(playerId)) {
+                player->updateTeam(*teamId);
+            } else {
+                log::debug("player {} has unknown team", playerId);
+            }
         }
     }
 
@@ -183,6 +190,14 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         for (auto& it : fields.m_players) {
             int playerId = it.first;
             this->handlePlayerLeave(playerId);
+        }
+    }
+
+    // refresh teams if needed
+    if (rm.getSettings().teams) {
+        if (fields.m_timeCounter - fields.m_lastTeamRefresh > 10.f) {
+            NetworkManagerImpl::get().sendGetTeamMembers();
+            fields.m_lastTeamRefresh = fields.m_timeCounter;
         }
     }
 

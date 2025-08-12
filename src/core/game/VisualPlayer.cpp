@@ -1,5 +1,6 @@
 #include <globed/core/game/VisualPlayer.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <globed/core/RoomManager.hpp>
 #include <globed/util/lazy.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 
@@ -467,8 +468,16 @@ void VisualPlayer::cleanupObjectLayer() {
 
 void VisualPlayer::updateDisplayData(const PlayerDisplayData& data) {
     auto gm = cachedSingleton<GameManager>();
+    auto& rm = RoomManager::get();
 
-    m_nameLabel->updateData(data.username);
+    // update the team if not initialized
+    if (!m_teamInitialized) {
+        if (auto id = rm.getTeamIdForPlayer(data.accountId)) {
+            this->updateTeam(*id);
+        }
+    }
+
+    m_nameLabel->updateName(data.username);
     m_nameLabel->updateOpacity(globed::setting<float>("core.player.name-opacity"));
 
     // TODO: i dont know why this was here
@@ -482,6 +491,13 @@ void VisualPlayer::updateDisplayData(const PlayerDisplayData& data) {
 
     this->updatePlayerObjectIcons(true);
     this->updateIconType(m_prevMode);
+}
+
+void VisualPlayer::updateTeam(uint16_t teamId) {
+    if (auto team = RoomManager::get().getTeam(teamId)) {
+        m_nameLabel->updateTeam(teamId, team->color);
+        m_teamInitialized = true;
+    }
 }
 
 void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {

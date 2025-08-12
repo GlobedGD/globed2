@@ -18,6 +18,7 @@ public:
     void cleanupObjectLayer();
 
     void updateDisplayData(const PlayerDisplayData& icons);
+    void updateTeam(uint16_t teamId);
 
 private:
     friend class RemotePlayer;
@@ -25,6 +26,7 @@ private:
     RemotePlayer* m_remotePlayer = nullptr;
     PlayerIconData m_icons;
     cocos2d::ccColor3B m_color1{}, m_color2{};
+    bool m_teamInitialized = false;
     geode::Ref<NameLabel> m_nameLabel;
     geode::Ref<PlayerStatusIcons> m_statusIcons;
 

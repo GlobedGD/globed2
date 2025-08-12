@@ -1008,6 +1008,12 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             this->invokeListeners(data::decodeTeamMembersMessage(result));
         } break;
 
+        case CentralMessage::TEAMS_UPDATED: {
+            auto result = msg.getTeamsUpdated();
+
+            this->invokeListeners(data::decodeTeamsUpdatedMessage(result));
+        } break;
+
         case CentralMessage::JOIN_FAILED: {
             log::warn("Received join failed message: {}", (int) msg.getJoinFailed().getReason());
         } break;

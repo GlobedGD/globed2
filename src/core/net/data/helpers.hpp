@@ -449,10 +449,34 @@ inline msg::TeamMembersMessage decodeTeamMembersMessage(const schema::main::Team
     msg::TeamMembersMessage out{};
 
     auto members = reader.getMembers();
-    out.members.reserve(members.size());
+    auto teams = reader.getTeamIds();
+    out.members.resize(std::min(members.size(), teams.size()));
 
+    size_t i = 0;
     for (auto member : members) {
-        out.members.push_back(member);
+        out.members[i++].first = member;
+    }
+
+    i = 0;
+    for (auto team : teams) {
+        out.members[i++].second = team;
+    }
+
+    return out;
+}
+
+/// Teams updated message
+
+inline msg::TeamsUpdatedMessage decodeTeamsUpdatedMessage(const schema::main::TeamsUpdatedMessage::Reader& reader) {
+    msg::TeamsUpdatedMessage out{};
+
+    auto teams = reader.getTeams();
+    out.teams.reserve(teams.size());
+
+    for (auto team : teams) {
+        out.teams.push_back(RoomTeam {
+            .color = decodeColor4(team),
+        });
     }
 
     return out;

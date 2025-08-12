@@ -119,7 +119,7 @@ private:
         m_rightContainer->updateLayout();
 
         auto& rm = RoomManager::get();
-        bool myTeam = m_idx == rm.getTeamId();
+        bool myTeam = m_idx == rm.getCurrentTeamId();
         bool canJoin = !rm.getSettings().lockedTeams || rm.isOwner();
 
         // button to either join or leave team

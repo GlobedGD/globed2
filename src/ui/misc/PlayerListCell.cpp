@@ -1,5 +1,6 @@
 #include "PlayerListCell.hpp"
 #include <globed/core/actions.hpp>
+#include <globed/core/RoomManager.hpp>
 #include <globed/util/singleton.hpp>
 
 #include <UIBuilder.hpp>
@@ -34,20 +35,24 @@ bool PlayerListCell::init(
 
     cue::rescaleToMatch(m_cubeIcon, cellSize.height * 0.7f);
 
-    m_usernameBtn = Build<CCLabelBMFont>::create(username.c_str(), "bigFont.fnt")
+    m_nameLabel = Build(NameLabel::create(username, true))
         .scale(cellSize.height / 52.f)
-        .intoMenuItem([this, username = username](auto) {
-            globed::openUserProfile(m_accountId, m_userId, username);
+        .with([&](auto lbl) {
+            lbl->makeClickable(
+                [this, username = username](auto) {
+                   globed::openUserProfile(m_accountId, m_userId, username);
+                }
+            );
         })
-        .scaleMult(1.1f)
         .id("username-btn")
-        .parent(this);
+        .parent(this)
+        .collect();
 
     this->setContentSize({cellSize.width - 20.f, cellSize.height});
     this->ignoreAnchorPointForPosition(false);
     this->updateLayout();
 
-    m_usernameBtn->setPositionY(m_usernameBtn->getPositionY() + 1.f);
+    m_nameLabel->setPositionY(m_nameLabel->getPositionY() + 1.f);
 
     m_rightMenu = Build<CCMenu>::create()
         .anchorPoint(1.f, 0.5f)
@@ -55,6 +60,8 @@ bool PlayerListCell::init(
         .contentSize(cellSize.width - 10.f - 10.f, cellSize.height - 4.f)
         .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
         .parent(this);
+
+    this->schedule(schedule_selector(PlayerListCell::updateStuff), 1.0f);
 
     this->customSetup();
 
@@ -78,6 +85,16 @@ bool PlayerListCell::initMyself(cocos2d::CCSize cellSize) {
         },
         cellSize
     );
+}
+
+void PlayerListCell::updateStuff(float dt) {
+    auto& rm = RoomManager::get();
+
+    if (auto teamId = rm.getTeamIdForPlayer(m_accountId)) {
+        if (auto team = rm.getTeam(*teamId)) {
+            m_nameLabel->updateTeam(*teamId, team->color);
+        }
+    }
 }
 
 PlayerListCell* PlayerListCell::create(

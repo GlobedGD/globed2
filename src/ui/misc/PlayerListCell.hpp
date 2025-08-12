@@ -1,4 +1,5 @@
 #pragma once
+#include <ui/misc/NameLabel.hpp>
 
 #include <Geode/Geode.hpp>
 #include <cue/PlayerIcon.hpp>
@@ -23,6 +24,7 @@ protected:
     CCMenuItemSpriteExtra* m_usernameBtn;
     cue::PlayerIcon* m_cubeIcon;
     cocos2d::CCMenu* m_rightMenu;
+    NameLabel* m_nameLabel;
 
     bool init(
         int accountId,
@@ -33,6 +35,7 @@ protected:
     );
 
     bool initMyself(cocos2d::CCSize cellSize);
+    void updateStuff(float dt);
 
     inline virtual bool customSetup() {
         return true;

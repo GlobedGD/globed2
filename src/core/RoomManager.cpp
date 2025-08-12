@@ -43,8 +43,39 @@ uint32_t RoomManager::getRoomId() {
     return m_roomId;
 }
 
-uint16_t RoomManager::getTeamId() {
+uint16_t RoomManager::getCurrentTeamId() {
     return m_teamId;
+}
+
+std::optional<RoomTeam> RoomManager::getCurrentTeam() {
+    return this->getTeam(m_teamId);
+}
+
+std::optional<RoomTeam> RoomManager::getTeam(uint16_t id) {
+    if (m_settings.teams && id < m_teams.size()) {
+        return m_teams[id];
+    } else {
+        return std::nullopt;
+    }
+}
+
+std::optional<uint16_t> RoomManager::getTeamIdForPlayer(int player) {
+    if (!m_settings.teams) {
+        return std::nullopt;
+    }
+
+    if (player == cachedSingleton<GJAccountManager>()->m_accountID) {
+        return m_teamId;
+    }
+
+    for (auto& [teamId, players] : m_teamMembers) {
+        log::debug("Team {}, players: {}", teamId, players.size());
+        if (std::find(players.begin(), players.end(), player) != players.end()) {
+            return teamId;
+        }
+    }
+
+    return std::nullopt;
 }
 
 int RoomManager::getRoomOwner() {
@@ -82,6 +113,7 @@ RoomManager::RoomManager() {
             m_roomOwner = msg.roomOwner;
             m_teamId = 0;
             m_teamMembers.clear();
+            m_teams.clear();
 
             // a change in rooms resets the warp context as well
             globed::_clearWarpContext();
@@ -89,6 +121,14 @@ RoomManager::RoomManager() {
 
         m_settings = msg.settings;
 
+        if (!msg.players.empty()) {
+            m_teamMembers.clear();
+
+            for (const RoomPlayer& player : msg.players) {
+                m_teamMembers[player.teamId].push_back(player.accountData.accountId);
+            }
+        }
+
         return ListenerResult::Continue;
     })->setPriority(-10000);
 
@@ -99,14 +139,21 @@ RoomManager::RoomManager() {
 
     nm.listenGlobal<msg::TeamChangedMessage>([this](const auto& msg) {
         m_teamId = msg.teamId;
-        m_teamMembers.clear();
         return ListenerResult::Continue;
     })->setPriority(-10000);
 
     nm.listenGlobal<msg::TeamMembersMessage>([this](const auto& msg) {
-        for (auto member : msg.members) {
-            m_teamMembers.push_back(member);
+        m_teamMembers.clear();
+
+        for (auto [id, teamId] : msg.members) {
+            m_teamMembers[teamId].push_back(id);
         }
+
+        return ListenerResult::Continue;
+    })->setPriority(-10000);
+
+    nm.listenGlobal<msg::TeamsUpdatedMessage>([this](const auto& msg) {
+        m_teams = msg.teams;
 
         return ListenerResult::Continue;
     })->setPriority(-10000);

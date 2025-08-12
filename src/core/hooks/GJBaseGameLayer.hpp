@@ -35,6 +35,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         float m_timeCounter = 0.0f;
         float m_lastServerUpdate = 0.0f;
         float m_lastDataSend = 0.0f;
+        float m_lastTeamRefresh = 0.0f;
         uint32_t m_totalSentPackets = 0;
         Interpolator m_interpolator;
         float m_lastP1XPosition = 0.f;

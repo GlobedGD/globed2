@@ -1,25 +1,30 @@
 #include "NameLabel.hpp"
 
 #include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
 bool NameLabel::init(const std::string& name, bool bigFont) {
-    if (!CCNode::init()) return false;
+    if (!CCMenu::init()) return false;
 
     m_bigFont = bigFont;
+    m_shadow = !bigFont;
+
+    m_badgeContainer = Build<CCNode>::create()
+        .zOrder(99)
+        .layout(RowLayout::create()->setAutoScale(false)->setGap(3.f))
+        .parent(this);
+
     this->setAnchorPoint({0.5f, 0.5f});
-    this->setLayout(RowLayout::create()->setGap(4.f)->setAutoScale(false));
+    this->ignoreAnchorPointForPosition(false);
+    this->setLayout(RowLayout::create()->setGap(4.f)->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start));
     this->setContentWidth(300.f);
-    this->updateData(name);
+    this->updateName(name);
 
     return true;
-}
-
-void NameLabel::updateData(const std::string& name) {
-    this->updateName(name);
 }
 
 void NameLabel::updateName(const std::string& name) {
@@ -28,10 +33,8 @@ void NameLabel::updateName(const std::string& name) {
 
 void NameLabel::updateName(const char* name) {
     if (!m_label) {
-        Build<CCNode>::create()
-            .parent(this)
-            .zOrder(-2)
-            .store(m_labelContainer);
+        m_labelContainer = Build<CCNode>::create()
+            .zOrder(-2);
 
         Build<CCLabelBMFont>::create("", m_bigFont ? "bigFont.fnt" : "chatFont.fnt")
             .zOrder(-1)
@@ -51,8 +54,47 @@ void NameLabel::updateName(const char* name) {
 
     m_label->setString(name);
     m_labelShadow->setString(name);
+    m_labelShadow->setVisible(m_shadow);
     m_labelContainer->setScaledContentSize(m_label->getScaledContentSize());
+
+    if (m_labelButton) {
+        m_labelButton->removeFromParent();
+    }
+
+    m_labelButton = Build(m_labelContainer)
+        .intoMenuItem([this](auto btn) {
+            this->onClick(btn);
+        })
+        .scaleMult(1.1f)
+        .enabled(false)
+        .parent(this);
+
     this->updateLayout();
+}
+
+void NameLabel::onClick(CCMenuItemSpriteExtra* btn) {
+    if (m_callback) {
+        m_callback(btn);
+    }
+}
+
+void NameLabel::updateTeam(size_t idx, cocos2d::ccColor4B color) {
+    if (!m_teamLabel) {
+        m_teamLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
+            .parent(m_badgeContainer);
+    }
+
+    m_teamLabel->setString(fmt::format("{}", idx + 1).c_str());
+    m_teamLabel->setColor(cue::into<ccColor3B>(color));
+
+    this->resizeBadgeContainer();
+    this->updateLayout();
+}
+
+void NameLabel::resizeBadgeContainer() {
+    // TODO: yeah
+
+    m_badgeContainer->updateLayout();
 }
 
 void NameLabel::updateOpacity(float opacity) {
@@ -72,10 +114,23 @@ void NameLabel::updateOpacity(unsigned char opacity) {
     }
 }
 
+void NameLabel::makeClickable(std::function<void(CCMenuItemSpriteExtra*)> callback) {
+    m_callback = callback;
+    m_labelButton->setEnabled(true);
+}
+
 void NameLabel::setMultipleBadges(bool multiple) {
     m_multipleBadges = multiple;
 
     // TODO
+}
+
+void NameLabel::setShadowEnabled(bool enabled) {
+    m_shadow = enabled;
+
+    if (m_labelShadow) {
+        m_labelShadow->setVisible(enabled);
+    }
 }
 
 NameLabel* NameLabel::create(const std::string& name, bool bigFont) {
