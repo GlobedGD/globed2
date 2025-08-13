@@ -8,6 +8,7 @@
 #include "Event.hpp"
 #include "RoomTeam.hpp"
 #include "UserPunishment.hpp"
+#include "FetchedMod.hpp"
 
 namespace globed::msg {
 
@@ -117,6 +118,10 @@ struct AdminFetchResponseMessage {
     std::optional<UserPunishment> activeRoomBan;
     std::optional<UserPunishment> activeMute;
     size_t punishmentCount;
+};
+
+struct AdminFetchModsResponseMessage {
+    std::vector<FetchedMod> users;
 };
 
 }

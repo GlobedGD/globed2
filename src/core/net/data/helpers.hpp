@@ -525,4 +525,32 @@ inline msg::AdminFetchResponseMessage decodeAdminFetchResponseMessage(const sche
     return out;
 }
 
+/// Fetched mod
+
+inline FetchedMod decodeFetchedMod(const schema::main::FetchedMod::Reader& reader) {
+    FetchedMod out{};
+    out.accountId = reader.getAccountId();
+    out.username = reader.getUsername();
+    out.cube = reader.getCube();
+    out.color1 = reader.getColor1();
+    out.color2 = reader.getColor2();
+    out.glowColor = reader.getGlowColor();
+    return out;
+}
+
+/// Admin fetch mods response message
+
+inline msg::AdminFetchModsResponseMessage decodeFetchModsResponseMessage(const schema::main::AdminFetchModsResponseMessage::Reader& reader) {
+    msg::AdminFetchModsResponseMessage out{};
+
+    auto users = reader.getUsers();
+    out.users.reserve(users.size());
+
+    for (auto user : users) {
+        out.users.push_back(decodeFetchedMod(user));
+    }
+
+    return out;
+}
+
 }

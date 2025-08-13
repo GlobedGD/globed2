@@ -122,6 +122,7 @@ public:
     void sendAdminNoticeEveryone(const std::string& message);
     void sendAdminLogin(const std::string& password);
     void sendAdminFetchUser(const std::string& query);
+    void sendAdminFetchMods();
 
     // Both servers
     void sendJoinSession(SessionId id);
