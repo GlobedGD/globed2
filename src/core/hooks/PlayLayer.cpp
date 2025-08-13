@@ -12,6 +12,11 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         return GlobedGJBGL::get(this);
     }
 
+    static void onModify(auto& self) {
+        // self:int stuff;
+        (void) self.setHookPriority("PlayLayer::destroyPlayer", 0x500000);
+    }
+
     $override
     bool init(GJGameLevel* level, bool a, bool b) {
         auto gjbgl = this->asBase();
@@ -55,6 +60,15 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
 
         gm->m_playerDeathEffect = effect;
         gm->m_loadedDeathEffect = effect;
+    }
+
+    $override
+    void destroyPlayer(PlayerObject* player, GameObject* obj) {
+        PlayLayer::destroyPlayer(player, obj);
+
+        if (obj != m_anticheatSpike) {
+            GlobedGJBGL::get(this)->handleLocalPlayerDeath(player);
+        }
     }
 };
 

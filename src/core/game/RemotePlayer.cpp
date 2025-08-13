@@ -1,5 +1,6 @@
 #include <globed/core/game/RemotePlayer.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <globed/core/RoomManager.hpp>
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
@@ -76,8 +77,19 @@ void RemotePlayer::initData(const PlayerDisplayData& data, uint16_t teamId) {
 }
 
 void RemotePlayer::updateTeam(uint16_t teamId) {
+    m_teamId = teamId;
     m_player1->updateTeam(teamId);
     m_player2->updateTeam(teamId);
+}
+
+bool RemotePlayer::isTeammate(bool whatWhenNoTeams) {
+    auto& rm = RoomManager::get();
+
+    if (!rm.getSettings().teams) {
+        return whatWhenNoTeams;
+    }
+
+    return m_teamId.has_value() && *m_teamId == rm.getCurrentTeamId();
 }
 
 }

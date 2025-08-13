@@ -21,7 +21,6 @@ namespace { namespace btnorder {
     static constexpr int Notice = 49;
 } }
 
-
 namespace globed {
 
 const CCSize ModUserPopup::POPUP_SIZE { 340.f, 210.f };

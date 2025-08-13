@@ -44,6 +44,10 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         float m_lastDataRequest = 0.f;
         std::optional<MessageListener<msg::LevelDataMessage>> m_levelDataListener;
 
+        uint8_t m_deathCount = 0;
+        bool m_lastLocalDeathReal = false;
+        bool m_isFakingDeath = false;
+
         CCNode* m_playerNode = nullptr;
     };
 
@@ -81,6 +85,10 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     bool isCurrentPlayLayer();
     void handlePlayerJoin(int playerId);
     void handlePlayerLeave(int playerId);
+    void handleLocalPlayerDeath(PlayerObject*);
+    /// Kills the local player, by default the death will not be counted as 'real'.
+    /// If this is unwanted, pass `false`
+    void killLocalPlayer(bool fake = true);
 
     // Functions for the outside :tm:
     static GlobedGJBGL* get(GJBaseGameLayer* base = nullptr);

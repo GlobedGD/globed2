@@ -20,6 +20,7 @@ public:
     bool isTeamInitialized() const;
     void initData(const PlayerDisplayData& data, uint16_t teamId = 0xffff);
     void updateTeam(uint16_t teamId);
+    bool isTeammate(bool whatWhenNoTeams = true);
 
 private:
     friend class VisualPlayer;
@@ -29,6 +30,7 @@ private:
     cocos2d::CCNode* m_parentNode = nullptr;
     VisualPlayer* m_player1 = nullptr;
     VisualPlayer* m_player2 = nullptr;
+    std::optional<uint16_t> m_teamId;
 };
 
 }

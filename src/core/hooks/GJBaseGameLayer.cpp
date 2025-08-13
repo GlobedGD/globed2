@@ -275,7 +275,7 @@ PlayerState GlobedGJBGL::getPlayerState() {
     out.accountId = globed::cachedSingleton<GJAccountManager>()->m_accountID;
     out.timestamp = fields.m_timeCounter;
     out.frameNumber = 0;
-    out.deathCount = 0;
+    out.deathCount = fields.m_deathCount;
 
     // this function (getCurrentPercent) only exists in playlayer and not the editor, so reimpl it
     auto getPercent = [&](){
@@ -307,7 +307,7 @@ PlayerState GlobedGJBGL::getPlayerState() {
     out.isPracticing = m_isPracticeMode;
     out.isInEditor = this->isEditor();
     out.isEditorBuilding = out.isInEditor && m_playbackMode == PlaybackMode::Not;
-    out.isLastDeathReal = true; // TODO: deathlink
+    out.isLastDeathReal = fields.m_lastLocalDeathReal;
 
     auto getPlayerObjState = [this, &fields](PlayerObject* obj, PlayerObjectData& out){
         using enum PlayerIconType;
@@ -405,6 +405,23 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     fields.m_players.erase(playerId);
     fields.m_interpolator.removePlayer(playerId);
     PlayerCacheManager::get().evictToLayer2(playerId);
+}
+
+void GlobedGJBGL::handleLocalPlayerDeath(PlayerObject* obj) {
+    auto& fields = *m_fields.self();
+
+    fields.m_deathCount++;
+    fields.m_lastLocalDeathReal = !fields.m_isFakingDeath;
+}
+
+void GlobedGJBGL::killLocalPlayer(bool fake) {
+    auto& fields = *m_fields.self();
+
+    fields.m_isFakingDeath = fake;
+
+    this->destroyPlayer(m_player1, nullptr);
+
+    fields.m_isFakingDeath = false;
 }
 
 GlobedGJBGL* GlobedGJBGL::get(GJBaseGameLayer* base) {
