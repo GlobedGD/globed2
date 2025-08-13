@@ -121,6 +121,7 @@ public:
     void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply);
     void sendAdminNoticeEveryone(const std::string& message);
     void sendAdminLogin(const std::string& password);
+    void sendAdminFetchUser(const std::string& query);
 
     // Both servers
     void sendJoinSession(SessionId id);

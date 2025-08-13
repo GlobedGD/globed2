@@ -30,7 +30,8 @@
             "resources/misc/*.png",
             "resources/menu/*.png",
             "resources/editor/*.png",
-            "resources/roles/*.png"
+            "resources/roles/*.png",
+            "resources/mod/*.png"
         ]
     }
 }

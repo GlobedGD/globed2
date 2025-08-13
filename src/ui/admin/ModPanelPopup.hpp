@@ -9,6 +9,8 @@ public:
     static const cocos2d::CCSize POPUP_SIZE;
 
 protected:
+    geode::TextInput* m_queryInput;
+
     bool setup();
 };
 

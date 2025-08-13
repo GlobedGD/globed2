@@ -482,4 +482,47 @@ inline msg::TeamsUpdatedMessage decodeTeamsUpdatedMessage(const schema::main::Te
     return out;
 }
 
+/// User punishment
+
+inline UserPunishment decodeUserPunishment(const schema::main::UserPunishment::Reader& reader) {
+    UserPunishment out{};
+    out.issuedBy = reader.getIssuedBy();
+    out.issuedAt = reader.getIssuedAt();
+    out.expiresAt = reader.getExpiresAt();
+    out.reason = reader.getReason();
+    return out;
+}
+
+/// Admin fetch response message
+
+inline msg::AdminFetchResponseMessage decodeAdminFetchResponseMessage(const schema::main::AdminFetchResponseMessage::Reader& reader) {
+    msg::AdminFetchResponseMessage out{};
+
+    out.accountId = reader.getAccountId();
+    out.found = reader.getFound();
+    out.whitelisted = reader.getWhitelisted();
+    out.punishmentCount = reader.getPunishmentCount();
+
+    auto roles = reader.getRoles();
+    out.roles.reserve(roles.size());
+
+    for (auto role : roles) {
+        out.roles.push_back(role);
+    }
+
+    if (reader.hasActiveBan()) {
+        out.activeBan = decodeUserPunishment(reader.getActiveBan());
+    }
+
+    if (reader.hasActiveRoomBan()) {
+        out.activeRoomBan = decodeUserPunishment(reader.getActiveRoomBan());
+    }
+
+    if (reader.hasActiveMute()) {
+        out.activeMute = decodeUserPunishment(reader.getActiveMute());
+    }
+
+    return out;
+}
+
 }

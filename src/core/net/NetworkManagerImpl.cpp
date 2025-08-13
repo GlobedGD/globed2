@@ -833,6 +833,13 @@ void NetworkManagerImpl::sendAdminLogin(const std::string& password) {
     });
 }
 
+void NetworkManagerImpl::sendAdminFetchUser(const std::string& query) {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto fetchUser = msg.initAdminFetchUser();
+        fetchUser.setQuery(query);
+    });
+}
+
 void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener) {
     std::type_index index{ty};
     auto listeners = m_listeners.lock();
@@ -1060,7 +1067,9 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::ADMIN_FETCH_RESPONSE: {
-            // TODO
+            auto result = msg.getAdminFetchResponse();
+
+            this->invokeListeners(data::decodeAdminFetchResponseMessage(result));
         } break;
 
         case CentralMessage::ADMIN_LOGS_RESPONSE: {

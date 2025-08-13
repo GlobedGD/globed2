@@ -7,6 +7,7 @@
 #include "UserRole.hpp"
 #include "Event.hpp"
 #include "RoomTeam.hpp"
+#include "UserPunishment.hpp"
 
 namespace globed::msg {
 
@@ -105,6 +106,17 @@ struct LevelDataMessage {
 struct AdminResultMessage {
     bool success;
     std::string error;
+};
+
+struct AdminFetchResponseMessage {
+    int accountId;
+    bool found;
+    bool whitelisted;
+    std::vector<uint8_t> roles;
+    std::optional<UserPunishment> activeBan;
+    std::optional<UserPunishment> activeRoomBan;
+    std::optional<UserPunishment> activeMute;
+    size_t punishmentCount;
 };
 
 }

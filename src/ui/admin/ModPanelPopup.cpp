@@ -1,6 +1,7 @@
 #include "ModPanelPopup.hpp"
 #include "ModNoticeSetupPopup.hpp"
 #include "ModAuditLogPopup.hpp"
+#include "ModUserPopup.hpp"
 
 #include <UIBuilder.hpp>
 
@@ -19,11 +20,22 @@ bool ModPanelPopup::setup() {
         .parent(m_mainLayer)
         .collect();
 
-    Build<TextInput>::create(200.f, "Username / ID", "chatFont.fnt")
+    m_queryInput = Build<TextInput>::create(200.f, "Username / ID", "chatFont.fnt")
         .parent(playerContainer);
 
     Build<CCSprite>::createSpriteName("GJ_longBtn05_001.png")
         .scale(0.9f)
+        .intoMenuItem([this] {
+            auto query = geode::utils::string::trim(m_queryInput->getString());
+
+            if (query.empty()) {
+                return;
+            }
+
+            auto popup = ModUserPopup::create(0);
+            popup->startLoadingProfile(query);
+            popup->show();
+        })
         .parent(playerContainer);
 
     playerContainer->updateLayout();
