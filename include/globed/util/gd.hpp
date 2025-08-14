@@ -32,4 +32,12 @@ struct GameLevelKind {
 /// * If it's a custom level, the `kind` will be set to `Custom` and the `level` will be null.
 GameLevelKind classifyLevel(int levelId);
 
+enum class GameVariable {
+    FastRespawn = 52,
+    FastMenu = 168,
+};
+
+bool gameVariable(GameVariable var);
+void setGameVariable(GameVariable var, bool state);
+
 }

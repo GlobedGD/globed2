@@ -32,8 +32,10 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
     m_player1->m_remotePlayer = this;
     m_player2->m_remotePlayer = this;
 
-    m_player1->updateDisplayData(DUMMY_DATA);
-    m_player2->updateDisplayData(DUMMY_DATA);
+    m_data = DUMMY_DATA;
+
+    m_player1->updateDisplayData();
+    m_player2->updateDisplayData();
 }
 
 RemotePlayer::~RemotePlayer() {
@@ -71,9 +73,10 @@ bool RemotePlayer::isTeamInitialized() const {
 
 void RemotePlayer::initData(const PlayerDisplayData& data, uint16_t teamId) {
     m_dataInitialized = true;
+    m_data = data;
 
-    m_player1->updateDisplayData(data);
-    m_player2->updateDisplayData(data);
+    m_player1->updateDisplayData();
+    m_player2->updateDisplayData();
 }
 
 void RemotePlayer::updateTeam(uint16_t teamId) {
@@ -90,6 +93,18 @@ bool RemotePlayer::isTeammate(bool whatWhenNoTeams) {
     }
 
     return m_teamId.has_value() && *m_teamId == rm.getCurrentTeamId();
+}
+
+VisualPlayer* RemotePlayer::player1() {
+    return m_player1;
+}
+
+VisualPlayer* RemotePlayer::player2() {
+    return m_player2;
+}
+
+PlayerDisplayData& RemotePlayer::displayData() {
+    return m_data;
 }
 
 }

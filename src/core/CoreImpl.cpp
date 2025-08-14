@@ -101,4 +101,10 @@ void CoreImpl::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const Pla
     });
 }
 
+void CoreImpl::onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onUserlistSetup(container, accountId, myself, popup);
+    });
+}
+
 }

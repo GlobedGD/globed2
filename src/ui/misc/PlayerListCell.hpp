@@ -21,6 +21,7 @@ public:
 protected:
     int m_accountId;
     int m_userId;
+    std::string m_username;
     CCMenuItemSpriteExtra* m_usernameBtn;
     cue::PlayerIcon* m_cubeIcon;
     cocos2d::CCNode* m_leftContainer;

@@ -22,10 +22,16 @@ public:
     void updateTeam(uint16_t teamId);
     bool isTeammate(bool whatWhenNoTeams = true);
 
+    VisualPlayer* player1();
+    VisualPlayer* player2();
+
+    PlayerDisplayData& displayData();
+
 private:
     friend class VisualPlayer;
 
     PlayerState m_state;
+    PlayerDisplayData m_data;
     bool m_dataInitialized = false;
     cocos2d::CCNode* m_parentNode = nullptr;
     VisualPlayer* m_player1 = nullptr;

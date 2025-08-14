@@ -92,4 +92,16 @@ GameLevelKind classifyLevel(int levelId) {
     }
 }
 
+static std::string gvkey(GameVariable var) {
+    return fmt::format("{:04}", static_cast<int>(var));
+}
+
+bool gameVariable(GameVariable var) {
+    return globed::cachedSingleton<GameManager>()->getGameVariable(gvkey(var).c_str());
+}
+
+void setGameVariable(GameVariable var, bool state) {
+    globed::cachedSingleton<GameManager>()->setGameVariable(gvkey(var).c_str(), state);
+}
+
 }

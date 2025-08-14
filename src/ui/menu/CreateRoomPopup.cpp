@@ -2,6 +2,7 @@
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/ValueManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <globed/util/gd.hpp>
 #include <ui/misc/LoadingPopup.hpp>
 
 #include <UIBuilder.hpp>
@@ -171,6 +172,8 @@ bool CreateRoomPopup::setup() {
                         globed::alert("Error", "No game servers are available to host this room. This is a <cr>server issue</c>, please <cj>reconnect to the server and try again</c>.");
                         return;
                     }
+
+                    m_settings.fasterReset = gameVariable(GameVariable::FastRespawn);
 
                     this->waitForResponse();
 

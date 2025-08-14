@@ -2,6 +2,7 @@
 #include <globed/core/game/RemotePlayer.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <Geode/modify/PlayLayer.hpp>
 
 using namespace geode::prelude;
 
@@ -25,5 +26,28 @@ void DeathlinkModule::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, co
 
     gjbgl->killLocalPlayer();
 }
+
+struct GLOBED_MODIFY_ATTR DLPlayLayer : geode::Modify<DLPlayLayer, PlayLayer> {
+    static void onModify(auto& self) {
+        (void) self.setHookPriority("PlayLayer::resetLevel", -999);
+
+        GLOBED_CLAIM_HOOKS(DeathlinkModule::get(), self,
+            "PlayLayer::resetLevel",
+        );
+    }
+
+    $override
+    void resetLevel() {
+        auto gameLayer = GlobedGJBGL::get();
+
+        if (gameLayer && gameLayer->active() && gameLayer->isManuallyResetting()) {
+            // if the user hit R or otherwise manually reset the level, just play it as a normal death instead
+            gameLayer->killLocalPlayer();
+            return;
+        }
+
+        PlayLayer::resetLevel();
+    }
+};
 
 }

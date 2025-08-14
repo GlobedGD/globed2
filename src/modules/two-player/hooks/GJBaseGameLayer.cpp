@@ -7,10 +7,40 @@
 namespace globed {
 
 struct GLOBED_MODIFY_ATTR TPMBaseGameLayer : geode::Modify<TPMBaseGameLayer, GJBaseGameLayer> {
+    static void onModify(auto& self) {
+        GLOBED_CLAIM_HOOKS(TwoPlayerModule::get(), self,
+            "GJBaseGameLayer::updateCamera",
+            "GJBaseGameLayer::update",
+        );
+    }
+
     $override
     void updateCamera(float dt) {
-        // TODO: stuff
+        auto& mod = TwoPlayerModule::get();
+
+        bool fixCamera = m_gameState.m_isDualMode && mod.isLinked() && mod.isPlayer2();
+        if (!fixCamera) {
+            GJBaseGameLayer::updateCamera(dt);
+            return;
+        }
+
+        auto origPos = m_player1->getPosition();
+        m_player1->setPosition({m_player2->getPositionX(), origPos.y});
         GJBaseGameLayer::updateCamera(dt);
+        m_player1->setPosition(origPos);
+    }
+
+    $override
+    void update(float dt) {
+        GJBaseGameLayer::update(dt);
+
+        auto& mod = TwoPlayerModule::get();
+        if (!mod.isLinked()) {
+            auto pl = PlayLayer::get();
+            if (pl && !pl->m_isPaused) {
+                pl->pauseGame(false);
+            }
+        }
     }
 };
 

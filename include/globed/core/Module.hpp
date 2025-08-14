@@ -2,6 +2,7 @@
 
 #include <Geode/Result.hpp>
 #include <Geode/utils/terminate.hpp>
+#include <globed/core/data/PlayerDisplayData.hpp>
 
 #include <core/game/Interpolator.hpp>
 
@@ -19,6 +20,7 @@ namespace globed {
 
 class Core;
 class RemotePlayer;
+class UserListPopup;
 struct GlobedGJBGL;
 
 enum class AutoEnableMode {
@@ -96,6 +98,8 @@ public:
     /// This function can only be called if linking to Globed.
     geode::Result<> disable();
 
+    bool isEnabled() const;
+
 protected:
     Module(Module&&) = default;
     Module& operator=(Module&&) = default;
@@ -123,6 +127,8 @@ protected:
     virtual void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {}
     /// Called when another player dies on the level.
     virtual void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) {}
+    /// Called on each player when reloading the player list in the pause menu. Use this to add buttons.
+    virtual void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {}
 
 private:
     friend class Core;

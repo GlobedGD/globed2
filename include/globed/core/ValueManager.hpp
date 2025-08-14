@@ -1,6 +1,8 @@
 #pragma once
 
 #include <globed/util/singleton.hpp>
+#include <globed/util/ConstexprString.hpp>
+#include "Constants.hpp"
 
 namespace globed {
 

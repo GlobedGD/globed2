@@ -17,15 +17,15 @@ public:
     void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState);
     void cleanupObjectLayer();
 
-    void updateDisplayData(const PlayerDisplayData& icons);
+    void updateDisplayData();
     void updateTeam(uint16_t teamId);
     void playDeathEffect();
+    cocos2d::CCPoint getLastPosition();
 
 private:
     friend class RemotePlayer;
 
     RemotePlayer* m_remotePlayer = nullptr;
-    PlayerIconData m_icons;
     cocos2d::ccColor3B m_color1{}, m_color2{};
     bool m_teamInitialized = false;
     geode::Ref<NameLabel> m_nameLabel;
@@ -60,6 +60,8 @@ private:
     cocos2d::CCPoint m_prevPosition{};
 
     bool init(GJBaseGameLayer* gameLayer, CCNode* playerNode, bool isSecond);
+    PlayerIconData& icons();
+    PlayerDisplayData& displayData();
     void updateOpacity();
     void updateIconType(PlayerIconType iconType);
     void updateRobotAnimation();

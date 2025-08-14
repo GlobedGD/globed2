@@ -47,6 +47,9 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         uint8_t m_deathCount = 0;
         bool m_lastLocalDeathReal = false;
         bool m_isFakingDeath = false;
+        bool m_manualReset = false;
+        bool m_safeMode = false;
+        bool m_permanentSafeMode = false;
 
         CCNode* m_playerNode = nullptr;
     };
@@ -83,18 +86,27 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     bool isPaused(bool checkCurrent = true);
     bool isEditor();
     bool isCurrentPlayLayer();
+    bool isManuallyResetting();
+    bool isSafeMode();
     void handlePlayerJoin(int playerId);
     void handlePlayerLeave(int playerId);
     void handleLocalPlayerDeath(PlayerObject*);
+    void setPermanentSafeMode();
     /// Kills the local player, by default the death will not be counted as 'real'.
     /// If this is unwanted, pass `false`
     void killLocalPlayer(bool fake = true);
+
+    void resetSafeMode();
+    void toggleSafeMode();
+
+    void pausedUpdate(float dt);
 
     // Functions for the outside :tm:
     static GlobedGJBGL* get(GJBaseGameLayer* base = nullptr);
     bool active();
     CameraDirection getCameraDirection();
     GameCameraState getCameraState();
+    RemotePlayer* getPlayer(int playerId);
 
 private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);

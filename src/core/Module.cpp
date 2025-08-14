@@ -34,6 +34,10 @@ Result<> Module::disable() {
     return Ok();
 }
 
+bool Module::isEnabled() const {
+    return m_enabled;
+}
+
 Result<> Module::enableHooks() {
     for (auto& hook : m_hooks) {
         // note that we dont have to check if the hook is already enabled, geode just returns Ok, unlike patches

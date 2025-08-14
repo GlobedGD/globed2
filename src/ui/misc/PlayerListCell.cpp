@@ -23,6 +23,7 @@ bool PlayerListCell::init(
 
     m_accountId = accountId;
     m_userId = userId;
+    m_username = username;
 
     m_leftContainer = Build<CCNode>::create()
         .layout(RowLayout::create()
@@ -33,8 +34,7 @@ bool PlayerListCell::init(
         .contentSize(cellSize.width - 20.f, cellSize.height)
         .pos(10.f, cellSize.height / 2.f)
         .anchorPoint(0.f, 0.5f)
-        .parent(this)
-        ;
+        .parent(this);
 
     m_cubeIcon = Build(cue::PlayerIcon::create(icons))
         .id("icon")

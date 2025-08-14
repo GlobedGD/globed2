@@ -377,6 +377,14 @@ bool GlobedGJBGL::isCurrentPlayLayer() {
     return static_cast<GJBaseGameLayer*>(pl) == this;
 }
 
+bool GlobedGJBGL::isManuallyResetting() {
+    return m_fields->m_manualReset;
+}
+
+bool GlobedGJBGL::isSafeMode() {
+    return m_fields->m_safeMode;
+}
+
 void GlobedGJBGL::handlePlayerJoin(int playerId) {
     auto& fields = *m_fields.self();
 
@@ -414,6 +422,13 @@ void GlobedGJBGL::handleLocalPlayerDeath(PlayerObject* obj) {
     fields.m_lastLocalDeathReal = !fields.m_isFakingDeath;
 }
 
+void GlobedGJBGL::setPermanentSafeMode() {
+    auto& fields = *m_fields.self();
+
+    fields.m_permanentSafeMode = true;
+    fields.m_safeMode = true;
+}
+
 void GlobedGJBGL::killLocalPlayer(bool fake) {
     auto& fields = *m_fields.self();
 
@@ -422,6 +437,22 @@ void GlobedGJBGL::killLocalPlayer(bool fake) {
     this->destroyPlayer(m_player1, nullptr);
 
     fields.m_isFakingDeath = false;
+}
+
+void GlobedGJBGL::pausedUpdate(float dt) {
+    // unpause dash effects and death effects
+    for (auto* child : CCArrayExt<CCNode*>(m_objectLayer->getChildren())) {
+        // TODO
+        // int tag1 = ComplexVisualPlayer::SPIDER_DASH_CIRCLE_WAVE_TAG;
+        // int tag2 = ComplexVisualPlayer::SPIDER_DASH_SPRITE_TAG;
+        // int tag3 = ComplexVisualPlayer::DEATH_EFFECT_TAG;
+
+        // int ctag = child->getTag();
+
+        // if (ctag == tag1 || ctag == tag2 || ctag == tag3) {
+        //     child->resumeSchedulerAndActions();
+        // }
+    }
 }
 
 GlobedGJBGL* GlobedGJBGL::get(GJBaseGameLayer* base) {
@@ -456,6 +487,14 @@ GameCameraState GlobedGJBGL::getCameraState() {
     state.zoom = m_objectLayer->getScale();
 
     return state;
+}
+
+RemotePlayer* GlobedGJBGL::getPlayer(int playerId) {
+    auto& players = m_fields->m_players;
+
+    auto it = players.find(playerId);
+
+    return it == players.end() ? nullptr : it->second.get();
 }
 
 void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {

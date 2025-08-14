@@ -12,12 +12,14 @@ namespace globed {
 // 0xf010 - EVENT_SPAWN_GROUP
 // 0xf011 - EVENT_SET_ITEM
 // 0xf100 - EVENT_2P_LINK_REQUEST
+// 0xf101 - EVENT_2P_UNLINK
 
 constexpr uint16_t EVENT_GLOBED_BASE = 0xf000;
 constexpr uint16_t EVENT_COUNTER_CHANGE = 0xf001;
 constexpr uint16_t EVENT_SPAWN_GROUP = 0xf010;
 constexpr uint16_t EVENT_SET_ITEM = 0xf011;
 constexpr uint16_t EVENT_2P_LINK_REQUEST = 0xf100;
+constexpr uint16_t EVENT_2P_UNLINK = 0xf101;
 
 constexpr uint16_t EVENT_CUSTOM_BASE = 0xf800;
 
