@@ -15,11 +15,12 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool VisualPlayer::init(GJBaseGameLayer* gameLayer, CCNode* playerNode, bool isSecond) {
+bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {
     if (!PlayerObject::init(1, 1, gameLayer, gameLayer->m_objectLayer, gameLayer->m_isEditor)) {
         return false;
     }
 
+    m_remotePlayer = rp;
     m_isSecond = isSecond;
     m_isEditor = gameLayer->m_isEditor;
     m_isPlatformer = gameLayer->m_level->isPlatformer();
@@ -32,8 +33,9 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, CCNode* playerNode, bool isS
 
     // create the name label
     bool showName = setting<bool>("core.player.show-names") && (!isSecond || setting<bool>("core.player.dual-name"));
+    m_forceHideName = !showName;
 
-    m_nameLabel = Build<NameLabel>::create("")
+    m_nameLabel = Build<NameLabel>::create("", true)
         .visible(showName)
         .pos(0.f, NAME_OFFSET)
         .parent(playerNode)
@@ -111,6 +113,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     }
 
     this->setVisible(shouldBeVisible);
+    m_nameLabel->setVisible(shouldBeVisible && !m_forceHideName);
     if (!shouldBeVisible) {
         m_playEffects = false;
         if (m_regularTrail) m_regularTrail->setVisible(false);
@@ -590,9 +593,9 @@ CCPoint VisualPlayer::getLastPosition() {
     return m_prevPosition;
 }
 
-VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, CCNode* playerNode, bool isSecond) {
+VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {
     auto ret = new VisualPlayer();
-    if (ret->init(gameLayer, playerNode, isSecond)) {
+    if (ret->init(gameLayer, rp, playerNode, isSecond)) {
         ret->autorelease();
         return ret;
     }

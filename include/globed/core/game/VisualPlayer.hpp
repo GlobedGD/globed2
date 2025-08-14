@@ -13,7 +13,7 @@ struct GameCameraState;
 
 class VisualPlayer : public PlayerObject {
 public:
-    static VisualPlayer* create(GJBaseGameLayer* gameLayer, CCNode* playerNode, bool isSecond);
+    static VisualPlayer* create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond);
     void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState);
     void cleanupObjectLayer();
 
@@ -38,6 +38,7 @@ private:
     bool m_isSecond = false;
     bool m_isPlatformer = false;
     bool m_isEditor = false;
+    bool m_forceHideName = false;
 
     PlayerIconType m_prevMode = PlayerIconType::Unknown;
 
@@ -59,7 +60,7 @@ private:
 
     cocos2d::CCPoint m_prevPosition{};
 
-    bool init(GJBaseGameLayer* gameLayer, CCNode* playerNode, bool isSecond);
+    bool init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond);
     PlayerIconData& icons();
     PlayerDisplayData& displayData();
     void updateOpacity();
