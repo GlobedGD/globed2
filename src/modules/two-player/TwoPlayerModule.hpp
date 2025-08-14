@@ -26,7 +26,12 @@ public:
         return "";
     }
 
+    void sendLinkEvent(int player, bool player1);
+
 private:
+    void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) override;
+    void onJoinLevelPostInit(GlobedGJBGL* gjbgl) override;
+    void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) override;
 };
 
 }

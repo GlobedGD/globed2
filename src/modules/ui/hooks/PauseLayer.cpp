@@ -2,6 +2,7 @@
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <modules/ui/UIModule.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PauseLayer.hpp>
@@ -15,6 +16,10 @@ static bool g_force = false;
 struct GLOBED_MODIFY_ATTR HookedPauseLayer : geode::Modify<HookedPauseLayer, PauseLayer> {
     static void onModify(auto& self) {
         (void) self.setHookPriority("PauseLayer::onQuit", -10000);
+
+        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
+            "PauseLayer::onQuit",
+        );
     }
 
     $override

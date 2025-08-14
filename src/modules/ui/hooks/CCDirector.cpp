@@ -1,6 +1,7 @@
 #include <globed/config.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <ui/menu/GlobedMenuLayer.hpp>
+#include <modules/ui/UIModule.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/CCDirector.hpp>
@@ -39,6 +40,14 @@ static bool block(CCScene* scene = nullptr) {
 }
 
 struct GLOBED_MODIFY_ATTR HookedCCDirector : geode::Modify<HookedCCDirector, CCDirector> {
+    static void onModify(auto& self) {
+        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
+            "cocos2d::CCDirector::pushScene",
+            "cocos2d::CCDirector::replaceScene",
+            "cocos2d::CCDirector::popScene",
+        );
+    }
+
     $override
     bool pushScene(CCScene* scene) {
         return block(scene) ? false : CCDirector::pushScene(scene);
@@ -54,6 +63,8 @@ struct GLOBED_MODIFY_ATTR HookedCCDirector : geode::Modify<HookedCCDirector, CCD
         if (block()) return;
         CCDirector::popScene();
     }
+
+    // TODO: popscenewithtransition?
 };
 
 }

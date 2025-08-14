@@ -10,7 +10,6 @@ namespace globed {
 DeathlinkModule::DeathlinkModule() {}
 
 void DeathlinkModule::onModuleInit() {
-    log::info("");
     this->setAutoEnableMode(AutoEnableMode::Level);
 }
 
