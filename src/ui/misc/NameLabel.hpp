@@ -6,7 +6,7 @@ namespace globed {
 
 class NameLabel : public cocos2d::CCMenu {
 public:
-    static NameLabel* create(const std::string& name, bool bigFont = false);
+    static NameLabel* create(const std::string& name, bool alignMiddle = false, bool bigFont = false);
 
     void makeClickable(std::function<void(CCMenuItemSpriteExtra*)> callback);
     void updateName(const std::string& name);
@@ -22,7 +22,7 @@ private:
     cocos2d::CCLabelBMFont* m_label = nullptr;
     cocos2d::CCLabelBMFont* m_labelShadow = nullptr;
     cocos2d::CCLabelBMFont* m_teamLabel = nullptr;
-    cocos2d::CCNode* m_labelContainer = nullptr;
+    geode::Ref<cocos2d::CCNode> m_labelContainer = nullptr;
     CCMenuItemSpriteExtra* m_labelButton = nullptr;
     cocos2d::CCNode* m_badgeContainer = nullptr;
     std::function<void(CCMenuItemSpriteExtra*)> m_callback;
@@ -30,7 +30,7 @@ private:
     bool m_multipleBadges = false;
     bool m_shadow = true;
 
-    bool init(const std::string& name, bool bigFont);
+    bool init(const std::string& name, bool alignMiddle, bool bigFont);
     void resizeBadgeContainer();
     void onClick(CCMenuItemSpriteExtra* btn);
 };

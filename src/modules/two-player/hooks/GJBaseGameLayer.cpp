@@ -1,8 +1,11 @@
 #include <modules/two-player/TwoPlayerModule.hpp>
 #include <globed/config.hpp>
+#include <core/hooks/GJBaseGameLayer.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
+
+using namespace geode::prelude;
 
 namespace globed {
 
@@ -37,7 +40,8 @@ struct GLOBED_MODIFY_ATTR TPMBaseGameLayer : geode::Modify<TPMBaseGameLayer, GJB
         auto& mod = TwoPlayerModule::get();
         if (!mod.isLinked()) {
             auto pl = PlayLayer::get();
-            if (pl && !pl->m_isPaused) {
+            if (pl && GlobedGJBGL::get(pl)->active() && !pl->m_isPaused) {
+                log::debug("force pausing game");
                 pl->pauseGame(false);
             }
         }

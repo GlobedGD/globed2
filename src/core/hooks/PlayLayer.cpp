@@ -115,7 +115,9 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
     $override
     void showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
         // doesn't actually change any progress but this stops the NEW BEST popup from showing up while cheating/jumping to a player
-        if (!GlobedGJBGL::get(this)->isSafeMode()) PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
+        if (!GlobedGJBGL::get(this)->isSafeMode()) {
+            PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
+        }
     }
 };
 

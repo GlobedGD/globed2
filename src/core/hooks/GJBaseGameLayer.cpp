@@ -9,6 +9,7 @@
 
 #include <UIBuilder.hpp>
 #include <asp/time/Instant.hpp>
+#include <qunet/util/algo.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -139,12 +140,42 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     float dt = tsdt / CCScheduler::get()->getTimeScale();
     fields.m_timeCounter += dt;
 
-    float p1x = m_player1->getPosition().x;
-    float p1xdiff = p1x - fields.m_lastP1XPosition;
-    fields.m_lastP1XPosition = p1x;
+    auto camPos = m_gameState.m_cameraPosition;
+
+    // calculate camera delta
+    CCPoint cameraDelta = camPos - fields.m_lastCameraPos;
+    fields.m_lastCameraPos = camPos;
+
+    CCPoint cameraSpeed = cameraDelta / dt; // TODO: or tsdt?
+    fields.m_cameraSpeedMeasurements.push_back({fields.m_timeCounter, cameraSpeed});
+
+    // store up to 200ms of data
+    while (fields.m_timeCounter - fields.m_cameraSpeedMeasurements.front().first > 0.2f) {
+        fields.m_cameraSpeedMeasurements.pop_front();
+    }
+
+    // calculate vector with the data
+    CCPoint sumVector{};
+    for (auto& [_, vec] : fields.m_cameraSpeedMeasurements) {
+        sumVector += vec;
+    }
+    CCPoint cameraVector = sumVector / fields.m_cameraSpeedMeasurements.size();
+    CCPoint avgVec = fields.m_lastAvgCameraVector;
+
+    // adjust using ema
+    if (!fields.m_cameraSpeedMeasurements.empty()) {
+        avgVec = CCPoint {
+            qn::exponentialMovingAverage(avgVec.x, cameraVector.x, 0.15),
+            qn::exponentialMovingAverage(avgVec.y, cameraVector.y, 0.15),
+        };
+    }
+
+    fields.m_lastAvgCameraVector = avgVec;
+
+    log::debug("cam pos: {}, delta: {}, vector: {}", camPos, cameraDelta, avgVec);
 
     // process stuff
-    fields.m_interpolator.tick(dt, p1xdiff);
+    fields.m_interpolator.tick(dt, cameraDelta, avgVec);
 
     fields.m_unknownPlayers.clear();
 
@@ -431,12 +462,23 @@ void GlobedGJBGL::setPermanentSafeMode() {
 
 void GlobedGJBGL::killLocalPlayer(bool fake) {
     auto& fields = *m_fields.self();
+    log::debug("Killing player");
 
     fields.m_isFakingDeath = fake;
 
     this->destroyPlayer(m_player1, nullptr);
 
     fields.m_isFakingDeath = false;
+}
+
+void GlobedGJBGL::resetSafeMode() {
+    auto& fields = *m_fields.self();
+    fields.m_safeMode = false;
+}
+
+void GlobedGJBGL::toggleSafeMode() {
+    auto& fields = *m_fields.self();
+    fields.m_safeMode = false;
 }
 
 void GlobedGJBGL::pausedUpdate(float dt) {

@@ -42,7 +42,7 @@ bool PlayerListCell::init(
 
     cue::rescaleToMatch(m_cubeIcon, cellSize.height * 0.7f);
 
-    m_nameLabel = Build(NameLabel::create(username, true))
+    m_nameLabel = Build(NameLabel::create(username, false, true))
         .scale(cellSize.height / 52.f)
         .with([&](auto lbl) {
             lbl->makeClickable(

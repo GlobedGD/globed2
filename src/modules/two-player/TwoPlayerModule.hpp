@@ -47,13 +47,12 @@ private:
     bool m_isPlayer2 = false;
     bool m_ignoreNoclip = false;
     std::optional<int> m_linkAttempt;
-    std::optional<MessageListener<msg::LevelDataMessage>> m_listener;
+    std::optional<MessageListenerImpl<msg::LevelDataMessage>*> m_listener;
     RemotePlayer* m_linkedRp = nullptr;
 
     geode::Result<> onDisabled() override;
 
     void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) override;
-    void onJoinLevelPostInit(GlobedGJBGL* gjbgl) override;
     void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) override;
     void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) override;
     void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) override;

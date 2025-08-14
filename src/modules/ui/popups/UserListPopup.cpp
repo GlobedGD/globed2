@@ -175,9 +175,12 @@ void UserListPopup::hardRefresh() {
 
     this->setTitle(fmt::format("Players ({})", players.size()));
 
+    bool createdSelf = false;
+
     for (auto& [playerId, player] : players) {
         if (playerId == cachedSingleton<GJAccountManager>()->m_accountID) {
             m_list->addCell(PlayerCell::createMyself(this));
+            createdSelf = true;
         } else if (player->isDataInitialized()) {
             auto& data = player->displayData();
             m_list->addCell(PlayerCell::create(data.accountId, data.userId, data.username, cue::Icons {
@@ -190,6 +193,11 @@ void UserListPopup::hardRefresh() {
         } else {
             log::warn("Uninitialized player, not adding to player list (ID {})", playerId);
         }
+    }
+
+    if (!createdSelf) {
+        m_list->addCell(PlayerCell::createMyself(this));
+        createdSelf = true;
     }
 
     auto selfId = cachedSingleton<GJAccountManager>()->m_accountID;

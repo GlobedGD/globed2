@@ -11,7 +11,7 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize LinkRequestPopup::POPUP_SIZE { 200.f, 140.f };
+const CCSize LinkRequestPopup::POPUP_SIZE { 270.f, 160.f };
 
 bool LinkRequestPopup::setup(int accountId, UserListPopup* popup) {
     auto gjbgl = GlobedGJBGL::get();
@@ -21,13 +21,13 @@ bool LinkRequestPopup::setup(int accountId, UserListPopup* popup) {
     m_userListPopup = popup;
 
     this->setTitle("Link Request");
-    m_title->setPosition(this->fromTop(10.f));
+    m_title->setPosition(this->fromTop(14.f));
 
     m_username = rp && rp->isDataInitialized() ? rp->displayData().username : "Unknown";
 
     Build<CCLabelBMFont>::create(m_username.c_str(), "bigFont.fnt")
         .scale(0.6f)
-        .pos(this->fromTop(30.f))
+        .pos(this->fromTop(35.f))
         .parent(m_mainLayer);
 
     // draw an icon
@@ -46,8 +46,8 @@ bool LinkRequestPopup::setup(int accountId, UserListPopup* popup) {
         .parent(m_mainLayer);
 
     m_loadingCircle = Build<cue::LoadingCircle>::create()
-        .scale(0.75f)
-        .pos(this->fromBottom(20.f))
+        .scale(0.4f)
+        .pos(this->fromBottom(23.f))
         .parent(m_mainLayer);
 
     m_loadText = Build<CCLabelBMFont>::create("Waiting for confirmation..", "bigFont.fnt")
@@ -59,8 +59,8 @@ bool LinkRequestPopup::setup(int accountId, UserListPopup* popup) {
     m_reqMenu = Build<CCMenu>::create()
         .layout(RowLayout::create()->setAutoScale(false))
         .ignoreAnchorPointForPos(false)
-        .pos(this->fromBottom(40.f))
-        .contentSize(140.f, 40.f)
+        .pos(this->fromBottom(30.f))
+        .contentSize(220.f, 40.f)
         .parent(m_mainLayer);
 
     Build<ButtonSprite>::create("Player 1", "bigFont.fnt", "GJ_button_01.png", 0.7f)
@@ -94,6 +94,7 @@ void LinkRequestPopup::link(bool p2) {
     m_reqMenu->setVisible(false);
     m_loadingCircle->fadeIn();
     m_loadText->setVisible(true);
+    m_startedWaiting = Instant::now();
 }
 
 void LinkRequestPopup::update(float dt) {
@@ -112,7 +113,7 @@ void LinkRequestPopup::update(float dt) {
     }
 
     // otherwise, just wait until timeout
-    if (m_startedWaiting.elapsed() > Duration::fromSecs(15)) {
+    if (m_waiting && m_startedWaiting.elapsed() > Duration::fromSecs(15)) {
         this->onClose(nullptr);
         globed::alert("Error", "Player took <cy>too long to respond</c>, link attempt was <cr>cancelled</c>.");
         return;

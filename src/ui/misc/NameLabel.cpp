@@ -7,7 +7,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool NameLabel::init(const std::string& name, bool bigFont) {
+bool NameLabel::init(const std::string& name, bool alignMiddle, bool bigFont) {
     if (!CCMenu::init()) return false;
 
     m_bigFont = bigFont;
@@ -22,7 +22,11 @@ bool NameLabel::init(const std::string& name, bool bigFont) {
 
     this->setAnchorPoint({0.5f, 0.5f});
     this->ignoreAnchorPointForPosition(false);
-    this->setLayout(RowLayout::create()->setGap(4.f)->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start));
+    this->setLayout(RowLayout::create()
+                ->setGap(4.f)
+                ->setAutoScale(false)
+                ->setAxisAlignment(alignMiddle ? AxisAlignment::Center : AxisAlignment::Start)
+    );
     this->setContentWidth(300.f);
     this->updateName(name);
 
@@ -63,7 +67,7 @@ void NameLabel::updateName(const char* name) {
         m_labelButton->removeFromParent();
     }
 
-    m_labelButton = Build(m_labelContainer)
+    m_labelButton = Build(*m_labelContainer)
         .intoMenuItem([this](auto btn) {
             this->onClick(btn);
         })
@@ -153,9 +157,9 @@ void NameLabel::setShadowEnabled(bool enabled) {
     }
 }
 
-NameLabel* NameLabel::create(const std::string& name, bool bigFont) {
+NameLabel* NameLabel::create(const std::string& name, bool alignMiddle, bool bigFont) {
     auto ret = new NameLabel();
-    if (ret->init(name, bigFont)) {
+    if (ret->init(name, alignMiddle, bigFont)) {
         ret->autorelease();
         return ret;
     }

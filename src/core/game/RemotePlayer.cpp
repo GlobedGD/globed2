@@ -17,13 +17,13 @@ static const PlayerDisplayData DUMMY_DATA = {
 RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode) : m_state(), m_parentNode(parentNode) {
     m_state.accountId = playerId;
 
-    Build<VisualPlayer>::create(gameLayer, m_parentNode, false)
+    Build<VisualPlayer>::create(gameLayer, this, m_parentNode, false)
         .id(fmt::format("{}-player1", playerId).c_str())
         .parent(m_parentNode)
         .visible(false)
         .store(m_player1);
 
-    Build<VisualPlayer>::create(gameLayer, m_parentNode, true)
+    Build<VisualPlayer>::create(gameLayer, this, m_parentNode, true)
         .id(fmt::format("{}-player2", playerId).c_str())
         .parent(m_parentNode)
         .visible(false)

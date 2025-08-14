@@ -21,8 +21,11 @@ struct GLOBED_MODIFY_ATTR HookedPauseLayer : geode::Modify<HookedPauseLayer, Pau
         );
     }
 
+    $override
     void onResume(CCObject* o) {
         auto& mod = TwoPlayerModule::get();
+        log::debug("Intercept unpause, linked: {}", mod.isLinked());
+
         if (!mod.isLinked()) {
             globed::quickPopup(
                 "Globed Error",

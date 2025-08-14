@@ -14,10 +14,12 @@ using namespace geode::prelude;
 namespace globed {
 
 TwoPlayerModule::TwoPlayerModule() {
-    m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const auto& msg) {
-        if (this->isEnabled()) {
+    m_listener = NetworkManagerImpl::get().listenGlobal<msg::LevelDataMessage>([](const auto& msg) {
+        auto& mod = TwoPlayerModule::get();
+
+        if (mod.isEnabled()) {
             for (auto& event : msg.events) {
-                this->handleEvent(event);
+                mod.handleEvent(event);
             }
         }
 
@@ -64,11 +66,13 @@ void TwoPlayerModule::onUserlistSetup(CCNode* container, int accountId, bool mys
         }
 
         Build<CCSprite>::createSpriteName("gj_linkBtnOff_001.png")
+            .scale(0.8f)
             .intoMenuItem([this, popup] {
                 this->unlink();
                 popup->hardRefresh();
             })
-            .id("2p-unlink");
+            .id("2p-unlink")
+            .parent(container);
 
         return;
     }
@@ -76,10 +80,12 @@ void TwoPlayerModule::onUserlistSetup(CCNode* container, int accountId, bool mys
     // otherwise, show a link button on all players
 
     Build<CCSprite>::createSpriteName("gj_linkBtn_001.png")
+        .scale(0.8f)
         .intoMenuItem([this, accountId, popup] {
             LinkRequestPopup::create(accountId, popup)->show();
         })
-        .id("2p-unlink");
+        .id("2p-unlink")
+        .parent(container);
 }
 
 void TwoPlayerModule::onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {

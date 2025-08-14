@@ -13,7 +13,7 @@ void scheduleUpdateFor(cocos2d::CCObject* obj);
 template <typename T>
 constexpr std::string_view getTypenameConstexpr() {
 #ifdef __clang__
-    constexpr auto pfx = sizeof("std::string_view getTypenameConstexpr() [T = ") - 1;
+    constexpr auto pfx = sizeof("std::string_view globed::getTypenameConstexpr() [T = ") - 1;
     constexpr auto sfx = sizeof("]") - 1;
     constexpr auto function = __PRETTY_FUNCTION__;
     constexpr auto len = sizeof(__PRETTY_FUNCTION__) - pfx - sfx - 1;

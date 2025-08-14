@@ -19,7 +19,7 @@ public:
     bool hasPlayer(int playerId) const;
     void updatePlayer(const PlayerState& player, float curTimestamp);
     void updateNoop(int accountId, float curTimestamp);
-    void tick(float dt, float p1xdiff);
+    void tick(float dt, cocos2d::CCPoint cameraDelta, cocos2d::CCPoint cameraVector);
 
     PlayerState& getPlayerState(int playerId, std::optional<PlayerDeath>& outDeath);
     PlayerState& getNewerState(int playerId);
@@ -42,7 +42,7 @@ private:
     std::unordered_map<int, LerpState> m_players;
     size_t m_stationaryFrames = 0;
 
-    bool isMainPlayerXStationary();
+    bool isCameraStationary();
 };
 
 }

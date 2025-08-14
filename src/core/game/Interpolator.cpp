@@ -78,17 +78,24 @@ void Interpolator::updateNoop(int accountId, float curTimestamp) {
     state.updatedAt = curTimestamp;
 }
 
+static bool areVectorsClose(const CCPoint& one, const CCPoint& two) {
+    return std::abs(one.x - two.x) + std::abs(one.y - two.y) < 0.1f;
+}
+
 static inline void lerpSpecific(
     const PlayerObjectData& older,
     const PlayerObjectData& newer,
+    float olderTime,
+    float newerTime,
     PlayerObjectData& out,
     float t,
-    float p1xdiff,
-    bool p1xStationary
+    CCPoint cameraDelta,
+    CCPoint cameraVector,
+    bool camStationary
 ) {
     out.copyFlagsFrom(older);
 
-    float newGuessedX = out.position.x + p1xdiff;
+    CCPoint newGuessed = out.position + cameraDelta;
 
     // i hate spider
     if (out.iconType == PlayerIconType::Spider && std::abs(older.position.y - newer.position.y) >= 33.f) {
@@ -98,16 +105,6 @@ static inline void lerpSpecific(
         out.position = older.position.lerp(newer.position, t);
     }
 
-    // if both us and this player are moving, try to use the guessed X position as long as it is close enough,
-    // this will result in smoother movement for an FPS that is not a factor of 240
-    // TODO: maybe only apply this modification if the camera is dynamic (moves with the player)
-    if (!p1xStationary && std::abs(older.position.x - newer.position.x) > 0.1f && std::abs(newGuessedX - out.position.x) < 3.0f) {
-        LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessedX);
-        out.position.x = newGuessedX;
-    }
-
-    // TODO: apply same smoothing to Y position
-
     // in platformer, a player may rotate by 180 degrees simply by moving left or right,
     // if that happens, do not interpolate the rotation
     if (older.isLookingLeft != newer.isLookingLeft && std::abs(normalizeAngle(newer.rotation - older.rotation)) >= 170.f) {
@@ -116,6 +113,36 @@ static inline void lerpSpecific(
         // rotation can wrap around, so we avoid using std::lerp
         out.rotation = lerpAngle(older.rotation, newer.rotation, t);
     }
+
+    // calculate speed vector
+    CCPoint speedVec{};
+    speedVec.x = static_cast<float>(newer.position.x - older.position.x) / (newerTime - olderTime);
+    speedVec.y = static_cast<float>(newer.position.y - older.position.y) / (newerTime - olderTime);
+
+    // if both us and this player are moving, try to use the guessed position as long as it is close enough,
+    // this will result in smoother movement for an FPS that is not a factor of 240
+
+    constexpr float closeAllowance = 20.0f;
+    constexpr float stillAllowance = 1.0f;
+
+    bool cameraMovesX = std::fabs(cameraVector.x) > stillAllowance;
+    bool cameraMovesY = std::fabs(cameraVector.y) > stillAllowance;
+
+    bool playerMovesX = std::fabs(speedVec.x) >= stillAllowance;
+    bool playerMovesY = std::fabs(speedVec.y) >= stillAllowance;
+
+    bool similarSpeedX = std::fabs(speedVec.x - cameraVector.x) < closeAllowance;
+    bool similarSpeedY = std::fabs(speedVec.y - cameraVector.y) < closeAllowance;
+
+    if (cameraMovesX && playerMovesX && similarSpeedX && std::abs(newGuessed.x - out.position.x) < 5.0f) {
+        LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessed.x);
+        out.position.x = newGuessed.x;
+    }
+
+    if (cameraMovesY && playerMovesY && similarSpeedY && std::abs(newGuessed.y - out.position.y) < 5.0f) {
+        LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessed.x);
+        out.position.x = newGuessed.x;
+    }
 }
 
 static inline void lerpPlayer(
@@ -123,8 +150,9 @@ static inline void lerpPlayer(
     const PlayerState& newer,
     PlayerState& out,
     float t,
-    float p1xdiff,
-    bool p1xStationary
+    CCPoint cameraDelta,
+    CCPoint cameraVector,
+    bool camStationary
 ) {
     out.accountId = older.accountId;
     out.timestamp = std::lerp(older.timestamp, newer.timestamp, t);
@@ -138,23 +166,23 @@ static inline void lerpPlayer(
     out.isEditorBuilding = older.isEditorBuilding;
     out.isLastDeathReal = older.isLastDeathReal;
 
-    lerpSpecific(older.player1, newer.player1, out.player1, t, p1xdiff, p1xStationary);
+    lerpSpecific(older.player1, newer.player1, older.timestamp, newer.timestamp, out.player1, t, cameraDelta, cameraVector, camStationary);
 
     // only lerp player2 if present in both frames
     if (newer.player2 && older.player2) {
         out.player2 = PlayerObjectData{};
-        lerpSpecific(*older.player2, *newer.player2, *out.player2, t, p1xdiff, p1xStationary);
+        lerpSpecific(*older.player2, *newer.player2, older.timestamp, newer.timestamp, *out.player2, t, cameraDelta, cameraVector, camStationary);
     }
 }
 
-void Interpolator::tick(float dt, float p1xdiff) {
-    if (p1xdiff == 0.0f) {
+void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
+    if (cameraDelta.isZero()) {
         m_stationaryFrames++;
     } else {
         m_stationaryFrames = 0;
     }
 
-    bool p1xStationary = this->isMainPlayerXStationary();
+    bool camStationary = this->isCameraStationary();
 
     for (auto& [playerId, player] : m_players) {
         if (player.frames.size() < 2) continue;
@@ -207,7 +235,7 @@ void Interpolator::tick(float dt, float p1xdiff) {
         float frameDelta = newer->timestamp - older->timestamp;
         float t = (player.timeCounter - older->timestamp) / frameDelta;
 
-        lerpPlayer(*older, *newer, player.interpolatedState, t, p1xdiff, p1xStationary);
+        lerpPlayer(*older, *newer, player.interpolatedState, t, cameraDelta, cameraVector, camStationary);
 
         LERP_LOG("[Interpolator] Lerp for {}: t = {}, timeCounter = {}, older ts = {}, newer ts = {}",
             playerId, t, player.timeCounter, older->timestamp, newer->timestamp
@@ -236,7 +264,7 @@ bool Interpolator::isPlayerStale(int playerId, float curTimestamp) {
     return std::abs(state.updatedAt - curTimestamp) > 0.5f;
 }
 
-bool Interpolator::isMainPlayerXStationary() {
+bool Interpolator::isCameraStationary() {
     float userFps = 1.f / CCDirector::get()->getAnimationInterval();
 
     // fps = 0-240, return frames > 0,
