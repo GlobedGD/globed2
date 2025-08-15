@@ -134,8 +134,8 @@ static inline void lerpSpecific(
     bool similarSpeedX = std::fabs(speedVec.x - cameraVector.x) < closeAllowance;
     bool similarSpeedY = std::fabs(speedVec.y - cameraVector.y) < closeAllowance;
 
-    float guessAllowanceX = std::fabs(cameraVector.x) / 60.f;
-    float guessAllowanceY = std::fabs(cameraVector.y) / 60.f;
+    float guessAllowanceX = std::fabs(cameraVector.x) / 50.f;
+    float guessAllowanceY = std::fabs(cameraVector.y) / 50.f;
 
     if (cameraMovesX && playerMovesX && similarSpeedX && std::abs(newGuessed.x - out.position.x) < guessAllowanceX) {
         LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessed.x);
