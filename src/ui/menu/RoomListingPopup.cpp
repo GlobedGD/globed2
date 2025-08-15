@@ -27,7 +27,7 @@ bool RoomListingPopup::setup() {
         return false;
     }
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE, ccColor4B{0x33, 0x44, 0x99, 255}, cue::ListBorderStyle::Comments))
+    m_list = Build(cue::ListNode::create(LIST_SIZE, cue::Brown, cue::ListBorderStyle::Comments))
         .anchorPoint(0.5f, 1.f)
         .pos(this->fromTop(40.f))
         .zOrder(2)
