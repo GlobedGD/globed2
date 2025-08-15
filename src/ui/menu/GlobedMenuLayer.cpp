@@ -442,10 +442,13 @@ void GlobedMenuLayer::initSideButtons() {
         LeftBtn::Disconnect,
         "btn-disconnect",
         [this] {
-            log::debug("disconnecting");
-            if (auto err = NetworkManagerImpl::get().disconnectCentral().err()) {
-                globed::toastError("{}", *err);
-            }
+            globed::quickPopup("Note", "Are you sure you want to <cr>disconnect</c> from the server?", "Cancel", "Yes", [](auto, bool yes) {
+                if (!yes) return;
+
+                if (auto err = NetworkManagerImpl::get().disconnectCentral().err()) {
+                    globed::toastError("{}", *err);
+                }
+            });
         }
     );
 
