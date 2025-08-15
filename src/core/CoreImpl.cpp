@@ -1,11 +1,18 @@
 #include "CoreImpl.hpp"
 #include <globed/core/SettingsManager.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
-CoreImpl::CoreImpl() {}
+CoreImpl::CoreImpl() {
+    m_loginOkListener = NetworkManagerImpl::get().listenGlobal<msg::CentralLoginOkMessage>([this](const auto& msg) {
+        this->onServerConnected();
+        return ListenerResult::Continue;
+    });
+}
+
 CoreImpl::~CoreImpl() {}
 
 Result<> CoreImpl::addModule(std::shared_ptr<Module> mod) {

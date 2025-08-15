@@ -100,7 +100,8 @@ namespace RightBtn {
 }
 
 namespace LeftBtn {
-    constexpr int Teams = 3;
+    constexpr int Disconnect = 100;
+    constexpr int Teams = 300;
 }
 
 }
@@ -413,8 +414,15 @@ void GlobedMenuLayer::initSideButtons() {
 
     constexpr static CCSize buttonSize {30.f, 30.f};
 
-    auto makeButton = [this](CCSprite* sprite, EditorBaseColor color, CCNode* parent, int zOrder, const char* id, auto cb) {
-        Build<EditorButtonSprite>::create(sprite, color)
+    auto makeButton = [this](CCSprite* sprite, std::optional<EditorBaseColor> color, CCNode* parent, int zOrder, const char* id, auto cb) {
+        CCSprite* spr;
+        if (color) {
+            spr = EditorButtonSprite::create(sprite, *color);
+        } else {
+            spr = sprite;
+        }
+
+        Build(spr)
             .with([&](auto btn) { cue::rescaleToMatch(btn, buttonSize); })
             .intoMenuItem([cb = std::move(cb)](auto) {
                 cb();
@@ -426,6 +434,20 @@ void GlobedMenuLayer::initSideButtons() {
     };
 
     /// Left side buttons
+
+    makeButton(
+        CCSprite::create("icon-leave-server.png"_spr),
+        std::nullopt,
+        m_leftSideMenu,
+        LeftBtn::Disconnect,
+        "btn-disconnect",
+        [this] {
+            log::debug("disconnecting");
+            if (auto err = NetworkManagerImpl::get().disconnectCentral().err()) {
+                globed::toastError("{}", *err);
+            }
+        }
+    );
 
     if (RoomManager::get().getSettings().teams) {
         makeButton(

@@ -2,6 +2,8 @@
 
 #include <globed/core/Module.hpp>
 #include <globed/core/Core.hpp>
+#include <globed/core/data/Messages.hpp>
+#include <globed/core/net/MessageListener.hpp>
 #include <core/game/Interpolator.hpp>
 #include <memory>
 
@@ -48,6 +50,7 @@ public:
 
 private:
     std::vector<std::shared_ptr<Module>> m_modules;
+    std::optional<MessageListenerImpl<msg::CentralLoginOkMessage>*> m_loginOkListener;
 
     template <typename F>
     void enableIf(F&& func) {

@@ -580,7 +580,9 @@ void NetworkManagerImpl::abortConnection(std::string reason) {
 void NetworkManagerImpl::onCentralDisconnected() {
     log::debug("connection to central server lost!");
 
-    CoreImpl::get().onServerDisconnected();
+    Loader::get()->queueInMainThread([this] {
+        CoreImpl::get().onServerDisconnected();
+    });
 
     m_finishedClosingNotify.notifyAll();
 
@@ -932,8 +934,6 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             if (!msg.newToken.empty()) {
                 this->setUToken(msg.newToken);
             }
-
-            CoreImpl::get().onServerConnected();
 
             this->invokeListeners(msg);
         } break;
