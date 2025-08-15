@@ -9,9 +9,9 @@ cue::PlayerIcon* RoomPlayer::createIcon() const {
         cue::Icons{
             .type = IconType::Cube,
             .id = this->cube,
-            .color1 = this->color1,
-            .color2 = this->color2,
-            .glowColor = this->glowColor,
+            .color1 = this->color1.asIdx(),
+            .color2 = this->color2.asIdx(),
+            .glowColor = this->glowColor.asIdx(),
         }
     );
 }
@@ -32,6 +32,7 @@ RoomPlayer RoomPlayer::createMyself() {
     if (gm->m_playerGlow) {
         out.glowColor = gm->m_playerGlowColor;
     }
+
     out.session = SessionId{};
     return out;
 }

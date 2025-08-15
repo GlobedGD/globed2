@@ -10,9 +10,9 @@ namespace globed {
 struct RoomPlayer {
     PlayerAccountData accountData;
     int16_t cube = 0;
-    uint16_t color1 = 0;
-    uint16_t color2 = 0;
-    uint16_t glowColor = NO_GLOW;
+    ColorId<uint16_t> color1;
+    ColorId<uint16_t> color2;
+    ColorId<uint16_t> glowColor;
     SessionId session = SessionId{};
     uint16_t teamId;
 

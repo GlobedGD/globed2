@@ -361,9 +361,9 @@ void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<Room
             cue::Icons {
                 .type = IconType::Cube,
                 .id = player.cube,
-                .color1 = player.color1,
-                .color2 = player.color2,
-                .glowColor = NO_GLOW,
+                .color1 = player.color1.asIdx(),
+                .color2 = player.color2.asIdx(),
+                .glowColor = player.glowColor.asIdx(),
             },
             player.session
         ));
