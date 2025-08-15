@@ -36,9 +36,9 @@ bool LinkRequestPopup::setup(int accountId, UserListPopup* popup) {
         auto& data = rp->displayData().icons;
         icons.type = IconType::Cube;
         icons.id = data.cube;
-        icons.color1 = data.color1;
-        icons.color2 = data.color2;
-        icons.glowColor = data.glowColor == NO_GLOW ? (int)-1 : (int)data.glowColor;
+        icons.color1 = data.color1.asIdx();
+        icons.color2 = data.color2.asIdx();
+        icons.glowColor = data.glowColor.asIdx();
     }
 
     Build<cue::PlayerIcon>::create(icons)

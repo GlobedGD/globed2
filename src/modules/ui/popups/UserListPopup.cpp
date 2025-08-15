@@ -186,9 +186,9 @@ void UserListPopup::hardRefresh() {
             m_list->addCell(PlayerCell::create(data.accountId, data.userId, data.username, cue::Icons {
                 .type = IconType::Cube,
                 .id = data.icons.cube,
-                .color1 = data.icons.color1,
-                .color2 = data.icons.color2,
-                .glowColor = data.icons.glowColor == NO_GLOW ? (int)-1 : (int)data.icons.glowColor,
+                .color1 = data.icons.color1.asIdx(),
+                .color2 = data.icons.color2.asIdx(),
+                .glowColor = data.icons.glowColor.asIdx(),
             }, this));
         } else {
             log::warn("Uninitialized player, not adding to player list (ID {})", playerId);
