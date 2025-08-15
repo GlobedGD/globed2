@@ -123,7 +123,7 @@ static inline void lerpSpecific(
     // this will result in smoother movement for an FPS that is not a factor of 240
 
     constexpr float closeAllowance = 20.0f;
-    constexpr float stillAllowance = 1.0f;
+    constexpr float stillAllowance = 7.0f;
 
     bool cameraMovesX = std::fabs(cameraVector.x) > stillAllowance;
     bool cameraMovesY = std::fabs(cameraVector.y) > stillAllowance;
@@ -134,14 +134,17 @@ static inline void lerpSpecific(
     bool similarSpeedX = std::fabs(speedVec.x - cameraVector.x) < closeAllowance;
     bool similarSpeedY = std::fabs(speedVec.y - cameraVector.y) < closeAllowance;
 
-    if (cameraMovesX && playerMovesX && similarSpeedX && std::abs(newGuessed.x - out.position.x) < 5.0f) {
+    float guessAllowanceX = std::fabs(cameraVector.x) / 60.f;
+    float guessAllowanceY = std::fabs(cameraVector.y) / 60.f;
+
+    if (cameraMovesX && playerMovesX && similarSpeedX && std::abs(newGuessed.x - out.position.x) < guessAllowanceX) {
         LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessed.x);
         out.position.x = newGuessed.x;
     }
 
-    if (cameraMovesY && playerMovesY && similarSpeedY && std::abs(newGuessed.y - out.position.y) < 5.0f) {
-        LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessed.x);
-        out.position.x = newGuessed.x;
+    if (cameraMovesY && playerMovesY && similarSpeedY && std::abs(newGuessed.y - out.position.y) < guessAllowanceY) {
+        LERP_LOG("[Interpolator] Rounding up Y position from {} to {} for player", out.position.y, newGuessed.y);
+        out.position.y = newGuessed.y;
     }
 }
 

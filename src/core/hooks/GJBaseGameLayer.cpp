@@ -149,8 +149,9 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     CCPoint cameraSpeed = cameraDelta / dt; // TODO: or tsdt?
     fields.m_cameraSpeedMeasurements.push_back({fields.m_timeCounter, cameraSpeed});
 
-    // store up to 200ms of data
-    while (fields.m_timeCounter - fields.m_cameraSpeedMeasurements.front().first > 0.2f) {
+    // store a fixed amount of data (150ms)
+    constexpr float measurementLimit = 0.15f;
+    while (fields.m_timeCounter - fields.m_cameraSpeedMeasurements.front().first > measurementLimit) {
         fields.m_cameraSpeedMeasurements.pop_front();
     }
 
@@ -165,8 +166,8 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     // adjust using ema
     if (!fields.m_cameraSpeedMeasurements.empty()) {
         avgVec = CCPoint {
-            qn::exponentialMovingAverage(avgVec.x, cameraVector.x, 0.15),
-            qn::exponentialMovingAverage(avgVec.y, cameraVector.y, 0.15),
+            qn::exponentialMovingAverage(avgVec.x, cameraVector.x, 0.3),
+            qn::exponentialMovingAverage(avgVec.y, cameraVector.y, 0.3),
         };
     }
 
