@@ -20,10 +20,10 @@ namespace globed {
 static SessionId g_warpctx;
 static std::optional<SessionId> g_awaitingWarp;
 
-void warpToSession(SessionId session, bool openLevel) {
+void warpToSession(SessionId session, bool openLevel, bool force) {
     auto& rm = RoomManager::get();
     // ignore if we are the room host or not a follower room
-    if (rm.isOwner() || !rm.isInFollowerRoom()) {
+    if (!force && (rm.isOwner() || !rm.isInFollowerRoom())) {
         g_awaitingWarp.reset();
         return;
     }
@@ -31,9 +31,9 @@ void warpToSession(SessionId session, bool openLevel) {
     auto putOnHold = [&] {
         g_awaitingWarp = session;
 
-        Loader::get()->queueInMainThread([openLevel] {
+        Loader::get()->queueInMainThread([openLevel, force] {
             if (g_awaitingWarp.has_value()) {
-                warpToSession(g_awaitingWarp.value(), openLevel);
+                warpToSession(g_awaitingWarp.value(), openLevel, force);
             }
         });
     };

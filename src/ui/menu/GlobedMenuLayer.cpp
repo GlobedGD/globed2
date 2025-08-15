@@ -75,7 +75,7 @@ protected:
             Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
                 .scale(0.31f)
                 .intoMenuItem([this] {
-                    globed::warpToSession(m_sessionId, false);
+                    globed::warpToSession(m_sessionId, false, true);
                 })
                 .zOrder(10)
                 .pos(this->getContentWidth() - 30.f, this->getContentHeight() / 2.f)
@@ -102,7 +102,6 @@ namespace RightBtn {
 namespace LeftBtn {
     constexpr int Teams = 3;
 }
-
 
 }
 

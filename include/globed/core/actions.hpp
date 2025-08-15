@@ -4,7 +4,7 @@
 
 namespace globed {
 
-void warpToSession(SessionId session, bool openLevel = false);
+void warpToSession(SessionId session, bool openLevel = false, bool force = false);
 void warpToLevel(int level, bool openLevel = false);
 
 void openUserProfile(int accountId, int userId = 0, std::string_view username = "");
