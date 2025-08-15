@@ -533,15 +533,15 @@ void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
     auto* gm = globed::cachedSingleton<GameManager>();
     auto& icons = this->icons();
 
-    m_color1 = gm->colorForIdx(icons.color1);
-    m_color2 = gm->colorForIdx(icons.color2);
+    m_color1 = icons.color1.asColor();
+    m_color2 = icons.color2.asColor();
 
     this->setColor(m_color1);
     this->setSecondColor(m_color2);
 
-    if (icons.glowColor != NO_GLOW) {
+    if (!icons.glowColor.isNone()) {
         this->m_hasGlow = true;
-        this->enableCustomGlowColor(gm->colorForIdx(icons.glowColor));
+        this->enableCustomGlowColor(icons.glowColor.asColor());
     } else {
         this->m_hasGlow = false;
         this->disableCustomGlowColor();

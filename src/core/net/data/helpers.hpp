@@ -145,9 +145,9 @@ inline void encodeIconData(const PlayerIconData& icons, auto&& data) {
     data.setSpider(icons.spider);
     data.setSwing(icons.swing);
     data.setJetpack(icons.jetpack);
-    data.setColor1(icons.color1);
-    data.setColor2(icons.color2);
-    data.setGlowColor(icons.glowColor);
+    data.setColor1(icons.color1.inner());
+    data.setColor2(icons.color2.inner());
+    data.setGlowColor(icons.glowColor.inner());
     data.setDeathEffect(icons.deathEffect);
     data.setTrail(icons.trail);
     data.setShipTrail(icons.shipTrail);
