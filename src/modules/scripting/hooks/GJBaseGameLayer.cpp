@@ -1,7 +1,9 @@
 #include "GJBaseGameLayer.hpp"
 
+#include <globed/core/RoomManager.hpp>
 #include <globed/util/Random.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <core/hooks/GJBaseGameLayer.hpp>
 #include <modules/scripting/data/SpawnData.hpp>
 #include <modules/scripting/data/SetItemData.hpp>
 
@@ -10,13 +12,15 @@ using namespace geode::prelude;
 namespace globed {
 
 SCBaseGameLayer* SCBaseGameLayer::get(GJBaseGameLayer* base) {
-    if (!base) base = SCBaseGameLayer::get();
+    if (!base) base = GlobedGJBGL::get();
 
     return static_cast<SCBaseGameLayer*>(base);
 }
 
-void SCBaseGameLayer::postInit() {
-    m_fields->m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const auto& msg) {
+void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
+    auto& nm = NetworkManagerImpl::get();
+
+    m_fields->m_listener = nm.listen<msg::LevelDataMessage>([this](const auto& msg) {
         auto& fields = *m_fields.self();
 
         for (auto& event : msg.events) {
@@ -25,6 +29,13 @@ void SCBaseGameLayer::postInit() {
 
         return ListenerResult::Continue;
     });
+
+    // send over the scripts to the server if we are the room owner
+    auto& rm = RoomManager::get();
+    if (rm.isOwner() && !scripts.empty()) {
+        log::info("Sending {} scripts to the server", scripts.size());
+        nm.sendLevelScript(scripts);
+    }
 }
 
 void SCBaseGameLayer::handleEvent(const Event& event) {

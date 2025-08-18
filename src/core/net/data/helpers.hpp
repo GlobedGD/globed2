@@ -4,6 +4,7 @@
 #include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/data/UserRole.hpp>
+#include <modules/scripting/data/EmbeddedScript.hpp>
 
 namespace globed::data {
 
@@ -551,6 +552,24 @@ inline msg::AdminFetchModsResponseMessage decodeFetchModsResponseMessage(const s
     }
 
     return out;
+}
+
+/// Send level script message
+
+inline void encodeSendLevelScriptMessage(const std::vector<EmbeddedScript>& scripts, auto&& out) {
+    auto send = out.initSendLevelScript();
+    auto outscr = send.initScripts(scripts.size());
+
+    for (size_t i = 0; i < scripts.size(); i++) {
+        auto& script = scripts[i];
+        auto scr = outscr[i];
+        scr.setContent(script.content);
+        scr.setFilename(script.filename);
+        scr.setMain(script.main);
+        if (script.signature) {
+            scr.setSignature({script.signature->data(), script.signature->size()});
+        }
+    }
 }
 
 }

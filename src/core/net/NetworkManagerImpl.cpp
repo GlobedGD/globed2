@@ -728,6 +728,12 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
     }, !connInfo.m_gameEventQueue.empty());
 }
 
+void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scripts) {
+    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+        data::encodeSendLevelScriptMessage(scripts, msg);
+    });
+}
+
 void NetworkManagerImpl::queueGameEvent(Event&& event) {
     auto lock = m_connInfo.lock();
     if (!*lock) {

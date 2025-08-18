@@ -15,6 +15,7 @@ namespace globed {
 struct GLOBED_NOVTABLE GLOBED_DLL SCPlayLayerHook : geode::Modify<SCPlayLayerHook, PlayLayer> {
     struct Fields {
         bool m_hasScriptObjects = false;
+        std::vector<EmbeddedScript> m_scripts;
     };
 
     static void onModify(auto& self) {
@@ -28,8 +29,16 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCPlayLayerHook : geode::Modify<SCPlayLayerHoo
 
     $override
     void addObject(GameObject* p0) {
-        if (globed::onAddObject(p0, false)) {
-            m_fields->m_hasScriptObjects = true;
+        std::optional<EmbeddedScript> script;
+
+        if (globed::onAddObject(p0, false, script)) {
+            auto& fields = *m_fields.self();
+            fields.m_hasScriptObjects = true;
+
+            if (script) {
+                // add the script
+                fields.m_scripts.push_back(std::move(*script));
+            }
         }
 
         PlayLayer::addObject(p0);
@@ -39,14 +48,16 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCPlayLayerHook : geode::Modify<SCPlayLayerHoo
     void setupHasCompleted() {
         PlayLayer::setupHasCompleted();
 
-        if (!m_fields->m_hasScriptObjects) {
+        auto& fields = *m_fields.self();
+
+        if (!fields.m_hasScriptObjects) {
             log::debug("No script objects, disabling module");
             (void) ScriptingModule::get().disable();
             return;
         }
 
         auto layer = SCBaseGameLayer::get(this);
-        layer->postInit();
+        layer->postInit(fields.m_scripts);
     }
 };
 

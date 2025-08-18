@@ -31,29 +31,29 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorHook : geode::Modify<SCEditorHook, Lev
         LevelEditorLayer::createObjectsFromSetup(p0);
 
         for (auto obj : CCArrayExt<GameObject>(m_objects)) {
-            globed::onAddObject(obj, true);
+            std::optional<EmbeddedScript> script;
+            globed::onAddObject(obj, true, script);
         }
     }
 
     $override
-    GameObject* createObject(int objectIdRaw, CCPoint p1, bool p2) {
-        auto type = globed::classifyObjectId(objectIdRaw);
+    GameObject* createObject(int p0, cocos2d::CCPoint p1, bool p2) {
+        auto obj = LevelEditorLayer::createObject(p0, p1, p2);
 
+        auto type = classifyObjectId(p0);
         if (type != ScriptObjectType::None) {
-            return this->onCustomCreateObject(type, p1, p2);
-        } else {
-            return LevelEditorLayer::createObject(objectIdRaw, p1, p2);
+            globed::postCreateObject(obj, type);
         }
-    }
-
-    GameObject* onCustomCreateObject(ScriptObjectType type, CCPoint p1, bool p2) {
-        auto obj = static_cast<ItemTriggerGameObject*>(LevelEditorLayer::createObject(ObjectId::ItemCompareTrigger, p1, p2));
-
-        globed::onCreateObject(obj, type);
 
         return obj;
     }
 
+    $override
+    static void updateObjectLabel(GameObject* obj) {
+        LevelEditorLayer::updateObjectLabel(obj);
+
+        globed::onUpdateObjectLabel(obj);
+    }
 };
 
 }

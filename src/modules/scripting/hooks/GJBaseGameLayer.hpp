@@ -6,6 +6,7 @@
 #include <globed/core/net/MessageListener.hpp>
 #include <modules/scripting/ScriptingModule.hpp>
 #include <modules/scripting/objects/ListenEventObject.hpp>
+#include "Common.hpp"
 
 namespace globed {
 
@@ -17,7 +18,7 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCBaseGameLayer : geode::Modify<SCBaseGameLaye
 
     static SCBaseGameLayer* get(GJBaseGameLayer* base = nullptr);
 
-    void postInit();
+    void postInit(const std::vector<EmbeddedScript>& scripts);
     void handleEvent(const Event& event);
 
     void addEventListener(const ListenEventPayload& obj);

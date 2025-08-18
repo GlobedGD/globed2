@@ -8,6 +8,7 @@
 #include <globed/core/data/UserRole.hpp>
 #include <globed/core/data/Event.hpp>
 #include <globed/core/net/MessageListener.hpp>
+#include <modules/scripting/data/EmbeddedScript.hpp>
 #include <typeindex>
 
 #include <capnp/message.h>
@@ -130,6 +131,7 @@ public:
 
     // Game server
     void sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests);
+    void sendLevelScript(const std::vector<EmbeddedScript>& scripts);
     void queueGameEvent(Event&& event);
 
     // Listeners
