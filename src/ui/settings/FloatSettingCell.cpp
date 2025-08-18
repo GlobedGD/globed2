@@ -15,6 +15,9 @@ void FloatSettingCell::setup() {
         .collect();
 
     slider->setValue(this->get<float>());
+    slider->setCallback([this](auto, double value) {
+        this->set(value);
+    });
 }
 
 }
