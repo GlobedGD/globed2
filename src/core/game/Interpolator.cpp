@@ -8,6 +8,8 @@
 #endif
 
 constexpr float TIME_DRIFT_THRESHOLD = 0.20f; // 200ms
+constexpr float TIME_DRIFT_SMALL_THRESHOLD = 0.05f; // 50ms
+constexpr float TIME_DRIFT_SMALL_ADJ_DEADLINE = 30.0f; // 30s
 
 using namespace geode::prelude;
 
@@ -65,11 +67,28 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
     state.frames.push_back(player);
 
     // account for potential drift in time
-    float drift = state.newestFrame().timestamp - state.timeCounter;
-    if (state.frames.size() >= 2 && std::abs(drift) > TIME_DRIFT_THRESHOLD) {
-        float newTs = state.frames[state.frames.size() - 2].timestamp;
-        LERP_LOG("[Interpolator] Time drift for {}, resetting time from {} to {}", player.accountId, state.timeCounter, newTs);
-        state.timeCounter = newTs;
+    if (state.frames.size() >= 2) {
+        float sinceLastCorrection = state.lastDriftCorrection - state.timeCounter;
+
+        float drift = state.newestFrame().timestamp - state.timeCounter;
+        bool smallDrift = std::abs(drift) > TIME_DRIFT_SMALL_THRESHOLD;
+        bool largeDrift = m_lowLatency ? smallDrift : std::abs(drift) > TIME_DRIFT_THRESHOLD;
+
+        // we detect two kinds of drift, large and small
+        // large drift always causes a correction, because the drift is big enough
+        // small drift *eventually* causes a correction. for example, if you have a very stable connection,
+        // but over time multiple packets just happen to get lost, the time drift will slowly creep up to the large threshold.
+        // small drift detection aims to eliminate small drift at a time interval, so we check how long has it been since last drift adjustment
+
+        bool doAdjust = largeDrift || (smallDrift && sinceLastCorrection > TIME_DRIFT_SMALL_ADJ_DEADLINE);
+
+        // in realtime mode, always adjust. this *will* lead to poor visuals.
+        if (m_realtime || doAdjust) {
+            float newTs = state.frames[state.frames.size() - 2].timestamp;
+            LERP_LOG("[Interpolator] Time drift for {} ({:.3f}s), resetting time from {} to {}", player.accountId, drift, state.timeCounter, newTs);
+            state.timeCounter = newTs;
+            state.lastDriftCorrection = state.timeCounter;
+        }
     }
 }
 
@@ -265,6 +284,14 @@ bool Interpolator::isPlayerStale(int playerId, float curTimestamp) {
     }
 
     return std::abs(state.updatedAt - curTimestamp) > 0.5f;
+}
+
+void Interpolator::setLowLatencyMode(bool enable) {
+    m_lowLatency = enable;
+}
+
+void Interpolator::setRealtimeMode(bool enable) {
+    m_realtime = enable;
 }
 
 bool Interpolator::isCameraStationary() {
