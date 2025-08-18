@@ -36,7 +36,7 @@ bool BaseLayer::init(bool background) {
     return true;
 }
 
-void BaseLayer::initBackground(cocos2d::ccColor3B color) {
+void BaseLayer::initBackground(ccColor3B color) {
     if (m_background) {
         m_background->removeFromParent();
         m_background = nullptr;

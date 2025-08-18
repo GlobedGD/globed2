@@ -13,6 +13,7 @@
 #include <ui/menu/RoomListingPopup.hpp>
 #include <ui/menu/CreateRoomPopup.hpp>
 #include <ui/menu/TeamManagementPopup.hpp>
+#include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
 
 #include <cue/RepeatingBackground.hpp>
@@ -254,8 +255,25 @@ bool GlobedMenuLayer::init() {
         .anchorPoint(1.f, 1.f)
         .parent(m_playerListMenu);
 
+    // init far menus
+
+    m_farLeftMenu = Build<CCMenu>::create()
+        .id("far-left-menu")
+        .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::Start))
+        .contentSize(48.f, 250.f)
+        .pos(16.f, 18.f)
+        .anchorPoint(0.f, 0.f)
+        .parent(this);
+
+    m_farRightMenu = Build<CCMenu>::create()
+        .id("far-right-menu")
+        .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::Start))
+        .contentSize(48.f, 250.f)
+        .pos(winSize.width - 16.f, 18.f)
+        .anchorPoint(1.f, 0.f)
+        .parent(this);
+
     m_roomStateListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
-        log::debug("Packet arrived");
         if (msg.roomId != m_roomId) {
             this->initNewRoom(msg.roomId, msg.roomName, msg.players, msg.settings);
         } else {
@@ -265,7 +283,6 @@ bool GlobedMenuLayer::init() {
         return ListenerResult::Continue;
     });
 
-    log::debug("Init over");
 
     this->onServerModified();
 
@@ -276,8 +293,6 @@ bool GlobedMenuLayer::init() {
 }
 
 void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings) {
-    log::debug("Init new room");
-
     m_roomId = id;
     m_roomNameLabel->setString(fmt::format("{} ({})", name, id).c_str());
 
@@ -496,12 +511,32 @@ void GlobedMenuLayer::initSideButtons() {
     m_leftSideMenu->updateLayout();
 }
 
+void GlobedMenuLayer::initFarSideButtons() {
+    auto winSize = CCDirector::get()->getWinSize();
+    m_farLeftMenu->removeAllChildren();
+    m_farRightMenu->removeAllChildren();
+
+    bool connected = m_state == MenuState::Connected;
+
+    if (connected) {
+        Build<CCSprite>::create("icon-settings.png"_spr)
+            .intoMenuItem([this] {
+                this->onSettings();
+            })
+            .scaleMult(1.1f)
+            .parent(m_farLeftMenu);
+    }
+
+    m_farLeftMenu->updateLayout();
+    m_farRightMenu->updateLayout();
+}
+
 void GlobedMenuLayer::copyRoomIdToClipboard() {
     geode::utils::clipboard::write(fmt::to_string(m_roomId));
 }
 
 void GlobedMenuLayer::onSettings() {
-
+    SettingsLayer::create()->switchTo();
 }
 
 void GlobedMenuLayer::onServerModified() {
@@ -576,7 +611,6 @@ void GlobedMenuLayer::update(float dt) {
         if (m_roomId == -1 && (!m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > Duration::fromSecs(1))) {
             // request room state
             m_lastRoomUpdate = Instant::now();
-            log::debug("Sending check");
             NetworkManagerImpl::get().sendRoomStateCheck();
         }
     }
@@ -610,6 +644,8 @@ void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
             m_playerListMenu->setVisible(true);
         } break;
     }
+
+    this->initFarSideButtons();
 
     // yikes
     m_connectMenuBg->setVisible(false);

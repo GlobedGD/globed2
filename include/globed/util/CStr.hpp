@@ -21,6 +21,10 @@ public:
         return m_ptr;
     }
 
+    inline operator std::string_view() const {
+        return m_ptr;
+    }
+
     inline const char* get() const {
         return m_ptr;
     }
