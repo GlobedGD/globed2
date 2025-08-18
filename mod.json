@@ -32,6 +32,12 @@
             "resources/editor/*.png",
             "resources/roles/*.png",
             "resources/mod/*.png"
-        ]
+        ],
+        "fonts": {
+            "Consolas": {
+                "path": "resources/fonts/Consolas-Regular.ttf",
+                "size": 64
+            }
+        }
     }
 }
