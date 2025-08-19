@@ -97,7 +97,6 @@ struct NoticeMessage {
 
 struct LevelDataMessage {
     std::vector<PlayerState> players;
-    std::vector<int> culled;
     std::vector<PlayerDisplayData> displayDatas;
     std::vector<Event> events;
 };

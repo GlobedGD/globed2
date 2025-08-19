@@ -130,7 +130,12 @@ public:
     void sendLeaveSession();
 
     // Game server
-    void sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests);
+    void sendPlayerState(
+        const PlayerState& state,
+        const std::vector<int>& dataRequests,
+        cocos2d::CCPoint cameraCenter,
+        float cameraRadius
+    );
     void sendLevelScript(const std::vector<EmbeddedScript>& scripts);
     void queueGameEvent(Event&& event);
 

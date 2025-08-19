@@ -79,7 +79,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
             auto& newstate = interpolator.getNewerState(m_remotePlayer->m_state.accountId);
 
             m_playerTrajectory->drawCircle(
-                m_isSecond ? (newstate.player2 ? newstate.player2->position : CCPoint{}) : newstate.player1.position,
+                m_isSecond ? (newstate.player2 ? newstate.player2->position : CCPoint{}) : newstate.player1->position,
                 1.5f,
                 ccColor4F{0.1f, 0.9f, 0.2f, 1.f},
                 0.3f,

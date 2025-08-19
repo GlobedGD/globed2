@@ -173,7 +173,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
 
     fields.m_lastAvgCameraVector = avgVec;
 
-    log::debug("cam pos: {}, delta: {}, vector: {}", camPos, cameraDelta, avgVec);
+    // log::debug("cam pos: {}, delta: {}, vector: {}", camPos, cameraDelta, avgVec);
 
     // process stuff
     fields.m_interpolator.tick(dt, cameraDelta, avgVec);
@@ -297,7 +297,14 @@ void GlobedGJBGL::selSendPlayerData(float dt) {
         // this will cause them to be sent every single time (as the server will never send their data). not sure how to handle this yet.
     }
 
-    NetworkManagerImpl::get().sendPlayerState(state, toRequest);
+    // get camera position and radius
+    auto camState = this->getCameraState();
+    auto coverage = camState.cameraCoverage();
+
+    CCPoint camCenter = camState.cameraOrigin + coverage / 2.f;
+    float camRadius = std::max(coverage.width, coverage.height) / 2.f * 2.75f;
+
+    NetworkManagerImpl::get().sendPlayerState(state, toRequest, camCenter, camRadius);
 }
 
 PlayerState GlobedGJBGL::getPlayerState() {
@@ -371,7 +378,8 @@ PlayerState GlobedGJBGL::getPlayerState() {
         out.isSideways = obj->m_isSideways;
     };
 
-    getPlayerObjState(m_player1, out.player1);
+    out.player1 = PlayerObjectData{};
+    getPlayerObjState(m_player1, *out.player1);
 
     if (m_gameState.m_isDualMode) {
         out.player2 = PlayerObjectData{};
@@ -553,15 +561,6 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
         }
 
         fields.m_interpolator.updatePlayer(player, fields.m_lastServerUpdate);
-    }
-
-    for (auto id : message.culled) {
-        if (id <= 0) continue;
-
-        // this player is still on the level, but the server decided not to send their data,
-        // for example because they are stationary or very far away
-        // call `updateNoop` to prevent them from being kicked
-        fields.m_interpolator.updateNoop(id, fields.m_lastServerUpdate);
     }
 
     for (auto& dd : message.displayDatas) {

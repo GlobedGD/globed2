@@ -62,7 +62,7 @@ struct PlayerState {
     bool isInEditor;
     bool isEditorBuilding;
     bool isLastDeathReal;
-    PlayerObjectData player1;
+    std::optional<PlayerObjectData> player1;
     std::optional<PlayerObjectData> player2;
 
     double progress() const {

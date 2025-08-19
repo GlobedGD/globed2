@@ -48,7 +48,9 @@ RemotePlayer::~RemotePlayer() {
 void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState) {
     m_state = state;
 
-    m_player1->updateFromData(m_state.player1, m_state, camState);
+    if (m_state.player1) {
+        m_player1->updateFromData(*m_state.player1, m_state, camState);
+    }
 
     if (m_state.player2) {
         m_player2->updateFromData(*m_state.player2, m_state, camState);

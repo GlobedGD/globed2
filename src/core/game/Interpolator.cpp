@@ -29,8 +29,14 @@ bool Interpolator::hasPlayer(int playerId) const {
 
 void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
     auto& state = m_players.at(player.accountId);
-    state.totalFrames++;
     state.updatedAt = curTimestamp;
+
+    // don't push culled frames
+    if (!player.player1) {
+        return;
+    }
+
+    state.totalFrames++;
 
     if (!state.frames.empty()) {
         // ignore repeated frames
@@ -45,11 +51,11 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
 
         LERP_LOG("[Interpolator] new frame for {}, X progression: {} ({}) ... {} ({}) -> {} ({})",
             player.accountId,
-            state.oldestFrame().player1.position.x,
+            state.oldestFrame().player1->position.x,
             state.oldestFrame().timestamp,
-            state.newestFrame().player1.position.x,
+            state.newestFrame().player1->position.x,
             state.newestFrame().timestamp,
-            player.player1.position.x,
+            player.player1->position.x,
             player.timestamp
         );
     }
@@ -188,7 +194,8 @@ static inline void lerpPlayer(
     out.isEditorBuilding = older.isEditorBuilding;
     out.isLastDeathReal = older.isLastDeathReal;
 
-    lerpSpecific(older.player1, newer.player1, older.timestamp, newer.timestamp, out.player1, t, cameraDelta, cameraVector, camStationary);
+    out.player1 = PlayerObjectData{};
+    lerpSpecific(*older.player1, *newer.player1, older.timestamp, newer.timestamp, *out.player1, t, cameraDelta, cameraVector, camStationary);
 
     // only lerp player2 if present in both frames
     if (newer.player2 && older.player2) {

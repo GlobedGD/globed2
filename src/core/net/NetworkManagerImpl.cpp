@@ -696,7 +696,7 @@ void NetworkManagerImpl::sendGameJoinRequest(SessionId id) {
     });
 }
 
-void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests) {
+void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests, CCPoint cameraCenter, float cameraRadius) {
     auto lock = m_connInfo.lock();
     if (!*lock || !(**lock).m_gameEstablished) {
         log::warn("Cannot send player state, not connected to game server");
@@ -709,6 +709,10 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
         auto playerData = msg.initPlayerData();
         auto data = playerData.initData();
         data::encodePlayerState(state, data);
+
+        playerData.setCameraX(cameraCenter.x);
+        playerData.setCameraY(cameraCenter.y);
+        playerData.setCameraRadius(cameraRadius);
 
         auto reqs = playerData.initDataRequests(dataRequests.size());
         for (size_t i = 0; i < dataRequests.size(); ++i) {
@@ -963,6 +967,16 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::BANNED: {
             // TODO
+        } break;
+
+        case CentralMessage::SERVERS_CHANGED: {
+            auto lock = m_connInfo.lock();
+            auto& connInfo = **lock;
+
+            auto serversChanged = msg.getServersChanged();
+            auto servers = serversChanged.getServers();
+
+            updateServers(connInfo.m_gameServers, servers);
         } break;
 
         case CentralMessage::PLAYER_COUNTS: {

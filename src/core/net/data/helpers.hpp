@@ -5,6 +5,7 @@
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/data/UserRole.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
+#include <globed/util/assert.hpp>
 
 namespace globed::data {
 
@@ -61,16 +62,18 @@ inline void encodePlayerState(const PlayerState& state, auto&& data) {
         dst.setIsSideways(src.isSideways);
     };
 
+    GLOBED_ASSERT(state.player1.has_value());
+
     if (state.player2) {
         auto dual = data.initDual();
         auto p1 = dual.initPlayer1();
         auto p2 = dual.initPlayer2();
-        initPlayer(state.player1, p1);
+        initPlayer(*state.player1, p1);
         initPlayer(*state.player2, p2);
     } else {
         auto single = data.initSingle();
         auto p1 = single.initPlayer1();
-        initPlayer(state.player1, p1);
+        initPlayer(*state.player1, p1);
     }
 }
 
@@ -115,8 +118,9 @@ inline std::optional<PlayerState> decodePlayerState(const schema::game::PlayerDa
         auto p1 = dual.getPlayer1();
         auto p2 = dual.getPlayer2();
 
+        out.player1 = PlayerObjectData{};
         out.player2 = PlayerObjectData{};
-        initPlayer(p1, out.player1);
+        initPlayer(p1, *out.player1);
         initPlayer(p2, *out.player2);
     } else if (reader.isSingle()) {
         auto single = reader.getSingle();
@@ -125,8 +129,11 @@ inline std::optional<PlayerState> decodePlayerState(const schema::game::PlayerDa
         }
 
         auto p1 = single.getPlayer1();
+        out.player1 = PlayerObjectData{};
         out.player2 = std::nullopt;
-        initPlayer(p1, out.player1);
+        initPlayer(p1, *out.player1);
+    } else if (reader.isCulled()) {
+        // nothing
     } else {
         return std::nullopt;
     }
@@ -335,13 +342,11 @@ inline std::optional<msg::RoomListMessage> decodeRoomListMessage(schema::main::R
 
 inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDataMessage::Reader& reader) {
     auto players = reader.getPlayers();
-    auto culled = reader.getCulled();
     auto ddatas = reader.getDisplayDatas();
     auto events = reader.getEvents();
 
     msg::LevelDataMessage outMsg;
     outMsg.players.reserve(players.size());
-    outMsg.culled.reserve(culled.size());
     outMsg.displayDatas.reserve(ddatas.size());
     outMsg.events.reserve(events.size());
 
@@ -351,10 +356,6 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
         } else {
             geode::log::warn("Server sent invalid player state data for {}, skipping", player.getAccountId());
         }
-    }
-
-    for (auto id : culled) {
-        outMsg.culled.push_back(id);
     }
 
     for (auto dd : ddatas) {
