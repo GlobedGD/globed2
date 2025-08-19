@@ -19,6 +19,12 @@ class ServerManager : public SingletonBase<ServerManager> {
 public:
     CentralServerData& getServer(size_t index);
     CentralServerData& getActiveServer();
+    std::vector<CentralServerData>& getAllServers();
+    size_t getActiveIndex();
+    void switchTo(size_t index);
+    void deleteServer(size_t index);
+    void addServer(CentralServerData&& data);
+    void commit();
 
 private:
     struct Storage {
@@ -28,7 +34,6 @@ private:
 
     Storage m_storage;
 
-    void commit();
     void reload();
 };
 

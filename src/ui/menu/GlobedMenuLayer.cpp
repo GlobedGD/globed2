@@ -11,6 +11,7 @@
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/misc/InputPopup.hpp>
 #include <ui/menu/RoomListingPopup.hpp>
+#include <ui/menu/ServerListPopup.hpp>
 #include <ui/menu/CreateRoomPopup.hpp>
 #include <ui/menu/TeamManagementPopup.hpp>
 #include <ui/settings/SettingsLayer.hpp>
@@ -147,8 +148,8 @@ bool GlobedMenuLayer::init() {
         .child(
             Build<CCSprite>::create("pencil.png"_spr)
                 .scale(0.7f)
-                .intoMenuItem([] {
-                    // TODO: let the user edit the server
+                .intoMenuItem([this] {
+                    ServerListPopup::create(this)->show();
                 })
                 .store(m_editServerButton)
         )
@@ -159,9 +160,8 @@ bool GlobedMenuLayer::init() {
     m_connectButton = Build<ButtonSprite>::create("Connect", "bigFont.fnt", "GJ_button_01.png", 0.7f)
         .scale(0.9f)
         .intoMenuItem([this] {
-            // TODO: yeah
-            auto override = globed::value<std::string>("core.dev.override-central-url");
-            std::string url = override ? *override : "tcp://[::1]:53781";
+            auto& sm = ServerManager::get();
+            auto url = sm.getActiveServer().url;
 
             if (auto err = NetworkManager::get().connectCentral(url).err()) {
                 log::error("failed to connect to central server: {}", err);

@@ -17,6 +17,38 @@ CentralServerData& ServerManager::getActiveServer() {
     return this->getServer(m_storage.activeIdx);
 }
 
+size_t ServerManager::getActiveIndex() {
+    return m_storage.activeIdx;
+}
+
+void ServerManager::switchTo(size_t index) {
+    if (index >= m_storage.servers.size()) return;
+
+    m_storage.activeIdx = index;
+    this->commit();
+}
+
+void ServerManager::deleteServer(size_t index) {
+    if (index >= m_storage.servers.size()) return;
+
+    m_storage.servers.erase(m_storage.servers.begin() + index);
+
+    if (m_storage.activeIdx == index) {
+        m_storage.activeIdx = 0;
+    }
+
+    this->commit();
+}
+
+void ServerManager::addServer(CentralServerData&& data) {
+    m_storage.servers.push_back(std::move(data));
+    this->commit();
+}
+
+std::vector<CentralServerData>& ServerManager::getAllServers() {
+    return m_storage.servers;
+}
+
 void ServerManager::commit() {
     globed::setValue("core.central-servers", m_storage);
 }

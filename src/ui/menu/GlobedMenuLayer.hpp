@@ -21,6 +21,8 @@ class GlobedMenuLayer : public BaseLayer {
 public:
     static GlobedMenuLayer* create();
 
+    void onServerModified();
+
 private:
     cocos2d::CCMenu* m_connectMenu;
     cocos2d::extension::CCScale9Sprite* m_connectMenuBg;
@@ -57,7 +59,6 @@ private:
     void copyRoomIdToClipboard();
 
     void onSettings();
-    void onServerModified();
 };
 
 }
