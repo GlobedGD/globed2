@@ -1,6 +1,7 @@
 #pragma once
 
 #include <globed/core/data/PlayerState.hpp>
+#include "SpeedTracker.hpp"
 #include <deque>
 #include <optional>
 
@@ -38,6 +39,8 @@ public:
 
 private:
     struct LerpState {
+        VectorSpeedTracker p1speedTracker;
+        VectorSpeedTracker p2speedTracker;
         std::deque<PlayerState> frames;
         PlayerState interpolatedState{};
         size_t totalFrames = 0;

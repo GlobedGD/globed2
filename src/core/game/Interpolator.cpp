@@ -72,6 +72,13 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
 
     state.frames.push_back(player);
 
+    // track the speed of the players
+    state.p1speedTracker.pushMeasurement(curTimestamp, player.player1->position.x, player.player1->position.y);
+
+    if (player.player2) {
+        state.p2speedTracker.pushMeasurement(curTimestamp, player.player2->position.x, player.player2->position.y);
+    }
+
     // account for potential drift in time
     if (state.frames.size() >= 2) {
         float sinceLastCorrection = state.lastDriftCorrection - state.timeCounter;
@@ -107,27 +114,32 @@ static bool areVectorsClose(const CCPoint& one, const CCPoint& two) {
     return std::abs(one.x - two.x) + std::abs(one.y - two.y) < 0.1f;
 }
 
+struct LerpContext {
+    float t;
+    CCPoint cameraDelta;
+    CCPoint cameraVector;
+    bool camStationary;
+};
+
 static inline void lerpSpecific(
     const PlayerObjectData& older,
     const PlayerObjectData& newer,
     float olderTime,
     float newerTime,
     PlayerObjectData& out,
-    float t,
-    CCPoint cameraDelta,
-    CCPoint cameraVector,
-    bool camStationary
+    LerpContext& ctx,
+    VectorSpeedTracker& speedTracker
 ) {
     out.copyFlagsFrom(older);
 
-    CCPoint newGuessed = out.position + cameraDelta;
+    CCPoint newGuessed = out.position + ctx.cameraDelta;
 
     // i hate spider
     if (out.iconType == PlayerIconType::Spider && std::abs(older.position.y - newer.position.y) >= 33.f) {
-        out.position.x = std::lerp(older.position.x, newer.position.x, t);
+        out.position.x = std::lerp(older.position.x, newer.position.x, ctx.t);
         out.position.y = older.position.y;
     } else {
-        out.position = older.position.lerp(newer.position, t);
+        out.position = older.position.lerp(newer.position, ctx.t);
     }
 
     // in platformer, a player may rotate by 180 degrees simply by moving left or right,
@@ -136,31 +148,38 @@ static inline void lerpSpecific(
         out.rotation = older.rotation;
     } else {
         // rotation can wrap around, so we avoid using std::lerp
-        out.rotation = lerpAngle(older.rotation, newer.rotation, t);
+        out.rotation = lerpAngle(older.rotation, newer.rotation, ctx.t);
     }
 
     // calculate speed vector
-    CCPoint speedVec{};
-    speedVec.x = static_cast<float>(newer.position.x - older.position.x) / (newerTime - olderTime);
-    speedVec.y = static_cast<float>(newer.position.y - older.position.y) / (newerTime - olderTime);
+    auto speedVec = speedTracker.getVector();
 
     // if both us and this player are moving, try to use the guessed position as long as it is close enough,
     // this will result in smoother movement for an FPS that is not a factor of 240
 
-    constexpr float closeAllowance = 20.0f;
+    constexpr float closeAllowance = 25.0f;
     constexpr float stillAllowance = 7.0f;
 
-    bool cameraMovesX = std::fabs(cameraVector.x) > stillAllowance;
-    bool cameraMovesY = std::fabs(cameraVector.y) > stillAllowance;
+    bool cameraMovesX = std::fabs(ctx.cameraVector.x) > stillAllowance;
+    bool cameraMovesY = std::fabs(ctx.cameraVector.y) > stillAllowance;
 
-    bool playerMovesX = std::fabs(speedVec.x) >= stillAllowance;
-    bool playerMovesY = std::fabs(speedVec.y) >= stillAllowance;
+    bool playerMovesX = std::fabs(speedVec.first) >= stillAllowance;
+    bool playerMovesY = std::fabs(speedVec.second) >= stillAllowance;
 
-    bool similarSpeedX = std::fabs(speedVec.x - cameraVector.x) < closeAllowance;
-    bool similarSpeedY = std::fabs(speedVec.y - cameraVector.y) < closeAllowance;
+    bool similarSpeedX = std::fabs(speedVec.first - ctx.cameraVector.x) < closeAllowance;
+    bool similarSpeedY = std::fabs(speedVec.second - ctx.cameraVector.y) < closeAllowance;
 
-    float guessAllowanceX = std::fabs(cameraVector.x) / 50.f;
-    float guessAllowanceY = std::fabs(cameraVector.y) / 50.f;
+    float guessAllowanceX = std::fabs(ctx.cameraVector.x) / 50.f;
+    float guessAllowanceY = std::fabs(ctx.cameraVector.y) / 50.f;
+
+    LERP_LOG(
+        "[Interpolator] speedVec: {}, cameraVec: {}, guessallowx: {}, newx: {}, outx: {}",
+        speedVec.first,
+        ctx.cameraVector.x,
+        guessAllowanceX,
+        newGuessed.x,
+        out.position.x
+    );
 
     if (cameraMovesX && playerMovesX && similarSpeedX && std::abs(newGuessed.x - out.position.x) < guessAllowanceX) {
         LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessed.x);
@@ -177,13 +196,12 @@ static inline void lerpPlayer(
     const PlayerState& older,
     const PlayerState& newer,
     PlayerState& out,
-    float t,
-    CCPoint cameraDelta,
-    CCPoint cameraVector,
-    bool camStationary
+    LerpContext& ctx,
+    VectorSpeedTracker& p1spt,
+    VectorSpeedTracker& p2spt
 ) {
     out.accountId = older.accountId;
-    out.timestamp = std::lerp(older.timestamp, newer.timestamp, t);
+    out.timestamp = std::lerp(older.timestamp, newer.timestamp, ctx.t);
     out.frameNumber = older.frameNumber;
     out.deathCount = older.deathCount;
     out.percentage = older.percentage;
@@ -194,13 +212,13 @@ static inline void lerpPlayer(
     out.isEditorBuilding = older.isEditorBuilding;
     out.isLastDeathReal = older.isLastDeathReal;
 
-    out.player1 = PlayerObjectData{};
-    lerpSpecific(*older.player1, *newer.player1, older.timestamp, newer.timestamp, *out.player1, t, cameraDelta, cameraVector, camStationary);
+    if (!out.player1) out.player1 = PlayerObjectData{};
+    lerpSpecific(*older.player1, *newer.player1, older.timestamp, newer.timestamp, *out.player1, ctx, p1spt);
 
     // only lerp player2 if present in both frames
     if (newer.player2 && older.player2) {
-        out.player2 = PlayerObjectData{};
-        lerpSpecific(*older.player2, *newer.player2, older.timestamp, newer.timestamp, *out.player2, t, cameraDelta, cameraVector, camStationary);
+        if (!out.player2) out.player2 = PlayerObjectData{};
+        lerpSpecific(*older.player2, *newer.player2, older.timestamp, newer.timestamp, *out.player2, ctx, p2spt);
     }
 }
 
@@ -264,7 +282,10 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
         float frameDelta = newer->timestamp - older->timestamp;
         float t = (player.timeCounter - older->timestamp) / frameDelta;
 
-        lerpPlayer(*older, *newer, player.interpolatedState, t, cameraDelta, cameraVector, camStationary);
+        LerpContext ctx {
+            t, cameraDelta, cameraVector, camStationary
+        };
+        lerpPlayer(*older, *newer, player.interpolatedState, ctx, player.p1speedTracker, player.p2speedTracker);
 
         LERP_LOG("[Interpolator] Lerp for {}: t = {}, timeCounter = {}, older ts = {}, newer ts = {}",
             playerId, t, player.timeCounter, older->timestamp, newer->timestamp

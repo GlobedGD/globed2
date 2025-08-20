@@ -6,6 +6,7 @@
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <core/game/Interpolator.hpp>
+#include <core/game/SpeedTracker.hpp>
 
 namespace globed {
 
@@ -38,9 +39,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         float m_lastTeamRefresh = 0.0f;
         uint32_t m_totalSentPackets = 0;
         Interpolator m_interpolator;
-        cocos2d::CCPoint m_lastCameraPos{};
-        std::deque<std::pair<float, cocos2d::CCPoint>> m_cameraSpeedMeasurements;
-        cocos2d::CCPoint m_lastAvgCameraVector{};
+        VectorSpeedTracker m_cameraTracker;
         std::unordered_map<int, std::unique_ptr<RemotePlayer>> m_players;
         std::vector<int> m_unknownPlayers;
         float m_lastDataRequest = 0.f;

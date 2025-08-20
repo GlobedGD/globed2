@@ -141,42 +141,15 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     fields.m_timeCounter += dt;
 
     auto camPos = m_gameState.m_cameraPosition;
-
-    // calculate camera delta
-    CCPoint cameraDelta = camPos - fields.m_lastCameraPos;
-    fields.m_lastCameraPos = camPos;
-
-    CCPoint cameraSpeed = cameraDelta / dt; // TODO: or tsdt?
-    fields.m_cameraSpeedMeasurements.push_back({fields.m_timeCounter, cameraSpeed});
-
-    // store a fixed amount of data (150ms)
-    constexpr float measurementLimit = 0.15f;
-    while (fields.m_timeCounter - fields.m_cameraSpeedMeasurements.front().first > measurementLimit) {
-        fields.m_cameraSpeedMeasurements.pop_front();
-    }
-
-    // calculate vector with the data
-    CCPoint sumVector{};
-    for (auto& [_, vec] : fields.m_cameraSpeedMeasurements) {
-        sumVector += vec;
-    }
-    CCPoint cameraVector = sumVector / fields.m_cameraSpeedMeasurements.size();
-    CCPoint avgVec = fields.m_lastAvgCameraVector;
-
-    // adjust using ema
-    if (!fields.m_cameraSpeedMeasurements.empty()) {
-        avgVec = CCPoint {
-            qn::exponentialMovingAverage(avgVec.x, cameraVector.x, 0.3),
-            qn::exponentialMovingAverage(avgVec.y, cameraVector.y, 0.3),
-        };
-    }
-
-    fields.m_lastAvgCameraVector = avgVec;
-
-    // log::debug("cam pos: {}, delta: {}, vector: {}", camPos, cameraDelta, avgVec);
+    auto cameraDelta = fields.m_cameraTracker.pushMeasurement(fields.m_timeCounter, camPos.x, camPos.y);
+    auto cameraVector = fields.m_cameraTracker.getVector();
 
     // process stuff
-    fields.m_interpolator.tick(dt, cameraDelta, avgVec);
+    fields.m_interpolator.tick(
+        dt,
+        CCPoint{(float) cameraDelta.first, (float) cameraVector.second},
+        CCPoint{(float) cameraVector.first, (float) cameraVector.second}
+    );
 
     fields.m_unknownPlayers.clear();
 
