@@ -42,4 +42,11 @@ void setValue(std::string_view key, T value) {
     ValueManager::get().set(key, matjson::Value(value));
 }
 
+inline bool swapFlag(std::string_view key) {
+    bool result = value<bool>(key).value_or(false);
+    setValue(key, true);
+
+    return result;
+}
+
 }

@@ -329,8 +329,7 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
         case TAG_TEAMS: m_settings.teams = state; break;
     }
 
-    if (isSafeMode && state && !globed::value<bool>("core.flags.seen-room-safe-mode-notice")) {
-        globed::setValue("core.flags.seen-room-safe-mode-notice", true);
+    if (isSafeMode && state && !globed::swapFlag("core.flags.seen-room-safe-mode-notice")) {
         this->showSafeModePopup(true);
     }
 

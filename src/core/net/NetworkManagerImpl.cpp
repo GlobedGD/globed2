@@ -375,6 +375,21 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
     return std::nullopt;
 }
 
+std::vector<GameServer> NetworkManagerImpl::getGameServers() {
+    auto lock = m_connInfo.lock();
+    if (!*lock) {
+        return {};
+    }
+
+    std::vector<GameServer> out;
+
+    for (auto& server : (**lock).m_gameServers) {
+        out.push_back(server.second);
+    }
+
+    return out;
+}
+
 bool NetworkManagerImpl::isConnected() const {
     return (**m_connInfo.lock()).m_established;
 }

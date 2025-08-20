@@ -13,6 +13,7 @@
 #include <ui/menu/RoomListingPopup.hpp>
 #include <ui/menu/ServerListPopup.hpp>
 #include <ui/menu/CreateRoomPopup.hpp>
+#include <ui/menu/RegionSelectPopup.hpp>
 #include <ui/menu/TeamManagementPopup.hpp>
 #include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
@@ -103,6 +104,7 @@ namespace RightBtn {
 
 namespace LeftBtn {
     constexpr int Disconnect = 100;
+    constexpr int RegionSwitch = 110;
     constexpr int Teams = 300;
 }
 
@@ -430,6 +432,11 @@ void GlobedMenuLayer::initSideButtons() {
     constexpr static CCSize buttonSize {30.f, 30.f};
 
     auto makeButton = [this](CCSprite* sprite, std::optional<EditorBaseColor> color, CCNode* parent, int zOrder, const char* id, auto cb) {
+        if (!sprite) {
+            log::error("Sprite is null for {}!", id);
+            return;
+        }
+
         CCSprite* spr;
         if (color) {
             spr = EditorButtonSprite::create(sprite, *color);
@@ -464,6 +471,25 @@ void GlobedMenuLayer::initSideButtons() {
                     globed::toastError("{}", *err);
                 }
             });
+        }
+    );
+
+    // region switching button
+    makeButton(
+        // TODO: icon
+        CCSprite::create("icon-among-us.png"_spr),
+        std::nullopt,
+        m_leftSideMenu,
+        LeftBtn::RegionSwitch,
+        "btn-region-select",
+        [this] {
+            if (auto popup = RegionSelectPopup::create()) {
+                popup->show();
+
+                if (!globed::swapFlag("core.flags.seen-region-select-note")) {
+                    RegionSelectPopup::showInfo();
+                }
+            }
         }
     );
 

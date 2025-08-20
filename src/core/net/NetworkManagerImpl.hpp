@@ -73,6 +73,7 @@ public:
 
     /// Returns the numeric ID of the preferred game server, or nullopt if not connected
     std::optional<uint8_t> getPreferredServer();
+    std::vector<GameServer> getGameServers();
 
     /// Returns whether the client is connected and authenticated with the central server
     bool isConnected() const;

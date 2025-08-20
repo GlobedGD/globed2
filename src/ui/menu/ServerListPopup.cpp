@@ -132,13 +132,12 @@ void ServerListPopup::reloadList() {
     auto* btn = Build<CCSprite>::createSpriteName("GJ_plusBtn_001.png")
         .with([&](auto btn) { cue::rescaleToMatch(btn, CCSize{CELL_HEIGHT * 0.85f, CELL_HEIGHT * 0.85f}); })
         .intoMenuItem([this] {
-            if (!globed::value<bool>("core.flags.seen-add-server-warn")) {
+            if (!globed::swapFlag("core.flags.seen-add-server-warn")) {
                 globed::alert(
                     "Notice",
                     "If you want to make your own <cy>custom server</c>, you need hosting. Hosting instructions can be found on the <cj>Globed GitHub page</c>."
                 );
 
-                globed::setValue<bool>("core.flags.seen-add-server-warn", true);
                 return;
             }
 
