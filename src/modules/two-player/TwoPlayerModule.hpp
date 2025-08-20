@@ -56,6 +56,9 @@ private:
     void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) override;
     void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) override;
     void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) override;
+    bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) override {
+        return true;
+    }
 
     void sendUnlinkEventTo(int id);
     void sendLinkEventTo(int id, bool player2);

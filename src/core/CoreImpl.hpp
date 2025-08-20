@@ -48,6 +48,8 @@ public:
     void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death);
     void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup);
 
+    bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl);
+
 private:
     std::vector<std::shared_ptr<Module>> m_modules;
     std::optional<MessageListenerImpl<msg::CentralLoginOkMessage>*> m_loginOkListener;

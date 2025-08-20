@@ -114,4 +114,14 @@ void CoreImpl::onUserlistSetup(cocos2d::CCNode* container, int accountId, bool m
     });
 }
 
+bool CoreImpl::shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) {
+    bool should = false;
+
+    this->forEachEnabled([&](Module& mod) {
+        should = mod.shouldSpeedUpNewBest(gjbgl) || should;
+    });
+
+    return should;
+}
+
 }

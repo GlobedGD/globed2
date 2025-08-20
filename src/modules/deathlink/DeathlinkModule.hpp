@@ -29,6 +29,9 @@ public:
 private:
     void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) override;
     void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) override;
+    bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) override {
+        return true;
+    }
 };
 
 }
