@@ -135,10 +135,32 @@ void RoomListingPopup::doJoinRoom(uint32_t roomId, bool hasPassword) {
         return;
     }
 
+    auto& nm = NetworkManagerImpl::get();
+
+    if (hasPassword) {
+        // prompt for password
+        auto popup = InputPopup::create("chatFont.fnt");
+        popup->setTitle("Join Room");
+        popup->setPlaceholder("Room Password");
+        popup->setCommonFilter(CommonFilter::Uint);
+        popup->setMaxCharCount(16);
+        popup->setCallback([this, roomId](auto outcome) {
+            if (!outcome.cancelled) {
+                // parse the password
+                uint64_t pw = geode::utils::numFromString<uint64_t>(outcome.text).unwrapOr(0);
+                this->actuallyJoin(roomId, pw);
+            }
+        });
+        popup->show();
+    } else {
+        this->actuallyJoin(roomId, 0);
+    }
+}
+
+void RoomListingPopup::actuallyJoin(uint32_t roomId, uint64_t passcode) {
     m_joinedRoomId = roomId;
     this->waitForResponse();
-
-    NetworkManagerImpl::get().sendJoinRoom(roomId, 0); // TODO: passcode
+    NetworkManagerImpl::get().sendJoinRoom(roomId, passcode);
 }
 
 void RoomListingPopup::waitForResponse() {
@@ -161,15 +183,15 @@ void RoomListingPopup::waitForResponse() {
     m_successListener.value()->setPriority(-100);
 
     m_failListener = NetworkManagerImpl::get().listen<msg::RoomJoinFailedMessage>([this](const auto& msg) {
-        log::debug("Got fail!");
-
         using enum msg::RoomJoinFailedReason;
         std::string reason;
 
-        // TODO: prompt for passcode if InvalidPasscode
         switch (msg.reason) {
             case NotFound: reason = "Room not found"; break;
-            case InvalidPasscode: reason = "Invalid passcode"; break;
+            case InvalidPasscode: {
+                this->stopWaiting(std::nullopt);
+                this->doJoinRoom(m_joinedRoomId, true);
+            } break;
             case Full: reason = "Room is full"; break;
             default: reason = "Unknown reason"; break;
         }

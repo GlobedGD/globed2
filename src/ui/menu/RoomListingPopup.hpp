@@ -34,6 +34,7 @@ protected:
     void populateList(const std::vector<RoomListingInfo>& rooms);
 
     void doJoinRoom(uint32_t roomId, bool hasPassword);
+    void actuallyJoin(uint32_t roomId, uint64_t passcode);
     void waitForResponse();
     void stopWaiting(std::optional<std::string> failReason);
 };
