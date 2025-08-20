@@ -34,13 +34,12 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
 
     m_iconWrapper = Build<CCNode>::create()
         .anchorPoint(0.f, 0.5f)
-        .layout(RowLayout::create()->setGap(6.5f))
+        .layout(RowLayout::create()->setGap(6.5f)->setAutoScale(false))
         .parent(this);
 
-    // TODO: change this
-    CCSize iconSize{16.f, 16.f};
+    CCSize iconSize{24.f, 24.f};
 
-    float width = 25.f;
+    float width = 20.f;
     size_t count = 0;
 
     auto addButton = [&](CCSprite* spr, const std::string& id) {

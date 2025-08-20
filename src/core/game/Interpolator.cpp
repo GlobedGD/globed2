@@ -60,7 +60,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
         );
     }
 
-    // TODO: idk some stuff with didJustJump
+    // TODO: pending frame flags like jump, spider teleport
 
     // assert that the frame is newer than the last one
     if (!state.frames.empty() && player.timestamp <= state.newestFrame().timestamp) {
