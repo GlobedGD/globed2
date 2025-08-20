@@ -396,6 +396,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     };
 
+    tokio::spawn(async move {
+        // watch the shutdown flag (this is very silly)
+        let (mut debouncer, mut file_events) = AsyncDebouncer::new_with_channel(Duration::from_secs(1), Some(Duration::from_secs(5)))
+            .await
+            .expect("failed to create debouncer 2");
+
+        let shutdown_flag_path = std::env::current_dir().unwrap().join(".shutdown-flag");
+
+        if let Err(e) = debouncer.watcher().watch(&shutdown_flag_path, RecursiveMode::NonRecursive) {
+            warn!("Failed to watch the shutdown flag path ({shutdown_flag_path:?}");
+            warn!("Error: {e}");
+            return;
+        }
+
+        while let Some(Ok(events)) = file_events.recv().await {
+            for ev in events.iter() {
+                if ev.event.kind.is_create() {
+                    warn!("Exiting because .shutdown-flag was created");
+                    std::process::exit(1);
+                }
+            }
+        }
+    });
+
     // run the server!
     Box::pin(server.run()).await;
 
