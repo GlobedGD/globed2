@@ -45,16 +45,21 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.preload.enabled", "Preload Assets", "");
     this->addSetting<BoolSettingCell>("core.preload.defer", "Defer Preloading", "");
 
-    // TODO: maybe some flag to allow dev settings?
     // Advanced settings
     this->addHeader("core.dev", "Advanced");
     this->addSetting<BoolSettingCell>("core.ui.allow-custom-servers", "Allow Custom Servers", "");
 
 #ifdef GLOBED_DEBUG
-    this->addSetting<FloatSettingCell>("core.dev.packet-loss-sim", "Packet Loss Simulation", "");
-    this->addSetting<BoolSettingCell>("core.dev.net-debug-logs", "Network Debug Logs", "");
-    this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data", "");
+    bool showDebug = true;
+#else
+    bool showDebug = globed::value<bool>("core.dev.enable-dev-settings");
 #endif
+
+    if (showDebug) {
+        this->addSetting<FloatSettingCell>("core.dev.packet-loss-sim", "Packet Loss Simulation", "");
+        this->addSetting<BoolSettingCell>("core.dev.net-debug-logs", "Network Debug Logs", "");
+        this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data", "");
+    }
 
     m_list->setAutoUpdate(true);
     m_list->updateLayout();
