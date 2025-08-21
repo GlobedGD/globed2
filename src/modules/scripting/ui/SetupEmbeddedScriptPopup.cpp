@@ -59,6 +59,7 @@ bool SetupEmbeddedScriptPopup::setup(TextGameObject* obj) {
     Build<ButtonSprite>::create("Save", "goldFont.fnt", "GJ_button_01.png", 1.0f)
         .scale(0.85f)
         .intoMenuItem([this] {
+            m_doSave = true;
             this->onClose(nullptr);
         })
         .scaleMult(1.15f)

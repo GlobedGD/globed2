@@ -62,7 +62,15 @@ bool CodeEditor::init(CCSize size) {
 }
 
 void CodeEditor::setContent(CStr content) {
-    m_textBuffer = content;
+    m_textBuffer.clear();
+
+    for (char c : std::string_view{content}) {
+        if (c == '\t') {
+            for (size_t i = 0; i < 4; i++) m_textBuffer.push_back(' ');
+        } else {
+            m_textBuffer.push_back(c);
+        }
+    }
     this->updateFromBuffer();
 }
 
