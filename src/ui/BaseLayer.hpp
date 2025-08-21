@@ -10,9 +10,9 @@ public:
     virtual void switchTo();
 
 protected:
-    cocos2d::CCMenu* m_backMenu;
-    CCMenuItemSpriteExtra* m_backButton;
-    cocos2d::CCSprite* m_background;
+    cocos2d::CCMenu* m_backMenu = nullptr;
+    CCMenuItemSpriteExtra* m_backButton = nullptr;
+    cocos2d::CCSprite* m_background = nullptr;
 
     bool init(bool background = true);
     void initBackground(cocos2d::ccColor3B color = {0, 102, 255});
