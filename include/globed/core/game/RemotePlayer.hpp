@@ -16,6 +16,7 @@ public:
 
     void update(const PlayerState& state, const GameCameraState& camState);
     void handleDeath(const PlayerDeath& death);
+    void handleSpiderTp(const SpiderTeleportData& tp, bool p1);
     bool isDataInitialized() const;
     bool isTeamInitialized() const;
     void initData(const PlayerDisplayData& data, uint16_t teamId = 0xffff);

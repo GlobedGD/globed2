@@ -4,9 +4,17 @@
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/core/game/PlayerStatusIcons.hpp>
+#include <core/game/Interpolator.hpp>
 #include <ui/misc/NameLabel.hpp>
 
 namespace globed {
+
+static constexpr int ROBOT_FIRE_ACTION = 1000727;
+static constexpr int SWING_FIRE_ACTION = 1000728;
+static constexpr int SPIDER_TELEPORT_COLOR_ACTION = 1000729;
+static constexpr int SPIDER_DASH_CIRCLE_WAVE_TAG = 234562345;
+static constexpr int SPIDER_DASH_SPRITE_TAG = 234562347;
+static constexpr int DEATH_EFFECT_TAG = 234562349;
 
 class RemotePlayer;
 struct GameCameraState;
@@ -20,6 +28,7 @@ public:
     void updateDisplayData();
     void updateTeam(uint16_t teamId);
     void playDeathEffect();
+    void handleSpiderTp(const SpiderTeleportData& tp);
     cocos2d::CCPoint getLastPosition();
 
 private:
@@ -60,6 +69,9 @@ private:
 
     cocos2d::CCPoint m_prevPosition{};
 
+    //
+    float m_tpColorDelta = 0.f;
+
     bool init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond);
     PlayerIconData& icons();
     PlayerDisplayData& displayData();
@@ -74,6 +86,7 @@ private:
 
     void updatePlayerObjectIcons(bool skipFrames);
     bool isPlayerNearby(const PlayerObjectData& data, const GameCameraState& camState);
+    void spiderTeleportUpdateColor();
 };
 
 }

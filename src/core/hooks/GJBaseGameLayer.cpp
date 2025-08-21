@@ -164,14 +164,21 @@ void GlobedGJBGL::selUpdate(float tsdt) {
             continue;
         }
 
-        std::optional<PlayerDeath> death;
-        auto& vstate = fields.m_interpolator.getPlayerState(playerId, death);
+        OutFlags flags;
+        auto& vstate = fields.m_interpolator.getPlayerState(playerId, flags);
         player->update(vstate, camState);
 
         // if the player just died, handle the death
-        if (death.has_value()) {
-            player->handleDeath(*death);
-            CoreImpl::get().onPlayerDeath(this, player.get(), *death);
+        if (flags.death.has_value()) {
+            player->handleDeath(*flags.death);
+            CoreImpl::get().onPlayerDeath(this, player.get(), *flags.death);
+        }
+
+        // if the player teleported, play a spider dash animation
+        if (flags.spiderP1) {
+            player->handleSpiderTp(*flags.spiderP1, true);
+        } else if (flags.spiderP2) {
+            player->handleSpiderTp(*flags.spiderP2, false);
         }
 
         // if the player has left the level, remove them

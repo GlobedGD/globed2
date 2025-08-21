@@ -7,11 +7,11 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool NameLabel::init(const std::string& name, bool alignMiddle, bool bigFont) {
+bool NameLabel::init(const std::string& name, const char* font, bool alignMiddle) {
     if (!CCMenu::init()) return false;
 
-    m_bigFont = bigFont;
-    m_shadow = !bigFont;
+    m_font = font;
+    m_shadow = false;
 
     auto bcLayout = RowLayout::create()->setAutoScale(false)->setGap(3.f);
     bcLayout->ignoreInvisibleChildren(true);
@@ -42,13 +42,13 @@ void NameLabel::updateName(const char* name) {
         m_labelContainer = Build<CCNode>::create()
             .zOrder(-2);
 
-        Build<CCLabelBMFont>::create("", m_bigFont ? "bigFont.fnt" : "chatFont.fnt")
+        Build<CCLabelBMFont>::create("", m_font)
             .zOrder(-1)
             .anchorPoint(0.f, 0.f)
             .parent(m_labelContainer)
             .store(m_label);
 
-        Build<CCLabelBMFont>::create("", m_bigFont ? "bigFont.fnt" : "chatFont.fnt")
+        Build<CCLabelBMFont>::create("", m_font)
             .zOrder(-2)
             .color(0, 0, 0)
             .anchorPoint(0.f, 0.0f)
@@ -157,9 +157,9 @@ void NameLabel::setShadowEnabled(bool enabled) {
     }
 }
 
-NameLabel* NameLabel::create(const std::string& name, bool alignMiddle, bool bigFont) {
+NameLabel* NameLabel::create(const std::string& name, const char* font, bool alignMiddle) {
     auto ret = new NameLabel();
-    if (ret->init(name, alignMiddle, bigFont)) {
+    if (ret->init(name, font, alignMiddle)) {
         ret->autorelease();
         return ret;
     }

@@ -27,6 +27,23 @@ bool Interpolator::hasPlayer(int playerId) const {
     return m_players.contains(playerId);
 }
 
+static std::optional<SpiderTeleportData> detectSpiderTp(const PlayerObjectData& older, const PlayerObjectData& newer) {
+    if (older.iconType != PlayerIconType::Spider || newer.iconType != PlayerIconType::Spider) {
+        return std::nullopt;
+    }
+
+    float yDiff = std::abs(newer.position.y - older.position.y);
+    if (yDiff < 33.f) {
+        return std::nullopt;
+    }
+
+    SpiderTeleportData data;
+    data.from = older.position;
+    data.to = newer.position;
+
+    return data;
+}
+
 void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
     auto& state = m_players.at(player.accountId);
     state.updatedAt = curTimestamp;
@@ -39,22 +56,35 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
     state.totalFrames++;
 
     if (!state.frames.empty()) {
+        auto& prevFrame = state.newestFrame();
         // ignore repeated frames
-        if (player.timestamp == state.newestFrame().timestamp) {
+        if (player.timestamp == prevFrame.timestamp) {
             LERP_LOG("[Interpolator] Ignoring repeated frame for player {} at timestamp {}", player.accountId, player.timestamp);
             return;
         }
 
-        if (player.deathCount != state.newestFrame().deathCount) {
+        // detect death
+        if (player.deathCount != prevFrame.deathCount) {
             state.lastDeath = PlayerDeath { player.isLastDeathReal };
+        }
+
+        // detect spider tp
+        if (auto sptp1 = detectSpiderTp(*player.player1, *prevFrame.player1)) {
+            state.lastSpiderTp1 = sptp1;
+        }
+
+        if (player.player2 && prevFrame.player2) {
+            if (auto sptp2 = detectSpiderTp(*player.player2, *prevFrame.player2)) {
+                state.lastSpiderTp2 = sptp2;
+            }
         }
 
         LERP_LOG("[Interpolator] new frame for {}, X progression: {} ({}) ... {} ({}) -> {} ({})",
             player.accountId,
             state.oldestFrame().player1->position.x,
             state.oldestFrame().timestamp,
-            state.newestFrame().player1->position.x,
-            state.newestFrame().timestamp,
+            prevFrame.player1->position.x,
+            prevFrame.timestamp,
             player.player1->position.x,
             player.timestamp
         );
@@ -135,9 +165,11 @@ static inline void lerpSpecific(
     CCPoint newGuessed = out.position + ctx.cameraDelta;
 
     // i hate spider
-    if (out.iconType == PlayerIconType::Spider && std::abs(older.position.y - newer.position.y) >= 33.f) {
+    auto sptp = detectSpiderTp(older, newer);
+
+    if (sptp) {
         out.position.x = std::lerp(older.position.x, newer.position.x, ctx.t);
-        out.position.y = older.position.y;
+        out.position.y = sptp->from.y;
     } else {
         out.position = older.position.lerp(newer.position, ctx.t);
     }
@@ -295,9 +327,13 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
     }
 }
 
-PlayerState& Interpolator::getPlayerState(int playerId, std::optional<PlayerDeath>& outDeath) {
+PlayerState& Interpolator::getPlayerState(int playerId, OutFlags& flags) {
     auto& player = m_players.at(playerId);
-    outDeath = player.takeDeath();
+
+    flags.death = player.takeDeath();
+    flags.spiderP1 = player.takeSpiderTp(true);
+    flags.spiderP2 = player.takeSpiderTp(false);
+
     return player.interpolatedState;
 }
 
@@ -342,6 +378,13 @@ bool Interpolator::isCameraStationary() {
 std::optional<PlayerDeath> Interpolator::LerpState::takeDeath() {
     std::optional<PlayerDeath> out{};
     out.swap(lastDeath);
+    return out;
+}
+
+std::optional<SpiderTeleportData> Interpolator::LerpState::takeSpiderTp(bool p1) {
+    auto& in = p1 ? lastSpiderTp1 : lastSpiderTp2;
+    std::optional<SpiderTeleportData> out{};
+    out.swap(in);
     return out;
 }
 

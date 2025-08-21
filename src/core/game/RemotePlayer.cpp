@@ -65,6 +65,10 @@ void RemotePlayer::handleDeath(const PlayerDeath& death) {
     }
 }
 
+void RemotePlayer::handleSpiderTp(const SpiderTeleportData& tp, bool p1) {
+    p1 ? m_player1->handleSpiderTp(tp) : m_player2->handleSpiderTp(tp);
+}
+
 bool RemotePlayer::isDataInitialized() const {
     return m_dataInitialized;
 }

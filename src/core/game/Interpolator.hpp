@@ -11,6 +11,15 @@ struct PlayerDeath {
     bool isReal;
 };
 
+struct SpiderTeleportData {
+    cocos2d::CCPoint from, to;
+};
+
+struct OutFlags {
+    std::optional<PlayerDeath> death;
+    std::optional<SpiderTeleportData> spiderP1, spiderP2;
+};
+
 class Interpolator {
 public:
     Interpolator() = default;
@@ -22,7 +31,7 @@ public:
     void updateNoop(int accountId, float curTimestamp);
     void tick(float dt, cocos2d::CCPoint cameraDelta, cocos2d::CCPoint cameraVector);
 
-    PlayerState& getPlayerState(int playerId, std::optional<PlayerDeath>& outDeath);
+    PlayerState& getPlayerState(int playerId, OutFlags& outFlags);
     PlayerState& getNewerState(int playerId);
     bool isPlayerStale(int playerId, float curTimestamp);
 
@@ -45,11 +54,13 @@ private:
         PlayerState interpolatedState{};
         size_t totalFrames = 0;
         std::optional<PlayerDeath> lastDeath;
+        std::optional<SpiderTeleportData> lastSpiderTp1, lastSpiderTp2;
         float timeCounter = -100.0f;
         float lastDriftCorrection = -100.0f;
         float updatedAt = 0.0f;
 
         std::optional<PlayerDeath> takeDeath();
+        std::optional<SpiderTeleportData> takeSpiderTp(bool p1);
         PlayerState& oldestFrame();
         PlayerState& newestFrame();
     };

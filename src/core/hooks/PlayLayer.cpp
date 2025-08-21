@@ -162,8 +162,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         auto& rm = RoomManager::get();
         bool overrideReset = !rm.isInGlobal() && this->asBase()->active();
         bool oldReset = overrideReset ? gameVariable(GameVariable::FastRespawn) : false;
-        // bool speedUpAnim = CoreImpl::get().shouldSpeedUpNewBest(GlobedGJBGL::get(this));
-        bool speedUpAnim = true;
+        bool speedUpAnim = CoreImpl::get().shouldSpeedUpNewBest(GlobedGJBGL::get(this));
         bool realDeath = m_fields->m_setupWasCompleted && obj != m_anticheatSpike;
 
         if (overrideReset) {

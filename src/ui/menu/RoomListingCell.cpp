@@ -2,6 +2,7 @@
 #include <globed/core/actions.hpp>
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <ui/misc/NameLabel.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/PlayerIcon.hpp>
@@ -57,17 +58,28 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
         .zOrder(-1)
         .collect();
 
-    auto nameButton = Build<CCLabelBMFont>::create(info.roomOwner.accountData.username.c_str(), "goldFont.fnt")
-        .scale(0.5f)
+    // auto nameButton = Build<CCLabelBMFont>::create(info.roomOwner.accountData.username.c_str(), "goldFont.fnt")
+    //     .scale(0.5f)
+    //     .id("player-name")
+    //     .intoMenuItem([this] {
+    //         globed::openUserProfile(m_info.roomOwner);
+    //     })
+    //     .pos(3.f, 50.f)
+    //     .zOrder(0)
+    //     .scaleMult(1.1f)
+    //     .parent(playerMenu)
+    //     .collect();
+
+    auto nameButton = Build(NameLabel::create(info.roomOwner.accountData.username, "goldFont.fnt", false))
         .id("player-name")
-        .intoMenuItem([this] {
-            globed::openUserProfile(m_info.roomOwner);
-        })
         .pos(3.f, 50.f)
         .zOrder(0)
-        .scaleMult(1.1f)
         .parent(playerMenu)
         .collect();
+
+    nameButton->makeClickable([this](auto) {
+        globed::openUserProfile(m_info.roomOwner);
+    });
 
     // TODO Badges
 

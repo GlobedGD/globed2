@@ -35,11 +35,13 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     bool showName = setting<bool>("core.player.show-names") && (!isSecond || setting<bool>("core.player.dual-name"));
     m_forceHideName = !showName;
 
-    m_nameLabel = Build<NameLabel>::create("", true)
+    m_nameLabel = Build<NameLabel>::create("", "chatFont.fnt", true)
         .visible(showName)
         .pos(0.f, NAME_OFFSET)
         .parent(playerNode)
         .store(m_nameLabel);
+
+    m_nameLabel->setShadowEnabled(true);
 
     if (!isSecond && setting<bool>("core.player.status-icons")) {
         float opacity = static_cast<unsigned char>(setting<float>("core.player.opacity") * 255.f);
@@ -527,6 +529,83 @@ void VisualPlayer::playDeathEffect() {
     PlayerObject::playDeathEffect();
 
     gm->setPlayerDeathEffect(oldEffect);
+}
+
+void VisualPlayer::handleSpiderTp(const SpiderTeleportData& tp) {
+    auto pl = globed::cachedSingleton<GameManager>()->m_playLayer;
+    if (!pl || !m_prevNearby) return;
+
+    m_playEffects = true;
+    this->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
+
+    auto arr = pl->m_circleWaveArray;
+    size_t countBefore = arr ? arr->count() : 0;
+    this->playSpiderDashEffect(tp.from, tp.to);
+    size_t countAfter = arr ? arr->count() : 0;
+
+    for (size_t i = countBefore; i < countAfter; i++) {
+        static_cast<CCNode*>(arr->objectAtIndex(i))->setTag(SPIDER_DASH_CIRCLE_WAVE_TAG);
+    }
+
+    for (auto child : m_parentLayer->getChildrenExt()) {
+        if (child->getZOrder() != 40) continue;
+        if (!child->getID().empty()) continue;
+
+        auto sprite = typeinfo_cast<CCSprite*>(child);
+        if (!sprite) continue;
+
+        auto sfc = cachedSingleton<CCSpriteFrameCache>();
+        auto* spdash1 = sfc->spriteFrameByName("spiderDash_001.png")->getTexture();
+        auto* tex = sprite->getTexture();
+
+        if (tex == spdash1) {
+            sprite->setTag(SPIDER_DASH_SPRITE_TAG);
+        }
+    }
+
+    m_tpColorDelta = 0.f;
+    this->spiderTeleportUpdateColor();
+}
+
+static inline ccColor3B lerpColor(ccColor3B from, ccColor3B to, float delta) {
+    delta = std::clamp(delta, 0.f, 1.f);
+
+    ccColor3B out;
+    out.r = std::lerp(from.r, to.r, delta);
+    out.g = std::lerp(from.g, to.g, delta);
+    out.b = std::lerp(from.b, to.b, delta);
+
+    return out;
+}
+
+void VisualPlayer::spiderTeleportUpdateColor() {
+    constexpr float MAX_TIME = 0.4f;
+
+    m_tpColorDelta += (1.f / 60.f);
+
+    float delta = m_tpColorDelta / MAX_TIME;
+
+    if (delta >= 1.f) {
+        this->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
+        this->setColor(m_color1);
+        this->setSecondColor(m_color2);
+        return;
+    }
+
+    auto main = lerpColor(ccColor3B{255, 255, 255}, m_color1, delta);
+    auto secondary = lerpColor(ccColor3B{255, 255, 255}, m_color2, delta);
+
+    this->setColor(main);
+    this->setSecondColor(secondary);
+
+    auto* seq = CCSequence::create(
+        CCDelayTime::create(1.f / 60.f),
+        CCCallFunc::create(this, callfunc_selector(VisualPlayer::spiderTeleportUpdateColor)),
+        nullptr
+    );
+    seq->setTag(SPIDER_TELEPORT_COLOR_ACTION);
+
+    this->runAction(seq);
 }
 
 void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
