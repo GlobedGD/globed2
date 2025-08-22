@@ -34,11 +34,11 @@ static std::vector<Ref<CCAction>> getAllActions(CCNode* target) {
 
     auto am = target->m_pActionManager;
 
-    tHashElement *pElement = NULL;
+    tHashElement* pElement = nullptr;
     HASH_FIND_INT(am->m_pTargets, &target, pElement);
 
     if (pElement) {
-        if (pElement->actions != NULL) {
+        if (pElement->actions != nullptr) {
             unsigned int limit = pElement->actions->num;
             for (unsigned int i = 0; i < limit; ++i) {
                 out.push_back((CCAction*)pElement->actions->arr[i]);
