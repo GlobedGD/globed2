@@ -26,8 +26,10 @@ private:
 
     void onClose(CCObject*) override;
     void onUpload();
+    void onPaste();
     void invalidateSignature();
     geode::Result<> loadCodeFromPath(const std::filesystem::path& path);
+    void loadCodeFromString(std::string&& code);
 };
 
 }

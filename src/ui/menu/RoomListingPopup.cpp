@@ -140,7 +140,7 @@ void RoomListingPopup::doJoinRoom(uint32_t roomId, bool hasPassword) {
     if (hasPassword) {
         // prompt for password
         auto popup = InputPopup::create("chatFont.fnt");
-        popup->setTitle("Join Room");
+        popup->setTitle("Room Password");
         popup->setPlaceholder("Room Password");
         popup->setCommonFilter(CommonFilter::Uint);
         popup->setMaxCharCount(16);

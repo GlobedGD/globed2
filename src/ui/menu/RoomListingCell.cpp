@@ -71,6 +71,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
     //     .collect();
 
     auto nameButton = Build(NameLabel::create(info.roomOwner.accountData.username, "goldFont.fnt", false))
+        .scale(0.5f)
         .id("player-name")
         .pos(3.f, 50.f)
         .zOrder(0)

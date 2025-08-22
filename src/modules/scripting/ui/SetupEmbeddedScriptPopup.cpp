@@ -3,6 +3,7 @@
 
 #include <UIBuilder.hpp>
 #include <asp/fs.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
@@ -105,13 +106,25 @@ bool SetupEmbeddedScriptPopup::setup(TextGameObject* obj) {
         .pos(60.f, 24.f)
         .parent(m_mainLayer);
 
+    CCSize btnSize {32.f, 32.f};
+
     // upload btn
     Build<CCSprite>::createSpriteName("GJ_myServerBtn_001.png")
-        .scale(0.7f)
+        .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
         .intoMenuItem([this] {
             this->onUpload();
         })
         .pos(this->fromBottomRight(24.f, 26.f))
+        .scaleMult(1.15f)
+        .parent(m_buttonMenu);
+
+    // paste btn
+    Build(CircleButtonSprite::createWithSprite("clipboard-icon.png"_spr, 1.f, CircleBaseColor::Pink, CircleBaseSize::Small))
+        .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
+        .intoMenuItem([this] {
+            this->onPaste();
+        })
+        .pos(this->fromBottomRight(60.f, 26.f))
         .scaleMult(1.15f)
         .parent(m_buttonMenu);
 
@@ -143,14 +156,22 @@ void SetupEmbeddedScriptPopup::onUpload() {
     });
 }
 
+void SetupEmbeddedScriptPopup::onPaste() {
+    this->loadCodeFromString(geode::utils::clipboard::read());
+}
+
 Result<> SetupEmbeddedScriptPopup::loadCodeFromPath(const std::filesystem::path& path) {
     auto code = GEODE_UNWRAP(asp::fs::readToString(path).mapErr([](auto err) { return err.message(); }));
-    m_script.content = code;
-    m_editor->setContent(code);
-    m_madeChanges = true;
-    this->invalidateSignature();
+    this->loadCodeFromString(std::move(code));
 
     return Ok();
+}
+
+void SetupEmbeddedScriptPopup::loadCodeFromString(std::string&& code) {
+    m_editor->setContent(code);
+    m_script.content = std::move(code);
+    m_madeChanges = true;
+    this->invalidateSignature();
 }
 
 void SetupEmbeddedScriptPopup::invalidateSignature() {
@@ -171,6 +192,8 @@ void SetupEmbeddedScriptPopup::onClose(CCObject* obj) {
                 }
             }
         );
+
+        return;
     }
 
     // commit changes
