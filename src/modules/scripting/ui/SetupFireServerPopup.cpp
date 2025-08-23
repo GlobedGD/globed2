@@ -153,7 +153,13 @@ CCNode* SetupFireServerPopup::createParam(size_t idx, int value) {
 CCNode* SetupFireServerPopup::createInputBox(size_t idx, int value) {
     auto input = TextInput::create(60.f, "0");
     input->setCommonFilter(CommonFilter::Int);
-    input->setString(fmt::to_string(value));
+
+    if (value == 0) {
+        input->setString("");
+    } else {
+        input->setString(fmt::to_string(value));
+    }
+
     input->setCallback([this, input, idx](const std::string& str) {
         if (str.empty()) {
             this->onPropChange(idx, 0);
@@ -162,7 +168,7 @@ CCNode* SetupFireServerPopup::createInputBox(size_t idx, int value) {
 
         auto res = geode::utils::numFromString<int>(str);
         if (!res) {
-            input->setString("0");
+            input->setString("");
             this->onPropChange(idx, 0);
             return;
         }
