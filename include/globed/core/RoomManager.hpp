@@ -20,6 +20,8 @@ public:
     int getRoomOwner();
     std::optional<uint8_t> pickServerId();
     RoomSettings& getSettings();
+    void setAttemptedPasscode(uint64_t code);
+    uint64_t getPasscode();
 
     uint16_t getCurrentTeamId();
     std::optional<RoomTeam> getCurrentTeam();
@@ -32,6 +34,7 @@ private:
     ~RoomManager() = default;
 
     uint32_t m_roomId = 0;
+    uint64_t m_passcode = 0;
     int m_roomOwner = 0;
     std::string m_roomName;
     RoomSettings m_settings{};
@@ -39,6 +42,8 @@ private:
     uint16_t m_teamId = 0;
     std::unordered_map<uint16_t, std::vector<int>> m_teamMembers;
     std::vector<RoomTeam> m_teams;
+
+    void resetValues();
 
 };
 

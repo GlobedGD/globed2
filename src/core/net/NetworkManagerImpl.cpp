@@ -5,6 +5,7 @@
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
+#include <globed/core/RoomManager.hpp>
 #include <core/CoreImpl.hpp>
 #include "data/helpers.hpp"
 
@@ -689,7 +690,7 @@ void NetworkManagerImpl::sendGameLoginJoinRequest(SessionId id) {
         loginJoin.setAccountId(GJAccountManager::get()->m_accountID);
         loginJoin.setToken(this->getUToken().value_or(""));
         loginJoin.setSessionId(id);
-        loginJoin.setPasscode(0); // TODO
+        loginJoin.setPasscode(RoomManager::get().getPasscode());
         data::encodeIconData(gatherIconData(), loginJoin.initIcons());
     });
 }
@@ -707,7 +708,7 @@ void NetworkManagerImpl::sendGameJoinRequest(SessionId id) {
     (void) this->sendToGame([&](GameMessage::Builder& msg) {
         auto join = msg.initJoinSession();
         join.setSessionId(id);
-        join.setPasscode(0); // TODO
+        join.setPasscode(RoomManager::get().getPasscode());
     });
 }
 
@@ -783,6 +784,7 @@ void NetworkManagerImpl::sendJoinRoom(uint32_t id, uint32_t passcode) {
         auto joinRoom = msg.initJoinRoom();
         joinRoom.setRoomId(id);
         joinRoom.setPasscode(passcode);
+        RoomManager::get().setAttemptedPasscode(passcode);
     });
 }
 

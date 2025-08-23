@@ -108,12 +108,10 @@ RoomManager::RoomManager() {
 
     nm.listenGlobal<msg::RoomStateMessage>([this](const auto& msg) {
         if (msg.roomId != m_roomId) {
+            this->resetValues();
             m_roomId = msg.roomId;
             m_roomName = msg.roomName;
             m_roomOwner = msg.roomOwner;
-            m_teamId = 0;
-            m_teamMembers.clear();
-            m_teams.clear();
 
             // a change in rooms resets the warp context as well
             globed::_clearWarpContext();
@@ -157,6 +155,16 @@ RoomManager::RoomManager() {
 
         return ListenerResult::Continue;
     })->setPriority(-10000);
+}
+
+void RoomManager::resetValues() {
+    m_roomId = 0;
+    m_roomName = "";
+    m_roomOwner = 0;
+    m_teamId = 0;
+    m_passcode = 0;
+    m_teamMembers.clear();
+    m_teams.clear();
 }
 
 $on_mod(Loaded) { RoomManager::get(); }
