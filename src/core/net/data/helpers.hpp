@@ -353,7 +353,7 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
     for (auto player : players) {
         if (auto s = data::decodePlayerState(player)) {
             outMsg.players.emplace_back(*std::move(s));
-        } else {
+        } else if (player.getAccountId() != 0) {
             geode::log::warn("Server sent invalid player state data for {}, skipping", player.getAccountId());
         }
     }
@@ -363,7 +363,7 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
             outMsg.displayDatas.push_back(*std::move(s));
         } else {
             // can happen as an optimization
-            geode::log::debug("Server sent invalid player display data, skipping");
+            // geode::log::debug("Server sent invalid player display data, skipping");
         }
     }
 
@@ -377,6 +377,20 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
     }
 
     return outMsg;
+}
+
+/// Script logs
+
+inline msg::ScriptLogsMessage decodeScriptLogsMessage(const schema::game::ScriptLogsMessage::Reader& reader) {
+    std::vector<std::string> logs;
+    auto in = reader.getLogs();
+    logs.reserve(in.size());
+
+    for (auto r : in) {
+        logs.push_back(r);
+    }
+
+    return msg::ScriptLogsMessage { std::move(logs) };
 }
 
 /// User roles

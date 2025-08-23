@@ -100,6 +100,14 @@ RoomSettings& RoomManager::getSettings() {
     return m_settings;
 }
 
+void RoomManager::setAttemptedPasscode(uint32_t code) {
+    m_passcode = code;
+}
+
+uint32_t RoomManager::getPasscode() {
+    return m_passcode;
+}
+
 RoomManager::RoomManager() {
     m_roomId = 0;
     m_roomName = "Global Room";

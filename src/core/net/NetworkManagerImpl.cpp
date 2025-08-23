@@ -1193,6 +1193,11 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
             this->invokeListeners(data::decodeLevelDataMessage(data));
         } break;
 
+        case GameMessage::SCRIPT_LOGS: {
+            auto logs = msg.getScriptLogs();
+            this->invokeListeners(data::decodeScriptLogsMessage(logs));
+        } break;
+
         case GameMessage::KICKED: {
             // TODO
         } break;

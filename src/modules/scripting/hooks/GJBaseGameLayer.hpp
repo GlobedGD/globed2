@@ -13,6 +13,9 @@ namespace globed {
 struct GLOBED_NOVTABLE GLOBED_DLL SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBaseGameLayer> {
     struct Fields {
         std::optional<MessageListener<msg::LevelDataMessage>> m_listener;
+        std::optional<MessageListener<msg::ScriptLogsMessage>> m_logsListener;
+        std::vector<std::string> m_logBuffer;
+
         // std::unordered_map<uint16_t, std::vector<int>> m_customListeners;
     };
 
@@ -22,6 +25,8 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCBaseGameLayer : geode::Modify<SCBaseGameLaye
     void handleEvent(const Event& event);
 
     void addEventListener(const ListenEventPayload& obj);
+    void sendLogRequest(float);
+    std::vector<std::string>& getLogs();
 };
 
 }

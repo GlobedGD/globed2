@@ -101,6 +101,12 @@ struct LevelDataMessage {
     std::vector<Event> events;
 };
 
+// Script logs
+
+struct ScriptLogsMessage {
+    std::vector<std::string> logs;
+};
+
 // Admin
 
 struct AdminResultMessage {

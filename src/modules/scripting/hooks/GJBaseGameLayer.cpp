@@ -30,12 +30,33 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
         return ListenerResult::Continue;
     });
 
+    m_fields->m_logsListener = nm.listen<msg::ScriptLogsMessage>([this](const auto& msg) {
+        log::debug("Received {} logs from game server", msg.logs.size());
+
+        for (auto& log : msg.logs) {
+            m_fields->m_logBuffer.push_back(log);
+        }
+
+        return ListenerResult::Continue;
+    });
+
     // send over the scripts to the server if we are the room owner
     auto& rm = RoomManager::get();
     if (rm.isOwner() && !scripts.empty()) {
         log::info("Sending {} scripts to the server", scripts.size());
         nm.sendLevelScript(scripts);
+        this->schedule(schedule_selector(SCBaseGameLayer::sendLogRequest), 1.0f);
     }
+}
+
+void SCBaseGameLayer::sendLogRequest(float) {
+    Event ev{};
+    ev.type = EVENT_REQUEST_SCRIPT_LOGS;
+    NetworkManagerImpl::get().queueGameEvent(std::move(ev));
+}
+
+std::vector<std::string>& SCBaseGameLayer::getLogs() {
+    return m_fields->m_logBuffer;
 }
 
 void SCBaseGameLayer::handleEvent(const Event& event) {

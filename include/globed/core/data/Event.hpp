@@ -18,6 +18,7 @@ constexpr uint16_t EVENT_GLOBED_BASE = 0xf000;
 constexpr uint16_t EVENT_COUNTER_CHANGE = 0xf001;
 constexpr uint16_t EVENT_SPAWN_GROUP = 0xf010;
 constexpr uint16_t EVENT_SET_ITEM = 0xf011;
+constexpr uint16_t EVENT_REQUEST_SCRIPT_LOGS = 0xf012;
 constexpr uint16_t EVENT_2P_LINK_REQUEST = 0xf100;
 constexpr uint16_t EVENT_2P_UNLINK = 0xf101;
 
