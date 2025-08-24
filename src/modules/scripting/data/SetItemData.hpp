@@ -1,8 +1,6 @@
 #pragma once
 
 #include <qunet/buffers/ByteReader.hpp>
-#include <qunet/buffers/HeapByteWriter.hpp>
-#include <globed/core/data/Event.hpp>
 #include <modules/scripting/objects/ExtendedObjectBase.hpp>
 
 namespace globed {

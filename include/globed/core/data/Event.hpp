@@ -9,16 +9,21 @@ namespace globed {
 
 // Globed events
 // 0xf001 - EVENT_COUNTER_CHANGE
-// 0xf010 - EVENT_SPAWN_GROUP
-// 0xf011 - EVENT_SET_ITEM
+// 0xf010 - EVENT_SCR_SPAWN_GROUP
+// 0xf011 - EVENT_SCR_SET_ITEM
 // 0xf100 - EVENT_2P_LINK_REQUEST
 // 0xf101 - EVENT_2P_UNLINK
 
 constexpr uint16_t EVENT_GLOBED_BASE = 0xf000;
 constexpr uint16_t EVENT_COUNTER_CHANGE = 0xf001;
-constexpr uint16_t EVENT_SPAWN_GROUP = 0xf010;
-constexpr uint16_t EVENT_SET_ITEM = 0xf011;
-constexpr uint16_t EVENT_REQUEST_SCRIPT_LOGS = 0xf012;
+
+constexpr uint16_t EVENT_SCR_SPAWN_GROUP = 0xf010;
+constexpr uint16_t EVENT_SCR_SET_ITEM = 0xf011;
+constexpr uint16_t EVENT_SCR_REQUEST_SCRIPT_LOGS = 0xf012;
+constexpr uint16_t EVENT_SCR_MOVE_GROUP = 0xf013;
+constexpr uint16_t EVENT_SCR_MOVE_GROUP_ABSOLUTE = 0xf014;
+constexpr uint16_t EVENT_SCR_FOLLOW_PLAYER = 0xf015;
+
 constexpr uint16_t EVENT_2P_LINK_REQUEST = 0xf100;
 constexpr uint16_t EVENT_2P_UNLINK = 0xf101;
 
