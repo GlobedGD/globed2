@@ -47,7 +47,11 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
     if (rm.isOwner() && !scripts.empty()) {
         log::info("Sending {} scripts to the server", scripts.size());
         nm.sendLevelScript(scripts);
-        this->schedule(schedule_selector(SCBaseGameLayer::sendLogRequest), 1.0f);
+
+        auto gjbgl = GlobedGJBGL::get(this);
+        gjbgl->customSchedule("2p-send-log-request", [this](GlobedGJBGL*, float dt) {
+            this->sendLogRequest(dt);
+        }, 1.0f);
     }
 
     this->schedule(schedule_selector(SCBaseGameLayer::processCustomFollowActions));

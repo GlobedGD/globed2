@@ -32,6 +32,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_editor = false;
         bool m_didSchedule = false;
         float m_sendDataInterval = 0.0f;
+        std::vector<std::string> m_customSchedules;
 
         float m_timeCounter = 0.0f;
         float m_lastServerUpdate = 0.0f;
@@ -108,6 +109,10 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     CameraDirection getCameraDirection();
     GameCameraState getCameraState();
     RemotePlayer* getPlayer(int playerId);
+
+    void customSchedule(const std::string& id, std::function<void(GlobedGJBGL*, float)>&& f, float interval);
+    void customUnschedule(const std::string& id);
+    void customUnscheduleAll();
 
 private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);

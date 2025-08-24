@@ -14,6 +14,33 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
+namespace {
+
+class CustomSchedule : public CCObject {
+public:
+    using Fn = std::function<void(globed::GlobedGJBGL*, float)>;
+
+    static CustomSchedule* create(Fn&& fn, float interval, globed::GlobedGJBGL* gjbgl) {
+        auto ret = new CustomSchedule;
+        ret->m_fn = std::move(fn);
+        ret->m_gjbgl = gjbgl;
+        ret->autorelease();
+        CCScheduler::get()->scheduleSelector(schedule_selector(CustomSchedule::invoke), ret, interval, false);
+        return ret;
+    }
+private:
+    Fn m_fn;
+    globed::GlobedGJBGL* m_gjbgl;
+
+    CustomSchedule() {}
+
+    void invoke(float dt) {
+        m_fn(m_gjbgl, dt);
+    }
+};
+
+}
+
 namespace globed {
 
 void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
@@ -526,6 +553,29 @@ RemotePlayer* GlobedGJBGL::getPlayer(int playerId) {
     auto it = players.find(playerId);
 
     return it == players.end() ? nullptr : it->second.get();
+}
+
+void GlobedGJBGL::customSchedule(const std::string& id, std::function<void(GlobedGJBGL*, float)>&& f, float interval) {
+    auto sched = CustomSchedule::create(std::move(f), interval, this);
+    this->setUserObject(id, sched);
+}
+
+void GlobedGJBGL::customUnschedule(const std::string& id) {
+    this->setUserObject(id, nullptr);
+
+    auto& fields = *m_fields.self();
+    fields.m_customSchedules.erase(std::find_if(fields.m_customSchedules.begin(), fields.m_customSchedules.end(), [&](const auto& s) {
+        return s == id;
+    }));
+}
+
+void GlobedGJBGL::customUnscheduleAll() {
+    auto& fields = *m_fields.self();
+    for (auto& id : fields.m_customSchedules) {
+        this->setUserObject(id, nullptr);
+    }
+
+    fields.m_customSchedules.clear();
 }
 
 void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
