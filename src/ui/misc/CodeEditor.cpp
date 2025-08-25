@@ -44,16 +44,16 @@ bool CodeEditor::init(CCSize size) {
         .pos(size / 2.f)
         .parent(this);
 
-    m_label = Build<CCLabelBMFont>::create("", "Consolas.fnt"_spr)
+    m_label = Build<Label>::create("", "Consolas.fnt"_spr)
         .anchorPoint(0.f, 1.f)
         .parent(m_scrollLayer->m_contentLayer);
 
-    m_lineNumberColumn = Build<CCLabelBMFont>::create("", "Consolas.fnt"_spr)
+    m_lineNumberColumn = Build<Label>::create("", "Consolas.fnt"_spr)
         .opacity(160)
         .anchorPoint(0.f, 1.f)
         .parent(m_scrollLayer->m_contentLayer);
 
-    this->setFontSize(0.6f);
+    this->setFontSize(0.5f);
 
     this->updateLineNumbers();
     this->updateScrollLayer();
@@ -118,7 +118,7 @@ void CodeEditor::updateLineNumbers() {
 
     outStr += "    ";
 
-    m_lineNumberColumn->setAlignment(cocos2d::kCCTextAlignmentRight);
+    m_lineNumberColumn->setAlignment(BMFontAlignment::Right);
 
     m_lineNumberColumn->setString(outStr.c_str());
 }

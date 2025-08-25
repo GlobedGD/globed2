@@ -3,6 +3,8 @@
 #include <Geode/Geode.hpp>
 #include <globed/util/CStr.hpp>
 
+#include <AdvancedLabel.hpp>
+
 namespace globed {
 
 class CodeEditor : public cocos2d::CCLayer {
@@ -15,9 +17,9 @@ public:
 private:
     cocos2d::CCSize m_size;
     cocos2d::CCLayerColor* m_background;
-    cocos2d::CCLabelBMFont* m_label;
+    Label* m_label;
     geode::ScrollLayer* m_scrollLayer;
-    cocos2d::CCLabelBMFont* m_lineNumberColumn = nullptr;
+    Label* m_lineNumberColumn = nullptr;
     std::string m_textBuffer;
     size_t m_cursorPos = -1;
     cocos2d::CCPoint m_cursorUiPos{};
