@@ -106,6 +106,7 @@ CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
 CPMAddPackage("gh:dankmeme01/cue#main")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 CPMAddPackage("gh:Prevter/sinaps#2541d6d")
+CPMAddPackage("gh:Prevter/AdvancedLabel#d78d7f82")
 
 if (GLOBED_VOICE_SUPPORT)
     CPMAddPackage("gh:xiph/opus#v1.5.2")
@@ -113,4 +114,4 @@ if (GLOBED_VOICE_SUPPORT)
     target_link_libraries(${PROJECT_NAME} opus)
 endif()
 
-target_link_libraries(${PROJECT_NAME} CapnProto::capnp ServerShared qunet asp argon cue UIBuilder sinaps)
+target_link_libraries(${PROJECT_NAME} CapnProto::capnp ServerShared qunet asp argon cue UIBuilder sinaps advanced_label)

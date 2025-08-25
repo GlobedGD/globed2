@@ -390,7 +390,7 @@ inline msg::ScriptLogsMessage decodeScriptLogsMessage(const schema::game::Script
         logs.push_back(r);
     }
 
-    return msg::ScriptLogsMessage { std::move(logs) };
+    return msg::ScriptLogsMessage { std::move(logs), reader.getRamUsage() };
 }
 
 /// User roles

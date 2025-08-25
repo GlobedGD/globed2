@@ -105,6 +105,7 @@ struct LevelDataMessage {
 
 struct ScriptLogsMessage {
     std::vector<std::string> logs;
+    float memUsage;
 };
 
 // Admin

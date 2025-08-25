@@ -10,6 +10,7 @@
 #include <modules/scripting/data/FollowPlayerData.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 namespace globed {
 
@@ -33,10 +34,17 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
     });
 
     m_fields->m_logsListener = nm.listen<msg::ScriptLogsMessage>([this](const auto& msg) {
-        log::debug("Received {} logs from game server", msg.logs.size());
+        auto& fields = *m_fields.self();
+
+        log::debug("Received {} logs from game server, mem usage: {}", msg.logs.size(), msg.memUsage * 100.f);
 
         for (auto& log : msg.logs) {
-            m_fields->m_logBuffer.push_back(log);
+            fields.m_logBuffer.push_back(log);
+        }
+
+        fields.m_memLimitBuffer.push_back({ SystemTime::now(), msg.memUsage });
+        if (fields.m_memLimitBuffer.size() > 300) {
+            fields.m_memLimitBuffer.pop_front();
         }
 
         return ListenerResult::Continue;
@@ -164,6 +172,10 @@ void SCBaseGameLayer::unfollowAllForPlayer(int id) {
 
 std::vector<std::string>& SCBaseGameLayer::getLogs() {
     return m_fields->m_logBuffer;
+}
+
+std::deque<std::pair<asp::time::SystemTime, float>>& SCBaseGameLayer::getMemLimitBuffer() {
+    return m_fields->m_memLimitBuffer;
 }
 
 void SCBaseGameLayer::handleEvent(const Event& event) {

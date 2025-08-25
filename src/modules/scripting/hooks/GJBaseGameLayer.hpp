@@ -8,6 +8,8 @@
 #include <modules/scripting/objects/ListenEventObject.hpp>
 #include "Common.hpp"
 
+#include <asp/time/SystemTime.hpp>
+
 namespace globed {
 
 struct pairhash {
@@ -26,6 +28,7 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCBaseGameLayer : geode::Modify<SCBaseGameLaye
         std::optional<MessageListener<msg::LevelDataMessage>> m_listener;
         std::optional<MessageListener<msg::ScriptLogsMessage>> m_logsListener;
         std::vector<std::string> m_logBuffer;
+        std::deque<std::pair<asp::time::SystemTime, float>> m_memLimitBuffer;
 
         // std::unordered_map<uint16_t, std::vector<int>> m_customListeners;
         std::unordered_set<std::pair<int, int>, pairhash> m_customFollowers;
@@ -40,6 +43,7 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCBaseGameLayer : geode::Modify<SCBaseGameLaye
     void addEventListener(const ListenEventPayload& obj);
     void sendLogRequest(float);
     std::vector<std::string>& getLogs();
+    std::deque<std::pair<asp::time::SystemTime, float>>& getMemLimitBuffer();
 
     void customMoveBy(int group, double dx, double dy);
     void customMoveTo(int group, int center, double x, double y);
