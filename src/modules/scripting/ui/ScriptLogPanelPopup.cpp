@@ -109,12 +109,8 @@ void ScriptLogPanelPopup::refresh() {
                 joined += '\n';
             }
 
-            log::debug("to join took {} ({} chars)", start.elapsed().toString(), joined.size());
-            if (joined.size() > 40000) return;
 
             m_editor->setContent(joined);
-
-            log::debug("overall took {}", start.elapsed().toString());
         } else {
             auto& memLimits = gjbgl->getMemLimitBuffer();
             this->refreshGraph(memLimits);

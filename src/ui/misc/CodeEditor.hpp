@@ -17,23 +17,26 @@ public:
 private:
     cocos2d::CCSize m_size;
     cocos2d::CCLayerColor* m_background;
-    Label* m_label;
     geode::ScrollLayer* m_scrollLayer;
-    Label* m_lineNumberColumn = nullptr;
+    CCNode* m_textContainer;
+    std::vector<Label*> m_textLabels;
+    CCNode* m_lineNumContainer;
+    std::vector<Label*> m_lineNumLabels;
     std::string m_textBuffer;
     size_t m_cursorPos = -1;
     cocos2d::CCPoint m_cursorUiPos{};
     cocos2d::CCLayerColor* m_cursor = nullptr;
+    float m_textScale = 0.5f;
     bool m_activeTouch = false;
 
     bool init(cocos2d::CCSize size);
-    void updateScrollLayer();
-    void updateLineNumbers();
-    void updateFromBuffer();
 
+    void updateFromBuffer();
     void setCursorPos(size_t pos);
     void setCursorUiPos(cocos2d::CCPoint);
 
+    void updateState(bool recreate = false);
+    void splitStringInto(std::string_view str, std::vector<Label*>& labels, CCNode* container, BMFontAlignment alignment, uint8_t opacity);
 
     // Touch stuff
 

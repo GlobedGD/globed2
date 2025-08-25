@@ -44,19 +44,21 @@ bool CodeEditor::init(CCSize size) {
         .pos(size / 2.f)
         .parent(this);
 
-    m_label = Build<Label>::create("", "Consolas.fnt"_spr)
-        .anchorPoint(0.f, 1.f)
+    m_textContainer = Build<CCNode>::create()
+        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(0.f))
+        .contentSize(scrollSize.width - LINE_NUMBER_WIDTH, 0.f)
+        .anchorPoint(0.f, 0.f)
+        .pos(LINE_NUMBER_WIDTH, 0.f)
         .parent(m_scrollLayer->m_contentLayer);
 
-    m_lineNumberColumn = Build<Label>::create("", "Consolas.fnt"_spr)
-        .opacity(160)
-        .anchorPoint(0.f, 1.f)
+    m_lineNumContainer = Build<CCNode>::create()
+        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(0.f))
+        .contentSize(LINE_NUMBER_WIDTH, 0.f)
+        .anchorPoint(0.f, 0.f)
+        .pos(4.f, 0.f)
         .parent(m_scrollLayer->m_contentLayer);
 
     this->setFontSize(0.5f);
-
-    this->updateLineNumbers();
-    this->updateScrollLayer();
 
     return true;
 }
@@ -71,18 +73,16 @@ void CodeEditor::setContent(CStr content) {
             m_textBuffer.push_back(c);
         }
     }
+
     this->updateFromBuffer();
 }
 
 void CodeEditor::updateFromBuffer() {
-    m_label->setString(m_textBuffer.c_str());
-    this->updateLineNumbers();
-    this->updateScrollLayer();
+    this->updateState(false);
 }
 
 void CodeEditor::setFontSize(float scale) {
-    m_label->setScale(scale);
-    m_lineNumberColumn->setScale(scale);
+    m_textScale = scale;
 
     if (m_cursor) m_cursor->removeFromParent();
 
@@ -94,47 +94,105 @@ void CodeEditor::setFontSize(float scale) {
         .pos(m_cursorUiPos)
         .parent(m_scrollLayer->m_contentLayer);
 
-    this->updateScrollLayer();
+    this->updateState(true);
 }
 
-void CodeEditor::updateLineNumbers() {
-    auto str =  m_label->getString();
+void CodeEditor::splitStringInto(std::string_view str, std::vector<Label*>& labels, CCNode* container, BMFontAlignment alignment, uint8_t opacity) {
+    size_t curIdx = 0;
+
+    auto addOne = [&](std::string_view s) {
+        if (curIdx >= labels.size()) {
+            auto label = Label::create("", "Consolas.fnt"_spr, alignment, m_textScale);
+            label->setOpacity(opacity);
+            labels.push_back(label);
+            container->addChild(label);
+        }
+
+        auto label = labels[curIdx++];
+        label->setString(s);
+    };
+
+    size_t contentBegin = 0;
+    size_t inLine = 0;
+
+    for (char c : str) {
+        // allow up to 10000 characters in one label, and then scan until a newline
+        if (inLine > 10000 && c == '\n') {
+            addOne(str.substr(contentBegin, inLine));
+            contentBegin += inLine + 1;
+            inLine = 0;
+        } else {
+            inLine++;
+        }
+    }
+
+    if (inLine > 0) {
+        addOne(str.substr(contentBegin, inLine));
+    }
+
+    double totalHeight = 0.f;
+    for (auto label : labels) {
+        totalHeight += label->getContentHeight();
+    }
+
+    container->setContentHeight(totalHeight * (double)m_textScale);
+    container->updateLayout();
+
+}
+
+void CodeEditor::updateState(bool recreate) {
+    if (recreate) {
+        m_textContainer->removeAllChildren();
+        m_lineNumContainer->removeAllChildren();
+        m_textLabels.clear();
+        m_lineNumLabels.clear();
+    }
+
+    // calculate amount of lines and build the line string
+
     size_t lines = 1;
 
-    while (*str != '\0') {
-        if (*str == '\n') lines++;
-        str++;
+    for (char c : m_textBuffer) {
+        if (c == '\n') lines++;
     }
 
     std::string outStr;
     for (size_t i = 0; i < lines; i++) {
-        std::array<char, 64> buf;
+        std::array<char, 32> buf;
         auto result = fmt::format_to_n(buf.data(), buf.size(), "{}\n", i + 1);
 
         for (size_t j = 0; j < result.size; j++) {
+            if (i == lines - 1 && j == result.size - 1) {
+                // dont insert the final newline
+                continue;
+            }
+
             outStr.push_back(buf[j]);
         }
+
+        // if (i == 0) {
+        //     // bruh
+        //     for (size_t j = result.size; j < 4; j++) {
+        //         outStr.push_back(' ');
+        //     }
+        // }
     }
 
-    outStr += "    ";
+    splitStringInto(outStr, m_lineNumLabels, m_lineNumContainer, BMFontAlignment::Right, 160);
+    splitStringInto(m_textBuffer, m_textLabels, m_textContainer, BMFontAlignment::Left, 255);
 
-    m_lineNumberColumn->setAlignment(BMFontAlignment::Right);
-
-    m_lineNumberColumn->setString(outStr.c_str());
-}
-
-void CodeEditor::updateScrollLayer() {
-    auto csize = m_label->getScaledContentSize();
+    auto csize = m_textContainer ->getScaledContentSize();
     if (csize.height < m_scrollLayer->getContentHeight()) {
         csize.height = m_scrollLayer->getContentHeight();
     }
 
     m_scrollLayer->m_contentLayer->setContentSize(csize);
 
-    m_label->setPosition({LINE_NUMBER_WIDTH, csize.height});
+    for (auto lbl : m_lineNumLabels) {
+        lbl->setContentWidth(LINE_NUMBER_WIDTH);
+    }
 
-    m_lineNumberColumn->setContentSize({LINE_NUMBER_WIDTH, m_lineNumberColumn->getContentHeight()});
-    m_lineNumberColumn->setPosition({0.f, csize.height - 0.5f});
+    m_lineNumContainer->updateLayout();
 }
 
 void CodeEditor::setCursorPos(size_t pos) {
@@ -197,7 +255,7 @@ std::pair<size_t, cocos2d::CCPoint> CodeEditor::touchPosToBufferPos(CCPoint pos)
     // the content layer itself is either the height of the label or the minimum cap which is scroll layer height
     CCPoint labelRelPos = pos;
 
-    float labelHeight = m_label->getScaledContentHeight();
+    float labelHeight = cl->getScaledContentHeight();
     if (labelHeight < cl->getContentHeight()) {
         // if the user clicked on the empty space at the bottom, snap the Y position to the last line in the label
         float distToTop = cl->getContentHeight() - pos.y;
@@ -215,14 +273,16 @@ std::pair<size_t, cocos2d::CCPoint> CodeEditor::touchPosToBufferPos(CCPoint pos)
 
     // TODO: this logic really could be improved
     // find the closest character
-    CCFontSprite* spr = nullptr;
+    CCSprite* spr = nullptr;
     float distance = 99999999.f;
 
-    for (auto child : m_label->getChildrenExt<CCFontSprite>()) {
-        float dist = child->getPosition().getDistance(labelRelPos);
-        if (dist < distance) {
-            distance = dist;
-            spr = child;
+    for (auto label : m_textLabels) {
+        for (auto child : label->getChildrenExt<CCSprite>()) {
+            float dist = child->getPosition().getDistance(labelRelPos);
+            if (dist < distance) {
+                distance = dist;
+                spr = child;
+            }
         }
     }
 
@@ -238,10 +298,11 @@ std::pair<size_t, cocos2d::CCPoint> CodeEditor::touchPosToBufferPos(CCPoint pos)
 
     bool leftCloser = left.getDistance(labelRelPos) < right.getDistance(labelRelPos);
 
-    auto cursorPos = m_label->getPosition() - CCPoint{0.f, labelHeight} + (leftCloser ? left : right);
-    size_t bufPos = spr->getZOrder() + (leftCloser ? 0 : 1);
+    // auto cursorPos = m_label->getPosition() - CCPoint{0.f, labelHeight} + (leftCloser ? left : right);
+    // size_t bufPos = spr->getZOrder() + (leftCloser ? 0 : 1);
 
-    return {bufPos, cursorPos};
+    // return {bufPos, cursorPos};
+    return {};
 }
 
 CodeEditor* CodeEditor::create(CCSize size) {
