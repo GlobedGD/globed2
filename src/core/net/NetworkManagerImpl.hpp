@@ -46,7 +46,8 @@ struct ConnectionInfo {
     std::string m_gameServerUrl;
     std::optional<std::pair<std::string, SessionId>> m_gsDeferredConnectJoin;
     std::optional<SessionId> m_gsDeferredJoin;
-    std::queue<Event> m_gameEventQueue;
+    std::queue<OutEvent> m_gameEventQueue;
+    std::vector<EmbeddedScript> m_queuedScripts;
     bool m_gameEstablished = false;
 
     uint32_t m_gameTickrate = 0;
@@ -137,8 +138,9 @@ public:
         cocos2d::CCPoint cameraCenter,
         float cameraRadius
     );
+    void queueLevelScript(const std::vector<EmbeddedScript>& scripts);
     void sendLevelScript(const std::vector<EmbeddedScript>& scripts);
-    void queueGameEvent(Event&& event);
+    void queueGameEvent(OutEvent&& event);
 
     // Listeners
 

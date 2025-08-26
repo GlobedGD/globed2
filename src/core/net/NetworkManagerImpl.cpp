@@ -131,6 +131,10 @@ NetworkManagerImpl::NetworkManagerImpl() {
             } else {
                 this->sendGameLoginRequest();
             }
+
+            // if there was a queued script message, send it
+            auto queuedScripts = std::move(connInfo.m_queuedScripts);
+            this->sendLevelScript(queuedScripts);
         } else if (state == qn::ConnectionState::Disconnected) {
             log::debug("disconnected from game server at {}", connInfo.m_gameServerUrl);
             connInfo.m_gameEstablished = false;
@@ -735,17 +739,33 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
             reqs.set(i, dataRequests[i]);
         }
 
-        auto evs = playerData.initEvents(std::min<size_t>(connInfo.m_gameEventQueue.size(), 64));
-        for (size_t i = 0; i < evs.size(); i++) {
+        qn::HeapByteWriter eventEncoder;
+        for (size_t i = 0; i < std::min<size_t>(64, connInfo.m_gameEventQueue.size()); i++) {
             auto& event = connInfo.m_gameEventQueue.front();
-
-            auto ev = evs[i];
-            ev.setType(event.type);
-            ev.setData({(kj::byte*) event.data.data(), event.data.size()});
+            if (auto err = event.encode(eventEncoder).err()) {
+                log::warn("Failed to encode event: {}", *err);
+            }
 
             connInfo.m_gameEventQueue.pop();
         }
+
+        auto eventData = std::move(eventEncoder).intoVector();
+        playerData.setEventData(kj::ArrayPtr{eventData.data(), eventData.size()});
     }, !connInfo.m_gameEventQueue.empty());
+}
+
+void NetworkManagerImpl::queueLevelScript(const std::vector<EmbeddedScript>& scripts) {
+    {
+        auto lock = m_connInfo.lock();
+        if (!*lock) return;
+
+        auto& connInfo = **lock;
+        if (connInfo.m_gameEstablished) {
+            this->sendLevelScript(scripts);
+        } else {
+            (*lock)->m_queuedScripts = scripts;
+        }
+    }
 }
 
 void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scripts) {
@@ -754,7 +774,7 @@ void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scri
     });
 }
 
-void NetworkManagerImpl::queueGameEvent(Event&& event) {
+void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
     auto lock = m_connInfo.lock();
     if (!*lock) {
         return;
