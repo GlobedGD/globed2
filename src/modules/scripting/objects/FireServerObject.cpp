@@ -17,33 +17,8 @@ void FireServerObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, gd::vector<
 
     auto& payload = *res;
 
-    qn::HeapByteWriter writer;
-    writer.writeU8(payload.argCount);
-
-    // Encode the argument types, MSB is for first argument and LSB is for the last argument.
-    // one bit per argument (max 8), bit 1 means float, bit 0 means int.
-
-    uint8_t typeByte = 0;
-    uint8_t shift = 7;
-
-    for (size_t i = 0; i < payload.argCount; i++) {
-        auto& arg = payload.args[i];
-
-        if (arg.type == FireServerArgType::Timer) {
-            // this is a float
-            typeByte |= (1 << shift);
-        } else if (arg.type == FireServerArgType::Item || arg.type == FireServerArgType::Static) {
-            // this is an int, do nothing
-        } else {
-            // this should never happen
-            GLOBED_ASSERT(false && "Invalid FireServerArgType in payload");
-            std::unreachable();
-        }
-
-        shift--;
-    }
-
-    writer.writeU8(typeByte);
+    ScriptedEvent ev{};
+    ev.type = payload.eventId;
 
     // encode the values
 
@@ -52,25 +27,21 @@ void FireServerObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, gd::vector<
 
         if (arg.type == FireServerArgType::Static) {
             // treat value as a static int value
-            writer.writeI32(arg.value);
+            ev.args.push_back(arg.value);
         } else if (arg.type == FireServerArgType::Item) {
             // treat value as an item ID
             auto value = (int) gjbgl->getItemValue(1, arg.value);
-            writer.writeI32(value);
+            ev.args.push_back(value);
         } else if (arg.type == FireServerArgType::Timer) {
             // treat value as a timer ID
             float value = gjbgl->getItemValue(2, arg.value);
-            writer.writeF32(value);
+            ev.args.push_back(value);
         }
     }
 
     // send off the event
-    NetworkManagerImpl::get().queueGameEvent(Event {
-        .type = payload.eventId,
-        .data = std::move(writer).intoVector(),
-    });
+    NetworkManagerImpl::get().queueGameEvent(std::move(ev));
 }
-
 
 static Result<FireServerPayload, qn::ByteReaderError> decodePayload(qn::ByteReader& reader) {
     FireServerPayload out{};

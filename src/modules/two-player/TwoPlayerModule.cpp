@@ -150,24 +150,11 @@ void TwoPlayerModule::unlink(bool silent) {
 }
 
 void TwoPlayerModule::sendUnlinkEventTo(int id) {
-    qn::HeapByteWriter writer;
-    writer.writeI32(id);
-
-    NetworkManagerImpl::get().queueGameEvent(Event {
-        .type = EVENT_2P_UNLINK,
-        .data = std::move(writer).intoVector(),
-    });
+    NetworkManagerImpl::get().queueGameEvent(TwoPlayerUnlinkEvent { id });
 }
 
 void TwoPlayerModule::sendLinkEventTo(int id, bool player2) {
-    qn::HeapByteWriter writer;
-    writer.writeI32(id);
-    writer.writeBool(!player2);
-
-    NetworkManagerImpl::get().queueGameEvent(Event {
-        .type = EVENT_2P_LINK_REQUEST,
-        .data = std::move(writer).intoVector(),
-    });
+    NetworkManagerImpl::get().queueGameEvent(TwoPlayerLinkRequestEvent { id, !player2 });
 }
 
 void TwoPlayerModule::linkSuccess(int id, bool player2) {
@@ -182,51 +169,40 @@ void TwoPlayerModule::linkSuccess(int id, bool player2) {
     }
 }
 
-void TwoPlayerModule::handleEvent(const Event& event) {
-    switch (event.type) {
-        case EVENT_2P_LINK_REQUEST: {
-            qn::ByteReader reader{event.data};
-            if (auto err = this->handleLinkEvent(reader).err()) {
-                log::error("Server sent invalid 2p link event: {}", err->message());
-            }
-        } break;
-
-        case EVENT_2P_UNLINK: {
-            qn::ByteReader reader{event.data};
-            if (auto err = this->handleUnlinkEvent(reader).err()) {
-                log::error("Server sent invalid 2p unlink event: {}", err->message());
-            }
-        } break;
+void TwoPlayerModule::handleEvent(const InEvent& event) {
+    if (event.is<TwoPlayerLinkRequestEvent>()) {
+        auto& ev = event.as<TwoPlayerLinkRequestEvent>();
+        this->handleLinkEvent(ev);
+    } else if (event.is<TwoPlayerUnlinkEvent>()) {
+        auto& ev = event.as<TwoPlayerUnlinkEvent>();
+        this->handleUnlinkEvent(ev);
     }
 }
 
-qn::ByteReader::Result<> TwoPlayerModule::handleLinkEvent(qn::ByteReader& reader) {
-    int id = GEODE_UNWRAP(reader.readI32());
-    bool player2 = !GEODE_UNWRAP(reader.readBool());
-
+void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkRequestEvent& event) {
     // are we already linked? if so, ignore this event
     if (m_linkedPlayer) {
-        this->sendUnlinkEventTo(id);
-        return Ok();
+        this->sendUnlinkEventTo(event.playerId);
+        return;
     }
 
     // are we currently trying to link? check if it's the right user
     if (m_linkAttempt) {
-        if (*m_linkAttempt != id) {
-            this->sendUnlinkEventTo(id);
-            return Ok();
+        if (*m_linkAttempt != event.playerId) {
+            this->sendUnlinkEventTo(event.playerId);
+            return;
         }
 
         // successful link!
-        this->linkSuccess(id, player2);
-        return Ok();
+        this->linkSuccess(event.playerId, !event.player1);
+        return;
     }
 
     // if we are not currently trying to link, show a popup to the user, asking if they agree to link
     std::string username;
 
     if (auto pl = GlobedGJBGL::get()) {
-        if (auto player = pl->getPlayer(id)) {
+        if (auto player = pl->getPlayer(event.playerId)) {
             if (player->isDataInitialized()) {
                 username = player->displayData().username;
             }
@@ -234,42 +210,36 @@ qn::ByteReader::Result<> TwoPlayerModule::handleLinkEvent(qn::ByteReader& reader
     }
 
     if (username.empty()) {
-        username = fmt::format("Unknown ({})", id);
+        username = fmt::format("Unknown ({})", event.playerId);
     }
 
     globed::quickPopup(
         "Note",
-        fmt::format("<cg>{}</c> wants to link with you. You will be playing as the <cy>{} player</c>. Agree to link?", username, player2 ? "second" : "first"),
+        fmt::format("<cg>{}</c> wants to link with you. You will be playing as the <cy>{} player</c>. Agree to link?", username, event.player1 ? "first" : "second"),
         "Cancel",
         "Agree",
-        [this, id, player2](auto, bool agree) {
+        [this, event](auto, bool agree) {
             if (!agree) {
-                this->sendUnlinkEventTo(id);
+                this->sendUnlinkEventTo(event.playerId);
             } else {
                 // successful link! make sure to send confirmation event
-                this->sendLinkEventTo(id, player2);
-                this->linkSuccess(id, player2);
+                this->sendLinkEventTo(event.playerId, !event.player1);
+                this->linkSuccess(event.playerId, !event.player1);
             }
         }
     );
-
-    return Ok();
 }
 
-qn::ByteReader::Result<> TwoPlayerModule::handleUnlinkEvent(qn::ByteReader& reader) {
-    int id = GEODE_UNWRAP(reader.readI32());
-
-    if (m_linkedPlayer == id) {
+void TwoPlayerModule::handleUnlinkEvent(const TwoPlayerUnlinkEvent& event) {
+    if (m_linkedPlayer == event.playerId) {
         this->unlink(true);
-        return Ok();
+        return;
     }
 
     // if this is from the current link attempt, cancel the attempt
-    if (m_linkAttempt == id) {
+    if (m_linkAttempt == event.playerId) {
         m_linkAttempt.reset();
     }
-
-    return Ok();
 }
 
 }

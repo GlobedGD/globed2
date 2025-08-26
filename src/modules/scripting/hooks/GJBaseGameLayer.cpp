@@ -22,8 +22,9 @@ SCBaseGameLayer* SCBaseGameLayer::get(GJBaseGameLayer* base) {
 
 void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
     auto& nm = NetworkManagerImpl::get();
+    auto& fields = *m_fields.self();
 
-    m_fields->m_listener = nm.listen<msg::LevelDataMessage>([this](const auto& msg) {
+    fields.m_listener = nm.listen<msg::LevelDataMessage>([this](const auto& msg) {
         auto& fields = *m_fields.self();
 
         for (auto& event : msg.events) {
@@ -33,12 +34,13 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
         return ListenerResult::Continue;
     });
 
-    m_fields->m_logsListener = nm.listen<msg::ScriptLogsMessage>([this](const auto& msg) {
+    fields.m_logsListener = nm.listen<msg::ScriptLogsMessage>([this](const auto& msg) {
         auto& fields = *m_fields.self();
 
         log::debug("Received {} logs from game server, mem usage: {}", msg.logs.size(), msg.memUsage * 100.f);
 
         for (auto& log : msg.logs) {
+            log::debug("(Script) {}", log);
             fields.m_logBuffer.push_back(log);
         }
 
@@ -54,7 +56,7 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
     auto& rm = RoomManager::get();
     if (rm.isOwner() && !scripts.empty()) {
         log::info("Sending {} scripts to the server", scripts.size());
-        nm.sendLevelScript(scripts);
+        nm.queueLevelScript(scripts);
 
         auto gjbgl = GlobedGJBGL::get(this);
         gjbgl->customSchedule("2p-send-log-request", [this](GlobedGJBGL*, float dt) {
@@ -62,13 +64,13 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
         }, 1.0f);
     }
 
+    fields.m_localId = cachedSingleton<GJAccountManager>()->m_accountID;
+
     this->schedule(schedule_selector(SCBaseGameLayer::processCustomFollowActions));
 }
 
 void SCBaseGameLayer::sendLogRequest(float) {
-    Event ev{};
-    ev.type = EVENT_SCR_REQUEST_SCRIPT_LOGS;
-    NetworkManagerImpl::get().queueGameEvent(std::move(ev));
+    NetworkManagerImpl::get().queueGameEvent(RequestScriptLogsEvent{});
 }
 
 void SCBaseGameLayer::customMoveBy(int group, double dx, double dy) {
@@ -123,18 +125,31 @@ void SCBaseGameLayer::customFollowPlayer(int id, int group, bool enable) {
     auto& fields = *m_fields.self();
 
     auto gjbgl = GlobedGJBGL::get(this);
-    auto rp = gjbgl->getPlayer(id);
-    if (!rp && enable) {
-        log::warn("Tried to follow invalid player: {}", id);
-        return;
-    }
 
     if (enable) {
+        CCPoint curPos;
+        if (id == fields.m_localId) {
+            curPos = m_player1->getPosition();
+        } else {
+            auto rp = gjbgl->getPlayer(id);
+
+            if (!rp) {
+                log::warn("Tried to follow invalid player: {}", id);
+                return;
+            }
+
+            curPos = rp->player1()->getLastPosition();
+        }
+
+        log::debug("Following player {} for group {}", id, group);
         fields.m_customFollowers.insert(std::make_pair(id, group));
-        fields.m_lastPlayerPositions[id] = rp->player1()->getLastPosition();
+        fields.m_lastPlayerPositions[id] = curPos;
     } else {
+        log::debug("Unfollowing player {} for group {}", id, group);
         fields.m_customFollowers.erase(std::make_pair(id, group));
-        fields.m_lastPlayerPositions.erase(id);
+
+        // TODO: only remove if player is gone from the map
+        // fields.m_lastPlayerPositions.erase(id);
     }
 }
 
@@ -145,15 +160,22 @@ void SCBaseGameLayer::processCustomFollowActions(float) {
     std::vector<int> toUnfollow;
 
     for (auto& [player, group] : fields.m_customFollowers) {
-        auto rp = gjbgl->getPlayer(player);
-        if (!rp) {
-            // unfollow
-            toUnfollow.push_back(player);
-            continue;
+        CCPoint pos;
+
+        if (player == fields.m_localId) {
+            pos = m_player1->getPosition();
+        } else {
+            auto rp = gjbgl->getPlayer(player);
+            if (!rp) {
+                // unfollow
+                toUnfollow.push_back(player);
+                continue;
+            }
+
+            pos = rp->player1()->getLastPosition();
         }
 
         auto& lastPos = fields.m_lastPlayerPositions[player];
-        auto pos = rp->player1()->getLastPosition();
 
         float dx = pos.x - lastPos.x;
         float dy = pos.y - lastPos.y;
@@ -178,84 +200,49 @@ std::deque<std::pair<asp::time::SystemTime, float>>& SCBaseGameLayer::getMemLimi
     return m_fields->m_memLimitBuffer;
 }
 
-void SCBaseGameLayer::handleEvent(const Event& event) {
+void SCBaseGameLayer::handleEvent(const InEvent& event) {
     auto& fields = *m_fields.self();
-    qn::ByteReader reader{event.data};
 
-    switch (event.type) {
-        case EVENT_SCR_SPAWN_GROUP: {
-            auto res = globed::decodeSpawnData(reader);
-            if (!res) {
-                log::warn("Failed to decode spawn group data: {}", res.unwrapErr());
-                return;
-            }
+    if (event.is<SpawnGroupEvent>()) {
+        auto& data = event.as<SpawnGroupEvent>().data;
 
-            auto data = std::move(res).unwrap();
-            double delay = data.delay.value_or(0.f);
+        double delay = data.delay.value_or(0.f);
 
-            if (data.delayVariance > 0.f) {
-                double min = std::max(0.0, delay - data.delayVariance);
-                double max = delay + data.delayVariance;
-                delay = rng()->random(min, max);
-            }
+        if (data.delayVariance > 0.f) {
+            double min = std::max(0.0, delay - data.delayVariance);
+            double max = delay + data.delayVariance;
+            delay = rng()->random(min, max);
+        }
 
-            log::debug("Spawning group {} with delay {} (ordered: {})", data.groupId, delay, data.ordered);
+        log::debug("Spawning group {} with delay {} (ordered: {})", data.groupId, delay, data.ordered);
 
-            this->spawnGroup(
-                data.groupId,
-                data.ordered,
-                delay,
-                data.remaps,
-                0,
-                0
-            );
-        } break;
+        this->spawnGroup(
+            data.groupId,
+            data.ordered,
+            delay,
+            data.remaps,
+            0,
+            0
+        );
+    } else if (event.is<SetItemEvent>()) {
+        auto& data = event.as<SetItemEvent>().data;
 
-        case EVENT_SCR_SET_ITEM: {
-            auto res = globed::decodeSetItemData(reader);
-            if (!res) {
-                log::warn("Failed to decode set item data: {}", res.unwrapErr());
-                return;
-            }
+        m_effectManager->updateCountForItem(data.itemId, data.value);
+        this->updateCounters(data.itemId, data.value);
+    } else if (event.is<MoveGroupEvent>()) {
+        auto& data = event.as<MoveGroupEvent>().data;
 
-            auto data = std::move(res).unwrap();
-            m_effectManager->updateCountForItem(data.itemId, data.value);
-            this->updateCounters(data.itemId, data.value);
-        } break;
+        this->customMoveBy(data.group, data.x, data.y);
+    } else if (event.is<MoveGroupAbsoluteEvent>()) {
+        auto& data = event.as<MoveGroupAbsoluteEvent>().data;
 
-        case EVENT_SCR_MOVE_GROUP: {
-            auto res = globed::decodeMoveGroupData(reader);
-            if (!res) {
-                log::warn("Failed to decode move group data: {}", res.unwrapErr());
-                return;
-            }
+        this->customMoveTo(data.group, data.center, data.x, data.y);
+    } else if (event.is<FollowPlayerEvent>()) {
+        auto& data = event.as<FollowPlayerEvent>().data;
 
-            auto data = std::move(res).unwrap();
-            this->customMoveBy(data.group, data.x, data.y);
-        } break;
-
-        case EVENT_SCR_MOVE_GROUP_ABSOLUTE: {
-            auto res = globed::decodeMoveAbsGroupData(reader);
-            if (!res) {
-                log::warn("Failed to decode move abs group data: {}", res.unwrapErr());
-                return;
-            }
-
-            auto data = std::move(res).unwrap();
-            this->customMoveTo(data.group, data.center, data.x, data.y);
-        } break;
-
-        case EVENT_SCR_FOLLOW_PLAYER: {
-            auto res = globed::decodeFollowPlayerData(reader);
-            if (!res) {
-                log::warn("Failed to decode follow data: {}", res.unwrapErr());
-                return;
-            }
-
-            auto data = std::move(res).unwrap();
-            this->customFollowPlayer(data.player, data.group, data.enable);
-        } break;
+        this->customFollowPlayer(data.player, data.group, data.enable);
     }
+
 
     // auto it = fields.m_customListeners.find(event.type);
     // if (it == fields.m_customListeners.end()) {

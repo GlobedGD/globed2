@@ -98,7 +98,7 @@ struct NoticeMessage {
 struct LevelDataMessage {
     std::vector<PlayerState> players;
     std::vector<PlayerDisplayData> displayDatas;
-    std::vector<Event> events;
+    std::vector<InEvent> events;
 };
 
 // Script logs

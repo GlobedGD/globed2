@@ -64,9 +64,9 @@ private:
     void sendLinkEventTo(int id, bool player2);
     void linkSuccess(int id, bool player2);
 
-    void handleEvent(const Event& event);
-    qn::ByteReader::Result<> handleLinkEvent(qn::ByteReader& reader);
-    qn::ByteReader::Result<> handleUnlinkEvent(qn::ByteReader& reader);
+    void handleEvent(const InEvent& event);
+    void handleLinkEvent(const TwoPlayerLinkRequestEvent& reader);
+    void handleUnlinkEvent(const TwoPlayerUnlinkEvent& reader);
 };
 
 }

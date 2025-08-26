@@ -17,8 +17,9 @@ void GlobalTriggersModule::onModuleInit() {
 }
 
 void GlobalTriggersModule::queueCounterChange(const CounterChange& change) {
-    Event ev{};
-    ev.type = EVENT_COUNTER_CHANGE;
+    CounterChangeEvent ev{};
+    ev.rawType = static_cast<uint8_t>(change.type);
+    ev.itemId = change.itemId;
 
     log::debug("Queuing counter change: type={}, itemId={}, value={}",
         (int)change.type, change.itemId, change.value.asInt());
@@ -28,13 +29,10 @@ void GlobalTriggersModule::queueCounterChange(const CounterChange& change) {
         | ((static_cast<uint64_t>(change.itemId) & 0x00ffffffull) << 32);
 
     if (change.type == CounterChangeType::Set || change.type == CounterChangeType::Add) {
-        rawData |= static_cast<uint64_t>((uint32_t) change.value.asInt());
+        ev.rawValue = (uint32_t) change.value.asInt();
     } else {
-        rawData |= static_cast<uint64_t>(std::bit_cast<uint32_t>(change.value.asFloat()));
+        ev.rawValue = std::bit_cast<uint32_t>(change.value.asFloat());
     }
-
-    ev.data.resize(8);
-    std::memcpy(ev.data.data(), &rawData, 8);
 
     NetworkManagerImpl::get().queueGameEvent(std::move(ev));
 }

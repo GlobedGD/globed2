@@ -45,17 +45,19 @@ bool CodeEditor::init(CCSize size) {
         .parent(this);
 
     m_textContainer = Build<CCNode>::create()
+        .id("text-container")
         .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(0.f))
         .contentSize(scrollSize.width - LINE_NUMBER_WIDTH, 0.f)
-        .anchorPoint(0.f, 0.f)
-        .pos(LINE_NUMBER_WIDTH, 0.f)
+        .anchorPoint(0.f, 1.f)
+        .pos(LINE_NUMBER_WIDTH, scrollSize.height)
         .parent(m_scrollLayer->m_contentLayer);
 
     m_lineNumContainer = Build<CCNode>::create()
+        .id("line-num-container")
         .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(0.f))
         .contentSize(LINE_NUMBER_WIDTH, 0.f)
-        .anchorPoint(0.f, 0.f)
-        .pos(4.f, 0.f)
+        .anchorPoint(0.f, 1.f)
+        .pos(4.f, scrollSize.height)
         .parent(m_scrollLayer->m_contentLayer);
 
     this->setFontSize(0.5f);
@@ -181,7 +183,7 @@ void CodeEditor::updateState(bool recreate) {
     splitStringInto(outStr, m_lineNumLabels, m_lineNumContainer, BMFontAlignment::Right, 160);
     splitStringInto(m_textBuffer, m_textLabels, m_textContainer, BMFontAlignment::Left, 255);
 
-    auto csize = m_textContainer ->getScaledContentSize();
+    auto csize = m_textContainer->getScaledContentSize();
     if (csize.height < m_scrollLayer->getContentHeight()) {
         csize.height = m_scrollLayer->getContentHeight();
     }
@@ -193,6 +195,10 @@ void CodeEditor::updateState(bool recreate) {
     }
 
     m_lineNumContainer->updateLayout();
+
+    float yPos = csize.height;
+    m_lineNumContainer->setPositionY(yPos);
+    m_textContainer->setPositionY(yPos);
 }
 
 void CodeEditor::setCursorPos(size_t pos) {

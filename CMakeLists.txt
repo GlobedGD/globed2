@@ -101,7 +101,7 @@ CPMAddPackage(
 )
 
 CPMAddPackage("gh:GlobedGD/server-shared#main")
-CPMAddPackage("gh:dankmeme01/qunet-cpp#9801ebd")
+CPMAddPackage("gh:dankmeme01/qunet-cpp#b7acada")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
 CPMAddPackage("gh:dankmeme01/cue#main")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")

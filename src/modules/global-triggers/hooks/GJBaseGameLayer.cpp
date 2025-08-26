@@ -251,33 +251,23 @@ void GTriggersGJBGL::updateItems(float dt) {
     this->updateCustomItem(ITEM_LOCAL_PING, ping.millis());
 }
 
-void GTriggersGJBGL::handleEvent(const Event& event) {
-    if (event.type != EVENT_COUNTER_CHANGE) {
+void GTriggersGJBGL::handleEvent(const InEvent& event) {
+    if (!event.is<CounterChangeEvent>()) {
         return;
     }
 
-    if (event.data.size() < 8) {
-        log::warn("Received invalid counter change event with size {}", event.data.size());
-        return;
-    }
-
-    uint64_t rawData;
-    std::memcpy(&rawData, event.data.data(), sizeof(rawData));
-
-    uint8_t rawType = (rawData >> 56) & 0xff;
-    uint32_t itemId = (rawData >> 32) & 0x00fffff;
-    int32_t value = static_cast<int32_t>(rawData & 0xffffffffULL);
+    auto& data = event.as<CounterChangeEvent>();
 
     CounterChange cc{};
 
-    if (rawType != (uint8_t) CounterChangeType::Set) {
-        log::warn("Received counter change with unexpected type {}", (int) rawType);
+    if (data.rawType != (uint8_t) CounterChangeType::Set) {
+        log::warn("Received counter change with unexpected type {}", (int) data.rawType);
         return;
     }
 
     cc.type = CounterChangeType::Set;
-    cc.itemId = itemId;
-    cc.value.asInt() = value;
+    cc.itemId = data.itemId;
+    cc.value.asInt() = std::bit_cast<int32_t>(data.rawValue);
 
     log::debug("Got set event for item ID {}, value {}", cc.itemId, cc.value.asInt());
 

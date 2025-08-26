@@ -4,8 +4,10 @@
 #include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/data/UserRole.hpp>
-#include <modules/scripting/data/EmbeddedScript.hpp>
 #include <globed/util/assert.hpp>
+#include <modules/scripting/data/EmbeddedScript.hpp>
+
+#include <qunet/buffers/ByteReader.hpp>
 
 namespace globed::data {
 
@@ -343,12 +345,11 @@ inline std::optional<msg::RoomListMessage> decodeRoomListMessage(schema::main::R
 inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDataMessage::Reader& reader) {
     auto players = reader.getPlayers();
     auto ddatas = reader.getDisplayDatas();
-    auto events = reader.getEvents();
+    auto eventData = reader.getEventData();
 
     msg::LevelDataMessage outMsg;
     outMsg.players.reserve(players.size());
     outMsg.displayDatas.reserve(ddatas.size());
-    outMsg.events.reserve(events.size());
 
     for (auto player : players) {
         if (auto s = data::decodePlayerState(player)) {
@@ -367,13 +368,14 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
         }
     }
 
-    for (auto event : events) {
-        auto data = event.getData().asBytes();
+    qn::ByteReader evReader{eventData.begin(), eventData.size()};
 
-        Event ev;
-        ev.type = static_cast<uint16_t>(event.getType());
-        ev.data = std::vector<uint8_t>(data.begin(), data.end());
-        outMsg.events.push_back(std::move(ev));
+    while (evReader.remainingSize() > 0) {
+        if (auto res = InEvent::decode(evReader)) {
+            outMsg.events.push_back(std::move(*res));
+        } else {
+            geode::log::warn("failed to decode event: {}", res.unwrapErr());
+        }
     }
 
     return outMsg;

@@ -33,12 +33,13 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCBaseGameLayer : geode::Modify<SCBaseGameLaye
         // std::unordered_map<uint16_t, std::vector<int>> m_customListeners;
         std::unordered_set<std::pair<int, int>, pairhash> m_customFollowers;
         std::unordered_map<int, cocos2d::CCPoint> m_lastPlayerPositions;
+        int m_localId = 0;
     };
 
     static SCBaseGameLayer* get(GJBaseGameLayer* base = nullptr);
 
     void postInit(const std::vector<EmbeddedScript>& scripts);
-    void handleEvent(const Event& event);
+    void handleEvent(const InEvent& event);
 
     void addEventListener(const ListenEventPayload& obj);
     void sendLogRequest(float);

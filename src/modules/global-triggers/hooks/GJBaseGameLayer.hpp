@@ -47,7 +47,7 @@ struct GLOBED_MODIFY_ATTR GTriggersGJBGL : geode::Modify<GTriggersGJBGL, GJBaseG
 
     void updateItems(float dt);
 
-    void handleEvent(const Event& event);
+    void handleEvent(const InEvent& event);
     void applyCounterChange(const CounterChange& change);
 
     void updateCustomItem(int itemId, int value);
