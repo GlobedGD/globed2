@@ -5,7 +5,10 @@
 #include <managers/admin.hpp>
 #include <managers/game_server.hpp>
 #include <managers/settings.hpp>
+#include <managers/room.hpp>
 #include <net/manager.hpp>
+#include <data/packets/client/room.hpp>
+#include <data/packets/server/room.hpp>
 #include <ui/game/player/complex_visual_player.hpp>
 #include <ui/game/player/remote_player.hpp>
 
@@ -14,6 +17,7 @@ using namespace globed::_internal;
 
 constexpr const char* NOT_CONNECTED_MSG = "Not connected to a server";
 constexpr const char* NOT_IN_LEVEL_MSG = "Not currently in a level";
+constexpr const char* NOT_IN_ROOM_MSG = "Not currently in a room";
 
 // Helper struct and specializations for obtaining function return type and arguments
 template <typename F>
@@ -327,6 +331,43 @@ $on_mod(Loaded) {
         }
 
         return Ok(Loader::get()->getLaunchFlag(flagStr));
+    });
+
+    // Room
+
+    listen<Type::IsInGlobal, bool()>([]() {
+        return Ok(RoomManager::get().isInGlobal());
+    });
+
+    listen<Type::RoomData, globed::RoomData()>([]() -> Result<globed::RoomData> {
+        auto& rm = RoomManager::get();
+        if (rm.isInGlobal()) return Err(NOT_IN_ROOM_MSG);
+        
+        auto& info = rm.getInfo();
+
+        return Ok(globed::RoomData {
+            .name = info.name,
+            .password = info.password,
+            .owner = info.owner.name,
+            .id = info.id 
+        });
+    });
+
+    listen<Type::AttemptJoinRoom, void(uint32_t, std::string)>([](uint32_t roomID, std::string password) -> Result<void> {
+        auto& rm = RoomManager::get();
+        auto& nm = NetworkManager::get();
+
+        if (!nm.established()) {
+            return Err(NOT_CONNECTED_MSG);
+        }
+
+        if (rm.isInRoom()) {
+            nm.sendLeaveRoom();
+        }
+
+        nm.send(JoinRoomPacket::create(roomID, password));
+        
+        return Ok();
     });
 }
 

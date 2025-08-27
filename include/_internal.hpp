@@ -42,6 +42,10 @@ enum class Type {
     ActiveSlotContainer = 1501,
     ReloadSaveContainer = 1502,
     LaunchFlag = 1503,
+    // Room
+    IsInGlobal = 1600,
+    RoomData = 1601,
+    AttemptJoinRoom = 1602,
 };
 
 class BaseEvent : public geode::Event {
