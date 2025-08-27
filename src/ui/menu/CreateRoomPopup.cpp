@@ -167,6 +167,7 @@ bool CreateRoomPopup::setup() {
 
                     // pick the preferred server
                     if (auto srv = NetworkManagerImpl::get().getPreferredServer()) {
+                        log::debug("using server ID: {}", *srv);
                         m_settings.serverId = *srv;
                     } else {
                         globed::alert("Error", "No game servers are available to host this room. This is a <cr>server issue</c>, please <cj>reconnect to the server and try again</c>.");

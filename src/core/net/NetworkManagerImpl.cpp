@@ -78,6 +78,19 @@ void GameServer::updateLatency(uint32_t latency) {
     lastLatency = latency;
 }
 
+std::string_view connectionStateToStr(qn::ConnectionState state) {
+    using enum qn::ConnectionState;
+    switch (state) {
+        case Disconnected: return "Disconnected";
+        case DnsResolving: return "DnsResolving";
+        case Pinging: return "Pinging";
+        case Connecting: return "Connecting";
+        case Connected: return "Connected";
+        case Closing: return "Closing";
+        case Reconnecting: return "Reconnecting";
+        default: return "unknown";
+    }
+}
 
 NetworkManagerImpl::NetworkManagerImpl() {
     // TODO: measure how much of an impact those have on bandwidth
@@ -86,6 +99,8 @@ NetworkManagerImpl::NetworkManagerImpl() {
 
     m_centralConn.setConnectionStateCallback([this](qn::ConnectionState state) {
         m_centralConnState = state;
+
+        log::info("Central connection state: {}", connectionStateToStr(state));
 
         if (state == qn::ConnectionState::Connected) {
             this->onCentralConnected();
@@ -109,6 +124,8 @@ NetworkManagerImpl::NetworkManagerImpl() {
     });
 
     m_gameConn.setConnectionStateCallback([this](qn::ConnectionState state) {
+        log::info("Game connection state: {}", connectionStateToStr(state));
+
         auto lock = m_connInfo.lock();
 
         // we assert that a game connection can only happen within the context of a central connection,

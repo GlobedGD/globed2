@@ -186,6 +186,7 @@ inline std::optional<PlayerIconData> decodeIconData(const schema::shared::Player
 // Room settings
 
 inline void encodeRoomSettings(const RoomSettings& settings, auto&& data) {
+    data.setServerId(settings.serverId);
     data.setPlayerLimit(settings.playerLimit);
     data.setFasterReset(settings.fasterReset);
     data.setHidden(settings.hidden);
@@ -201,6 +202,7 @@ inline void encodeRoomSettings(const RoomSettings& settings, auto&& data) {
 
 inline RoomSettings decodeRoomSettings(const schema::main::RoomSettings::Reader& reader) {
     RoomSettings out{};
+    out.serverId = reader.getServerId();
     out.playerLimit = reader.getPlayerLimit();
     out.fasterReset = reader.getFasterReset();
     out.hidden = reader.getHidden();
