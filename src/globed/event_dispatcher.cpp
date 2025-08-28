@@ -348,8 +348,14 @@ $on_mod(Loaded) {
         return Ok(globed::RoomData {
             .name = info.name,
             .password = info.password,
-            .owner = info.owner.name,
-            .id = info.id 
+            .id = info.id,
+
+            .ownerName = info.owner.name,
+            .ownerAccountId = info.owner.accountId,
+            
+            .playerLimit = info.settings.playerLimit,
+            .isHidden = info.settings.flags.isHidden,
+            .openInvites = info.settings.flags.publicInvites
         });
     });
 

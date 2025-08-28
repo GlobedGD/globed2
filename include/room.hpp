@@ -6,8 +6,35 @@ namespace globed {
     struct RoomData {
         std::string name;
         std::string password;
-        std::string owner;
         uint32_t id;
+
+        std::string ownerName;
+        int32_t ownerAccountId;
+
+        uint16_t playerLimit;
+        bool isHidden;
+        bool openInvites;
+    };
+
+    class RoomJoinEvent : public geode::Event {
+    public:
+        RoomJoinEvent(RoomData roomData)
+            : data(roomData) {}
+
+        inline RoomData getRoomData() { return this->data; }
+
+    private:
+        RoomData data;
+    };
+
+    class RoomUpdateEvent : public RoomJoinEvent {
+    public:
+        RoomUpdateEvent(RoomData roomData)
+            : RoomJoinEvent(roomData) {}
+    };
+
+    class RoomLeaveEvent : public geode::Event {
+        
     };
 }
 

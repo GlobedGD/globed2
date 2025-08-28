@@ -34,6 +34,8 @@
 #include <ui/menu/admin/user_punishment_popup.hpp>
 #include <ui/notification/panel.hpp>
 
+#include <globed.hpp>
+
 using namespace asp;
 using namespace asp::time;
 using namespace geode::prelude;
@@ -658,9 +660,23 @@ protected:
             ErrorQueues::get().success("Room configuration updated");
 
             RoomManager::get().setInfo(packet->info);
+            
+            Loader::get()->queueInMainThread([] {
+                globed::RoomUpdateEvent(globed::room::getRoomData().unwrapOrDefault()).post();
+            });
         });
 
-        addGlobalListener<RoomJoinedPacket>([](auto packet) {});
+        addGlobalListener<RoomJoinedPacket>([](auto packet) {
+            Loader::get()->queueInMainThread([] {
+                globed::RoomJoinEvent(globed::room::getRoomData().unwrapOrDefault()).post();
+            });
+        });
+
+        addGlobalListener<LeaveRoomPacket>([](auto packet) {
+            Loader::get()->queueInMainThread([] {
+                globed::RoomLeaveEvent().post();
+            });
+        });
 
         addGlobalListener<RoomJoinFailedPacket>([](auto packet) {
             std::string reason = "N/A";
