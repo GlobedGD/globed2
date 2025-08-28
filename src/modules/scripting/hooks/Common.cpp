@@ -1,7 +1,7 @@
 #include "Common.hpp"
 #include <globed/util/scary.hpp>
-#include <modules/scripting/ui/SetupFireServerPopup.hpp>
-#include <modules/scripting/ui/SetupEmbeddedScriptPopup.hpp>
+#include <modules/scripting-ui/ui/SetupFireServerPopup.hpp>
+#include <modules/scripting-ui/ui/SetupEmbeddedScriptPopup.hpp>
 #include <modules/scripting/objects/ExtendedObjectBase.hpp>
 #include <modules/scripting/objects/FireServerObject.hpp>
 #include <modules/scripting/objects/ListenEventObject.hpp>
@@ -132,6 +132,9 @@ bool onAddObject(GameObject* original, bool editor, std::optional<EmbeddedScript
 }
 
 bool onEditObject(GameObject* obj) {
+#ifndef GLOBED_MODULE_SCRIPTING_UI
+    return false;
+#else
     auto [iobj, type] = classifyObject(obj);
     if (type == ScriptObjectType::None) {
         return false;
@@ -152,6 +155,7 @@ bool onEditObject(GameObject* obj) {
     }
 
     return true;
+#endif
 }
 
 static void setObjectAttrs(ItemTriggerGameObject* obj, ScriptObjectType type) {

@@ -1,9 +1,9 @@
 #include <globed/config.hpp>
 #include <globed/util/assert.hpp>
-#include <modules/scripting/ScriptingModule.hpp>
+#include <modules/scripting-ui/ScriptingUIModule.hpp>
 #include <modules/scripting/objects/FireServerObject.hpp>
 #include <modules/scripting/objects/Ids.hpp>
-#include "Common.hpp"
+#include <modules/scripting/hooks/Common.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelEditorLayer.hpp>
@@ -19,11 +19,11 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorHook : geode::Modify<SCEditorHook, Lev
     };
 
     static void onModify(auto& self) {
-        (void) self.setHookPriority("LevelEditorLayer::createObjectsFromString", 10000);
-
-        // GLOBED_CLAIM_HOOKS(ScriptingModule::get(), self,
-        //     "LevelEditorLayer::createObjectsFromString",
-        // );
+        GLOBED_CLAIM_HOOKS(ScriptingUIModule::get(), self,
+            "LevelEditorLayer::createObjectsFromSetup",
+            "LevelEditorLayer::createObject",
+            "LevelEditorLayer::updateObjectLabel",
+        );
     }
 
     $override

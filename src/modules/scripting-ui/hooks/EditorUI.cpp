@@ -1,7 +1,7 @@
 #include <globed/config.hpp>
-#include <modules/scripting/ScriptingModule.hpp>
+#include <modules/scripting-ui/ScriptingUIModule.hpp>
 #include <modules/scripting/objects/Ids.hpp>
-#include "Common.hpp"
+#include <modules/scripting/hooks/Common.hpp>
 
 #include <alphalaneous.editortab_api/include/EditorTabs.hpp>
 #include <cue/Util.hpp>
@@ -24,9 +24,10 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCEditorUIHook : geode::Modify<SCEditorUIHook,
     }
 
     static void onModify(auto& self) {
-        // GLOBED_CLAIM_HOOKS(ScriptingModule::get(), self,
-        //     "EditorUI::init",
-        // );
+        GLOBED_CLAIM_HOOKS(ScriptingUIModule::get(), self,
+            "EditorUI::init",
+            "EditorUI::editObject",
+        );
     }
 
     $override

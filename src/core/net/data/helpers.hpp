@@ -377,6 +377,7 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
             outMsg.events.push_back(std::move(*res));
         } else {
             geode::log::warn("failed to decode event: {}", res.unwrapErr());
+            break;
         }
     }
 

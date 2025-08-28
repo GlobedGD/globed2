@@ -1,4 +1,6 @@
-#include "Common.hpp"
+
+#include <modules/scripting/hooks/Common.hpp>
+#include <modules/scripting-ui/ScriptingUIModule.hpp>
 #include <globed/config.hpp>
 
 #include <Geode/Geode.hpp>
@@ -7,6 +9,12 @@
 using namespace geode::prelude;
 
 struct GLOBED_MODIFY_ATTR SCGameManager : Modify<SCGameManager, GameManager> {
+    static void onModify(auto& self) {
+        GLOBED_CLAIM_HOOKS(globed::ScriptingUIModule::get(), self,
+            "GameManager::stringForCustomObject",
+        );
+    }
+
     $override
     gd::string stringForCustomObject(int id) {
         auto type = globed::classifyObjectId(id);

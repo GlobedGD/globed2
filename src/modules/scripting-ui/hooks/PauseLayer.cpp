@@ -1,5 +1,6 @@
 #include <globed/config.hpp>
-#include <modules/scripting/ui/ScriptLogPanelPopup.hpp>
+#include <modules/scripting-ui/ScriptingUIModule.hpp>
+#include <modules/scripting-ui/ui/ScriptLogPanelPopup.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PauseLayer.hpp>
@@ -10,6 +11,12 @@ using namespace geode::prelude;
 namespace globed {
 
 struct GLOBED_MODIFY_ATTR SCPauseLayer : Modify<SCPauseLayer, PauseLayer> {
+    static void onModify(auto& self) {
+        GLOBED_CLAIM_HOOKS(ScriptingUIModule::get(), self,
+            "PauseLayer::customSetup",
+        );
+    }
+
     $override
     void customSetup() {
         PauseLayer::customSetup();
