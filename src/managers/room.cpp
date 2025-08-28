@@ -33,7 +33,7 @@ bool RoomManager::isInRoom() {
 
 void RoomManager::setInfo(const RoomInfo& info) {
     bool levelChanged = info.settings.levelId != roomInfo.settings.levelId;
-    bool roomChanged = info.id != roomInfo.id;
+    bool roomIdChanged = info.id != roomInfo.id;
 
     roomInfo = info;
 
@@ -45,17 +45,18 @@ void RoomManager::setInfo(const RoomInfo& info) {
         }
     }
 
-    Loader::get()->queueInMainThread([roomChanged] {
+    Loader::get()->queueInMainThread([roomIdChanged] {
         auto data = globed::room::getRoomData();
-        if (!data) return;
-
-        // this is so silly
-        if (roomChanged) {
+        if (!data) {
+            // now in global room
             globed::RoomLeaveEvent().post();
+            return;
+        }
 
-            if (RoomManager::get().isInRoom()) {
-                globed::RoomJoinEvent(data.unwrap()).post();
-            }
+        // now in another room or the same room but updated
+        if (roomIdChanged) {
+            globed::RoomLeaveEvent().post();
+            globed::RoomJoinEvent(data.unwrap()).post();
         } else {
             globed::RoomUpdateEvent(data.unwrap()).post();
         }
