@@ -49,7 +49,7 @@ void RoomManager::setInfo(const RoomInfo& info) {
         auto data = globed::room::getRoomData();
         if (!data) {
             // now in global room or perhaps 
-            if (roomIDChanged) globed::RoomLeaveEvent().post();
+            if (roomIdChanged) globed::RoomLeaveEvent().post();
             return;
         }
 
