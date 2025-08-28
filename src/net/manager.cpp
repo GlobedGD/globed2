@@ -666,15 +666,7 @@ protected:
             RoomManager::get().setInfo(packet->info);
         });
 
-        addGlobalListener<RoomJoinedPacket>([](auto packet) {
-            
-        });
-
-        addGlobalListener<LeaveRoomPacket>([](auto packet) {
-            Loader::get()->queueInMainThread([] {
-                globed::RoomLeaveEvent().post();
-            });
-        });
+        addGlobalListener<RoomJoinedPacket>([](auto packet) {});
 
         addGlobalListener<RoomJoinFailedPacket>([](auto packet) {
             std::string reason = "N/A";
