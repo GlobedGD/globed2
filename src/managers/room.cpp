@@ -47,9 +47,9 @@ void RoomManager::setInfo(const RoomInfo& info) {
 
     Loader::get()->queueInMainThread([roomIdChanged] {
         auto data = globed::room::getRoomData();
-        if (!data && roomIdChanged) {
-            // now in global room
-            globed::RoomLeaveEvent().post();
+        if (!data) {
+            // now in global room or perhaps 
+            if (roomIDChanged) globed::RoomLeaveEvent().post();
             return;
         }
 
