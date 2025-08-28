@@ -427,6 +427,10 @@ protected:
             GameServerManager::get().clearActive();
             AdminManager::get().deauthorize();
         }
+
+        Loader::get()->queueInMainThread([] {
+            globed::NetworkManagerDisconnectedEvent().post();
+        });
     }
 
     void queueDisconnect(bool quiet = false, bool noclear = false) {
@@ -660,10 +664,6 @@ protected:
             ErrorQueues::get().success("Room configuration updated");
 
             RoomManager::get().setInfo(packet->info);
-            
-            Loader::get()->queueInMainThread([] {
-                globed::RoomUpdateEvent(globed::room::getRoomData().unwrapOrDefault()).post();
-            });
         });
 
         addGlobalListener<RoomJoinedPacket>([](auto packet) {
@@ -851,6 +851,10 @@ protected:
                 this->send(RequestMotdPacket::create(Mod::get()->getSavedValue<std::string>(lastSeenMotdKey, ""), false));
             }
         }
+
+        Loader::get()->queueInMainThread([] {
+            globed::NetworkManagerConnectedEvent().post();
+        });
     }
 
     void onProtocolMismatch(std::shared_ptr<ProtocolMismatchPacket> packet) {

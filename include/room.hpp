@@ -36,7 +36,7 @@ namespace globed {
     class RoomLeaveEvent : public geode::Event {
         
     };
-}
+} // namespace globed
 
 namespace globed::room {
     // Returns whether the player is connected to a global room or not.

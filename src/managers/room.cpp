@@ -3,6 +3,8 @@
 
 #include <util/gd.hpp>
 
+#include <room.hpp>
+
 using namespace geode::prelude;
 
 RoomManager::RoomManager() {
@@ -41,6 +43,10 @@ void RoomManager::setInfo(const RoomInfo& info) {
             this->fetchRoomLevel(info.settings.levelId);
         }
     }
+
+    Loader::get()->queueInMainThread([] {
+        globed::RoomUpdateEvent(globed::room::getRoomData().unwrapOrDefault()).post();
+    });
 }
 
 void RoomManager::setGlobal() {
