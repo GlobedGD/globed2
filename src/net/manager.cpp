@@ -667,9 +667,7 @@ protected:
         });
 
         addGlobalListener<RoomJoinedPacket>([](auto packet) {
-            Loader::get()->queueInMainThread([] {
-                globed::RoomJoinEvent(globed::room::getRoomData().unwrapOrDefault()).post();
-            });
+            
         });
 
         addGlobalListener<LeaveRoomPacket>([](auto packet) {
