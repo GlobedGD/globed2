@@ -63,6 +63,7 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCBaseGameLayer : geode::Modify<SCBaseGameLaye
 
     void unfollowAllForPlayer(int id);
     void processCustomFollowActions(float);
+
 };
 
 }

@@ -772,16 +772,15 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
 }
 
 void NetworkManagerImpl::queueLevelScript(const std::vector<EmbeddedScript>& scripts) {
-    {
-        auto lock = m_connInfo.lock();
-        if (!*lock) return;
+    auto lock = m_connInfo.lock();
+    if (!*lock) return;
 
-        auto& connInfo = **lock;
-        if (connInfo.m_gameEstablished) {
-            this->sendLevelScript(scripts);
-        } else {
-            (*lock)->m_queuedScripts = scripts;
-        }
+    auto& connInfo = **lock;
+    if (connInfo.m_gameEstablished) {
+        (*lock)->m_queuedScripts.clear();
+        this->sendLevelScript(scripts);
+    } else {
+        (*lock)->m_queuedScripts = scripts;
     }
 }
 

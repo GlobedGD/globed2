@@ -214,16 +214,23 @@ void SCBaseGameLayer::handleEvent(const InEvent& event) {
             delay = rng()->random(min, max);
         }
 
-        log::debug("Spawning group {} with delay {} (ordered: {})", data.groupId, delay, data.ordered);
+        log::debug("Spawning group {} with delay {} (ordered: {}), remaps {}", data.groupId, delay, data.ordered, data.remaps.size());
 
-        this->spawnGroup(
-            data.groupId,
-            data.ordered,
-            delay,
-            data.remaps,
-            0,
-            0
-        );
+        if (!data.remaps.empty()) {
+            int id = m_spawnRemapTriggers.size();
+            m_spawnRemapTriggers.push_back(std::unordered_map<int, int>{});
+
+            for (size_t i = 0; i < data.remaps.size(); i += 2) {
+                m_spawnRemapTriggers[id][data.remaps[i]] = data.remaps[i + 1];
+            }
+
+            this->spawnGroup(data.groupId, data.ordered, delay, {id, 0}, 0, 0);
+
+            m_spawnRemapTriggers.erase(m_spawnRemapTriggers.begin() + id);
+        } else {
+            this->spawnGroup(data.groupId, data.ordered, delay, {}, 0, 0);
+        }
+
     } else if (event.is<SetItemEvent>()) {
         auto& data = event.as<SetItemEvent>().data;
 
@@ -260,3 +267,11 @@ void SCBaseGameLayer::addEventListener(const ListenEventPayload& obj) {
 }
 
 }
+
+// class $modify(GJBaseGameLayer) {
+//     void spawnGroup(int group, bool ordered, double delay, gd::vector<int> const& remapKeys, int triggerID, int controlID) {
+//         log::debug("spawnGroup({}, {}, {}, {}, {}, {})", group, ordered, delay, remapKeys, triggerID, controlID);
+//         log::debug("{}", m_spawnRemapTriggers);
+//         GJBaseGameLayer::spawnGroup(group, ordered, delay, remapKeys, triggerID, controlID);
+//     }
+// };
