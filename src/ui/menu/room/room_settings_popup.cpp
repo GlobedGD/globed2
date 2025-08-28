@@ -44,7 +44,8 @@ bool RoomSettingsPopup::setup() {
     listLayer->swapCells(cells);
 
     NetworkManager::get().addListener<RoomInfoPacket>(this, [this](auto packet) {
-        RoomManager::get().setInfo(packet->info);
+        // networkmanager already listens to roominfopacket globally why is this here
+        // RoomManager::get().setInfo(packet->info);
         this->currentSettings = packet->info.settings;
         this->updateCheckboxes();
     });
