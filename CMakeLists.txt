@@ -111,12 +111,13 @@ CPMAddPackage(
 )
 
 CPMAddPackage("gh:GlobedGD/server-shared#main")
-CPMAddPackage("gh:dankmeme01/qunet-cpp#b7acada")
+CPMAddPackage("gh:dankmeme01/qunet-cpp#f5673ca")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
 CPMAddPackage("gh:dankmeme01/cue#main")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 CPMAddPackage("gh:Prevter/sinaps#2541d6d")
 CPMAddPackage("gh:Prevter/AdvancedLabel#d78d7f82")
+CPMAddPackage("gh:dankmeme01/asp2#b8536532")
 
 if (GLOBED_VOICE_SUPPORT)
     CPMAddPackage("gh:xiph/opus#v1.5.2")
