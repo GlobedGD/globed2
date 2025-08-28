@@ -151,7 +151,9 @@ NetworkManagerImpl::NetworkManagerImpl() {
 
             // if there was a queued script message, send it
             auto queuedScripts = std::move(connInfo.m_queuedScripts);
-            this->sendLevelScript(queuedScripts);
+            if (!queuedScripts.empty()) {
+                this->sendLevelScript(queuedScripts);
+            }
         } else if (state == qn::ConnectionState::Disconnected) {
             log::debug("disconnected from game server at {}", connInfo.m_gameServerUrl);
             connInfo.m_gameEstablished = false;
