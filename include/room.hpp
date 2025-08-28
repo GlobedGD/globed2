@@ -27,10 +27,15 @@ namespace globed {
         RoomData data;
     };
 
-    class RoomUpdateEvent : public RoomJoinEvent {
+    class RoomUpdateEvent : public geode::Event {
     public:
-        RoomUpdateEvent(RoomData roomData)
-            : RoomJoinEvent(roomData) {}
+        RoomJoinEvent(RoomData roomData)
+            : data(roomData) {}
+
+        inline RoomData getRoomData() { return this->data; }
+
+    private:
+        RoomData data;
     };
 
     class RoomLeaveEvent : public geode::Event {
