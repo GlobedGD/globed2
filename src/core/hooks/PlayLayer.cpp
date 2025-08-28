@@ -4,6 +4,7 @@
 #include <globed/core/RoomManager.hpp>
 #include <core/CoreImpl.hpp>
 #include <core/PreloadManager.hpp>
+#include <core/patches.hpp>
 
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/CurrencyRewardLayer.hpp>
@@ -165,12 +166,36 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         bool speedUpAnim = CoreImpl::get().shouldSpeedUpNewBest(GlobedGJBGL::get(this));
         bool realDeath = m_fields->m_setupWasCompleted && obj != m_anticheatSpike;
 
+        // g_diedAt = asp::time::Instant::now();
+
         if (overrideReset) {
             setGameVariable(GameVariable::FastRespawn, rm.getSettings().fasterReset);
         }
 
-        // g_diedAt = asp::time::Instant::now();
+#ifdef GEODE_IS_ARM_MAC
+        auto res = Mod::get()->patch(PATCH_SAVE_PERCENTAGE_CALL.addr(), {0x1f, 0x20, 0x03, 0xd5});
+        if (!res) {
+            log::error("Failed to patch getSaveString: {}", res.unwrapErr());
+        }
+
+        auto patch = res.unwrapOrDefault();
+
+        if (patch) {
+            if (GlobedGJBGL::get()->isSafeMode()) {
+                (void) patch->enable();
+            } else {
+                (void) patch->disable();
+            }
+        }
+
         PlayLayer::destroyPlayer(player, obj);
+
+        if (patch && patch->isEnabled()) {
+            (void) patch->disable();
+        }
+#else
+        PlayLayer::destroyPlayer(player, obj);
+#endif
 
         if (overrideReset) {
             setGameVariable(GameVariable::FastRespawn, oldReset);

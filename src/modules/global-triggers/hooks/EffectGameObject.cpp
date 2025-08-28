@@ -1,6 +1,7 @@
 #include "EffectGameObject.hpp"
 #include "../CounterChange.hpp"
 #include "../Ids.hpp"
+#include <core/patches.hpp>
 
 #include <sinaps.hpp>
 
@@ -19,9 +20,6 @@ void HookedEffectGameObject::triggerObject(GJBaseGameLayer* layer, int idk, gd::
 
 // EffectGameObject::getSaveString patch cmp 9999 to INT_MAX to avoid checks on saving the level (item edit trigger would break otherwise)
 $on_mod(Loaded) {
-#if GEODE_COMP_GD_VERSION != 22074
-# error "EffectGameObject::getSaveString patch requires update"
-#endif
 
 #ifndef GEODE_IS_WINDOWS
 # error "EffectGameObject::getSaveString patch unimplemented for this platform"
@@ -36,7 +34,7 @@ $on_mod(Loaded) {
         }
     };
 
-    auto funcStart = reinterpret_cast<uint8_t*>(geode::base::get() + 0x4932b0);
+    auto funcStart = PATCH_EGO_GETSAVESTRING_START.addr<uint8_t*>();
     auto offset1 = sinaps::find<"3d 0f 27 00 00">(funcStart, 0x100);
 
     if (offset1 != -1) {

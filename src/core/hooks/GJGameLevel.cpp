@@ -7,6 +7,9 @@ namespace globed {
 
 struct GLOBED_MODIFY_ATTR HookedGJGameLevel : geode::Modify<HookedGJGameLevel, GJGameLevel> {
 #ifndef GEODE_IS_ARM_MAC
+    // This function cannot be hooked on arm macos because of a tuliphook bug,
+    // check the PlayLayer.cpp file
+
     $override
     void savePercentage(int p0, bool p1, int p2, int p3, bool p4) {
         auto* gpl = GlobedGJBGL::get();
