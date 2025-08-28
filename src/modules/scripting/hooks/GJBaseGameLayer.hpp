@@ -6,7 +6,7 @@
 #include <globed/core/net/MessageListener.hpp>
 #include <modules/scripting/ScriptingModule.hpp>
 #include <modules/scripting/objects/ListenEventObject.hpp>
-#include "Common.hpp"
+#include <modules/scripting/data/EmbeddedScript.hpp>
 
 #include <asp/time/SystemTime.hpp>
 

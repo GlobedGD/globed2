@@ -3,7 +3,7 @@
     "name": "Globed",
     "developer": "dankmeme",
     "geode": "4.7.0",
-    "version": "v2.0.0-alpha.3",
+    "version": "v2.0.0-alpha.4",
     "gd": {
         "win": "2.2074",
         "android": "2.2074",
@@ -31,7 +31,8 @@
             "resources/menu/*.png",
             "resources/editor/*.png",
             "resources/roles/*.png",
-            "resources/mod/*.png"
+            "resources/mod/*.png",
+            "resources/game/*.png"
         ],
         "fonts": {
             "Consolas": {

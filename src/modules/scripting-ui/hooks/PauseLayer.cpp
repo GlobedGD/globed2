@@ -23,13 +23,11 @@ struct GLOBED_MODIFY_ATTR SCPauseLayer : Modify<SCPauseLayer, PauseLayer> {
 
         auto winSize = CCDirector::get()->getWinSize();
 
-        auto menu = Build<CCMenu>::create()
-            .parent(this)
-            .pos(winSize.width - 28.f, 24.f)
-            .anchorPoint(1.f, 0.f)
-            .contentSize(48.f, winSize.height - 48.f)
-            .layout(ColumnLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start))
-            .collect();
+        auto menu = this->getChildByID("playerlist-menu"_spr);
+        if (!menu) {
+            log::error("playerlist-menu not found, cannot add logs button!");
+            return;
+        }
 
         Build<ButtonSprite>::create("Logs", "bigFont.fnt", "GJ_button_01.png", 0.7f)
             .scale(0.7f)

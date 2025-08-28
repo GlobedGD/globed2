@@ -39,7 +39,7 @@ static bool block(CCScene* scene = nullptr) {
     return !typeinfo_cast<PlayLayer*>(layer) && !typeinfo_cast<GlobedMenuLayer*>(layer);
 }
 
-struct GLOBED_MODIFY_ATTR HookedCCDirector : geode::Modify<HookedCCDirector, CCDirector> {
+struct GLOBED_MODIFY_ATTR HookedCCDirector : Modify<HookedCCDirector, CCDirector> {
     static void onModify(auto& self) {
         GLOBED_CLAIM_HOOKS(UIModule::get(), self,
             "cocos2d::CCDirector::pushScene",

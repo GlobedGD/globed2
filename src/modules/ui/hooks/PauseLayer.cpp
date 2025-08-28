@@ -16,8 +16,9 @@ namespace globed {
 
 static bool g_force = false;
 
-struct GLOBED_MODIFY_ATTR HookedPauseLayer : geode::Modify<HookedPauseLayer, PauseLayer> {
+struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseLayer> {
     static void onModify(auto& self) {
+        (void) self.setHookPriority("PauseLayer::customSetup", 10);
         (void) self.setHookPriority("PauseLayer::onQuit", -10000);
         (void) self.setHookPriority("PauseLayer::goEdit", -999999999);
         (void) self.setHookPriority("PauseLayer::onRestart", -99999);
@@ -47,20 +48,24 @@ struct GLOBED_MODIFY_ATTR HookedPauseLayer : geode::Modify<HookedPauseLayer, Pau
 
         auto menu = Build<CCMenu>::create()
             .id("playerlist-menu"_spr)
-            .pos(0.f, 0.f)
             .parent(this)
+            .pos(winSize.width - 28.f, 24.f)
+            .anchorPoint(1.f, 0.f)
+            .contentSize(48.f, winSize.height - 48.f)
+            .layout(ColumnLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start))
             .collect();
 
         Build<CCSprite>::create("icon-players.png"_spr)
             .scale(0.9f)
             .intoMenuItem([](auto) {
-
+                UserListPopup::create()->show();
             })
-            .pos(winSize.width - 50.f, 50.f)
             .id("btn-open-playerlist"_spr)
             .parent(menu);
 
-        this->schedule(schedule_selector(HookedPauseLayer::selUpdate), 0.f);
+        menu->updateLayout();
+
+        this->schedule(schedule_selector(UIHookedPauseLayer::selUpdate), 0.f);
     }
 
     void selUpdate(float dt) {

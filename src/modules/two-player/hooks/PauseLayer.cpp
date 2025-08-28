@@ -12,7 +12,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-struct GLOBED_MODIFY_ATTR HookedPauseLayer : geode::Modify<HookedPauseLayer, PauseLayer> {
+struct GLOBED_MODIFY_ATTR TPHookedPauseLayer : geode::Modify<TPHookedPauseLayer, PauseLayer> {
     static void onModify(auto& self) {
         (void) self.setHookPriority("PauseLayer::onResume", -100000);
 
