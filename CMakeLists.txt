@@ -110,7 +110,7 @@ CPMAddPackage(
             "WITH_FIBERS OFF"
 )
 
-CPMAddPackage("gh:GlobedGD/server-shared#main")
+CPMAddPackage("gh:GlobedGD/server-shared#46908c19")
 CPMAddPackage("gh:dankmeme01/qunet-cpp#f5673ca")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
 CPMAddPackage("gh:dankmeme01/cue#main")

@@ -565,6 +565,8 @@ void NetworkManagerImpl::tryAuth() {
             auto loginUToken = msg.initLoginUToken();
             loginUToken.setToken(*stoken);
             loginUToken.setAccountId(accountId);
+            auto uid = this->computeUident();
+            loginUToken.setUident(kj::ArrayPtr(uid.data(), uid.size()));
             data::encodeIconData(gatherIconData(), loginUToken.initIcons());
         });
     } else if (!connInfo.m_knownArgonUrl.empty()) {
@@ -607,6 +609,8 @@ void NetworkManagerImpl::doArgonAuth(std::string token) {
         auto loginArgon = msg.initLoginArgon();
         loginArgon.setToken(token);
         loginArgon.setAccountId(GJAccountManager::get()->m_accountID);
+        auto uid = this->computeUident();
+        loginArgon.setUident(kj::ArrayPtr(uid.data(), uid.size()));
         data::encodeIconData(gatherIconData(), loginArgon.initIcons());
     });
 }
@@ -1339,6 +1343,27 @@ void NetworkManagerImpl::setUToken(std::string token) {
 
 void NetworkManagerImpl::clearUToken() {
     ValueManager::get().erase(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
+}
+
+std::array<uint8_t, 32> NetworkManagerImpl::computeUident() {
+    static auto fprint = [this]{
+        auto res = this->computeUidentInner();
+
+        if (!res) {
+            log::error("Failed to compute fingerprint: {}", res.unwrapErr());
+
+            // use a static predetermined value
+            auto data = globed::hexDecode("fecc8b3da5e8ed1b9dcd66f6213b6f891416c4c5f957a4a6d0c7fef540a5f05b").unwrap();
+            std::array<uint8_t, 32> arr;
+            std::copy_n(data.begin(), 32, arr.begin());
+
+            return arr;
+        } else {
+            return res.unwrap();
+        }
+    }();
+
+    return fprint;
 }
 
 }

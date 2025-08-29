@@ -194,6 +194,9 @@ private:
     void setUToken(std::string token);
     void clearUToken();
 
+    std::array<uint8_t, 32> computeUident();
+    geode::Result<std::array<uint8_t, 32>> computeUidentInner();
+
     void tryAuth();
     void doArgonAuth(std::string token);
     void abortConnection(std::string reason);
