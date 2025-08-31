@@ -20,7 +20,6 @@ void HookedEffectGameObject::triggerObject(GJBaseGameLayer* layer, int idk, gd::
 
 // EffectGameObject::getSaveString patch cmp 9999 to INT_MAX to avoid checks on saving the level (item edit trigger would break otherwise)
 $on_mod(Loaded) {
-
 #ifndef GEODE_IS_WINDOWS
 # error "EffectGameObject::getSaveString patch unimplemented for this platform"
 #else

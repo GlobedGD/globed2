@@ -14,6 +14,7 @@
 #include <ui/menu/ServerListPopup.hpp>
 #include <ui/menu/CreateRoomPopup.hpp>
 #include <ui/menu/RegionSelectPopup.hpp>
+#include <ui/menu/RoomUserControlsPopup.hpp>
 #include <ui/menu/TeamManagementPopup.hpp>
 #include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
@@ -73,22 +74,40 @@ protected:
     SessionId m_sessionId;
 
     bool customSetup() {
+        CCSize btnSize { 24.f, 24.f };
+
         if (m_sessionId.asU64() != 0) {
             // add button to join the session
             Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
-                .scale(0.31f)
+                .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
                 .intoMenuItem([this] {
                     globed::warpToSession(m_sessionId, false, true);
                 })
                 .zOrder(10)
-                .pos(this->getContentWidth() - 30.f, this->getContentHeight() / 2.f)
                 .scaleMult(1.1f)
                 .parent(m_rightMenu);
 
-            m_rightMenu->updateLayout();
         }
 
+        // if we are room host, add a button that allows us kicking/banning the person
+        if (RoomManager::get().isOwner()) {
+            Build<CCSprite>::create("GJ_reportBtn_001.png")
+                .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
+                .intoMenuItem([this] {
+                    this->openUserControls();
+                })
+                .zOrder(9)
+                .scaleMult(1.1f)
+                .parent(m_rightMenu);
+        }
+
+        m_rightMenu->updateLayout();
+
         return true;
+    }
+
+    void openUserControls() {
+        RoomUserControlsPopup::create(m_accountId, m_username)->show();
     }
 };
 

@@ -19,6 +19,7 @@ namespace globed {
 
 using CentralMessage = globed::schema::main::Message;
 using GameMessage = globed::schema::game::Message;
+using globed::schema::main::RoomOwnerActionType;
 
 struct GameServer {
     uint8_t id;
@@ -121,6 +122,7 @@ public:
     void sendDeleteTeam(uint16_t teamId);
     void sendUpdateTeam(uint16_t teamId, cocos2d::ccColor4B color);
     void sendGetTeamMembers();
+    void sendRoomOwnerAction(RoomOwnerActionType type, int target = 0);
     void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply);
     void sendAdminNoticeEveryone(const std::string& message);
     void sendAdminLogin(const std::string& password);
@@ -184,8 +186,8 @@ private:
     void onCentralDisconnected();
     geode::Result<> onCentralDataReceived(CentralMessage::Reader& msg);
     geode::Result<> onGameDataReceived(GameMessage::Reader& msg);
-    geode::Result<> sendToCentral(std::function<void(CentralMessage::Builder&)> func);
-    geode::Result<> sendToGame(std::function<void(GameMessage::Builder&)> func, bool reliable = true);
+    void sendToCentral(std::function<void(CentralMessage::Builder&)> func);
+    void sendToGame(std::function<void(GameMessage::Builder&)> func, bool reliable = true);
 
     void resetGameVars();
 

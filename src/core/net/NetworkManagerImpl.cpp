@@ -309,7 +309,7 @@ void NetworkManagerImpl::thrMaybeResendOwnData() {
         return;
     }
 
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto update = msg.initUpdateOwnData();
 
         if (icons) {
@@ -560,7 +560,7 @@ void NetworkManagerImpl::tryAuth() {
     auto& connInfo = **lock;
 
     if (auto stoken = this->getUToken()) {
-        (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        this->sendToCentral([&](CentralMessage::Builder& msg) {
             log::debug("attempting login with user token {}", *stoken);
             auto loginUToken = msg.initLoginUToken();
             loginUToken.setToken(*stoken);
@@ -591,7 +591,7 @@ void NetworkManagerImpl::tryAuth() {
             return;
         }
     } else {
-        (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        this->sendToCentral([&](CentralMessage::Builder& msg) {
             log::debug("attempting plain login");
             auto loginPlain = msg.initLoginPlain();
             auto data = loginPlain.initData();
@@ -604,7 +604,7 @@ void NetworkManagerImpl::tryAuth() {
 }
 
 void NetworkManagerImpl::doArgonAuth(std::string token) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         log::debug("attempting login with argon token");
         auto loginArgon = msg.initLoginArgon();
         loginArgon.setToken(token);
@@ -645,7 +645,7 @@ void NetworkManagerImpl::sendJoinSession(SessionId id) {
 
     log::debug("Joining session with ID {}", id.asU64());
 
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto joinSession = msg.initJoinSession();
         joinSession.setSessionId(id);
     });
@@ -664,11 +664,11 @@ void NetworkManagerImpl::sendJoinSession(SessionId id) {
 }
 
 void NetworkManagerImpl::sendLeaveSession() {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         msg.initLeaveSession();
     });
 
-    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
         msg.initLeaveSession();
     });
 }
@@ -712,7 +712,7 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
 }
 
 void NetworkManagerImpl::sendGameLoginJoinRequest(SessionId id) {
-    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
         auto loginJoin = msg.initLoginUTokenAndJoin();
         loginJoin.setAccountId(GJAccountManager::get()->m_accountID);
         loginJoin.setToken(this->getUToken().value_or(""));
@@ -723,7 +723,7 @@ void NetworkManagerImpl::sendGameLoginJoinRequest(SessionId id) {
 }
 
 void NetworkManagerImpl::sendGameLoginRequest() {
-    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
         auto login = msg.initLoginUToken();
         login.setAccountId(GJAccountManager::get()->m_accountID);
         login.setToken(this->getUToken().value_or(""));
@@ -732,7 +732,7 @@ void NetworkManagerImpl::sendGameLoginRequest() {
 }
 
 void NetworkManagerImpl::sendGameJoinRequest(SessionId id) {
-    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
         auto join = msg.initJoinSession();
         join.setSessionId(id);
         join.setPasscode(RoomManager::get().getPasscode());
@@ -748,7 +748,7 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
 
     auto& connInfo = **lock;
 
-    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
         auto playerData = msg.initPlayerData();
         auto data = playerData.initData();
         data::encodePlayerState(state, data);
@@ -791,7 +791,7 @@ void NetworkManagerImpl::queueLevelScript(const std::vector<EmbeddedScript>& scr
 }
 
 void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scripts) {
-    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
         data::encodeSendLevelScriptMessage(scripts, msg);
     });
 }
@@ -806,13 +806,13 @@ void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
 }
 
 void NetworkManagerImpl::sendRoomStateCheck() {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         msg.setCheckRoomState();
     });
 }
 
 void NetworkManagerImpl::sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto createRoom = msg.initCreateRoom();
         createRoom.setName(name);
         createRoom.setPasscode(passcode);
@@ -822,7 +822,7 @@ void NetworkManagerImpl::sendCreateRoom(const std::string& name, uint32_t passco
 }
 
 void NetworkManagerImpl::sendJoinRoom(uint32_t id, uint32_t passcode) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto joinRoom = msg.initJoinRoom();
         joinRoom.setRoomId(id);
         joinRoom.setPasscode(passcode);
@@ -831,19 +831,19 @@ void NetworkManagerImpl::sendJoinRoom(uint32_t id, uint32_t passcode) {
 }
 
 void NetworkManagerImpl::sendLeaveRoom() {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         msg.setLeaveRoom();
     });
 }
 
 void NetworkManagerImpl::sendRequestRoomList() {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto requestRoomList = msg.initRequestRoomList();
     });
 }
 
 void NetworkManagerImpl::sendAssignTeam(int accountId, uint16_t teamId) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto assign = msg.initAssignTeam();
         assign.setAccountId(accountId);
         assign.setTeamId(teamId);
@@ -851,21 +851,21 @@ void NetworkManagerImpl::sendAssignTeam(int accountId, uint16_t teamId) {
 }
 
 void NetworkManagerImpl::sendCreateTeam(cocos2d::ccColor4B color) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto create = msg.initCreateTeam();
         create.setColor(data::encodeColor4(color));
     });
 }
 
 void NetworkManagerImpl::sendDeleteTeam(uint16_t teamId) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto del = msg.initDeleteTeam();
         del.setTeamId(teamId);
     });
 }
 
 void NetworkManagerImpl::sendUpdateTeam(uint16_t teamId, cocos2d::ccColor4B color) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto update = msg.initUpdateTeam();
         update.setTeamId(teamId);
         update.setColor(data::encodeColor4(color));
@@ -873,13 +873,21 @@ void NetworkManagerImpl::sendUpdateTeam(uint16_t teamId, cocos2d::ccColor4B colo
 }
 
 void NetworkManagerImpl::sendGetTeamMembers() {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         msg.initGetTeamMembers();
     });
 }
 
+void NetworkManagerImpl::sendRoomOwnerAction(RoomOwnerActionType type, int target) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto roa = msg.initRoomOwnerAction();
+        roa.setType(type);
+        roa.setTarget(target);
+    });
+}
+
 void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto adminNotice = msg.initAdminNotice();
         adminNotice.setMessage(message);
         adminNotice.setTargetUser(user);
@@ -891,28 +899,28 @@ void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::
 }
 
 void NetworkManagerImpl::sendAdminNoticeEveryone(const std::string& message) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto adminNotice = msg.initAdminNoticeEveryone();
         adminNotice.setMessage(message);
     });
 }
 
 void NetworkManagerImpl::sendAdminLogin(const std::string& password) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto adminLogin = msg.initAdminLogin();
         adminLogin.setPassword(password);
     });
 }
 
 void NetworkManagerImpl::sendAdminFetchUser(const std::string& query) {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto fetchUser = msg.initAdminFetchUser();
         fetchUser.setQuery(query);
     });
 }
 
 void NetworkManagerImpl::sendAdminFetchMods() {
-    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto fetchUser = msg.initAdminFetchMods();
     });
 }
@@ -1311,26 +1319,36 @@ static Result<> encodeAndSend(
     return Ok();
 }
 
-Result<> NetworkManagerImpl::sendToCentral(std::function<void(CentralMessage::Builder&)> func) {
+void NetworkManagerImpl::sendToCentral(std::function<void(CentralMessage::Builder&)> func) {
     if (!m_centralConn.connected()) {
-        return Err("Not connected to central server");
+        log::warn("Failed to send message: not connected to central server!");
+        return;
     }
 
-    return encodeAndSend(m_centralConn, [&](capnp::MallocMessageBuilder& msg) {
+    auto res = encodeAndSend(m_centralConn, [&](capnp::MallocMessageBuilder& msg) {
         auto root = msg.initRoot<CentralMessage>();
         func(root);
     }, true);
+
+    if (!res) {
+        log::warn("Failed to send message to central server: {}", res.unwrapErr());
+    }
 }
 
-Result<> NetworkManagerImpl::sendToGame(std::function<void(GameMessage::Builder&)> func, bool reliable) {
+void NetworkManagerImpl::sendToGame(std::function<void(GameMessage::Builder&)> func, bool reliable) {
     if (!m_gameConn.connected()) {
-        return Err("Not connected to game server");
+        log::warn("Failed to send message: not connected to game server!");
+        return;
     }
 
-    return encodeAndSend(m_gameConn, [&](capnp::MallocMessageBuilder& msg) {
+    auto res = encodeAndSend(m_gameConn, [&](capnp::MallocMessageBuilder& msg) {
         auto root = msg.initRoot<GameMessage>();
         func(root);
     }, reliable);
+
+    if (!res) {
+        log::warn("Failed to send message to game server: {}", res.unwrapErr());
+    }
 }
 
 std::optional<std::string> NetworkManagerImpl::getUToken() {
