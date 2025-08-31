@@ -32,7 +32,7 @@ bool RoomUserControlsPopup::setup(int id, std::string_view username) {
 void RoomUserControlsPopup::remakeButtons() {
     m_menu->removeAllChildren();
 
-    Build<CCSprite>::create("button-admin-ban.png")
+    Build<CCSprite>::create("button-admin-ban.png"_spr)
         .scale(1.0f)
         .intoMenuItem([this] {
             globed::quickPopup(
@@ -52,7 +52,7 @@ void RoomUserControlsPopup::remakeButtons() {
         .scaleMult(1.1f)
         .parent(m_menu);
 
-    Build<CCSprite>::create("button-admin-kick.png")
+    Build<CCSprite>::create("button-admin-kick.png"_spr)
         .scale(1.0f)
         .intoMenuItem([this] {
             globed::quickPopup(

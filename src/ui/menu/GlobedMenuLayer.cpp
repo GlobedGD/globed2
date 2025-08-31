@@ -74,7 +74,7 @@ protected:
     SessionId m_sessionId;
 
     bool customSetup() {
-        CCSize btnSize { 24.f, 24.f };
+        CCSize btnSize { 22.f, 22.f };
 
         if (m_sessionId.asU64() != 0) {
             // add button to join the session
@@ -91,7 +91,7 @@ protected:
 
         // if we are room host, add a button that allows us kicking/banning the person
         if (RoomManager::get().isOwner()) {
-            Build<CCSprite>::create("GJ_reportBtn_001.png")
+            Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
                 .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
                 .intoMenuItem([this] {
                     this->openUserControls();
