@@ -1359,7 +1359,27 @@ std::array<uint8_t, 32> NetworkManagerImpl::computeUident() {
 
             return arr;
         } else {
-            return res.unwrap();
+            auto arr = res.unwrap();
+
+            uint8_t platnib = 0; // top 4 bits indicate platform
+#ifdef GEODE_IS_WINDOWS
+            platnib = 1;
+#elif defined(GEODE_IS_ANDROID64)
+            platnib = 2;
+#elif defined(GEODE_IS_ANDROID64)
+            platnib = 3;
+#elif defined(GEODE_IS_INTEL_MAC)
+            platnib = 4;
+#elif defined(GEODE_IS_ARM_MAC)
+            platnib = 5;
+#elif defined(GEODE_IS_IOS)
+            platnib = 6;
+#endif
+
+            uint8_t topByte = platnib << 4;
+            arr[0] = topByte;
+
+            return arr;
         }
     }();
 
