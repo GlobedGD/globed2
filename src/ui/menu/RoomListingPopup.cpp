@@ -193,6 +193,7 @@ void RoomListingPopup::waitForResponse() {
                 this->doJoinRoom(m_joinedRoomId, true);
             } break;
             case Full: reason = "Room is full"; break;
+            case Banned: reason = "You are banned from this room"; break;
             default: reason = "Unknown reason"; break;
         }
 

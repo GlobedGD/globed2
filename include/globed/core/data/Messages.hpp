@@ -36,6 +36,7 @@ enum class RoomJoinFailedReason : uint16_t {
     NotFound = 0,
     InvalidPasscode,
     Full,
+    Banned,
 
     Last_ = Full,
 };
