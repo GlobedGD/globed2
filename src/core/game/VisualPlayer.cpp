@@ -99,6 +99,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
     m_prevRotating = data.isRotating;
     m_prevPosition = data.position;
+    m_prevRotation = data.rotation;
 
     bool isNearby = this->isPlayerNearby(data, camState);
 
@@ -670,6 +671,10 @@ bool VisualPlayer::isPlayerNearby(const PlayerObjectData& data, const GameCamera
 
 CCPoint VisualPlayer::getLastPosition() {
     return m_prevPosition;
+}
+
+float VisualPlayer::getLastRotation() {
+    return m_prevRotation;
 }
 
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {

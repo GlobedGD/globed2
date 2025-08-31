@@ -82,6 +82,10 @@ Result<FollowPlayerEvent> FollowPlayerEvent::decode(qn::ByteReader& reader) {
     return Ok(GEODE_UNWRAP(decodeFollowPlayerData(reader)));
 }
 
+Result<FollowRotationEvent> FollowRotationEvent::decode(qn::ByteReader& reader) {
+    return Ok(GEODE_UNWRAP(decodeFollowRotationData(reader)));
+}
+
 Result<InEvent> InEvent::decode(ByteReader& reader) {
     auto type = READER_UNWRAP(reader.readU16());
 
@@ -93,6 +97,7 @@ Result<InEvent> InEvent::decode(ByteReader& reader) {
         MAP_TO(EVENT_SCR_MOVE_GROUP, MoveGroupEvent);
         MAP_TO(EVENT_SCR_MOVE_GROUP_ABSOLUTE, MoveGroupAbsoluteEvent);
         MAP_TO(EVENT_SCR_FOLLOW_PLAYER, FollowPlayerEvent);
+        MAP_TO(EVENT_SCR_FOLLOW_ROTATION, FollowRotationEvent);
         MAP_TO(EVENT_2P_LINK_REQUEST, TwoPlayerLinkRequestEvent);
         MAP_TO(EVENT_2P_UNLINK, TwoPlayerUnlinkEvent);
     }

@@ -30,6 +30,7 @@ public:
     void playDeathEffect();
     void handleSpiderTp(const SpiderTeleportData& tp);
     cocos2d::CCPoint getLastPosition();
+    float getLastRotation();
 
 private:
     friend class RemotePlayer;
@@ -68,6 +69,7 @@ private:
     bool m_prevRotating = false;
 
     cocos2d::CCPoint m_prevPosition{};
+    float m_prevRotation = 0.f;
 
     //
     float m_tpColorDelta = 0.f;

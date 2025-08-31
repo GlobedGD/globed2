@@ -23,7 +23,21 @@ public:
     }
 };
 
-struct GLOBED_NOVTABLE GLOBED_DLL SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBaseGameLayer> {
+struct CustomFollowAction {
+    int m_playerId;
+    int m_groupId;
+    int m_centerGroupId = 0;
+    bool m_pos, m_rot;
+
+    bool operator==(const CustomFollowAction&) const = default;
+};
+
+struct CustomFollowedData {
+    cocos2d::CCPoint pos;
+    float rot;
+};
+
+struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBaseGameLayer> {
     struct Fields {
         std::optional<MessageListener<msg::LevelDataMessage>> m_listener;
         std::optional<MessageListener<msg::ScriptLogsMessage>> m_logsListener;
@@ -31,8 +45,8 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCBaseGameLayer : geode::Modify<SCBaseGameLaye
         std::deque<std::pair<asp::time::SystemTime, float>> m_memLimitBuffer;
 
         // std::unordered_map<uint16_t, std::vector<int>> m_customListeners;
-        std::unordered_set<std::pair<int, int>, pairhash> m_customFollowers;
-        std::unordered_map<int, cocos2d::CCPoint> m_lastPlayerPositions;
+        std::vector<CustomFollowAction> m_followActions;
+        std::unordered_map<int, CustomFollowedData> m_lastPlayerPositions;
         int m_localId = 0;
     };
 
@@ -59,10 +73,24 @@ struct GLOBED_NOVTABLE GLOBED_DLL SCBaseGameLayer : geode::Modify<SCBaseGameLaye
         bool onlyY,
         bool dynamic
     );
-    void customFollowPlayer(int id, int group, bool enable);
+    void customRotateBy(int group, int center, double theta);
+
+    void customFollowPlayerMov(int player, int group, bool enable);
+    void customFollowPlayerRot(int player, int group, int center, bool enable);
+    void removeCustomFollow(int player, int group);
+
+    CustomFollowAction& insertCustomFollow(int player, int group);
+    void disableCustomFollow(int player, int group, bool disableMov, bool disableRot);
+    size_t getCustomFollowIndex(int player, int group);
+    CustomFollowedData positionForPlayer(int player);
 
     void unfollowAllForPlayer(int id);
     void processCustomFollowActions(float);
+
+    void rotateObjects(cocos2d::CCArray* p0, float p1, cocos2d::CCPoint p2, cocos2d::CCPoint p3, bool p4, bool p5) {
+        geode::log::debug("rotateObjects({}, {}, {}, {}, {}, {})", p0, p1, p2, p3, p4, p5);
+        GJBaseGameLayer::rotateObjects(p0, p1, p2, p3, p4, p5);
+    }
 
 };
 

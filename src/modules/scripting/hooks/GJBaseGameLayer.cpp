@@ -2,6 +2,7 @@
 
 #include <globed/core/RoomManager.hpp>
 #include <globed/util/Random.hpp>
+#include <globed/util/algo.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <modules/scripting/data/SpawnData.hpp>
@@ -121,35 +122,150 @@ void SCBaseGameLayer::customMoveDirection(
     // this->triggerMoveCommand(obj);
 }
 
-void SCBaseGameLayer::customFollowPlayer(int id, int group, bool enable) {
+void SCBaseGameLayer::customRotateBy(int group, int center, double theta) {
     auto& fields = *m_fields.self();
-
     auto gjbgl = GlobedGJBGL::get(this);
 
-    if (enable) {
-        CCPoint curPos;
-        if (id == fields.m_localId) {
-            curPos = m_player1->getPosition();
+    if (center == 0) {
+        center = group;
+    }
+
+    auto centerObj = this->tryGetObject(center); // m_targetGroupID
+    auto targetObj = this->tryGetObject(group);  // m_centerGroupID
+    auto targetIdk = this->tryGetObject(group);  // m_rotationTargetID
+
+    if (centerObj && targetObj && targetIdk) {
+        // auto a = getRotateCommand
+        // getRotateCommandAngleDelta
+    }
+
+    // log::debug("rotating this bitch!! {} against {} by {}", group, center, theta);
+
+    m_effectManager->createRotateCommand(
+        theta,
+        0.f,
+        group,
+        center,
+        (int)EasingType::None,
+        0.f, // easing rate
+        false, // m_lockObjectRotation
+        false, false, // idk
+        0, // m_uniqueID
+        0 // m_controlID
+    );
+}
+
+void SCBaseGameLayer::customFollowPlayerMov(int player, int group, bool enable) {
+    auto& fields = *m_fields.self();
+    auto gjbgl = GlobedGJBGL::get(this);
+
+    if (!enable) {
+        this->disableCustomFollow(player, group, false, true);
+        return;
+    }
+
+    auto& action = this->insertCustomFollow(player, group);
+    action.m_pos = enable;
+}
+
+void SCBaseGameLayer::customFollowPlayerRot(int player, int group, int center, bool enable) {
+    auto& fields = *m_fields.self();
+    auto gjbgl = GlobedGJBGL::get(this);
+
+    log::debug("follow rot {} {} {} {}", player, group, center, enable);
+
+    if (!enable) {
+        this->disableCustomFollow(player, group, false, true);
+        return;
+    }
+
+    auto& action = this->insertCustomFollow(player, group);
+    action.m_rot = enable;
+    action.m_centerGroupId = center;
+}
+
+CustomFollowAction& SCBaseGameLayer::insertCustomFollow(int player, int group) {
+    auto& fields = *m_fields.self();
+    auto gjbgl = GlobedGJBGL::get(this);
+
+    size_t idx = this->getCustomFollowIndex(player, group);
+
+    if (idx == -1) {
+        fields.m_followActions.push_back(CustomFollowAction {
+            .m_playerId = player,
+            .m_groupId = group,
+        });
+        idx = fields.m_followActions.size() - 1;
+
+    }
+
+    if (!fields.m_lastPlayerPositions.contains(player)) {
+        auto pos = this->positionForPlayer(player);
+
+        if (pos.pos.isZero()) {
+            log::warn("Failed to locate player {}, unable to follow!", player);
         } else {
-            auto rp = gjbgl->getPlayer(id);
+            fields.m_lastPlayerPositions[player] = pos;
+        }
+    }
 
-            if (!rp) {
-                log::warn("Tried to follow invalid player: {}", id);
-                return;
-            }
+    return fields.m_followActions[idx];
+}
 
-            curPos = rp->player1()->getLastPosition();
+void SCBaseGameLayer::disableCustomFollow(int player, int group, bool disableMov, bool disableRot) {
+    auto& fields = *m_fields.self();
+    auto gjbgl = GlobedGJBGL::get(this);
+
+    size_t idx = this->getCustomFollowIndex(player, group);
+
+    if (idx == -1) return;
+
+    auto& action = fields.m_followActions[idx];
+    if (disableMov) {
+        action.m_pos = disableMov;
+    }
+
+    if (disableRot) {
+        action.m_rot = disableRot;
+    }
+
+    if (!action.m_rot && !action.m_pos) {
+        fields.m_followActions.erase(fields.m_followActions.begin() + idx);
+    }
+}
+
+size_t SCBaseGameLayer::getCustomFollowIndex(int player, int group) {
+    auto& fields = *m_fields.self();
+
+    for (size_t i = 0; i < fields.m_followActions.size(); i++) {
+        auto& act = fields.m_followActions[i];
+        if (act.m_playerId == player && act.m_groupId == group) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+CustomFollowedData SCBaseGameLayer::positionForPlayer(int player) {
+    auto& fields = *m_fields.self();
+
+    if (player == fields.m_localId) {
+        return {
+            m_player1->getPosition(),
+            globed::normalizeAngle(m_player1->getRotation()),
+        };
+    } else {
+        auto rp = GlobedGJBGL::get(this)->getPlayer(player);
+
+        if (!rp) {
+            return {};
         }
 
-        log::debug("Following player {} for group {}", id, group);
-        fields.m_customFollowers.insert(std::make_pair(id, group));
-        fields.m_lastPlayerPositions[id] = curPos;
-    } else {
-        log::debug("Unfollowing player {} for group {}", id, group);
-        fields.m_customFollowers.erase(std::make_pair(id, group));
-
-        // TODO: only remove if player is gone from the map
-        // fields.m_lastPlayerPositions.erase(id);
+        return {
+            rp->player1()->getLastPosition(),
+            globed::normalizeAngle(rp->player1()->getLastRotation())
+        };
     }
 }
 
@@ -157,34 +273,40 @@ void SCBaseGameLayer::processCustomFollowActions(float) {
     auto& fields = *m_fields.self();
     auto gjbgl = GlobedGJBGL::get(this);
 
-    std::vector<int> toUnfollow;
+    for (size_t i = 0; i < fields.m_followActions.size(); i++) {
+        auto& action = fields.m_followActions[i];
 
-    for (auto& [player, group] : fields.m_customFollowers) {
-        CCPoint pos;
+        auto data = this->positionForPlayer(action.m_playerId);
 
-        if (player == fields.m_localId) {
-            pos = m_player1->getPosition();
-        } else {
-            auto rp = gjbgl->getPlayer(player);
-            if (!rp) {
-                // unfollow
-                toUnfollow.push_back(player);
-                continue;
-            }
-
-            pos = rp->player1()->getLastPosition();
+        if (data.pos.isZero()) {
+            continue;
         }
 
-        auto& lastPos = fields.m_lastPlayerPositions[player];
+        auto it = fields.m_lastPlayerPositions.find(action.m_playerId);
 
-        float dx = pos.x - lastPos.x;
-        float dy = pos.y - lastPos.y;
-        this->customMoveBy(group, dx, dy);
-        lastPos = pos;
+        if (it == fields.m_lastPlayerPositions.end()) {
+            // this player was not available when the follow action started, if they are now, then start following next frame
+            fields.m_lastPlayerPositions.insert(it, std::make_pair(action.m_playerId, data));
+            continue;
+        }
+
+        auto& lastData = it->second;
+
+        if (action.m_pos) {
+            float dx = data.pos.x - lastData.pos.x;
+            float dy = data.pos.y - lastData.pos.y;
+            this->customMoveBy(action.m_groupId, dx, dy);
+        }
+
+        if (action.m_rot) {
+            float dr = globed::normalizeAngle(data.rot - lastData.rot);
+            this->customRotateBy(action.m_groupId, action.m_centerGroupId, dr);
+        }
     }
 
-    for (int id : toUnfollow) {
-        this->unfollowAllForPlayer(id);
+    for (auto& it : fields.m_lastPlayerPositions) {
+        auto pos = this->positionForPlayer(it.first);
+        it.second = pos;
     }
 }
 
@@ -247,7 +369,11 @@ void SCBaseGameLayer::handleEvent(const InEvent& event) {
     } else if (event.is<FollowPlayerEvent>()) {
         auto& data = event.as<FollowPlayerEvent>().data;
 
-        this->customFollowPlayer(data.player, data.group, data.enable);
+        this->customFollowPlayerMov(data.player, data.group, data.enable);
+    } else if (event.is<FollowRotationEvent>()) {
+        auto& data = event.as<FollowRotationEvent>().data;
+
+        this->customFollowPlayerRot(data.player, data.group, data.center, data.enable);
     }
 
 

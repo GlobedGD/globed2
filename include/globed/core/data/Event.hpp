@@ -31,6 +31,7 @@ constexpr uint16_t EVENT_SCR_REQUEST_SCRIPT_LOGS = 0xf012;
 constexpr uint16_t EVENT_SCR_MOVE_GROUP = 0xf013;
 constexpr uint16_t EVENT_SCR_MOVE_GROUP_ABSOLUTE = 0xf014;
 constexpr uint16_t EVENT_SCR_FOLLOW_PLAYER = 0xf015;
+constexpr uint16_t EVENT_SCR_FOLLOW_ROTATION = 0xf016;
 
 constexpr uint16_t EVENT_2P_LINK_REQUEST = 0xf100;
 constexpr uint16_t EVENT_2P_UNLINK = 0xf101;
@@ -95,6 +96,12 @@ struct FollowPlayerEvent {
     static geode::Result<FollowPlayerEvent> decode(qn::ByteReader& reader);
 };
 
+struct FollowRotationEvent {
+    FollowRotationData data;
+
+    static geode::Result<FollowRotationEvent> decode(qn::ByteReader& reader);
+};
+
 struct InEvent {
     using Kind = std::variant<
         CounterChangeEvent,
@@ -103,6 +110,7 @@ struct InEvent {
         MoveGroupEvent,
         MoveGroupAbsoluteEvent,
         FollowPlayerEvent,
+        FollowRotationEvent,
         TwoPlayerLinkRequestEvent,
         TwoPlayerUnlinkEvent
     >;

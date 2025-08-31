@@ -9,7 +9,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-struct GLOBED_NOVTABLE GLOBED_DLL GTPlayLayerHook : geode::Modify<GTPlayLayerHook, PlayLayer> {
+struct GLOBED_MODIFY_ATTR GTPlayLayerHook : geode::Modify<GTPlayLayerHook, PlayLayer> {
     static void onModify(auto& self) {
         GLOBED_CLAIM_HOOKS(GlobalTriggersModule::get(), self,
             "PlayLayer::setupHasCompleted",

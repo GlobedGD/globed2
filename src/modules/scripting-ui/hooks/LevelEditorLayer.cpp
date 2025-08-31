@@ -13,7 +13,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-struct GLOBED_NOVTABLE GLOBED_DLL SCEditorHook : geode::Modify<SCEditorHook, LevelEditorLayer> {
+struct GLOBED_MODIFY_ATTR SCEditorHook : geode::Modify<SCEditorHook, LevelEditorLayer> {
     struct Fields {
         bool m_hasScriptObjects = false;
     };

@@ -14,7 +14,7 @@ namespace globed {
 
 CCMenuItemToggler* createObjButton(ScriptObjectType type);
 
-struct GLOBED_NOVTABLE GLOBED_DLL SCEditorUIHook : geode::Modify<SCEditorUIHook, EditorUI> {
+struct GLOBED_MODIFY_ATTR SCEditorUIHook : geode::Modify<SCEditorUIHook, EditorUI> {
     struct Fields {
         EditButtonBar* m_buttonBar = nullptr;
     };

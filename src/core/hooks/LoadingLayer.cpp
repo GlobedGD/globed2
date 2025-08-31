@@ -10,7 +10,7 @@ using namespace asp::time;
 
 namespace globed {
 
-struct GLOBED_NOVTABLE HookedLoadingLayer : Modify<HookedLoadingLayer, LoadingLayer> {
+struct GLOBED_MODIFY_ATTR HookedLoadingLayer : Modify<HookedLoadingLayer, LoadingLayer> {
     struct Fields {
         bool m_finished = false;
         SystemTime m_startedAt;

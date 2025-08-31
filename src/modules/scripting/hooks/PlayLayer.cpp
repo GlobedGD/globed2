@@ -12,7 +12,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-struct GLOBED_NOVTABLE GLOBED_DLL SCPlayLayerHook : geode::Modify<SCPlayLayerHook, PlayLayer> {
+struct GLOBED_MODIFY_ATTR SCPlayLayerHook : geode::Modify<SCPlayLayerHook, PlayLayer> {
     struct Fields {
         bool m_hasScriptObjects = false;
         std::vector<EmbeddedScript> m_scripts;
