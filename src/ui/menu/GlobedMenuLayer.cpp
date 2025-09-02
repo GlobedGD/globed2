@@ -553,6 +553,16 @@ void GlobedMenuLayer::initSideButtons() {
         }
     }
 
+    // refresh button
+    makeButton(
+        CCSprite::create("icon-refresh-square.png"_spr),
+        std::nullopt,
+        m_rightSideMenu,
+        RightBtn::Refresh,
+        "btn-refresh",
+        [this] { this->requestRoomState(); }
+    );
+
     m_rightSideMenu->updateLayout();
     m_leftSideMenu->updateLayout();
 }
@@ -579,6 +589,11 @@ void GlobedMenuLayer::initFarSideButtons() {
 
 void GlobedMenuLayer::copyRoomIdToClipboard() {
     geode::utils::clipboard::write(fmt::to_string(m_roomId));
+}
+
+void GlobedMenuLayer::requestRoomState() {
+    m_lastRoomUpdate = Instant::now();
+    NetworkManagerImpl::get().sendRoomStateCheck();
 }
 
 void GlobedMenuLayer::onSettings() {
@@ -655,9 +670,7 @@ void GlobedMenuLayer::update(float dt) {
 
     if (newState == MenuState::Connected) {
         if (m_roomId == -1 && (!m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > Duration::fromSecs(1))) {
-            // request room state
-            m_lastRoomUpdate = Instant::now();
-            NetworkManagerImpl::get().sendRoomStateCheck();
+            this->requestRoomState();
         }
     }
 }

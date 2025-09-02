@@ -58,6 +58,7 @@ private:
     void initSideButtons();
     void initFarSideButtons();
     void copyRoomIdToClipboard();
+    void requestRoomState();
 
     void onSettings();
 };
