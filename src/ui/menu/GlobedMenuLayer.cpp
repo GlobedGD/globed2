@@ -411,6 +411,8 @@ void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<Room
 }
 
 void GlobedMenuLayer::initRoomButtons() {
+    // fix cocos ub, i hate it here
+    m_roomButtonsMenu->m_pSelectedItem = nullptr;
     m_roomButtonsMenu->removeAllChildren();
 
     constexpr float BtnScale = 0.77f;
