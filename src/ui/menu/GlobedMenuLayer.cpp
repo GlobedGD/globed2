@@ -264,7 +264,7 @@ bool GlobedMenuLayer::init() {
         .id("left-side-menu")
         .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
         .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
-        .pos(8.f, PLAYER_LIST_MENU_SIZE.height - 6.f)
+        .pos(7.f, PLAYER_LIST_MENU_SIZE.height - 6.f)
         .anchorPoint(0.f, 1.f)
         .parent(m_playerListMenu);
 
@@ -272,7 +272,7 @@ bool GlobedMenuLayer::init() {
         .id("right-side-menu")
         .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
         .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
-        .pos(PLAYER_LIST_MENU_SIZE - CCSize{8.f, 6.f})
+        .pos(PLAYER_LIST_MENU_SIZE - CCSize{7.f, 6.f})
         .anchorPoint(1.f, 1.f)
         .parent(m_playerListMenu);
 
