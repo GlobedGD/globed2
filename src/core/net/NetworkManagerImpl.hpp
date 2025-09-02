@@ -123,6 +123,8 @@ public:
     void sendUpdateTeam(uint16_t teamId, cocos2d::ccColor4B color);
     void sendGetTeamMembers();
     void sendRoomOwnerAction(RoomOwnerActionType type, int target = 0);
+    void sendUpdateRoomSettings(const RoomSettings& settings);
+
     void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply);
     void sendAdminNoticeEveryone(const std::string& message);
     void sendAdminLogin(const std::string& password);

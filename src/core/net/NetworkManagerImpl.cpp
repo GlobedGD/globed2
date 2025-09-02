@@ -119,7 +119,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
         CentralMessage::Reader msg = reader.getRoot<CentralMessage>();
 
         if (auto err = this->onCentralDataReceived(msg).err()) {
-            log::error("failed to process message from central server: {}", err);
+            log::error("failed to process message from central server: {}", *err);
         }
     });
 
@@ -272,7 +272,7 @@ void NetworkManagerImpl::thrPingGameServers() {
             server.lastPingTime = Instant::now();
 
             // send a ping to the server
-            auto res = qn::Pinger::get().pingUrl(server.url, [this, srvkey](qn::PingResult res) {
+            auto res = qn::Pinger::get().pingUrl(server.url, [this, srvkey = srvkey](qn::PingResult res) {
                 if (res.timedOut) {
                     log::debug("Ping to server {} timed out!", srvkey);
                     return;
@@ -886,6 +886,13 @@ void NetworkManagerImpl::sendRoomOwnerAction(RoomOwnerActionType type, int targe
     });
 }
 
+void NetworkManagerImpl::sendUpdateRoomSettings(const RoomSettings& settings) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto upd = msg.initUpdateRoomSettings();
+        data::encodeRoomSettings(settings, upd.initSettings());
+    });
+}
+
 void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto adminNotice = msg.initAdminNotice();
@@ -1117,6 +1124,15 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         case CentralMessage::JOIN_FAILED: {
             log::warn("Received join failed message: {}", (int) msg.getJoinFailed().getReason());
         } break;
+
+        case CentralMessage::ROOM_SETTINGS_UPDATED: {
+            auto settings = msg.getRoomSettingsUpdated();
+            auto rs = data::decodeRoomSettings(settings.getSettings());
+
+            this->invokeListeners(msg::RoomSettingsUpdatedMessage { rs });
+        } break;
+
+        //
 
         case CentralMessage::WARP_PLAYER: {
             auto warpPlayer = msg.getWarpPlayer();

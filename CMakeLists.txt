@@ -21,6 +21,7 @@ option(GLOBED_DEBUG_INTERPOLATION "Enable interpolation debugging, adds a TON of
 option(GLOBED_MODULE_GLOBAL_TRIGGERS "Global triggers module" OFF)
 option(GLOBED_MODULE_SCRIPTING "Scripting module" OFF)
 option(GLOBED_MODULE_SCRIPTING_UI "Scripting UI module" OFF)
+option(GLOBED_MODULE_TCD_HNS "" OFF)
 
 # Configure platform sources
 if (ANDROID)
@@ -51,6 +52,11 @@ endif()
 if (GLOBED_MODULE_SCRIPTING_UI)
     file(GLOB_RECURSE SCRIPTING_UI_SOURCES CONFIGURE_DEPENDS "src/modules/scripting-ui/*.cpp")
     list(APPEND MODULE_SOURCES ${SCRIPTING_UI_SOURCES})
+endif()
+
+if (GLOBED_MODULE_TCD_HNS)
+    file(GLOB_RECURSE TCD_HNS_SOURCES CONFIGURE_DEPENDS "src/modules/comm/tcd-hidenseek/*.cpp")
+    list(APPEND MODULE_SOURCES ${TCD_HNS_SOURCES})
 endif()
 
 file(GLOB_RECURSE DEATHLINK_SOURCES CONFIGURE_DEPENDS "src/modules/deathlink/*.cpp")
@@ -98,6 +104,10 @@ endif()
 
 if (GLOBED_MODULE_SCRIPTING_UI)
     target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_MODULE_SCRIPTING_UI=1)
+endif()
+
+if (GLOBED_MODULE_TCD_HNS)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_MODULE_TCD_HNS=1)
 endif()
 
 # Dependencies

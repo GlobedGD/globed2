@@ -10,7 +10,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize TeamManagementPopup::POPUP_SIZE = {300.f, 230.f};
+const CCSize TeamManagementPopup::POPUP_SIZE = {300.f, 250.f};
 
 static constexpr float CELL_HEIGHT = 26.f;
 static constexpr float CELL_WIDTH = 260.f;
@@ -71,6 +71,8 @@ private:
 
         this->setContentSize({CELL_WIDTH, CELL_HEIGHT});
 
+        bool editable = popup->m_showPlus;
+
         m_popup = popup;
         m_color = team.color;
         m_originalColor = m_color;
@@ -85,20 +87,36 @@ private:
             .parent(this)
             .collect();
 
-        Build(ColorChannelSprite::create())
-            .with([&](auto spr) { cue::rescaleToMatch(spr, CELL_HEIGHT * 0.85f); })
+        auto colorBtn = Build(ColorChannelSprite::create())
+            .with([&](auto spr) { cue::rescaleToMatch(spr, CELL_HEIGHT * 0.8f); })
             .color(cue::into<ccColor3B>(team.color))
             .store(m_colorSprite)
             .intoMenuItem([this] {
                 this->openEditColor();
             })
-            .parent(leftContainer);
+            .scaleMult(1.1f)
+            .parent(leftContainer)
+            .collect();
 
-        Build<CCLabelBMFont>::create(fmt::format("Team {}", idx + 1).c_str(), "bigFont.fnt")
+        colorBtn->setEnabled(editable);
+
+        auto text = fmt::format("Team {}", idx + 1);
+
+#ifdef GLOBED_MODULE_TCD_HNS
+        if (idx == 0) {
+            text = "Hiders";
+        } else {
+            text = "Seekers";
+        }
+#endif
+
+        Build<CCLabelBMFont>::create(text.c_str(), "bigFont.fnt")
             .scale(0.6f)
             .parent(leftContainer);
 
         leftContainer->updateLayout();
+
+        colorBtn->setPositionY(colorBtn->getPositionY() + 1.f);
 
         m_rightContainer = Build<CCMenu>::create()
             .layout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::End))
@@ -108,13 +126,15 @@ private:
             .parent(this)
             .collect();
 
-        Build<CCSprite>::createSpriteName("GJ_deleteSongBtn_001.png")
-            .with([&](auto spr) { cue::rescaleToMatch(spr, CELL_HEIGHT * 0.85f); })
-            .intoMenuItem([this] {
-                m_popup->deleteTeam(m_idx);
-            })
-            .zOrder(99)
-            .parent(m_rightContainer);
+        if (editable) {
+            Build<CCSprite>::createSpriteName("GJ_deleteSongBtn_001.png")
+                .with([&](auto spr) { cue::rescaleToMatch(spr, CELL_HEIGHT * 0.8f); })
+                .intoMenuItem([this] {
+                    m_popup->deleteTeam(m_idx);
+                })
+                .zOrder(99)
+                .parent(m_rightContainer);
+        }
 
         m_rightContainer->updateLayout();
 
@@ -138,7 +158,7 @@ private:
 
     void join() {
         auto& nm = NetworkManagerImpl::get();
-        nm.sendAssignTeam(0, m_idx);
+        nm.sendAssignTeam(m_popup->m_assigningFor, m_idx);
 
         for (auto cell : m_popup->m_list->iterChecked<TeamCell>()) {
             cell->recreateJoinButton(cell == this);
@@ -169,21 +189,44 @@ private:
     }
 };
 
-bool TeamManagementPopup::setup() {
+bool TeamManagementPopup::setup(int assigningFor) {
     this->setTitle("Team Management");
-    m_showPlus = RoomManager::get().isOwner();
+    m_showPlus = RoomManager::get().isOwner() && !assigningFor;
+    m_assigningFor = assigningFor;
 
     m_list = Build(cue::ListNode::create(
         {CELL_WIDTH, 170.f},
-        ccColor4B{0x33, 0x44, 0x99, 255},
+        cue::Brown,
         cue::ListBorderStyle::Comments
     ))
-        .pos(this->fromCenter(0.f, -8.f))
+        .pos(this->fromCenter(0.f, -2.f))
         .visible(false)
         .parent(m_mainLayer);
 
     m_list->setCellHeight(CELL_HEIGHT);
     m_list->setJustify(cue::Justify::Center);
+
+    m_bottomContainer = Build<CCMenu>::create()
+        .layout(RowLayout::create()->setAutoScale(false))
+        .contentSize(CELL_WIDTH, 30.f)
+        .pos(this->fromBottom(20.f))
+        .visible(false)
+        .parent(m_mainLayer);
+
+    auto toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.7f, [this](auto toggler) {
+        this->setLockedTeams(!toggler->isOn());
+    }))
+        .scale(0.9f)
+        .parent(m_bottomContainer)
+        .collect();
+
+    toggler->toggle(RoomManager::get().getSettings().lockedTeams);
+
+    Build<CCLabelBMFont>::create("Locked teams", "bigFont.fnt")
+        .scale(0.4f)
+        .parent(m_bottomContainer);
+
+    m_bottomContainer->updateLayout();
 
     this->startLoading();
     NetworkManagerImpl::get().sendRoomStateCheck();
@@ -197,6 +240,7 @@ void TeamManagementPopup::startLoading() {
         .parent(m_mainLayer);
 
     m_list->setVisible(false);
+    m_bottomContainer->setVisible(false);
 
     auto& nm = NetworkManagerImpl::get();
 
@@ -207,6 +251,11 @@ void TeamManagementPopup::startLoading() {
 
     m_creationListener = nm.listen<msg::TeamCreationResultMessage>([this](const auto& msg) {
         this->onTeamCreated(msg.success, msg.teamCount);
+        return ListenerResult::Continue;
+    });
+
+    m_settingsListener = nm.listen<msg::RoomSettingsUpdatedMessage>([this](const auto& msg) {
+        this->stopLoad();
         return ListenerResult::Continue;
     });
 }
@@ -288,8 +337,10 @@ void TeamManagementPopup::stopLoad() {
     m_loadingCircle = nullptr;
     m_stateListener.reset();
     m_creationListener.reset();
+    m_settingsListener.reset();
 
     m_list->setVisible(true);
+    m_bottomContainer->setVisible(true);
 }
 
 void TeamManagementPopup::createTeam() {
@@ -308,6 +359,16 @@ void TeamManagementPopup::deleteTeam(uint16_t teamId) {
 
 void TeamManagementPopup::updateTeamColor(uint16_t teamId, cocos2d::ccColor4B color) {
     NetworkManagerImpl::get().sendUpdateTeam(teamId, color);
+}
+
+void TeamManagementPopup::setLockedTeams(bool locked) {
+    this->startLoading();
+
+    auto settings = RoomManager::get().getSettings();
+    settings.lockedTeams = locked;
+
+    auto& nm = NetworkManagerImpl::get();
+    nm.sendUpdateRoomSettings(settings);
 }
 
 }

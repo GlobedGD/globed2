@@ -81,6 +81,10 @@ struct TeamsUpdatedMessage {
     std::vector<RoomTeam> teams;
 };
 
+struct RoomSettingsUpdatedMessage {
+    RoomSettings settings;
+};
+
 // Misc
 
 struct WarpPlayerMessage {

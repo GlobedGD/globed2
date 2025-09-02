@@ -1,8 +1,10 @@
 #include "RoomUserControlsPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <ui/menu/TeamManagementPopup.hpp>
 
 #include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
@@ -32,8 +34,10 @@ bool RoomUserControlsPopup::setup(int id, std::string_view username) {
 void RoomUserControlsPopup::remakeButtons() {
     m_menu->removeAllChildren();
 
+    CCSize btnSize { 28.f, 28.f };
+
     Build<CCSprite>::create("button-admin-ban.png"_spr)
-        .scale(1.0f)
+        .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
         .intoMenuItem([this] {
             globed::quickPopup(
                 "Ban user",
@@ -53,7 +57,7 @@ void RoomUserControlsPopup::remakeButtons() {
         .parent(m_menu);
 
     Build<CCSprite>::create("button-admin-kick.png"_spr)
-        .scale(1.0f)
+        .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
         .intoMenuItem([this] {
             globed::quickPopup(
                 "Kick user",
@@ -68,6 +72,14 @@ void RoomUserControlsPopup::remakeButtons() {
                     NetworkManagerImpl::get().sendRoomOwnerAction(RoomOwnerActionType::KICK_USER, m_accountId);
                 }
             );
+        })
+        .scaleMult(1.1f)
+        .parent(m_menu);
+
+    Build(EditorButtonSprite::createWithSprite("icon-person.png"_spr, 1.f, EditorBaseColor::Cyan))
+        .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
+        .intoMenuItem([this] {
+            TeamManagementPopup::create(m_accountId)->show();
         })
         .scaleMult(1.1f)
         .parent(m_menu);

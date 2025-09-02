@@ -1,6 +1,7 @@
 #include <globed/config.hpp>
 #include <modules/scripting-ui/ScriptingUIModule.hpp>
 #include <modules/scripting-ui/ui/ScriptLogPanelPopup.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PauseLayer.hpp>
@@ -20,6 +21,10 @@ struct GLOBED_MODIFY_ATTR SCPauseLayer : Modify<SCPauseLayer, PauseLayer> {
     $override
     void customSetup() {
         PauseLayer::customSetup();
+
+        if (!NetworkManagerImpl::get().isConnected()) {
+            return;
+        }
 
         auto winSize = CCDirector::get()->getWinSize();
 

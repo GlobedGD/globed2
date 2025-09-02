@@ -304,7 +304,6 @@ bool GlobedMenuLayer::init() {
         return ListenerResult::Continue;
     });
 
-
     this->onServerModified();
 
     this->update(0.f);
@@ -520,7 +519,7 @@ void GlobedMenuLayer::initSideButtons() {
             LeftBtn::Teams,
             "btn-manage-teams",
             [this] {
-                TeamManagementPopup::create()->show();
+                TeamManagementPopup::create(0)->show();
             }
         );
     }
@@ -710,6 +709,11 @@ void GlobedMenuLayer::keyBackClicked() {
             "You are in a follower room, you <cr>cannot</c> leave to the main menu. Only the room owner can choose which levels to play."
         );
     }
+}
+
+void GlobedMenuLayer::onEnter() {
+    BaseLayer::onEnter();
+    this->onServerModified();
 }
 
 GlobedMenuLayer* GlobedMenuLayer::create() {

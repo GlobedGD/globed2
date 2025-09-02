@@ -50,6 +50,7 @@ private:
     void setMenuState(MenuState state, bool force = false);
 
     void keyBackClicked() override;
+    void onEnter() override;
 
     void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
     void updateRoom(const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);

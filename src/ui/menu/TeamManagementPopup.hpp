@@ -9,7 +9,7 @@
 
 namespace globed {
 
-class TeamManagementPopup : public BasePopup<TeamManagementPopup> {
+class TeamManagementPopup : public BasePopup<TeamManagementPopup, int> {
 public:
     static const cocos2d::CCSize POPUP_SIZE;
 
@@ -19,9 +19,12 @@ protected:
     cue::LoadingCircle* m_loadingCircle = nullptr;
     std::optional<MessageListener<msg::RoomStateMessage>> m_stateListener;
     std::optional<MessageListener<msg::TeamCreationResultMessage>> m_creationListener;
+    std::optional<MessageListener<msg::RoomSettingsUpdatedMessage>> m_settingsListener;
+    CCNode* m_bottomContainer;
+    int m_assigningFor = 0;
     bool m_showPlus = false;
 
-    bool setup();
+    bool setup(int assigningFor);
     void startLoading();
     void onLoaded(const std::vector<RoomTeam>& teams);
     void onTeamCreated(bool success, uint16_t teamCount);
@@ -32,6 +35,8 @@ protected:
     void createTeam();
     void deleteTeam(uint16_t teamId);
     void updateTeamColor(uint16_t teamId, cocos2d::ccColor4B color);
+
+    void setLockedTeams(bool locked);
 };
 
 }

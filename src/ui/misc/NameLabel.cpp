@@ -85,18 +85,27 @@ void NameLabel::onClick(CCMenuItemSpriteExtra* btn) {
 }
 
 void NameLabel::updateTeam(size_t idx, cocos2d::ccColor4B color) {
-    // TODO: make this an option, color names instead by default?
+    // TODO: make this an option
 
-    if (!m_teamLabel) {
-        m_teamLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
-            .parent(m_badgeContainer);
+    bool colorbmode = false;
+
+    if (!colorbmode) {
+        if (m_label) {
+            m_label->setColor(cue::into<ccColor3B>(color));
+            m_label->setOpacity(color.a);
+        }
+    } else {
+        if (!m_teamLabel) {
+            m_teamLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
+                .parent(m_badgeContainer);
+        }
+
+        m_teamLabel->setString(fmt::format("{}", idx + 1).c_str());
+        m_teamLabel->setColor(cue::into<ccColor3B>(color));
+
+        this->resizeBadgeContainer();
+        this->updateLayout();
     }
-
-    m_teamLabel->setString(fmt::format("{}", idx + 1).c_str());
-    m_teamLabel->setColor(cue::into<ccColor3B>(color));
-
-    this->resizeBadgeContainer();
-    this->updateLayout();
 }
 
 void NameLabel::updateNoTeam() {
