@@ -38,7 +38,7 @@ enum class RoomJoinFailedReason : uint16_t {
     Full,
     Banned,
 
-    Last_ = Full,
+    Last_ = Banned,
 };
 
 struct RoomJoinFailedMessage {

@@ -46,7 +46,7 @@ static std::pair<GameObject*, ScriptObjectType> classifyObject(GameObject* in) {
 #ifdef GLOBED_DEBUG
             log::warn("Object {} is not of the right type (expected TextGameObject)", in);
 #endif
-            return {nullptr, ScriptObjectType::None};;
+            return {nullptr, ScriptObjectType::None};
         }
 
         if (EmbeddedScript::decodeHeader(std::span{(uint8_t*)obj->m_text.data(), obj->m_text.size()})) {
