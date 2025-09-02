@@ -476,7 +476,7 @@ impl ClientSocket {
 
     /// fragmented udp send
     async fn send_fragmented_udp_payload(&self, buffer: &[u8]) -> Result<()> {
-        let mut vec = vec![0u8; self.mtu];
+        let mut vec: Vec<u8> = vec![0u8; self.mtu];
         let mut buf = FastByteBuffer::new(&mut vec[..]);
 
         let unique_id: u32 = globed_shared::rand::rng().random();

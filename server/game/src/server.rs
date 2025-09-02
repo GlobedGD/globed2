@@ -401,6 +401,8 @@ impl GameServer {
                         }
                     }
 
+                    thread.clear_messages().await;
+
                     // check for the result
                     match outcome {
                         ClientThreadOutcome::Terminate => break,
@@ -435,7 +437,7 @@ impl GameServer {
 
         // safety: the thread no longer runs and we are the only ones who can access the socket
         let socket = unsafe { socket.get_mut() };
-        let _ = socket.shutdown().await;
+        let _ = tokio::time::timeout(Duration::from_secs(5), socket.shutdown()).await;
 
         #[cfg(debug_assertions)]
         debug!("cleaning up thread: {} (udp peer: {:?})", socket.tcp_peer, socket.udp_peer);

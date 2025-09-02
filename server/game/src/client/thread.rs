@@ -326,8 +326,22 @@ impl ClientThread {
     }
 
     pub async fn push_new_message(&self, message: ServerThreadMessage) {
-        self.message_queue.lock().await.push_back(message);
+        let mut q = self.message_queue.lock().await;
+        if q.len() >= 128 {
+            warn!(
+                "[{}] message queue is overfilled for {}",
+                self.get_tcp_peer(),
+                self.account_id.load(Ordering::Relaxed)
+            );
+            return;
+        }
+
+        q.push_back(message);
         self.message_notify.notify_one();
+    }
+
+    pub async fn clear_messages(&self) {
+        self.message_queue.lock().await.clear();
     }
 
     /* private utilities */
