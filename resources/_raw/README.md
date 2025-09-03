@@ -1,0 +1,1 @@
+This is where stuff that doesn't go into the mod itself is stored, for example high resolution versions of textures, .psd/.pdn files, etc..
