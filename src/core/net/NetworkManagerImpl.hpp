@@ -178,6 +178,7 @@ private:
     asp::Notify m_pendingConnectNotify;
     asp::Notify m_disconnectNotify;
     asp::AtomicBool m_disconnectRequested;
+    asp::AtomicBool m_manualDisconnect = false;
     asp::Notify m_finishedClosingNotify;
 
     // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks

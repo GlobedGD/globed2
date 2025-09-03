@@ -262,7 +262,7 @@ bool GlobedMenuLayer::init() {
 
     m_leftSideMenu = Build<CCMenu>::create()
         .id("left-side-menu")
-        .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
+        .layout(ColumnLayout::create()->setAutoScale(false)->setGap(3.f)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
         .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
         .pos(7.f, PLAYER_LIST_MENU_SIZE.height - 6.f)
         .anchorPoint(0.f, 1.f)
@@ -270,7 +270,7 @@ bool GlobedMenuLayer::init() {
 
     m_rightSideMenu = Build<CCMenu>::create()
         .id("right-side-menu")
-        .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
+        .layout(ColumnLayout::create()->setAutoScale(false)->setGap(3.f)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
         .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
         .pos(PLAYER_LIST_MENU_SIZE - CCSize{7.f, 6.f})
         .anchorPoint(1.f, 1.f)
@@ -408,6 +408,8 @@ void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<Room
     m_playerList->setAutoUpdate(true);
     m_playerList->updateLayout();
     m_playerList->setScrollPos(scrollPos);
+
+    cocos::handleTouchPriority(this, true);
 }
 
 void GlobedMenuLayer::initRoomButtons() {
@@ -596,6 +598,37 @@ void GlobedMenuLayer::requestRoomState() {
     NetworkManagerImpl::get().sendRoomStateCheck();
 }
 
+bool GlobedMenuLayer::shouldAutoRefresh() {
+    auto playerCount = m_playerList->size();
+
+    Duration intv;
+
+    if (playerCount < 25) {
+        intv = Duration::fromSecs(3);
+    } else if (m_roomId != 0) {
+        intv = Duration::fromSecs(10);
+    } else {
+        intv = Duration::fromSecs(60);
+    }
+
+    auto bytime = !m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > intv;
+    if (!bytime) {
+        return false;
+    }
+
+    // dont refresh if the player interacted with the ui recently
+    if (m_lastInteraction && m_lastInteraction->elapsed() < Duration::fromSecs(3)) {
+        return false;
+    }
+
+    // dont refresh if the list is not at the top
+    if (!m_playerList->isAtTop()) {
+        return false;
+    }
+
+    return true;
+}
+
 void GlobedMenuLayer::onSettings() {
     SettingsLayer::create()->switchTo();
 }
@@ -669,7 +702,18 @@ void GlobedMenuLayer::update(float dt) {
     this->setMenuState(newState);
 
     if (newState == MenuState::Connected) {
+        auto scpos = m_playerList->getScrollPos();
+        bool changed = !m_lastScrollPos || m_lastScrollPos.value() != scpos;
+        m_lastScrollPos = scpos;
+
+        if (changed) {
+            m_lastInteraction = Instant::now();
+        }
+
         if (m_roomId == -1 && (!m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > Duration::fromSecs(1))) {
+            this->requestRoomState();
+        } else if (this->shouldAutoRefresh()) {
+            log::debug("automatic player list refresh!");
             this->requestRoomState();
         }
     }
@@ -729,6 +773,17 @@ void GlobedMenuLayer::keyBackClicked() {
 void GlobedMenuLayer::onEnter() {
     BaseLayer::onEnter();
     this->onServerModified();
+}
+
+bool GlobedMenuLayer::ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) {
+    auto pos = this->convertTouchToNodeSpace(touch);
+    if (CCRect{{}, this->getContentSize()}.containsPoint(pos)) {
+        m_lastInteraction = Instant::now();
+    }
+
+    m_playerList->getScrollPos();
+
+    return CCLayer::ccTouchBegan(touch, event);
 }
 
 GlobedMenuLayer* GlobedMenuLayer::create() {

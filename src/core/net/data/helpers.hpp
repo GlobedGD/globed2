@@ -261,6 +261,7 @@ inline RoomPlayer decodeRoomPlayer(const schema::main::RoomPlayer::Reader& reade
     out.color2 = reader.getColor2();
     out.glowColor = reader.getGlowColor();
     out.session = SessionId(reader.getSession());
+    out.teamId = reader.getTeamId();
 
     auto accountDataR = reader.getAccountData();
     out.accountData = decodeAccountData(accountDataR);

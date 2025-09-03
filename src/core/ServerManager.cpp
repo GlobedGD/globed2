@@ -62,7 +62,11 @@ void ServerManager::reload() {
 
     // ensure the main server is always present and is the first one
     // TODO: let gdps override this
+#ifdef GLOBED_MODULE_TCD_HNS
+    constexpr static auto mainServerUrl = "qunet://15.204.223.9:6010";
+#else
     constexpr static auto mainServerUrl = "qunet://globed.dev";
+#endif
 
     auto it = std::find_if(
         m_storage.servers.begin(), m_storage.servers.end(),

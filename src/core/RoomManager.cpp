@@ -69,7 +69,6 @@ std::optional<uint16_t> RoomManager::getTeamIdForPlayer(int player) {
     }
 
     for (auto& [teamId, players] : m_teamMembers) {
-        log::debug("Team {}, players: {}", teamId, players.size());
         if (std::find(players.begin(), players.end(), player) != players.end()) {
             return teamId;
         }
@@ -123,9 +122,15 @@ RoomManager::RoomManager() {
 
             // a change in rooms resets the warp context as well
             globed::_clearWarpContext();
+
+            // if we are in a level, clear the current session
+            if (GJBaseGameLayer::get()) {
+                NetworkManagerImpl::get().sendLeaveSession();
+            }
         }
 
         m_settings = msg.settings;
+        m_teams = msg.teams;
 
         if (!msg.players.empty()) {
             m_teamMembers.clear();
@@ -160,6 +165,12 @@ RoomManager::RoomManager() {
 
     nm.listenGlobal<msg::TeamsUpdatedMessage>([this](const auto& msg) {
         m_teams = msg.teams;
+
+        return ListenerResult::Continue;
+    })->setPriority(-10000);
+
+    nm.listenGlobal<msg::RoomSettingsUpdatedMessage>([this](const auto& msg) {
+        m_settings = msg.settings;
 
         return ListenerResult::Continue;
     })->setPriority(-10000);

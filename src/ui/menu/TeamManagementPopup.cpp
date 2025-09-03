@@ -139,12 +139,18 @@ private:
         m_rightContainer->updateLayout();
 
         auto& rm = RoomManager::get();
-        bool myTeam = m_idx == rm.getCurrentTeamId();
         bool canJoin = !rm.getSettings().lockedTeams || rm.isOwner();
 
+        bool isJoined;
+        if (m_popup->m_assigningFor == 0) {
+            isJoined = m_idx == rm.getCurrentTeamId();
+        } else {
+            isJoined = m_idx == rm.getTeamIdForPlayer(m_popup->m_assigningFor);
+        }
+
         // button to either join or leave team
-        if (myTeam || canJoin) {
-            this->recreateJoinButton(myTeam);
+        if (isJoined || canJoin) {
+            this->recreateJoinButton(isJoined);
         }
 
         return true;
@@ -213,18 +219,20 @@ bool TeamManagementPopup::setup(int assigningFor) {
         .visible(false)
         .parent(m_mainLayer);
 
-    auto toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.7f, [this](auto toggler) {
-        this->setLockedTeams(!toggler->isOn());
-    }))
-        .scale(0.9f)
-        .parent(m_bottomContainer)
-        .collect();
+    if (m_showPlus) {
+        auto toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.7f, [this](auto toggler) {
+            this->setLockedTeams(!toggler->isOn());
+        }))
+            .scale(0.9f)
+            .parent(m_bottomContainer)
+            .collect();
 
-    toggler->toggle(RoomManager::get().getSettings().lockedTeams);
+        toggler->toggle(RoomManager::get().getSettings().lockedTeams);
 
-    Build<CCLabelBMFont>::create("Locked teams", "bigFont.fnt")
-        .scale(0.4f)
-        .parent(m_bottomContainer);
+        Build<CCLabelBMFont>::create("Locked teams", "bigFont.fnt")
+            .scale(0.4f)
+            .parent(m_bottomContainer);
+    }
 
     m_bottomContainer->updateLayout();
 
@@ -278,6 +286,8 @@ void TeamManagementPopup::onLoaded(const std::vector<RoomTeam>& teams) {
     m_list->setAutoUpdate(true);
     m_list->updateLayout();
     m_list->scrollToTop();
+
+    cocos::handleTouchPriority(this, true);
 }
 
 void TeamManagementPopup::onTeamCreated(bool success, uint16_t teamCount) {

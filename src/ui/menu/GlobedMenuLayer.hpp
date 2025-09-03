@@ -44,6 +44,8 @@ private:
     std::optional<MessageListener<msg::RoomStateMessage>> m_roomStateListener;
     uint32_t m_roomId = -1;
     std::optional<asp::time::Instant> m_lastRoomUpdate;
+    std::optional<asp::time::Instant> m_lastInteraction;
+    std::optional<cue::ScrollPos> m_lastScrollPos;
 
     bool init() override;
     void update(float dt) override;
@@ -51,6 +53,7 @@ private:
 
     void keyBackClicked() override;
     void onEnter() override;
+    bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
 
     void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
     void updateRoom(const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
@@ -59,6 +62,7 @@ private:
     void initFarSideButtons();
     void copyRoomIdToClipboard();
     void requestRoomState();
+    bool shouldAutoRefresh();
 
     void onSettings();
 };

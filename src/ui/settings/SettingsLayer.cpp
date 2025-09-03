@@ -52,7 +52,7 @@ void SettingsLayer::addSettings() {
 #ifdef GLOBED_DEBUG
     bool showDebug = true;
 #else
-    bool showDebug = globed::value<bool>("core.dev.enable-dev-settings");
+    bool showDebug = globed::value<bool>("core.dev.enable-dev-settings").value_or(false);
 #endif
 
     if (showDebug) {

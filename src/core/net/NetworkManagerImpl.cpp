@@ -6,6 +6,7 @@
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/core/RoomManager.hpp>
+#include <globed/core/PopupManager.hpp>
 #include <core/CoreImpl.hpp>
 #include "data/helpers.hpp"
 
@@ -230,6 +231,8 @@ NetworkManagerImpl::NetworkManagerImpl() {
                     log::debug("disconnect was requested, aborting connection");
                     m_disconnectRequested.store(false);
 
+                    m_manualDisconnect = true;
+
                     (void) m_centralConn.disconnect();
                     m_gameConn.cancelConnection();
                     (void) m_gameConn.disconnect();
@@ -338,6 +341,7 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
 
     *m_pendingConnectUrl.lock() = std::string(url);
     m_pendingConnectNotify.notifyOne();
+    m_manualDisconnect = false;
 
     FriendListManager::get().refresh();
 
@@ -621,10 +625,18 @@ void NetworkManagerImpl::abortConnection(std::string reason) {
 }
 
 void NetworkManagerImpl::onCentralDisconnected() {
-    log::debug("connection to central server lost!");
+    auto err = m_centralConn.lastError();
+    bool manual = m_manualDisconnect;
 
-    Loader::get()->queueInMainThread([this] {
+    log::debug("connection to central server lost: {}", err.message());
+
+    Loader::get()->queueInMainThread([this, err, manual] {
         CoreImpl::get().onServerDisconnected();
+
+        if (!manual) {
+            auto alert = PopupManager::get().alertFormat("Globed Error", "Connection lost: <cy>{}</c>", err.message());
+            alert.showQueue();
+        }
     });
 
     m_finishedClosingNotify.notifyAll();
