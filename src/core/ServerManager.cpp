@@ -35,6 +35,8 @@ void ServerManager::deleteServer(size_t index) {
 
     if (m_storage.activeIdx == index) {
         m_storage.activeIdx = 0;
+    } else if (m_storage.activeIdx > index) {
+        m_storage.activeIdx--;
     }
 
     this->commit();

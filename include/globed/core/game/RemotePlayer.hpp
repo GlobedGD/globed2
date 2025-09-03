@@ -1,5 +1,7 @@
 #pragma once
 #include "VisualPlayer.hpp"
+#include "ProgressArrow.hpp"
+#include "ProgressIcon.hpp"
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <core/game/Interpolator.hpp>
 
@@ -37,6 +39,8 @@ private:
     cocos2d::CCNode* m_parentNode = nullptr;
     VisualPlayer* m_player1 = nullptr;
     VisualPlayer* m_player2 = nullptr;
+    ProgressArrow* m_progArrow = nullptr;
+    ProgressIcon* m_progIcon = nullptr;
     std::optional<uint16_t> m_teamId;
 };
 

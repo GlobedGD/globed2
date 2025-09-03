@@ -480,6 +480,10 @@ void VisualPlayer::cleanupObjectLayer() {
 
     // hope i didnt forget anything..
 
+    // custom nodes
+    $clear(m_nameLabel);
+    $clear(m_statusIcons);
+
 #undef $clear
 }
 

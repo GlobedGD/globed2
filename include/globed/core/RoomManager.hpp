@@ -10,7 +10,7 @@ namespace globed {
 /// It also manages joining and leaving levels.
 class RoomManager : public SingletonLeakBase<RoomManager> {
 public:
-    void joinLevel(int levelId);
+    void joinLevel(int levelId, bool platformer);
     void leaveLevel();
 
     bool isInGlobal();

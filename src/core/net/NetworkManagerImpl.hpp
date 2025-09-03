@@ -35,6 +35,11 @@ struct GameServer {
     void updateLatency(uint32_t latency);
 };
 
+struct DeferredSessionJoin {
+    SessionId id;
+    bool platformer;
+};
+
 // Struct for fields that are the same across one connection but are cleared on disconnect
 struct ConnectionInfo {
     std::string m_knownArgonUrl;
@@ -45,8 +50,8 @@ struct ConnectionInfo {
 
     std::atomic<qn::ConnectionState> m_gameConnState;
     std::string m_gameServerUrl;
-    std::optional<std::pair<std::string, SessionId>> m_gsDeferredConnectJoin;
-    std::optional<SessionId> m_gsDeferredJoin;
+    std::optional<std::pair<std::string, DeferredSessionJoin>> m_gsDeferredConnectJoin;
+    std::optional<DeferredSessionJoin> m_gsDeferredJoin;
     std::queue<OutEvent> m_gameEventQueue;
     std::vector<EmbeddedScript> m_queuedScripts;
     bool m_gameEstablished = false;
@@ -132,7 +137,7 @@ public:
     void sendAdminFetchMods();
 
     // Both servers
-    void sendJoinSession(SessionId id);
+    void sendJoinSession(SessionId id, bool platformer);
     void sendLeaveSession();
 
     // Game server
@@ -206,10 +211,10 @@ private:
     void doArgonAuth(std::string token);
     void abortConnection(std::string reason);
 
-    void joinSessionWith(std::string_view serverUrl, SessionId id);
-    void sendGameLoginJoinRequest(SessionId id);
+    void joinSessionWith(std::string_view serverUrl, SessionId id, bool platformer);
+    void sendGameLoginJoinRequest(SessionId id, bool platformer);
     void sendGameLoginRequest();
-    void sendGameJoinRequest(SessionId id);
+    void sendGameJoinRequest(SessionId id, bool platformer);
 
     // Handlers for messages
     void handleLoginFailed(schema::main::LoginFailedReason reason);

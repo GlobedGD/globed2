@@ -145,7 +145,8 @@ NetworkManagerImpl::NetworkManagerImpl() {
 
             // if there was a deferred join, try to login with session, otherwise just login
             if (connInfo.m_gsDeferredJoin) {
-                this->sendGameLoginJoinRequest(*connInfo.m_gsDeferredJoin);
+                auto& join = *connInfo.m_gsDeferredJoin;
+                this->sendGameLoginJoinRequest(join.id, join.platformer);
             } else {
                 this->sendGameLoginRequest();
             }
@@ -283,6 +284,8 @@ void NetworkManagerImpl::thrPingGameServers() {
 
                 // update the server latency
                 auto connInfo = m_connInfo.lock();
+                if (!*connInfo) return;
+
                 auto& servers = (*connInfo)->m_gameServers;
                 auto it = servers.find(srvkey);
                 if (it != servers.end()) {
@@ -646,7 +649,7 @@ void NetworkManagerImpl::onCentralDisconnected() {
     m_disconnectNotify.notifyAll();
 }
 
-void NetworkManagerImpl::sendJoinSession(SessionId id) {
+void NetworkManagerImpl::sendJoinSession(SessionId id, bool platformer) {
     auto lock = m_connInfo.lock();
     if (!*lock) {
         log::error("Cannot join session, not connected to central server");
@@ -666,7 +669,7 @@ void NetworkManagerImpl::sendJoinSession(SessionId id) {
     uint8_t serverId = id.serverId();
     for (auto& srv : connInfo.m_gameServers) {
         if (srv.second.id == serverId) {
-            this->joinSessionWith(srv.second.url, id);
+            this->joinSessionWith(srv.second.url, id, platformer);
             return;
         }
     }
@@ -685,7 +688,7 @@ void NetworkManagerImpl::sendLeaveSession() {
     });
 }
 
-void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId id) {
+void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId id, bool platformer) {
     // if already connected to another game server, disconnect and wait for the connection to close
     auto lock = m_connInfo.lock();
     if (!*lock) {
@@ -697,17 +700,20 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
 
     if (m_gameConn.connected()) {
         if (connInfo.m_gameServerUrl != serverUrl) {
-            connInfo.m_gsDeferredConnectJoin = std::make_pair(std::string(serverUrl), id);
+            connInfo.m_gsDeferredConnectJoin = std::make_pair(
+                std::string(serverUrl),
+                DeferredSessionJoin { id, platformer }
+            );
             (void) m_gameConn.disconnect();
         } else if (connInfo.m_gameEstablished) {
             // same server, just send the join request
-            this->sendGameJoinRequest(id);
+            this->sendGameJoinRequest(id, platformer);
         } else {
-            this->sendGameLoginJoinRequest(id);
+            this->sendGameLoginJoinRequest(id, platformer);
         }
     } else {
         // not connected, connect to the game server and join later
-        connInfo.m_gsDeferredJoin = id;
+        connInfo.m_gsDeferredJoin = DeferredSessionJoin { id, platformer };
         connInfo.m_gameServerUrl = std::string(serverUrl);
 
         (void) m_gameConn.cancelConnection();
@@ -723,13 +729,14 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
     }
 }
 
-void NetworkManagerImpl::sendGameLoginJoinRequest(SessionId id) {
+void NetworkManagerImpl::sendGameLoginJoinRequest(SessionId id, bool platformer) {
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto loginJoin = msg.initLoginUTokenAndJoin();
         loginJoin.setAccountId(GJAccountManager::get()->m_accountID);
         loginJoin.setToken(this->getUToken().value_or(""));
         loginJoin.setSessionId(id);
         loginJoin.setPasscode(RoomManager::get().getPasscode());
+        loginJoin.setPlatformer(platformer);
         data::encodeIconData(gatherIconData(), loginJoin.initIcons());
     });
 }
@@ -743,10 +750,11 @@ void NetworkManagerImpl::sendGameLoginRequest() {
     });
 }
 
-void NetworkManagerImpl::sendGameJoinRequest(SessionId id) {
+void NetworkManagerImpl::sendGameJoinRequest(SessionId id, bool platformer) {
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto join = msg.initJoinSession();
         join.setSessionId(id);
+        join.setPlatformer(platformer);
         join.setPasscode(RoomManager::get().getPasscode());
     });
 }

@@ -52,10 +52,12 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     // determine if mulitplayer should be active
     fields.m_active = nm.isConnected() && level->m_levelID != 0;
 
+    fields.m_interpolator.setPlatformer(level->isPlatformer());
+
     // TODO: disable multiplayer in editor depending on settings
 
     if (fields.m_active) {
-        RoomManager::get().joinLevel(level->m_levelID);
+        RoomManager::get().joinLevel(level->m_levelID, level->isPlatformer());
         CoreImpl::get().onJoinLevel(this, level, editor);
     }
 }
@@ -130,6 +132,36 @@ void GlobedGJBGL::setupUi() {
         .id("player-node"_spr)
         .parent(m_objectLayer)
         .store(fields.m_playerNode);
+
+    fields.m_progressBarContainer = Build<CCNode>::create()
+        .id("progress-bar-wrapper"_spr)
+        .visible(globed::setting<bool>("core.level.progress-indicators"))
+        .zOrder(-1);
+
+    if (auto pl = this->asPlayLayer()) {
+        if (pl->m_progressBar) {
+            pl->m_progressBar->addChild(fields.m_progressBarContainer);
+        }
+    }
+
+    fields.m_selfProgressIcon = Build<ProgressIcon>::create()
+        .parent(fields.m_progressBarContainer)
+        .id("self-player-progress"_spr);
+
+    auto gm = globed::cachedSingleton<GameManager>();
+
+    fields.m_selfProgressIcon->updateIcons(cue::Icons {
+        .id = gm->m_playerFrame,
+        .color1 = gm->m_playerColor,
+        .color2 = gm->m_playerColor2,
+        .glowColor = gm->m_playerGlowColor,
+    });
+    fields.m_selfProgressIcon->setForceOnTop(true);
+
+    // TODO: self status icons
+
+    // TODO: own username
+
 }
 
 void GlobedGJBGL::setupListeners() {
@@ -177,6 +209,12 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         CCPoint{(float) cameraDelta.first, (float) cameraVector.second},
         CCPoint{(float) cameraVector.first, (float) cameraVector.second}
     );
+
+    // update progress indicator
+    if (!m_isEditor) {
+        float perc = static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(this))->getCurrentPercent() / 100.f;
+        fields.m_selfProgressIcon->updatePosition(perc, m_isPracticeMode);
+    }
 
     fields.m_unknownPlayers.clear();
 
@@ -510,6 +548,14 @@ void GlobedGJBGL::pausedUpdate(float dt) {
         // if (ctag == tag1 || ctag == tag2 || ctag == tag3) {
         //     child->resumeSchedulerAndActions();
         // }
+    }
+}
+
+PlayLayer* GlobedGJBGL::asPlayLayer() {
+    if (!m_isEditor) {
+        return static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(this));
+    } else {
+        return nullptr;
     }
 }
 

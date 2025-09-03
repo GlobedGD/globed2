@@ -1,5 +1,6 @@
 #include "GameManager.hpp"
 #include <globed/util/gd.hpp>
+#include <core/hooks/GJBaseGameLayer.hpp>
 
 using namespace geode::prelude;
 
@@ -34,6 +35,10 @@ void HookedGameManager::unloadIcon(int iconId, int iconType, int idk) {
 }
 
 void HookedGameManager::returnToLastScene(GJGameLevel* level) {
+    if (auto lel = LevelEditorLayer::get()) {
+        GlobedGJBGL::get(lel)->onQuit();
+    }
+
     if (m_sceneEnum == POP_SCENE_ENUM) {
         globed::popScene();
     } else if (m_sceneEnum == NOOP_SCENE_ENUM) {

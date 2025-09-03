@@ -8,17 +8,17 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void RoomManager::joinLevel(int levelId) {
+void RoomManager::joinLevel(int levelId, bool platformer) {
     auto& nm = NetworkManagerImpl::get();
 
     // check for warp context, join a specific server if warping
     auto wctx = globed::_getWarpContext();
     if (wctx.levelId() == levelId) {
-        nm.sendJoinSession(wctx);
+        nm.sendJoinSession(wctx, platformer);
     } else if (auto srv = this->pickServerId()) {
         // construct a session ID
         auto id = SessionId::fromParts(*srv, m_roomId, levelId);
-        nm.sendJoinSession(id);
+        nm.sendJoinSession(id, platformer);
     }
 }
 
@@ -117,8 +117,6 @@ RoomManager::RoomManager() {
         if (msg.roomId != m_roomId) {
             this->resetValues();
             m_roomId = msg.roomId;
-            m_roomName = msg.roomName;
-            m_roomOwner = msg.roomOwner;
 
             // a change in rooms resets the warp context as well
             globed::_clearWarpContext();
@@ -131,6 +129,8 @@ RoomManager::RoomManager() {
 
         m_settings = msg.settings;
         m_teams = msg.teams;
+        m_roomOwner = msg.roomOwner;
+        m_roomName = msg.roomName;
 
         if (!msg.players.empty()) {
             m_teamMembers.clear();

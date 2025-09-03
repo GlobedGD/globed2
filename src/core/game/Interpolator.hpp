@@ -46,6 +46,8 @@ public:
     /// but lost, delayed or misplaced packets will cause jitter.
     void setRealtimeMode(bool enable);
 
+    void setPlatformer(bool enable);
+
 private:
     struct LerpState {
         VectorSpeedTracker p1speedTracker;
@@ -69,6 +71,7 @@ private:
     size_t m_stationaryFrames = 0;
     bool m_realtime = false;
     bool m_lowLatency = false;
+    bool m_platformer = false;
 
     bool isCameraStationary();
 };

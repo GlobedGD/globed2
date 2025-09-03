@@ -48,14 +48,11 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
     auto& state = m_players.at(player.accountId);
     state.updatedAt = curTimestamp;
 
-    // don't push culled frames
-    if (!player.player1) {
-        return;
-    }
+    bool culled = !player.player1;
 
     state.totalFrames++;
 
-    if (!state.frames.empty()) {
+    if (!state.frames.empty() && !culled) {
         auto& prevFrame = state.newestFrame();
         // ignore repeated frames
         if (player.timestamp == prevFrame.timestamp) {
@@ -102,11 +99,13 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
 
     state.frames.push_back(player);
 
-    // track the speed of the players
-    state.p1speedTracker.pushMeasurement(curTimestamp, player.player1->position.x, player.player1->position.y);
+    if (!culled) {
+        // track the speed of the players
+        state.p1speedTracker.pushMeasurement(curTimestamp, player.player1->position.x, player.player1->position.y);
 
-    if (player.player2) {
-        state.p2speedTracker.pushMeasurement(curTimestamp, player.player2->position.x, player.player2->position.y);
+        if (player.player2) {
+            state.p2speedTracker.pushMeasurement(curTimestamp, player.player2->position.x, player.player2->position.y);
+        }
     }
 
     // account for potential drift in time
@@ -149,6 +148,7 @@ struct LerpContext {
     CCPoint cameraDelta;
     CCPoint cameraVector;
     bool camStationary;
+    bool platformer;
 };
 
 static inline void lerpSpecific(
@@ -236,7 +236,6 @@ static inline void lerpPlayer(
     out.timestamp = std::lerp(older.timestamp, newer.timestamp, ctx.t);
     out.frameNumber = older.frameNumber;
     out.deathCount = older.deathCount;
-    out.percentage = older.percentage;
     out.isDead = older.isDead;
     out.isPaused = older.isPaused;
     out.isPracticing = older.isPracticing;
@@ -244,10 +243,24 @@ static inline void lerpPlayer(
     out.isEditorBuilding = older.isEditorBuilding;
     out.isLastDeathReal = older.isLastDeathReal;
 
-    if (!out.player1) out.player1 = PlayerObjectData{};
-    lerpSpecific(*older.player1, *newer.player1, older.timestamp, newer.timestamp, *out.player1, ctx, p1spt);
+    if (!ctx.platformer) {
+        out.percentage = std::lerp(older.percentage, newer.percentage, ctx.t);
+    } else {
+        // Percentage represents angle to the player, from 0 to 2pi, so scale the value to degrees and use lerpAngle
 
-    // only lerp player2 if present in both frames
+        // actual values returned by progress() are [0; 1], scale it up to [0; 360] degrees
+        float olderAng = older.progress() * 360.f;
+        float newerAng = newer.progress() * 360.f;
+        float lerpedAng = lerpAngleNormalized(olderAng, newerAng, ctx.t);
+
+        out.percentage = lerpedAng / 360.f * 65535.0;
+    }
+
+    if (newer.player1 && older.player1) {
+        if (!out.player1) out.player1 = PlayerObjectData{};
+        lerpSpecific(*older.player1, *newer.player1, older.timestamp, newer.timestamp, *out.player1, ctx, p1spt);
+    }
+
     if (newer.player2 && older.player2) {
         if (!out.player2) out.player2 = PlayerObjectData{};
         lerpSpecific(*older.player2, *newer.player2, older.timestamp, newer.timestamp, *out.player2, ctx, p2spt);
@@ -315,7 +328,11 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
         float t = (player.timeCounter - older->timestamp) / frameDelta;
 
         LerpContext ctx {
-            t, cameraDelta, cameraVector, camStationary
+            t,
+            cameraDelta,
+            cameraVector,
+            camStationary,
+            m_platformer,
         };
         lerpPlayer(*older, *newer, player.interpolatedState, ctx, player.p1speedTracker, player.p2speedTracker);
 
@@ -356,6 +373,10 @@ void Interpolator::setLowLatencyMode(bool enable) {
 
 void Interpolator::setRealtimeMode(bool enable) {
     m_realtime = enable;
+}
+
+void Interpolator::setPlatformer(bool enable) {
+    m_platformer = enable;
 }
 
 bool Interpolator::isCameraStationary() {

@@ -713,7 +713,6 @@ void GlobedMenuLayer::update(float dt) {
         if (m_roomId == -1 && (!m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > Duration::fromSecs(1))) {
             this->requestRoomState();
         } else if (this->shouldAutoRefresh()) {
-            log::debug("automatic player list refresh!");
             this->requestRoomState();
         }
     }

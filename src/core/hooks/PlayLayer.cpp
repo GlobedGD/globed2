@@ -150,12 +150,18 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
 
         PlayLayer::setupHasCompleted();
 
-        // TODO: the progress bar indicators
-
         gm->m_playerDeathEffect = effect;
         gm->m_loadedDeathEffect = effect;
 
         m_fields->m_setupWasCompleted = true;
+
+        // progress bar indicators
+        auto gjbgl = GlobedGJBGL::get(this);
+        auto& fields = *gjbgl->m_fields.self();
+
+        if (fields.m_progressBarContainer && !fields.m_progressBarContainer->getParent()) {
+            m_progressBar->addChild(fields.m_progressBarContainer);
+        }
     }
 
     $override

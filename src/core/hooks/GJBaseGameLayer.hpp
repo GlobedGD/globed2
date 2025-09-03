@@ -54,6 +54,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_permanentSafeMode = false;
 
         CCNode* m_playerNode = nullptr;
+        geode::Ref<CCNode> m_progressBarContainer = nullptr;
+        ProgressIcon* m_selfProgressIcon = nullptr;
     };
 
     // Setup functions
@@ -102,6 +104,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void toggleSafeMode();
 
     void pausedUpdate(float dt);
+
+    PlayLayer* asPlayLayer();
 
     // Functions for the outside :tm:
     static GlobedGJBGL* get(GJBaseGameLayer* base = nullptr);
