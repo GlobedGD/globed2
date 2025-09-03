@@ -16,6 +16,7 @@ struct GLOBED_DLL HookedMenuLayer : geode::Modify<HookedMenuLayer, MenuLayer> {
 
     void recreateButton();
     void onGlobedButton(cocos2d::CCObject*);
+    void checkButton(float);
 };
 
 }

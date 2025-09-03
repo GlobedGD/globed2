@@ -11,6 +11,9 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.preload.enabled", true);
     this->registerSetting("core.preload.defer", false);
 
+    // Various
+    this->registerSetting("core.autoconnect", true);
+
     // UI settings
     this->registerSetting("core.ui.allow-custom-servers", false);
 

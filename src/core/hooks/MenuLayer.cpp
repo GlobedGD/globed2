@@ -2,18 +2,53 @@
 #include <UIBuilder.hpp>
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <globed/core/ServerManager.hpp>
 #include <ui/menu/GlobedMenuLayer.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
+static void initiateAutoConnect() {
+    if (globed::value<bool>("core.was-connected").value_or(false)) {
+        auto& sm = ServerManager::get();
+        auto url = sm.getActiveServer().url;
+
+        if (auto err = NetworkManager::get().connectCentral(url).err()) {
+            log::error("failed to autoconnect: {}", err);
+            return;
+        }
+    }
+}
+
 bool HookedMenuLayer::init() {
     if (!MenuLayer::init()) return false;
 
     this->recreateButton();
 
+    static bool invoked = false;
+    if (!invoked) {
+        invoked = true;
+
+        if (globed::setting<bool>("core.autoconnect")) {
+            initiateAutoConnect();
+        }
+    }
+
+    this->schedule(schedule_selector(HookedMenuLayer::checkButton), 0.1f);
+
     return true;
+}
+
+void HookedMenuLayer::checkButton(float) {
+    auto& fields = *m_fields.self();
+
+    bool active = NetworkManager::get().getConnectionState() == ConnectionState::Connected;
+
+    if (active == fields.btnActive) return;
+    fields.btnActive = active;
+
+    this->recreateButton();
 }
 
 void HookedMenuLayer::recreateButton() {

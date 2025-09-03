@@ -260,6 +260,8 @@ NetworkManagerImpl::NetworkManagerImpl() {
 NetworkManagerImpl::~NetworkManagerImpl() {
     m_pendingConnectNotify.notifyAll();
     m_workerThread.stopAndWait();
+
+    m_destructing = true;
 }
 
 NetworkManagerImpl& NetworkManagerImpl::get() {
@@ -548,6 +550,8 @@ void NetworkManagerImpl::markAuthorizedModerator() {
 }
 
 void NetworkManagerImpl::onCentralConnected() {
+    globed::setValue<bool>("core.was-connected", true);
+
     log::debug("connection to central server established, trying to log in");
 
     this->tryAuth();
@@ -628,6 +632,10 @@ void NetworkManagerImpl::abortConnection(std::string reason) {
 }
 
 void NetworkManagerImpl::onCentralDisconnected() {
+    if (!m_destructing) {
+        globed::setValue<bool>("core.was-connected", false);
+    }
+
     auto err = m_centralConn.lastError();
     bool manual = m_manualDisconnect;
 

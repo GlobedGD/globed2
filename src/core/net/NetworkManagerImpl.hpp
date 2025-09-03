@@ -185,6 +185,7 @@ private:
     asp::AtomicBool m_disconnectRequested;
     asp::AtomicBool m_manualDisconnect = false;
     asp::Notify m_finishedClosingNotify;
+    bool m_destructing = false;
 
     // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
     asp::Mutex<std::unordered_map<std::type_index, std::vector<void*>>, true> m_listeners;
