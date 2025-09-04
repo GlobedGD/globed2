@@ -2,6 +2,16 @@
 
 #include "_internal.hpp"
 
+namespace globed {
+    class NetworkManagerConnectedEvent : public geode::Event {
+
+    };
+
+    class NetworkManagerDisconnectedEvent : public geode::Event {
+
+    };
+} // namespace globed
+
 namespace globed::net {
     // Returns whether the player is currently connected to a server.
     Result<bool> isConnected();

@@ -34,6 +34,8 @@
 #include <ui/menu/admin/user_punishment_popup.hpp>
 #include <ui/notification/panel.hpp>
 
+#include <globed.hpp>
+
 using namespace asp;
 using namespace asp::time;
 using namespace geode::prelude;
@@ -425,6 +427,10 @@ protected:
             GameServerManager::get().clearActive();
             AdminManager::get().deauthorize();
         }
+
+        Loader::get()->queueInMainThread([] {
+            globed::NetworkManagerDisconnectedEvent().post();
+        });
     }
 
     void queueDisconnect(bool quiet = false, bool noclear = false) {
@@ -835,6 +841,10 @@ protected:
                 this->send(RequestMotdPacket::create(Mod::get()->getSavedValue<std::string>(lastSeenMotdKey, ""), false));
             }
         }
+
+        Loader::get()->queueInMainThread([] {
+            globed::NetworkManagerConnectedEvent().post();
+        });
     }
 
     void onProtocolMismatch(std::shared_ptr<ProtocolMismatchPacket> packet) {
