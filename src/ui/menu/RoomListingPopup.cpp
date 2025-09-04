@@ -118,6 +118,8 @@ void RoomListingPopup::populateList(const std::vector<RoomListingInfo>& rooms) {
     m_list->updateLayout();
     m_list->scrollToTop();
 
+    cocos::handleTouchPriority(this, true);
+
     this->toggleModActions(m_modActionsOn);
 }
 
