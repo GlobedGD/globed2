@@ -128,6 +128,11 @@ namespace LeftBtn {
     constexpr int Teams = 300;
 }
 
+namespace FarLeftBtn {
+    constexpr int Levels = 300;
+    constexpr int Settings = 99999; // dead last
+}
+
 }
 
 bool GlobedMenuLayer::init() {
@@ -261,9 +266,16 @@ bool GlobedMenuLayer::init() {
         .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, 32.f)
         .parent(m_playerListMenu);
 
+    auto colLayout = ColumnLayout::create()
+        ->setAutoScale(false)
+        ->setGap(3.f)
+        ->setAxisReverse(true)
+        ->setAxisAlignment(AxisAlignment::End);
+    colLayout->ignoreInvisibleChildren(true);
+
     m_leftSideMenu = Build<CCMenu>::create()
         .id("left-side-menu")
-        .layout(ColumnLayout::create()->setAutoScale(false)->setGap(3.f)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
+        .layout(colLayout)
         .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
         .pos(7.f, PLAYER_LIST_MENU_SIZE.height - 6.f)
         .anchorPoint(0.f, 1.f)
@@ -271,7 +283,7 @@ bool GlobedMenuLayer::init() {
 
     m_rightSideMenu = Build<CCMenu>::create()
         .id("right-side-menu")
-        .layout(ColumnLayout::create()->setAutoScale(false)->setGap(3.f)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End))
+        .layout(colLayout)
         .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
         .pos(PLAYER_LIST_MENU_SIZE - CCSize{7.f, 6.f})
         .anchorPoint(1.f, 1.f)
@@ -279,9 +291,14 @@ bool GlobedMenuLayer::init() {
 
     // init far menus
 
+    auto farLayout = ColumnLayout::create()
+        ->setAutoScale(false)
+        ->setAxisReverse(true)
+        ->setAxisAlignment(AxisAlignment::Start);
+
     m_farLeftMenu = Build<CCMenu>::create()
         .id("far-left-menu")
-        .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::Start))
+        .layout(farLayout)
         .contentSize(48.f, 250.f)
         .pos(16.f, 18.f)
         .anchorPoint(0.f, 0.f)
@@ -289,18 +306,26 @@ bool GlobedMenuLayer::init() {
 
     m_farRightMenu = Build<CCMenu>::create()
         .id("far-right-menu")
-        .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::Start))
+        .layout(farLayout)
         .contentSize(48.f, 250.f)
         .pos(winSize.width - 16.f, 18.f)
         .anchorPoint(1.f, 0.f)
         .parent(this);
 
-    m_roomStateListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
+    auto& nm = NetworkManagerImpl::get();
+
+    m_roomStateListener = nm.listen<msg::RoomStateMessage>([this](const auto& msg) {
         if (msg.roomId != m_roomId) {
             this->initNewRoom(msg.roomId, msg.roomName, msg.players, msg.settings);
         } else {
             this->updateRoom(msg.roomName, msg.players, msg.settings);
         }
+
+        return ListenerResult::Continue;
+    });
+
+    m_roomPlayersListener = nm.listen<msg::RoomPlayersMessage>([this](const auto& msg) {
+        this->updatePlayerList(msg.players);
 
         return ListenerResult::Continue;
     });
@@ -323,6 +348,10 @@ void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const st
 }
 
 void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings) {
+    this->updatePlayerList(players);
+}
+
+void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
     auto scrollPos = m_playerList->getScrollPos();
 
     m_playerList->setAutoUpdate(false);
@@ -454,10 +483,10 @@ void GlobedMenuLayer::initSideButtons() {
 
     constexpr static CCSize buttonSize {30.f, 30.f};
 
-    auto makeButton = [this](CCSprite* sprite, std::optional<EditorBaseColor> color, CCNode* parent, int zOrder, const char* id, auto cb) {
+    auto makeButton = [this](CCSprite* sprite, std::optional<EditorBaseColor> color, CCNode* parent, int zOrder, const char* id, auto cb) -> CCMenuItemSpriteExtra* {
         if (!sprite) {
             log::error("Sprite is null for {}!", id);
-            return;
+            return nullptr;
         }
 
         CCSprite* spr;
@@ -467,7 +496,7 @@ void GlobedMenuLayer::initSideButtons() {
             spr = sprite;
         }
 
-        Build(spr)
+        return Build(spr)
             .with([&](auto btn) { cue::rescaleToMatch(btn, buttonSize); })
             .intoMenuItem([cb = std::move(cb)](auto) {
                 cb();
@@ -475,7 +504,8 @@ void GlobedMenuLayer::initSideButtons() {
             .zOrder(zOrder)
             .scaleMult(1.1f)
             .id(id)
-            .parent(parent);
+            .parent(parent)
+            .collect();
     };
 
     /// Left side buttons
@@ -531,8 +561,6 @@ void GlobedMenuLayer::initSideButtons() {
 
     /// Right side buttons
 
-    // TODO: filter button
-
     // mod panel button
     if (NetworkManagerImpl::get().isModerator()) {
         auto badge = globed::createMyBadge();
@@ -556,6 +584,42 @@ void GlobedMenuLayer::initSideButtons() {
         }
     }
 
+    // filter button
+    m_searchBtn = makeButton(
+        CCSprite::createWithSpriteFrameName("gj_findBtn_001.png"),
+        std::nullopt,
+        m_rightSideMenu,
+        RightBtn::Search,
+        "btn-search",
+        [this] {
+            auto popup = InputPopup::create("bigFont.fnt");
+            popup->setTitle("Search Player");
+            popup->setPlaceholder("Username");
+            popup->setMaxCharCount(16);
+            popup->setCommonFilter(CommonFilter::Name);
+            popup->setWidth(240.f);
+            popup->setCallback([this](auto outcome) {
+                if (outcome.cancelled) return;
+
+                this->reloadWithFilter(outcome.text);
+            });
+            popup->show();
+        }
+    );
+
+    // clear filter button
+    m_clearSearchBtn = makeButton(
+        CCSprite::createWithSpriteFrameName("gj_findBtnOff_001.png"),
+        std::nullopt,
+        m_rightSideMenu,
+        RightBtn::ClearSearch,
+        "btn-search",
+        [this] {
+            this->reloadWithFilter("");
+        }
+    );
+    m_clearSearchBtn->setVisible(false);
+
     // refresh button
     makeButton(
         CCSprite::create("icon-refresh-square.png"_spr),
@@ -563,7 +627,13 @@ void GlobedMenuLayer::initSideButtons() {
         m_rightSideMenu,
         RightBtn::Refresh,
         "btn-refresh",
-        [this] { this->requestRoomState(); }
+        [this] {
+            if (m_curFilter.empty()) {
+                this->requestRoomState();
+            } else {
+                NetworkManagerImpl::get().sendRequestRoomPlayers(m_curFilter);
+            }
+        }
     );
 
     m_rightSideMenu->updateLayout();
@@ -583,6 +653,7 @@ void GlobedMenuLayer::initFarSideButtons() {
                 this->onSettings();
             })
             .scaleMult(1.1f)
+            .zOrder(FarLeftBtn::Settings)
             .parent(m_farLeftMenu);
 
         Build<CCSprite>::create("icon-level-list.png"_spr)
@@ -590,6 +661,7 @@ void GlobedMenuLayer::initFarSideButtons() {
                 LevelListLayer::create()->switchTo();
             })
             .scaleMult(1.1f)
+            .zOrder(FarLeftBtn::Levels)
             .parent(m_farLeftMenu);
     }
 
@@ -607,6 +679,10 @@ void GlobedMenuLayer::requestRoomState() {
 }
 
 bool GlobedMenuLayer::shouldAutoRefresh() {
+    if (!m_curFilter.empty()) {
+        return false;
+    }
+
     auto playerCount = m_playerList->size();
 
     Duration intv;
@@ -780,6 +856,23 @@ void GlobedMenuLayer::keyBackClicked() {
 void GlobedMenuLayer::onEnter() {
     BaseLayer::onEnter();
     this->onServerModified();
+}
+
+void GlobedMenuLayer::reloadWithFilter(const std::string& filter) {
+    m_curFilter = filter;
+
+    auto& nm = NetworkManagerImpl::get();
+
+    m_searchBtn->setVisible(filter.empty());
+    m_clearSearchBtn->setVisible(!filter.empty());
+
+    m_rightSideMenu->updateLayout();
+
+    if (filter.empty()) {
+        this->requestRoomState();
+    } else {
+        nm.sendRequestRoomPlayers(filter);
+    }
 }
 
 bool GlobedMenuLayer::ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) {

@@ -41,11 +41,15 @@ private:
     cocos2d::CCMenu* m_leftSideMenu = nullptr;
     cocos2d::CCMenu* m_farLeftMenu = nullptr;
     cocos2d::CCMenu* m_farRightMenu = nullptr;
+    CCMenuItemSpriteExtra* m_searchBtn = nullptr;
+    CCMenuItemSpriteExtra* m_clearSearchBtn = nullptr;
     std::optional<MessageListener<msg::RoomStateMessage>> m_roomStateListener;
+    std::optional<MessageListener<msg::RoomPlayersMessage>> m_roomPlayersListener;
     uint32_t m_roomId = -1;
     std::optional<asp::time::Instant> m_lastRoomUpdate;
     std::optional<asp::time::Instant> m_lastInteraction;
     std::optional<cue::ScrollPos> m_lastScrollPos;
+    std::string m_curFilter;
 
     bool init() override;
     void update(float dt) override;
@@ -57,12 +61,15 @@ private:
 
     void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
     void updateRoom(const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
+    void updatePlayerList(const std::vector<RoomPlayer>& players);
     void initRoomButtons();
     void initSideButtons();
     void initFarSideButtons();
     void copyRoomIdToClipboard();
     void requestRoomState();
     bool shouldAutoRefresh();
+
+    void reloadWithFilter(const std::string& filter);
 
     void onSettings();
 };
