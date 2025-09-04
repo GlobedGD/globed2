@@ -2,6 +2,7 @@
 #include "LevelFiltersPopup.hpp"
 #include <globed/core/SettingsManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <core/hooks/LevelCell.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -387,9 +388,15 @@ void LevelListLayer::finishLoading() {
     m_list->clear();
 
     for (auto level : page) {
-        auto cell = new LevelCell("gay sex", 356.f, 90.f);
+        auto cell = new LevelCell("", 356.f, 90.f);
         cell->loadFromLevel(level);
         cell->setContentSize({356.f, 90.f});
+
+        auto count = this->findPlayerCountForLevel(level->m_levelID);
+        if (count) {
+            auto gcell = static_cast<HookedLevelCell*>(cell);
+            gcell->updatePlayerCount(*count);
+        }
 
         m_list->addCell(cell);
     }
@@ -408,7 +415,7 @@ void LevelListLayer::finishLoading() {
     //     .parent(listLayer)
     //     .collect();
 
-    // TODO: player count, stuff
+    // TODO: featured stuff
     // guys we are about to do a funny
     // for (LevelCell* cell : CCArrayExt<LevelCell*>(listLayer->m_listView->m_tableView->m_contentLayer->getChildren())) {
     //     int levelId = HookedGJGameLevel::getLevelIDFrom(cell->m_level);
