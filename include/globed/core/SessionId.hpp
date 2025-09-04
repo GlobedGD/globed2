@@ -46,3 +46,12 @@ private:
 };
 
 }
+
+namespace std {
+    template <>
+    struct hash<globed::SessionId> {
+        static size_t operator()(const globed::SessionId& sid) {
+            return std::hash<uint64_t>{}(sid.asU64());
+        }
+    };
+}

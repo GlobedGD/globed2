@@ -40,4 +40,25 @@ enum class GameVariable {
 bool gameVariable(GameVariable var);
 void setGameVariable(GameVariable var, bool state);
 
+
+enum class Difficulty {
+    Auto = -1,
+    NA = 0,
+    Easy = 1,
+    Normal = 2,
+    Hard = 3,
+    Harder = 4,
+    Insane = 5,
+    HardDemon = 6,
+    EasyDemon = 7,
+    MediumDemon = 8,
+    InsaneDemon = 9,
+    ExtremeDemon = 10
+};
+
+const char* difficultyToString(Difficulty diff);
+std::optional<Difficulty> difficultyFromString(std::string_view diff);
+
+Difficulty calcLevelDifficulty(GJGameLevel* level);
+
 }

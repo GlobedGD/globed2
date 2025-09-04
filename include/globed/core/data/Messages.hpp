@@ -32,6 +32,10 @@ struct RoomStateMessage {
     std::vector<RoomTeam> teams;
 };
 
+struct RoomPlayersMessage {
+    std::vector<RoomPlayer> players;
+};
+
 enum class RoomJoinFailedReason : uint16_t {
     NotFound = 0,
     InvalidPasscode,
@@ -96,6 +100,14 @@ struct NoticeMessage {
     std::string senderName;
     std::string message;
     bool canReply;
+};
+
+struct PlayerCountsMessage {
+    std::vector<std::pair<SessionId, uint16_t>> counts;
+};
+
+struct LevelListMessage {
+    std::vector<std::pair<SessionId, uint16_t>> levels;
 };
 
 // Level data

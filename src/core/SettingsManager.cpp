@@ -16,6 +16,7 @@ SettingsManager::SettingsManager() {
 
     // UI settings
     this->registerSetting("core.ui.allow-custom-servers", false);
+    this->registerSetting("core.ui.increase-level-list", false);
 
     // Player settings
     this->registerSetting("core.player.opacity", 1.0f);

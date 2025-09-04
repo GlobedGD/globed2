@@ -298,6 +298,19 @@ inline msg::RoomStateMessage decodeRoomStateMessage(schema::main::RoomStateMessa
     return out;
 }
 
+inline msg::RoomPlayersMessage decodeRoomPlayersMessage(schema::main::RoomPlayersMessage::Reader& reader) {
+    msg::RoomPlayersMessage out{};
+
+    auto players = reader.getPlayers();
+    out.players.reserve(players.size());
+
+    for (auto player : players) {
+        out.players.push_back(decodeRoomPlayer(player));
+    }
+
+    return out;
+}
+
 // Room join failed
 
 inline std::optional<msg::RoomJoinFailedMessage> decodeRoomJoinFailedMessage(schema::main::RoomJoinFailedMessage::Reader& reader) {
@@ -499,6 +512,42 @@ inline msg::TeamsUpdatedMessage decodeTeamsUpdatedMessage(const schema::main::Te
         out.teams.push_back(RoomTeam {
             .color = decodeColor4(team),
         });
+    }
+
+    return out;
+}
+
+/// Player counts message
+
+inline msg::PlayerCountsMessage decodePlayerCountsMessage(const schema::main::PlayerCountsMessage::Reader& reader) {
+    msg::PlayerCountsMessage out{};
+
+    auto counts = reader.getCounts();
+    auto levelIds = reader.getLevelIds();
+
+    size_t count = std::min(counts.size(), levelIds.size());
+    out.counts.reserve(count);
+
+    for (size_t i = 0; i < count; i++) {
+        out.counts.push_back({SessionId{levelIds[i]}, counts[i]});
+    }
+
+    return out;
+}
+
+/// Level list message
+
+inline msg::LevelListMessage decodeLevelListMessage(const schema::main::LevelListMessage::Reader& reader) {
+    msg::LevelListMessage out{};
+
+    auto counts = reader.getPlayerCounts();
+    auto levelIds = reader.getLevelIds();
+
+    size_t count = std::min(counts.size(), levelIds.size());
+    out.levels.reserve(count);
+
+    for (size_t i = 0; i < count; i++) {
+        out.levels.push_back({SessionId{levelIds[i]}, counts[i]});
     }
 
     return out;

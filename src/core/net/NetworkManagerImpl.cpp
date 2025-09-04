@@ -839,6 +839,19 @@ void NetworkManagerImpl::sendRoomStateCheck() {
     });
 }
 
+void NetworkManagerImpl::sendRequestRoomPlayers(const std::string& nameFilter) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto reqr = msg.initRequestRoomPlayers();
+        reqr.setNameFilter(nameFilter);
+    });
+}
+
+void NetworkManagerImpl::sendRequestLevelList() {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        msg.initRequestLevelList();
+    });
+}
+
 void NetworkManagerImpl::sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto createRoom = msg.initCreateRoom();
@@ -1082,7 +1095,21 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::PLAYER_COUNTS: {
-            // TODO
+            auto m = msg.getPlayerCounts();
+
+            this->invokeListeners(data::decodePlayerCountsMessage(m));
+        } break;
+
+        case CentralMessage::ROOM_PLAYERS: {
+            auto m = msg.getRoomPlayers();
+
+            this->invokeListeners(data::decodeRoomPlayersMessage(m));
+        } break;
+
+        case CentralMessage::LEVEL_LIST: {
+            auto m = msg.getLevelList();
+
+            this->invokeListeners(data::decodeLevelListMessage(m));
         } break;
 
         case CentralMessage::ROOM_STATE: {

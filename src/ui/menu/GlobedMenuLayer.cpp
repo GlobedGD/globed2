@@ -16,6 +16,7 @@
 #include <ui/menu/RegionSelectPopup.hpp>
 #include <ui/menu/RoomUserControlsPopup.hpp>
 #include <ui/menu/TeamManagementPopup.hpp>
+#include <ui/menu/levels/LevelListLayer.hpp>
 #include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
 
@@ -580,6 +581,13 @@ void GlobedMenuLayer::initFarSideButtons() {
         Build<CCSprite>::create("icon-settings.png"_spr)
             .intoMenuItem([this] {
                 this->onSettings();
+            })
+            .scaleMult(1.1f)
+            .parent(m_farLeftMenu);
+
+        Build<CCSprite>::create("icon-level-list.png"_spr)
+            .intoMenuItem([this] {
+                LevelListLayer::create()->switchTo();
             })
             .scaleMult(1.1f)
             .parent(m_farLeftMenu);

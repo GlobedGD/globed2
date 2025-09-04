@@ -104,4 +104,71 @@ void setGameVariable(GameVariable var, bool state) {
     globed::cachedSingleton<GameManager>()->setGameVariable(gvkey(var).c_str(), state);
 }
 
+const char* difficultyToString(Difficulty diff) {
+    switch (diff) {
+        case Difficulty::Auto: return "Auto";
+        case Difficulty::NA: return "NA";
+        case Difficulty::Easy: return "Easy";
+        case Difficulty::Normal: return "Normal";
+        case Difficulty::Hard: return "Hard";
+        case Difficulty::Harder: return "Harder";
+        case Difficulty::Insane: return "Insane";
+        case Difficulty::HardDemon: return "HardDemon";
+        case Difficulty::EasyDemon: return "EasyDemon";
+        case Difficulty::MediumDemon: return "MediumDemon";
+        case Difficulty::InsaneDemon: return "InsaneDemon";
+        case Difficulty::ExtremeDemon: return "ExtremeDemon";
+        default: return "NA";
+    }
+}
+
+std::optional<Difficulty> difficultyFromString(std::string_view diff) {
+    if (diff == "Auto") return Difficulty::Auto;
+    if (diff == "NA") return Difficulty::NA;
+    if (diff == "Easy") return Difficulty::Easy;
+    if (diff == "Normal") return Difficulty::Normal;
+    if (diff == "Hard") return Difficulty::Hard;
+    if (diff == "Harder") return Difficulty::Harder;
+    if (diff == "Insane") return Difficulty::Insane;
+    if (diff == "HardDemon") return Difficulty::HardDemon;
+    if (diff == "EasyDemon") return Difficulty::EasyDemon;
+    if (diff == "MediumDemon") return Difficulty::MediumDemon;
+    if (diff == "InsaneDemon") return Difficulty::InsaneDemon;
+    if (diff == "ExtremeDemon") return Difficulty::ExtremeDemon;
+
+    return std::nullopt;
+}
+
+Difficulty calcLevelDifficulty(GJGameLevel* level) {
+    using enum Difficulty;
+
+    Difficulty diff = NA;
+    // "would a backwards wormhole be a whitehole or a holeworm?" - kiba 2024
+    if (level->m_autoLevel) {
+        diff = Auto;
+    } else if (level->m_ratingsSum != 0) {
+        if (level->m_demon == 1){
+            int fixedNum = std::clamp(level->m_demonDifficulty, 0, 6);
+
+            if (fixedNum != 0) {
+                fixedNum -= 2;
+            }
+
+            diff = static_cast<Difficulty>(6 + fixedNum);
+        } else {
+            int val = level->m_ratingsSum / level->m_ratings;
+            if (val > (int) Difficulty::ExtremeDemon) {
+                val = (int) Difficulty::ExtremeDemon;
+            } else if (val < (int) Difficulty::NA) {
+                val = (int) Difficulty::NA;
+            }
+
+            diff = static_cast<Difficulty>(val);
+        }
+    }
+
+    return diff;
+}
+
+
 }

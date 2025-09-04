@@ -10,7 +10,7 @@ namespace globed {
 void FloatSettingCell::setup() {
     auto slider = Build(createSlider())
         .contentSize(80.f, 18.f)
-        .pos(m_size.width - 40.f, m_size.height / 2.f)
+        .pos(m_size.width - 48.f, m_size.height / 2.f)
         .parent(this)
         .collect();
 

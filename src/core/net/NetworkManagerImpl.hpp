@@ -118,6 +118,8 @@ public:
 
     // Central server
     void sendRoomStateCheck();
+    void sendRequestRoomPlayers(const std::string& nameFilter);
+    void sendRequestLevelList();
     void sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings);
     void sendJoinRoom(uint32_t id, uint32_t passcode = 0);
     void sendLeaveRoom();
