@@ -1,6 +1,7 @@
 /// This file contains all the messages that can be listened to with `NetworkManager`.
 
 #pragma once
+#include "AdminLogs.hpp"
 #include "PlayerState.hpp"
 #include "PlayerDisplayData.hpp"
 #include "RoomListingInfo.hpp"
@@ -145,6 +146,11 @@ struct AdminFetchResponseMessage {
 
 struct AdminFetchModsResponseMessage {
     std::vector<FetchedMod> users;
+};
+
+struct AdminLogsResponseMessage {
+    std::vector<AdminAuditLog> logs;
+    std::vector<PlayerAccountData> users;
 };
 
 }

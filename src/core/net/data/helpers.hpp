@@ -31,9 +31,67 @@ inline cocos2d::ccColor4B decodeColor4(uint32_t color) {
     };
 }
 
-/// Player state
+template <typename CxxS, typename CapnpW>
+struct Encode {
+    static void encode(const CxxS&, CapnpW&&) {
+        static_assert(std::is_void_v<CxxS>, "encode not implemented for this type");
+    }
+};
 
-inline void encodePlayerState(const PlayerState& state, auto&& data) {
+template <typename CxxS, typename CapnpR>
+struct Decode {
+    static std::optional<CxxS> decodeOpt(const CapnpR&) {
+        static_assert(std::is_void_v<CxxS>, "decode not implemented for this type");
+    }
+};
+
+template <typename CxxS, typename CapnpW>
+static void encode(const CxxS& s, CapnpW&& w) {
+    Encode<CxxS, CapnpW>::encode(s, std::forward<CapnpW>(w));
+}
+
+template <typename CxxS, typename CapnpR>
+static std::optional<CxxS> decodeOpt(const CapnpR& r) {
+    return Decode<CxxS, std::decay_t<CapnpR>>::decodeOpt(r);
+}
+template <typename CxxS, typename CapnpR>
+static CxxS decodeUnchecked(const CapnpR& r) {
+    return std::move(*decodeOpt<CxxS, CapnpR>(r));
+}
+
+template <typename A>
+struct ExtractFnArg;
+
+template <typename Z>
+struct ExtractFnArg<std::function<void(Z)>> {
+    using type = Z;
+};
+
+/// Extracts the type of a parameter expression declaration.
+/// For example: `const int& x` -> `const int&`
+#define EXTRACT_EXPR_TYPE(expr) ExtractFnArg<std::function<void(expr)>>::type
+
+#define $implEncodeInner(cxxt, wrt) \
+    template <typename Y> \
+    struct Encode<std::decay_t<EXTRACT_EXPR_TYPE(cxxt)>, Y> { \
+        using Wrt = std::decay_t<EXTRACT_EXPR_TYPE(wrt)>; \
+        static void encode(std::decay_t<EXTRACT_EXPR_TYPE(cxxt)> _zencodeInnervar, Y&& y) { encodeInner(_zencodeInnervar, y); } \
+        static void encodeInner(cxxt, wrt); \
+    }; \
+    template <typename Y> \
+    void Encode<std::decay_t<EXTRACT_EXPR_TYPE(cxxt)>, Y>::encodeInner(cxxt, wrt)
+
+#define $implDecodeInner(cxxt, rt) \
+    template <> \
+    struct Decode<cxxt, std::decay_t<EXTRACT_EXPR_TYPE(rt)>> { \
+        static std::optional<cxxt> decodeOpt(rt); \
+    }; \
+    inline std::optional<cxxt> Decode<cxxt, std::decay_t<EXTRACT_EXPR_TYPE(rt)>>::decodeOpt(rt)
+
+#define $implEncode(cxxt, wrt) $implEncodeInner(cxxt, ::globed::schema::wrt)
+#define $implDecode(cxxt, rt) $implDecodeInner(cxxt, const ::globed::schema::rt)
+
+$implEncode(const PlayerState& state, game::PlayerData::Builder& data) {
     data.setAccountId(state.accountId);
     data.setTimestamp(state.timestamp);
     data.setFrameNumber(state.frameNumber);
@@ -79,7 +137,7 @@ inline void encodePlayerState(const PlayerState& state, auto&& data) {
     }
 }
 
-inline std::optional<PlayerState> decodePlayerState(const schema::game::PlayerData::Reader& reader) {
+$implDecode(PlayerState, game::PlayerData::Reader& reader) {
     PlayerState out{};
     out.accountId = reader.getAccountId();
     out.timestamp = reader.getTimestamp();
@@ -145,7 +203,7 @@ inline std::optional<PlayerState> decodePlayerState(const schema::game::PlayerDa
 
 // Icon data
 
-inline void encodeIconData(const PlayerIconData& icons, auto&& data) {
+$implEncode(const PlayerIconData& icons, shared::PlayerIconData::Builder& data) {
     data.setCube(icons.cube);
     data.setShip(icons.ship);
     data.setBall(icons.ball);
@@ -163,7 +221,7 @@ inline void encodeIconData(const PlayerIconData& icons, auto&& data) {
     data.setShipTrail(icons.shipTrail);
 }
 
-inline std::optional<PlayerIconData> decodeIconData(const schema::shared::PlayerIconData::Reader& reader) {
+$implDecode(PlayerIconData, shared::PlayerIconData::Reader& reader) {
     PlayerIconData out{};
     out.cube = reader.getCube();
     out.ship = reader.getShip();
@@ -185,7 +243,7 @@ inline std::optional<PlayerIconData> decodeIconData(const schema::shared::Player
 
 // Room settings
 
-inline void encodeRoomSettings(const RoomSettings& settings, auto&& data) {
+$implEncode(const RoomSettings& settings, main::RoomSettings::Builder& data) {
     data.setServerId(settings.serverId);
     data.setPlayerLimit(settings.playerLimit);
     data.setFasterReset(settings.fasterReset);
@@ -200,7 +258,7 @@ inline void encodeRoomSettings(const RoomSettings& settings, auto&& data) {
     data.setDeathlink(settings.deathlink);
 }
 
-inline RoomSettings decodeRoomSettings(const schema::main::RoomSettings::Reader& reader) {
+$implDecode(RoomSettings, main::RoomSettings::Reader& reader) {
     RoomSettings out{};
     out.serverId = reader.getServerId();
     out.playerLimit = reader.getPlayerLimit();
@@ -219,7 +277,7 @@ inline RoomSettings decodeRoomSettings(const schema::main::RoomSettings::Reader&
 
 // Display data
 
-inline std::optional<PlayerDisplayData> decodeDisplayData(const schema::shared::PlayerDisplayData::Reader& reader) {
+$implDecode(PlayerDisplayData, shared::PlayerDisplayData::Reader& reader) {
     PlayerDisplayData out{};
     out.accountId = reader.getAccountId();
 
@@ -232,7 +290,7 @@ inline std::optional<PlayerDisplayData> decodeDisplayData(const schema::shared::
 
     auto iconsR = reader.getIcons();
 
-    if (auto icons = decodeIconData(iconsR)) {
+    if (auto icons = data::decodeOpt<PlayerIconData>(iconsR)) {
         out.icons = *icons;
     } else {
         return std::nullopt;
@@ -243,18 +301,17 @@ inline std::optional<PlayerDisplayData> decodeDisplayData(const schema::shared::
 
 // Account data
 
-inline PlayerAccountData decodeAccountData(const schema::main::PlayerAccountData::Reader& reader) {
+$implDecode(PlayerAccountData, main::PlayerAccountData::Reader& reader) {
     PlayerAccountData out{};
     out.accountId = reader.getAccountId();
     out.userId = reader.getUserId();
     out.username = reader.getUsername();
-
     return out;
 }
 
 // Room player
 
-inline RoomPlayer decodeRoomPlayer(const schema::main::RoomPlayer::Reader& reader) {
+$implDecode(RoomPlayer, main::RoomPlayer::Reader& reader) {
     RoomPlayer out{};
     out.cube = reader.getCube();
     out.color1 = reader.getColor1();
@@ -262,16 +319,13 @@ inline RoomPlayer decodeRoomPlayer(const schema::main::RoomPlayer::Reader& reade
     out.glowColor = reader.getGlowColor();
     out.session = SessionId(reader.getSession());
     out.teamId = reader.getTeamId();
-
-    auto accountDataR = reader.getAccountData();
-    out.accountData = decodeAccountData(accountDataR);
-
+    out.accountData = data::decodeUnchecked<PlayerAccountData>(reader.getAccountData());
     return out;
 }
 
 // Room state
 
-inline msg::RoomStateMessage decodeRoomStateMessage(schema::main::RoomStateMessage::Reader& reader) {
+$implDecode(msg::RoomStateMessage, main::RoomStateMessage::Reader& reader) {
     msg::RoomStateMessage out{};
     out.roomId = reader.getRoomId();
     out.roomOwner = reader.getRoomOwner();
@@ -281,10 +335,10 @@ inline msg::RoomStateMessage decodeRoomStateMessage(schema::main::RoomStateMessa
     out.players.reserve(players.size());
 
     for (auto player : players) {
-        out.players.push_back(decodeRoomPlayer(player));
+        out.players.push_back(data::decodeUnchecked<RoomPlayer>(player));
     }
 
-    out.settings = data::decodeRoomSettings(reader.getSettings());
+    out.settings = data::decodeUnchecked<RoomSettings>(reader.getSettings());
 
     auto teams = reader.getTeams();
     out.teams.reserve(teams.size());
@@ -298,22 +352,20 @@ inline msg::RoomStateMessage decodeRoomStateMessage(schema::main::RoomStateMessa
     return out;
 }
 
-inline msg::RoomPlayersMessage decodeRoomPlayersMessage(schema::main::RoomPlayersMessage::Reader& reader) {
+$implDecode(msg::RoomPlayersMessage, main::RoomPlayersMessage::Reader& reader) {
     msg::RoomPlayersMessage out{};
 
     auto players = reader.getPlayers();
     out.players.reserve(players.size());
 
     for (auto player : players) {
-        out.players.push_back(decodeRoomPlayer(player));
+        out.players.push_back(data::decodeUnchecked<RoomPlayer>(player));
     }
 
     return out;
 }
 
-// Room join failed
-
-inline std::optional<msg::RoomJoinFailedMessage> decodeRoomJoinFailedMessage(schema::main::RoomJoinFailedMessage::Reader& reader) {
+$implDecode(msg::RoomJoinFailedMessage, main::RoomJoinFailedMessage::Reader& reader) {
     using enum schema::main::RoomJoinFailedReason;
 
     msg::RoomJoinFailedMessage out{};
@@ -324,7 +376,7 @@ inline std::optional<msg::RoomJoinFailedMessage> decodeRoomJoinFailedMessage(sch
 
 // Room create failed
 
-inline std::optional<msg::RoomCreateFailedMessage> decodeRoomCreateFailedMessage(schema::main::RoomCreateFailedMessage::Reader& reader) {
+$implDecode(msg::RoomCreateFailedMessage, main::RoomCreateFailedMessage::Reader& reader) {
     using enum schema::main::RoomCreateFailedReason;
 
     msg::RoomCreateFailedMessage out{};
@@ -335,7 +387,7 @@ inline std::optional<msg::RoomCreateFailedMessage> decodeRoomCreateFailedMessage
 
 // Room listing
 
-inline std::optional<msg::RoomListMessage> decodeRoomListMessage(schema::main::RoomListMessage::Reader& reader) {
+$implDecode(msg::RoomListMessage, main::RoomListMessage::Reader& reader) {
     msg::RoomListMessage out{};
     auto rooms = reader.getRooms();
     out.rooms.reserve(rooms.size());
@@ -345,10 +397,10 @@ inline std::optional<msg::RoomListMessage> decodeRoomListMessage(schema::main::R
 
         info.roomId = room.getRoomId();
         info.roomName = room.getRoomName();
-        info.roomOwner = decodeRoomPlayer(room.getRoomOwner());
+        info.roomOwner = data::decodeUnchecked<RoomPlayer>(room.getRoomOwner());
         info.playerCount = room.getPlayerCount();
         info.hasPassword = room.getHasPassword();
-        info.settings = data::decodeRoomSettings(room.getSettings());
+        info.settings = data::decodeUnchecked<RoomSettings>(room.getSettings());
 
         out.rooms.push_back(std::move(info));
     }
@@ -358,7 +410,7 @@ inline std::optional<msg::RoomListMessage> decodeRoomListMessage(schema::main::R
 
 // Level data
 
-inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDataMessage::Reader& reader) {
+$implDecode(msg::LevelDataMessage, game::LevelDataMessage::Reader& reader) {
     auto players = reader.getPlayers();
     auto ddatas = reader.getDisplayDatas();
     auto eventData = reader.getEventData();
@@ -368,7 +420,7 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
     outMsg.displayDatas.reserve(ddatas.size());
 
     for (auto player : players) {
-        if (auto s = data::decodePlayerState(player)) {
+        if (auto s = data::decodeOpt<PlayerState>(player)) {
             outMsg.players.emplace_back(*std::move(s));
         } else if (player.getAccountId() != 0) {
             geode::log::warn("Server sent invalid player state data for {}, skipping", player.getAccountId());
@@ -376,7 +428,7 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
     }
 
     for (auto dd : ddatas) {
-        if (auto s = data::decodeDisplayData(dd)) {
+        if (auto s = data::decodeOpt<PlayerDisplayData>(dd)) {
             outMsg.displayDatas.push_back(*std::move(s));
         } else {
             // can happen as an optimization
@@ -400,7 +452,7 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
 
 /// Script logs
 
-inline msg::ScriptLogsMessage decodeScriptLogsMessage(const schema::game::ScriptLogsMessage::Reader& reader) {
+$implDecode(msg::ScriptLogsMessage, game::ScriptLogsMessage::Reader& reader) {
     std::vector<std::string> logs;
     auto in = reader.getLogs();
     logs.reserve(in.size());
@@ -412,8 +464,6 @@ inline msg::ScriptLogsMessage decodeScriptLogsMessage(const schema::game::Script
     return msg::ScriptLogsMessage { std::move(logs), reader.getRamUsage() };
 }
 
-/// User roles
-
 inline UserRole decodeUserRole(const schema::shared::UserRole::Reader& reader, size_t idx) {
     UserRole role{};
     role.id = idx;
@@ -423,9 +473,7 @@ inline UserRole decodeUserRole(const schema::shared::UserRole::Reader& reader, s
     return role;
 }
 
-/// Central login ok message
-
-inline msg::CentralLoginOkMessage decodeCentralLoginOk(const schema::main::LoginOkMessage::Reader& reader) {
+$implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
     msg::CentralLoginOkMessage msg{};
 
     if (reader.hasNewToken()) {
@@ -461,7 +509,7 @@ inline msg::CentralLoginOkMessage decodeCentralLoginOk(const schema::main::Login
 
 /// Team creation result
 
-inline msg::TeamCreationResultMessage decodeTeamCreationResultMessage(const schema::main::TeamCreationResultMessage::Reader& reader) {
+$implDecode(msg::TeamCreationResultMessage, main::TeamCreationResultMessage::Reader& reader) {
     msg::TeamCreationResultMessage out{};
 
     out.success = reader.getSuccess();
@@ -472,7 +520,7 @@ inline msg::TeamCreationResultMessage decodeTeamCreationResultMessage(const sche
 
 /// Team changed
 
-inline msg::TeamChangedMessage decodeTeamChangedMessage(const schema::main::TeamChangedMessage::Reader& reader) {
+$implDecode(msg::TeamChangedMessage, main::TeamChangedMessage::Reader& reader) {
     msg::TeamChangedMessage out{};
     out.teamId = reader.getTeamId();
     return out;
@@ -480,7 +528,7 @@ inline msg::TeamChangedMessage decodeTeamChangedMessage(const schema::main::Team
 
 /// Team members
 
-inline msg::TeamMembersMessage decodeTeamMembersMessage(const schema::main::TeamMembersMessage::Reader& reader) {
+$implDecode(msg::TeamMembersMessage, main::TeamMembersMessage::Reader& reader) {
     msg::TeamMembersMessage out{};
 
     auto members = reader.getMembers();
@@ -502,7 +550,7 @@ inline msg::TeamMembersMessage decodeTeamMembersMessage(const schema::main::Team
 
 /// Teams updated message
 
-inline msg::TeamsUpdatedMessage decodeTeamsUpdatedMessage(const schema::main::TeamsUpdatedMessage::Reader& reader) {
+$implDecode(msg::TeamsUpdatedMessage, main::TeamsUpdatedMessage::Reader& reader) {
     msg::TeamsUpdatedMessage out{};
 
     auto teams = reader.getTeams();
@@ -519,7 +567,7 @@ inline msg::TeamsUpdatedMessage decodeTeamsUpdatedMessage(const schema::main::Te
 
 /// Player counts message
 
-inline msg::PlayerCountsMessage decodePlayerCountsMessage(const schema::main::PlayerCountsMessage::Reader& reader) {
+$implDecode(msg::PlayerCountsMessage, main::PlayerCountsMessage::Reader& reader) {
     msg::PlayerCountsMessage out{};
 
     auto counts = reader.getCounts();
@@ -537,7 +585,7 @@ inline msg::PlayerCountsMessage decodePlayerCountsMessage(const schema::main::Pl
 
 /// Level list message
 
-inline msg::LevelListMessage decodeLevelListMessage(const schema::main::LevelListMessage::Reader& reader) {
+$implDecode(msg::LevelListMessage, main::LevelListMessage::Reader& reader) {
     msg::LevelListMessage out{};
 
     auto counts = reader.getPlayerCounts();
@@ -555,7 +603,7 @@ inline msg::LevelListMessage decodeLevelListMessage(const schema::main::LevelLis
 
 /// User punishment
 
-inline UserPunishment decodeUserPunishment(const schema::main::UserPunishment::Reader& reader) {
+$implDecode(UserPunishment, main::UserPunishment::Reader& reader) {
     UserPunishment out{};
     out.issuedBy = reader.getIssuedBy();
     out.issuedAt = reader.getIssuedAt();
@@ -566,7 +614,7 @@ inline UserPunishment decodeUserPunishment(const schema::main::UserPunishment::R
 
 /// Admin fetch response message
 
-inline msg::AdminFetchResponseMessage decodeAdminFetchResponseMessage(const schema::main::AdminFetchResponseMessage::Reader& reader) {
+$implDecode(msg::AdminFetchResponseMessage, main::AdminFetchResponseMessage::Reader& reader) {
     msg::AdminFetchResponseMessage out{};
 
     out.accountId = reader.getAccountId();
@@ -582,15 +630,15 @@ inline msg::AdminFetchResponseMessage decodeAdminFetchResponseMessage(const sche
     }
 
     if (reader.hasActiveBan()) {
-        out.activeBan = decodeUserPunishment(reader.getActiveBan());
+        out.activeBan = data::decodeUnchecked<UserPunishment>(reader.getActiveBan());
     }
 
     if (reader.hasActiveRoomBan()) {
-        out.activeRoomBan = decodeUserPunishment(reader.getActiveRoomBan());
+        out.activeRoomBan = data::decodeUnchecked<UserPunishment>(reader.getActiveRoomBan());
     }
 
     if (reader.hasActiveMute()) {
-        out.activeMute = decodeUserPunishment(reader.getActiveMute());
+        out.activeMute = data::decodeUnchecked<UserPunishment>(reader.getActiveMute());
     }
 
     return out;
@@ -598,7 +646,7 @@ inline msg::AdminFetchResponseMessage decodeAdminFetchResponseMessage(const sche
 
 /// Fetched mod
 
-inline FetchedMod decodeFetchedMod(const schema::main::FetchedMod::Reader& reader) {
+$implDecode(FetchedMod, main::FetchedMod::Reader& reader) {
     FetchedMod out{};
     out.accountId = reader.getAccountId();
     out.username = reader.getUsername();
@@ -611,14 +659,52 @@ inline FetchedMod decodeFetchedMod(const schema::main::FetchedMod::Reader& reade
 
 /// Admin fetch mods response message
 
-inline msg::AdminFetchModsResponseMessage decodeFetchModsResponseMessage(const schema::main::AdminFetchModsResponseMessage::Reader& reader) {
+$implDecode(msg::AdminFetchModsResponseMessage, main::AdminFetchModsResponseMessage::Reader& reader) {
     msg::AdminFetchModsResponseMessage out{};
 
     auto users = reader.getUsers();
     out.users.reserve(users.size());
 
     for (auto user : users) {
-        out.users.push_back(decodeFetchedMod(user));
+        out.users.push_back(decodeUnchecked<FetchedMod>(user));
+    }
+
+    return out;
+}
+
+/// Admin audit log
+
+$implDecode(AdminAuditLog, main::AuditLog::Reader& reader) {
+    AdminAuditLog out{};
+
+    out.id = reader.getId();
+    out.accountId = reader.getAccountId();
+    out.targetId = reader.getTargetAccountId();
+    out.type = reader.getType();
+    out.timestamp = reader.getTimestamp();
+    out.expiresAt = reader.getExpiresAt();
+    out.message = reader.getMessage();
+
+    return out;
+}
+
+/// Admin fetch logs response message
+
+$implDecode(msg::AdminLogsResponseMessage, main::AdminLogsResponseMessage::Reader& reader) {
+    msg::AdminLogsResponseMessage out{};
+
+    auto accs = reader.getAccounts();
+    auto logs = reader.getLogs();
+
+    out.users.reserve(accs.size());
+    out.logs.reserve(logs.size());
+
+    for (auto acc : accs) {
+        out.users.push_back(decodeUnchecked<PlayerAccountData>(acc));
+    }
+
+    for (auto log : logs) {
+        out.logs.push_back(decodeUnchecked<AdminAuditLog>(log));
     }
 
     return out;
@@ -626,9 +712,8 @@ inline msg::AdminFetchModsResponseMessage decodeFetchModsResponseMessage(const s
 
 /// Send level script message
 
-inline void encodeSendLevelScriptMessage(const std::vector<EmbeddedScript>& scripts, auto&& out) {
-    auto send = out.initSendLevelScript();
-    auto outscr = send.initScripts(scripts.size());
+$implEncode(const std::vector<EmbeddedScript>& scripts, game::SendLevelScriptMessage::Builder& out) {
+    auto outscr = out.initScripts(scripts.size());
 
     for (size_t i = 0; i < scripts.size(); i++) {
         auto& script = scripts[i];

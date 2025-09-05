@@ -6,6 +6,7 @@
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/data/UserRole.hpp>
+#include <globed/core/data/AdminLogs.hpp>
 #include <globed/core/data/Event.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
@@ -137,6 +138,7 @@ public:
     void sendAdminLogin(const std::string& password);
     void sendAdminFetchUser(const std::string& query);
     void sendAdminFetchMods();
+    void sendAdminFetchLogs(const FetchLogsFilters& filters);
 
     // Both servers
     void sendJoinSession(SessionId id, bool platformer);

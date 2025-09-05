@@ -321,7 +321,7 @@ void NetworkManagerImpl::thrMaybeResendOwnData() {
         auto update = msg.initUpdateOwnData();
 
         if (icons) {
-            data::encodeIconData(gatherIconData(), update.initIcons());
+            data::encode(gatherIconData(), update.initIcons());
         }
 
         if (friendList) {
@@ -578,7 +578,7 @@ void NetworkManagerImpl::tryAuth() {
             loginUToken.setAccountId(accountId);
             auto uid = this->computeUident();
             loginUToken.setUident(kj::ArrayPtr(uid.data(), uid.size()));
-            data::encodeIconData(gatherIconData(), loginUToken.initIcons());
+            data::encode(gatherIconData(), loginUToken.initIcons());
         });
     } else if (!connInfo.m_knownArgonUrl.empty()) {
         (void) argon::setServerUrl(connInfo.m_knownArgonUrl);
@@ -609,7 +609,7 @@ void NetworkManagerImpl::tryAuth() {
             data.setUsername(gam->m_username);
             data.setAccountId(accountId);
             data.setUserId(userId);
-            data::encodeIconData(gatherIconData(), loginPlain.initIcons());
+            data::encode(gatherIconData(), loginPlain.initIcons());
         });
     }
 }
@@ -622,7 +622,7 @@ void NetworkManagerImpl::doArgonAuth(std::string token) {
         loginArgon.setAccountId(GJAccountManager::get()->m_accountID);
         auto uid = this->computeUident();
         loginArgon.setUident(kj::ArrayPtr(uid.data(), uid.size()));
-        data::encodeIconData(gatherIconData(), loginArgon.initIcons());
+        data::encode(gatherIconData(), loginArgon.initIcons());
     });
 }
 
@@ -745,7 +745,7 @@ void NetworkManagerImpl::sendGameLoginJoinRequest(SessionId id, bool platformer)
         loginJoin.setSessionId(id);
         loginJoin.setPasscode(RoomManager::get().getPasscode());
         loginJoin.setPlatformer(platformer);
-        data::encodeIconData(gatherIconData(), loginJoin.initIcons());
+        data::encode(gatherIconData(), loginJoin.initIcons());
     });
 }
 
@@ -754,7 +754,7 @@ void NetworkManagerImpl::sendGameLoginRequest() {
         auto login = msg.initLoginUToken();
         login.setAccountId(GJAccountManager::get()->m_accountID);
         login.setToken(this->getUToken().value_or(""));
-        data::encodeIconData(gatherIconData(), login.initIcons());
+        data::encode(gatherIconData(), login.initIcons());
     });
 }
 
@@ -779,7 +779,7 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto playerData = msg.initPlayerData();
         auto data = playerData.initData();
-        data::encodePlayerState(state, data);
+        data::encode(state, data);
 
         playerData.setCameraX(cameraCenter.x);
         playerData.setCameraY(cameraCenter.y);
@@ -820,7 +820,7 @@ void NetworkManagerImpl::queueLevelScript(const std::vector<EmbeddedScript>& scr
 
 void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scripts) {
     this->sendToGame([&](GameMessage::Builder& msg) {
-        data::encodeSendLevelScriptMessage(scripts, msg);
+        data::encode(scripts, msg.initSendLevelScript());
     });
 }
 
@@ -858,7 +858,7 @@ void NetworkManagerImpl::sendCreateRoom(const std::string& name, uint32_t passco
         createRoom.setName(name);
         createRoom.setPasscode(passcode);
 
-        data::encodeRoomSettings(settings, createRoom.initSettings());
+        data::encode(settings, createRoom.initSettings());
     });
 }
 
@@ -930,7 +930,7 @@ void NetworkManagerImpl::sendRoomOwnerAction(RoomOwnerActionType type, int targe
 void NetworkManagerImpl::sendUpdateRoomSettings(const RoomSettings& settings) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto upd = msg.initUpdateRoomSettings();
-        data::encodeRoomSettings(settings, upd.initSettings());
+        data::encode(settings, upd.initSettings());
     });
 }
 
@@ -970,6 +970,18 @@ void NetworkManagerImpl::sendAdminFetchUser(const std::string& query) {
 void NetworkManagerImpl::sendAdminFetchMods() {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto fetchUser = msg.initAdminFetchMods();
+    });
+}
+
+void NetworkManagerImpl::sendAdminFetchLogs(const FetchLogsFilters& filters) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto flogs = msg.initAdminFetchLogs();
+        flogs.setIssuer(filters.issuer);
+        flogs.setTarget(filters.target);
+        flogs.setType({ filters.type.data(), filters.type.size() });
+        flogs.setBefore(filters.before);
+        flogs.setAfter(filters.after);
+        flogs.setPage(filters.page);
     });
 }
 
@@ -1050,7 +1062,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
                 updateServers(connInfo.m_gameServers, servers);
             }
 
-            auto msg = data::decodeCentralLoginOk(loginOk);
+            auto msg = data::decodeUnchecked<msg::CentralLoginOkMessage>(loginOk);
             connInfo.m_allRoles = msg.allRoles;
             connInfo.m_userRoles = msg.userRoles;
             connInfo.m_established = true;
@@ -1095,33 +1107,25 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::PLAYER_COUNTS: {
-            auto m = msg.getPlayerCounts();
-
-            this->invokeListeners(data::decodePlayerCountsMessage(m));
+            this->invokeListeners(data::decodeUnchecked<msg::PlayerCountsMessage>(msg.getPlayerCounts()));
         } break;
 
         case CentralMessage::ROOM_PLAYERS: {
-            auto m = msg.getRoomPlayers();
-
-            this->invokeListeners(data::decodeRoomPlayersMessage(m));
+            this->invokeListeners(data::decodeUnchecked<msg::RoomPlayersMessage>(msg.getRoomPlayers()));
         } break;
 
         case CentralMessage::LEVEL_LIST: {
-            auto m = msg.getLevelList();
-
-            this->invokeListeners(data::decodeLevelListMessage(m));
+            this->invokeListeners(data::decodeUnchecked<msg::LevelListMessage>(msg.getLevelList()));
         } break;
 
         case CentralMessage::ROOM_STATE: {
-            auto roomState = msg.getRoomState();
-
-            this->invokeListeners(data::decodeRoomStateMessage(roomState));
+            this->invokeListeners(data::decodeUnchecked<msg::RoomStateMessage>(msg.getRoomState()));
         } break;
 
         case CentralMessage::ROOM_JOIN_FAILED: {
             auto roomJoinFailed = msg.getRoomJoinFailed();
 
-            if (auto msg = data::decodeRoomJoinFailedMessage(roomJoinFailed)) {
+            if (auto msg = data::decodeOpt<msg::RoomJoinFailedMessage>(roomJoinFailed)) {
                 this->invokeListeners(*msg);
             } else {
                 log::warn("Received invalid room join failed message");
@@ -1131,7 +1135,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         case CentralMessage::ROOM_CREATE_FAILED: {
             auto roomCreateFailed = msg.getRoomCreateFailed();
 
-            if (auto msg = data::decodeRoomCreateFailedMessage(roomCreateFailed)) {
+            if (auto msg = data::decodeOpt<msg::RoomCreateFailedMessage>(roomCreateFailed)) {
                 this->invokeListeners(*msg);
             } else {
                 log::warn("Received invalid room create failed message");
@@ -1145,7 +1149,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         case CentralMessage::ROOM_LIST: {
             auto roomList = msg.getRoomList();
 
-            if (auto msg = data::decodeRoomListMessage(roomList)) {
+            if (auto msg = data::decodeOpt<msg::RoomListMessage>(roomList)) {
                 this->invokeListeners(*msg);
             } else {
                 log::warn("Received invalid room list message");
@@ -1153,27 +1157,19 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::TEAM_CREATION_RESULT: {
-            auto result = msg.getTeamCreationResult();
-
-            this->invokeListeners(data::decodeTeamCreationResultMessage(result));
+            this->invokeListeners(data::decodeUnchecked<msg::TeamCreationResultMessage>(msg.getTeamCreationResult()));
         } break;
 
         case CentralMessage::TEAM_CHANGED: {
-            auto result = msg.getTeamChanged();
-
-            this->invokeListeners(data::decodeTeamChangedMessage(result));
+            this->invokeListeners(data::decodeUnchecked<msg::TeamChangedMessage>(msg.getTeamChanged()));
         } break;
 
         case CentralMessage::TEAM_MEMBERS: {
-            auto result = msg.getTeamMembers();
-
-            this->invokeListeners(data::decodeTeamMembersMessage(result));
+            this->invokeListeners(data::decodeUnchecked<msg::TeamMembersMessage>(msg.getTeamMembers()));
         } break;
 
         case CentralMessage::TEAMS_UPDATED: {
-            auto result = msg.getTeamsUpdated();
-
-            this->invokeListeners(data::decodeTeamsUpdatedMessage(result));
+            this->invokeListeners(data::decodeUnchecked<msg::TeamsUpdatedMessage>(msg.getTeamsUpdated()));
         } break;
 
         case CentralMessage::JOIN_FAILED: {
@@ -1182,7 +1178,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::ROOM_SETTINGS_UPDATED: {
             auto settings = msg.getRoomSettingsUpdated();
-            auto rs = data::decodeRoomSettings(settings.getSettings());
+            auto rs = data::decodeUnchecked<RoomSettings>(settings.getSettings());
 
             this->invokeListeners(msg::RoomSettingsUpdatedMessage { rs });
         } break;
@@ -1231,19 +1227,15 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::ADMIN_FETCH_RESPONSE: {
-            auto result = msg.getAdminFetchResponse();
-
-            this->invokeListeners(data::decodeAdminFetchResponseMessage(result));
+            this->invokeListeners(data::decodeUnchecked<msg::AdminFetchResponseMessage>(msg.getAdminFetchResponse()));
         } break;
 
         case CentralMessage::ADMIN_FETCH_MODS_RESPONSE: {
-            auto result = msg.getAdminFetchModsResponse();
-
-            this->invokeListeners(data::decodeFetchModsResponseMessage(result));
+            this->invokeListeners(data::decodeUnchecked<msg::AdminFetchModsResponseMessage>(msg.getAdminFetchModsResponse()));
         } break;
 
         case CentralMessage::ADMIN_LOGS_RESPONSE: {
-            // TODO
+            this->invokeListeners(data::decodeUnchecked<msg::AdminLogsResponseMessage>(msg.getAdminLogsResponse()));
         } break;
 
         default: {
@@ -1310,13 +1302,11 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
         } break;
 
         case GameMessage::LEVEL_DATA: {
-            auto data = msg.getLevelData();
-            this->invokeListeners(data::decodeLevelDataMessage(data));
+            this->invokeListeners(data::decodeUnchecked<msg::LevelDataMessage>(msg.getLevelData()));
         } break;
 
         case GameMessage::SCRIPT_LOGS: {
-            auto logs = msg.getScriptLogs();
-            this->invokeListeners(data::decodeScriptLogsMessage(logs));
+            this->invokeListeners(data::decodeUnchecked<msg::ScriptLogsMessage>(msg.getScriptLogs()));
         } break;
 
         case GameMessage::KICKED: {

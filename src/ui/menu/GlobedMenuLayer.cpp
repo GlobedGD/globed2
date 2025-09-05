@@ -710,6 +710,13 @@ bool GlobedMenuLayer::shouldAutoRefresh() {
         return false;
     }
 
+    // dont refresh if theres any popups covering the list
+    for (auto child : CCScene::get()->getChildrenExt()) {
+        if (typeinfo_cast<FLAlertLayer*>(child)) {
+            return false;
+        }
+    }
+
     return true;
 }
 
