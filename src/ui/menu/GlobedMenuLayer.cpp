@@ -16,6 +16,7 @@
 #include <ui/menu/RegionSelectPopup.hpp>
 #include <ui/menu/RoomUserControlsPopup.hpp>
 #include <ui/menu/TeamManagementPopup.hpp>
+#include <ui/menu/RoomSettingsPopup.hpp>
 #include <ui/menu/levels/LevelListLayer.hpp>
 #include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
@@ -126,6 +127,7 @@ namespace LeftBtn {
     constexpr int Disconnect = 100;
     constexpr int RegionSwitch = 110;
     constexpr int Teams = 300;
+    constexpr int Settings = 400;
 }
 
 namespace FarLeftBtn {
@@ -508,6 +510,8 @@ void GlobedMenuLayer::initSideButtons() {
             .collect();
     };
 
+    auto& rm = RoomManager::get();
+
     /// Left side buttons
 
     makeButton(
@@ -546,7 +550,8 @@ void GlobedMenuLayer::initSideButtons() {
         }
     );
 
-    if (RoomManager::get().getSettings().teams) {
+    if (rm.getSettings().teams) {
+        // TODO: better icon
         makeButton(
             CCSprite::create("icon-person.png"_spr),
             EditorBaseColor::Cyan,
@@ -557,6 +562,23 @@ void GlobedMenuLayer::initSideButtons() {
                 TeamManagementPopup::create(0)->show();
             }
         );
+    }
+
+    if (rm.isOwner()) {
+        // TODO: better icon
+        auto btn = makeButton(
+            CCSprite::create("icon-gear.png"_spr),
+            EditorBaseColor::Gray,
+            m_leftSideMenu,
+            LeftBtn::Settings,
+            "btn-settings",
+            [this] {
+                RoomSettingsPopup::create()->show();
+            }
+        );
+
+        auto spr = btn->getChildrenExt()[0]->getChildrenExt()[0];
+        spr->setScale(spr->getScale() * 0.9f);
     }
 
     /// Right side buttons
