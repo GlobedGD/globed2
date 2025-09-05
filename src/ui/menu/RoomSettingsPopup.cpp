@@ -124,6 +124,12 @@ bool RoomSettingsPopup::setup() {
         &RoomSettings::deathlink
     ));
 
+    m_list->addCell(makeCell(
+        "Teams",
+        "Enables ability to create and join <cj>Teams</c>. In deathlink, <cy>deaths will only impact your teammates</c>. Otherwise, it only makes a visual difference.",
+        &RoomSettings::teams
+    ));
+
     return true;
 }
 
