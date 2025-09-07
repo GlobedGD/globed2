@@ -382,6 +382,7 @@ void ModAuditLogPopup::populateLogs(const std::vector<AdminAuditLog>& logs, cons
 
     m_list->setAutoUpdate(true);
     m_list->updateLayout();
+    m_list->scrollToTop();
 }
 
 void ModAuditLogPopup::refetch() {

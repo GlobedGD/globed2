@@ -934,6 +934,12 @@ void NetworkManagerImpl::sendUpdateRoomSettings(const RoomSettings& settings) {
     });
 }
 
+void NetworkManagerImpl::sendFetchCredits() {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        msg.initFetchCredits();
+    });
+}
+
 void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto adminNotice = msg.initAdminNotice();
@@ -1209,6 +1215,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::WARN: {
             // TODO
+        } break;
+
+        case CentralMessage::CREDITS: {
+            this->invokeListeners(data::decodeUnchecked<msg::CreditsMessage>(msg.getCredits()));
         } break;
 
         case CentralMessage::ADMIN_RESULT: {

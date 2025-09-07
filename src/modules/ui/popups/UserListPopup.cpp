@@ -222,6 +222,7 @@ void UserListPopup::hardRefresh() {
 
     m_list->setAutoUpdate(true);
     m_list->updateLayout();
+    m_list->scrollToTop();
 }
 
 void UserListPopup::onVolumeChanged(double value) {

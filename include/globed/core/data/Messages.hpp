@@ -10,6 +10,7 @@
 #include "RoomTeam.hpp"
 #include "UserPunishment.hpp"
 #include "FetchedMod.hpp"
+#include "Credits.hpp"
 
 namespace globed::msg {
 
@@ -124,6 +125,13 @@ struct LevelDataMessage {
 struct ScriptLogsMessage {
     std::vector<std::string> logs;
     float memUsage;
+};
+
+// Credits
+
+struct CreditsMessage {
+    std::vector<CreditsCategory> categories;
+    bool unavailable;
 };
 
 // Admin

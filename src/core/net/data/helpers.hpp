@@ -601,6 +601,54 @@ $implDecode(msg::LevelListMessage, main::LevelListMessage::Reader& reader) {
     return out;
 }
 
+/// Credits user
+
+$implDecode(CreditsUser, main::CreditsUser::Reader& reader) {
+    CreditsUser out{};
+
+    out.accountId = reader.getAccountId();
+    out.userId = reader.getUserId();
+    out.username = reader.getUsername();
+    out.displayName = reader.getDisplayName();
+    out.cube = reader.getCube();
+    out.color1 = reader.getColor1();
+    out.color2 = reader.getColor2();
+    out.glowColor = reader.getGlowColor();
+
+    return out;
+}
+
+/// Credits
+
+$implDecode(msg::CreditsMessage, main::CreditsMessage::Reader& reader) {
+    msg::CreditsMessage out{};
+
+    out.unavailable = reader.getUnavailable();
+
+    if (out.unavailable) {
+        return out;
+    }
+
+    auto cats = reader.getCategories();
+    out.categories.reserve(cats.size());
+
+    for (auto cat : cats) {
+        auto users = cat.getUsers();
+
+        CreditsCategory outc{};
+        outc.name = cat.getName();
+        outc.users.reserve(users.size());
+
+        for (auto user : users) {
+            outc.users.push_back(decodeUnchecked<CreditsUser>(user));
+        }
+
+        out.categories.push_back(std::move(outc));
+    }
+
+    return out;
+}
+
 /// User punishment
 
 $implDecode(UserPunishment, main::UserPunishment::Reader& reader) {

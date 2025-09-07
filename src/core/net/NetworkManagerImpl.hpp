@@ -132,6 +132,7 @@ public:
     void sendGetTeamMembers();
     void sendRoomOwnerAction(RoomOwnerActionType type, int target = 0);
     void sendUpdateRoomSettings(const RoomSettings& settings);
+    void sendFetchCredits();
 
     void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply);
     void sendAdminNoticeEveryone(const std::string& message);

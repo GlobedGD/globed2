@@ -17,6 +17,8 @@
 #include <ui/menu/RoomUserControlsPopup.hpp>
 #include <ui/menu/TeamManagementPopup.hpp>
 #include <ui/menu/RoomSettingsPopup.hpp>
+#include <ui/menu/SupportPopup.hpp>
+#include <ui/menu/CreditsPopup.hpp>
 #include <ui/menu/levels/LevelListLayer.hpp>
 #include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
@@ -130,6 +132,12 @@ namespace LeftBtn {
     constexpr int Settings = 400;
 }
 
+namespace FarRightBtn {
+    constexpr int Discord = 100;
+    constexpr int Support = 200;
+    constexpr int Credits = 300;
+}
+
 namespace FarLeftBtn {
     constexpr int Levels = 300;
     constexpr int Settings = 99999; // dead last
@@ -213,7 +221,8 @@ bool GlobedMenuLayer::init() {
         .parent(m_connectMenu)
         .collect();
 
-    Build<CCSprite>::create("icon-settings.png"_spr)
+    Build<CCSprite>::create("settings01.png"_spr)
+        .scale(0.7f)
         .intoMenuItem([this] {
             this->onSettings();
         })
@@ -534,7 +543,7 @@ void GlobedMenuLayer::initSideButtons() {
     // region switching button
     makeButton(
         // TODO: icon
-        CCSprite::create("icon-among-us.png"_spr),
+        CCSprite::create("server02.png"_spr),
         std::nullopt,
         m_leftSideMenu,
         LeftBtn::RegionSwitch,
@@ -551,10 +560,9 @@ void GlobedMenuLayer::initSideButtons() {
     );
 
     if (rm.getSettings().teams) {
-        // TODO: better icon
         makeButton(
-            CCSprite::create("icon-person.png"_spr),
-            EditorBaseColor::Cyan,
+            CCSprite::create("teams01.png"_spr),
+            std::nullopt,
             m_leftSideMenu,
             LeftBtn::Teams,
             "btn-manage-teams",
@@ -565,10 +573,9 @@ void GlobedMenuLayer::initSideButtons() {
     }
 
     if (rm.isOwner()) {
-        // TODO: better icon
         auto btn = makeButton(
-            CCSprite::create("icon-gear.png"_spr),
-            EditorBaseColor::Gray,
+            CCSprite::create("settings01.png"_spr),
+            std::nullopt,
             m_leftSideMenu,
             LeftBtn::Settings,
             "btn-settings",
@@ -576,9 +583,6 @@ void GlobedMenuLayer::initSideButtons() {
                 RoomSettingsPopup::create()->show();
             }
         );
-
-        auto spr = btn->getChildrenExt()[0]->getChildrenExt()[0];
-        spr->setScale(spr->getScale() * 0.9f);
     }
 
     /// Right side buttons
@@ -608,7 +612,7 @@ void GlobedMenuLayer::initSideButtons() {
 
     // filter button
     m_searchBtn = makeButton(
-        CCSprite::createWithSpriteFrameName("gj_findBtn_001.png"),
+        CCSprite::create("search01.png"_spr),
         std::nullopt,
         m_rightSideMenu,
         RightBtn::Search,
@@ -631,7 +635,7 @@ void GlobedMenuLayer::initSideButtons() {
 
     // clear filter button
     m_clearSearchBtn = makeButton(
-        CCSprite::createWithSpriteFrameName("gj_findBtnOff_001.png"),
+        CCSprite::create("search02.png"_spr),
         std::nullopt,
         m_rightSideMenu,
         RightBtn::ClearSearch,
@@ -644,7 +648,7 @@ void GlobedMenuLayer::initSideButtons() {
 
     // refresh button
     makeButton(
-        CCSprite::create("icon-refresh-square.png"_spr),
+        CCSprite::create("refresh01.png"_spr),
         std::nullopt,
         m_rightSideMenu,
         RightBtn::Refresh,
@@ -667,25 +671,71 @@ void GlobedMenuLayer::initFarSideButtons() {
     m_farLeftMenu->removeAllChildren();
     m_farRightMenu->removeAllChildren();
 
+    CCSize btnSize { 45.f, 45.f };
+
     bool connected = m_state == MenuState::Connected;
 
-    if (connected) {
-        Build<CCSprite>::create("icon-settings.png"_spr)
-            .intoMenuItem([this] {
-                this->onSettings();
-            })
-            .scaleMult(1.1f)
-            .zOrder(FarLeftBtn::Settings)
-            .parent(m_farLeftMenu);
-
-        Build<CCSprite>::create("icon-level-list.png"_spr)
-            .intoMenuItem([this] {
-                LevelListLayer::create()->switchTo();
-            })
-            .scaleMult(1.1f)
-            .zOrder(FarLeftBtn::Levels)
-            .parent(m_farLeftMenu);
+    if (!connected) {
+        m_farLeftMenu->updateLayout();
+        m_farRightMenu->updateLayout();
+        return;
     }
+
+    Build<CCSprite>::create("settings01.png"_spr)
+        .with([&](auto btn) { cue::rescaleToMatch(btn, btnSize); })
+        .intoMenuItem([this] {
+            this->onSettings();
+        })
+        .scaleMult(1.1f)
+        .zOrder(FarLeftBtn::Settings)
+        .parent(m_farLeftMenu);
+
+    Build<CCSprite>::create("levels01.png"_spr)
+        .with([&](auto btn) { cue::rescaleToMatch(btn, btnSize); })
+        .intoMenuItem([this] {
+            LevelListLayer::create()->switchTo();
+        })
+        .scaleMult(1.1f)
+        .zOrder(FarLeftBtn::Levels)
+        .parent(m_farLeftMenu);
+
+    // credits
+    Build<CCSprite>::create("support01.png"_spr)
+        .with([&](auto btn) { cue::rescaleToMatch(btn, btnSize); })
+        .intoMenuItem([this] {
+            CreditsPopup::create()->show();
+        })
+        .scaleMult(1.1f)
+        .zOrder(FarRightBtn::Credits)
+        .parent(m_farRightMenu);
+
+    // supporter popup
+    Build<CCSprite>::create("support02.png"_spr)
+        .with([&](auto btn) { cue::rescaleToMatch(btn, btnSize); })
+        .intoMenuItem([this] {
+            SupportPopup::create()->show();
+        })
+        .scaleMult(1.1f)
+        .zOrder(FarRightBtn::Support)
+        .parent(m_farRightMenu);
+
+    // discord
+    Build<CCSprite>::create("discord01.png"_spr)
+        .with([&](auto btn) { cue::rescaleToMatch(btn, btnSize); })
+        .intoMenuItem([this] {
+            globed::quickPopup(
+                "Open Discord",
+                "Join our <cp>Discord</c> server?\n\n<cr>Important: By joining the Discord server, you agree to being at least 13 years of age.</c>",
+                "No", "Yes",
+                [](auto, bool btn2) {
+                    if (btn2) {
+                        geode::utils::web::openLinkInBrowser(globed::constant<"discord">());
+                    }
+            });
+        })
+        .scaleMult(1.1f)
+        .zOrder(FarRightBtn::Discord)
+        .parent(m_farRightMenu);
 
     m_farLeftMenu->updateLayout();
     m_farRightMenu->updateLayout();
