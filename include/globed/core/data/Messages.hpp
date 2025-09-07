@@ -91,6 +91,15 @@ struct RoomSettingsUpdatedMessage {
     RoomSettings settings;
 };
 
+struct InvitedMessage {
+    PlayerAccountData invitedBy;
+    uint64_t token;
+};
+
+struct InviteTokenCreatedMessage {
+    uint64_t token;
+};
+
 // Misc
 
 struct WarpPlayerMessage {
@@ -106,6 +115,10 @@ struct NoticeMessage {
 
 struct PlayerCountsMessage {
     std::vector<std::pair<SessionId, uint16_t>> counts;
+};
+
+struct GlobalPlayersMessage {
+    std::vector<MinimalRoomPlayer> players;
 };
 
 struct LevelListMessage {

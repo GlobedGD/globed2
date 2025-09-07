@@ -4,23 +4,25 @@
 
 namespace globed {
 
-cue::PlayerIcon* RoomPlayer::createIcon() const {
-    return cue::PlayerIcon::create(
-        cue::Icons{
-            .type = IconType::Cube,
-            .id = this->cube,
-            .color1 = this->color1.asIdx(),
-            .color2 = this->color2.asIdx(),
-            .glowColor = this->glowColor.asIdx(),
-        }
-    );
+cue::PlayerIcon* MinimalRoomPlayer::createIcon() const {
+    return cue::PlayerIcon::create(this->toIcons());
 }
 
-RoomPlayer RoomPlayer::createMyself() {
+cue::Icons MinimalRoomPlayer::toIcons() const {
+    return cue::Icons{
+        .type = IconType::Cube,
+        .id = this->cube,
+        .color1 = this->color1.asIdx(),
+        .color2 = this->color2.asIdx(),
+        .glowColor = this->glowColor.asIdx(),
+    };
+}
+
+MinimalRoomPlayer MinimalRoomPlayer::createMyself() {
     auto gm = cachedSingleton<GameManager>();
     auto gam = cachedSingleton<GJAccountManager>();
 
-    RoomPlayer out{};
+    MinimalRoomPlayer out{};
     out.accountData = {
         .accountId = gam->m_accountID,
         .userId = gm->m_playerUserID,
@@ -33,8 +35,14 @@ RoomPlayer RoomPlayer::createMyself() {
         out.glowColor = gm->m_playerGlowColor;
     }
 
-    out.session = SessionId{};
     return out;
+}
+
+RoomPlayer RoomPlayer::createMyself() {
+    RoomPlayer self{MinimalRoomPlayer::createMyself()};
+    self.session = SessionId{};
+    self.teamId = 0;
+    return self;
 }
 
 }

@@ -16,6 +16,7 @@
 #include <ui/menu/RegionSelectPopup.hpp>
 #include <ui/menu/RoomUserControlsPopup.hpp>
 #include <ui/menu/TeamManagementPopup.hpp>
+#include <ui/menu/InvitePopup.hpp>
 #include <ui/menu/RoomSettingsPopup.hpp>
 #include <ui/menu/SupportPopup.hpp>
 #include <ui/menu/CreditsPopup.hpp>
@@ -608,6 +609,20 @@ void GlobedMenuLayer::initSideButtons() {
         } else {
             log::error("Failed to create mod panel button, badge not found");
         }
+    }
+
+    // invite button
+    if (!rm.isInGlobal() && (rm.isOwner() || !rm.getSettings().privateInvites)) {
+        makeButton(
+            CCSprite::create("icon-invite.png"_spr),
+            EditorBaseColor::Cyan,
+            m_rightSideMenu,
+            RightBtn::Invite,
+            "btn-invite",
+            [this] {
+                InvitePopup::create()->show();
+            }
+        );
     }
 
     // filter button

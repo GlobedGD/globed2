@@ -846,6 +846,13 @@ void NetworkManagerImpl::sendRequestRoomPlayers(const std::string& nameFilter) {
     });
 }
 
+void NetworkManagerImpl::sendRequestGlobalPlayerList(const std::string& nameFilter) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto reqr = msg.initRequestGlobalPlayerList();
+        reqr.setNameFilter(nameFilter);
+    });
+}
+
 void NetworkManagerImpl::sendRequestLevelList() {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         msg.initRequestLevelList();
@@ -868,6 +875,13 @@ void NetworkManagerImpl::sendJoinRoom(uint32_t id, uint32_t passcode) {
         joinRoom.setRoomId(id);
         joinRoom.setPasscode(passcode);
         RoomManager::get().setAttemptedPasscode(passcode);
+    });
+}
+
+void NetworkManagerImpl::sendJoinRoomByToken(uint64_t token) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto joinRoom = msg.initJoinRoomByToken();
+        joinRoom.setToken(token);
     });
 }
 
@@ -931,6 +945,13 @@ void NetworkManagerImpl::sendUpdateRoomSettings(const RoomSettings& settings) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto upd = msg.initUpdateRoomSettings();
         data::encode(settings, upd.initSettings());
+    });
+}
+
+void NetworkManagerImpl::sendInvitePlayer(int32_t player) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto invp = msg.initInvitePlayer();
+        invp.setPlayer(player);
     });
 }
 
@@ -1116,6 +1137,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             this->invokeListeners(data::decodeUnchecked<msg::PlayerCountsMessage>(msg.getPlayerCounts()));
         } break;
 
+        case CentralMessage::GLOBAL_PLAYERS: {
+            this->invokeListeners(data::decodeUnchecked<msg::GlobalPlayersMessage>(msg.getGlobalPlayers()));
+        } break;
+
         case CentralMessage::ROOM_PLAYERS: {
             this->invokeListeners(data::decodeUnchecked<msg::RoomPlayersMessage>(msg.getRoomPlayers()));
         } break;
@@ -1187,6 +1212,14 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             auto rs = data::decodeUnchecked<RoomSettings>(settings.getSettings());
 
             this->invokeListeners(msg::RoomSettingsUpdatedMessage { rs });
+        } break;
+
+        case CentralMessage::INVITED: {
+            this->invokeListeners(data::decodeUnchecked<msg::InvitedMessage>(msg.getInvited()));
+        } break;
+
+        case CentralMessage::INVITE_TOKEN_CREATED: {
+            this->invokeListeners(data::decodeUnchecked<msg::InviteTokenCreatedMessage>(msg.getInviteTokenCreated()));
         } break;
 
         //

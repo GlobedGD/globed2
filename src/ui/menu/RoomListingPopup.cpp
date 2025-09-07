@@ -229,16 +229,18 @@ static std::vector<RoomListingInfo> makeFakeData() {
             .roomId = rng()->random<uint32_t>(100000, 999999),
             .roomName = fmt::format("Room {}", i + 1),
             .roomOwner = RoomPlayer {
-                .accountData = PlayerAccountData {
-                    .accountId = rng()->random<int>(),
-                    .userId = rng()->random<int>(),
-                    .username = fmt::format("Player {}", rng()->random<int>())
+                MinimalRoomPlayer {
+                    .accountData = PlayerAccountData {
+                        .accountId = rng()->random<int>(),
+                        .userId = rng()->random<int>(),
+                        .username = fmt::format("Player {}", rng()->random<int>())
+                    },
+                    .cube = rng()->random<int16_t>(1, 484),
+                    .color1 = rng()->random<uint16_t>(1, 106),
+                    .color2 = rng()->random<uint16_t>(1, 106),
+                    .glowColor = NO_GLOW,
                 },
-                .cube = rng()->random<int16_t>(1, 484),
-                .color1 = rng()->random<uint16_t>(1, 106),
-                .color2 = rng()->random<uint16_t>(1, 106),
-                .glowColor = NO_GLOW,
-                .session = SessionId{},
+                SessionId{},
             },
             .playerCount = rng()->random<uint32_t>(1, 1000),
             .hasPassword = rng()->randomRatio(0.3),

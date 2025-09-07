@@ -309,17 +309,34 @@ $implDecode(PlayerAccountData, main::PlayerAccountData::Reader& reader) {
     return out;
 }
 
-// Room player
+// Minimal room player
 
-$implDecode(RoomPlayer, main::RoomPlayer::Reader& reader) {
-    RoomPlayer out{};
+$implDecode(MinimalRoomPlayer, main::MinimalRoomPlayer::Reader& reader) {
+    MinimalRoomPlayer out{};
     out.cube = reader.getCube();
     out.color1 = reader.getColor1();
     out.color2 = reader.getColor2();
     out.glowColor = reader.getGlowColor();
+    out.accountData = data::decodeUnchecked<PlayerAccountData>(reader.getAccountData());
+    return out;
+}
+
+$implDecode(MinimalRoomPlayer, main::RoomPlayer::Reader& reader) {
+    MinimalRoomPlayer out{};
+    out.cube = reader.getCube();
+    out.color1 = reader.getColor1();
+    out.color2 = reader.getColor2();
+    out.glowColor = reader.getGlowColor();
+    out.accountData = data::decodeUnchecked<PlayerAccountData>(reader.getAccountData());
+    return out;
+}
+
+// Room player
+
+$implDecode(RoomPlayer, main::RoomPlayer::Reader& reader) {
+    RoomPlayer out{decodeUnchecked<RoomPlayer>(reader)};
     out.session = SessionId(reader.getSession());
     out.teamId = reader.getTeamId();
-    out.accountData = data::decodeUnchecked<PlayerAccountData>(reader.getAccountData());
     return out;
 }
 
@@ -583,6 +600,21 @@ $implDecode(msg::PlayerCountsMessage, main::PlayerCountsMessage::Reader& reader)
     return out;
 }
 
+/// Global players message
+
+$implDecode(msg::GlobalPlayersMessage, main::GlobalPlayersMessage::Reader& reader) {
+    msg::GlobalPlayersMessage out{};
+
+    auto players = reader.getPlayers();
+    out.players.reserve(players.size());
+
+    for (auto pl : players) {
+        out.players.push_back(decodeUnchecked<MinimalRoomPlayer>(pl));
+    }
+
+    return out;
+}
+
 /// Level list message
 
 $implDecode(msg::LevelListMessage, main::LevelListMessage::Reader& reader) {
@@ -647,6 +679,28 @@ $implDecode(msg::CreditsMessage, main::CreditsMessage::Reader& reader) {
     }
 
     return out;
+}
+
+/// Invited
+
+$implDecode(msg::InvitedMessage, main::InvitedMessage::Reader& reader) {
+    msg::InvitedMessage out{};
+    out.token = reader.getToken();
+
+    auto invb = reader.getInvitedBy();
+    out.invitedBy.accountId = invb.getAccountId();
+    out.invitedBy.userId = invb.getUserId();
+    out.invitedBy.username = invb.getUsername();
+
+    return out;
+}
+
+/// Invite token created
+
+$implDecode(msg::InviteTokenCreatedMessage, main::InviteTokenCreatedMessage::Reader& reader) {
+    return msg::InviteTokenCreatedMessage {
+        .token = reader.getToken()
+    };
 }
 
 /// User punishment

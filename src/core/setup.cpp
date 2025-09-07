@@ -10,7 +10,7 @@ $execute {
         switch (level) {
             case qn::log::Level::Debug: {
                 if (globed::setting<bool>("core.dev.net-debug-logs")) {
-                    log::debug("[Qunet] {}", message);
+                    log::info("[Qunet] {}", message);
                 }
             } break;
 

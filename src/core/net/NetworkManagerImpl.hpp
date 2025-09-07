@@ -120,9 +120,11 @@ public:
     // Central server
     void sendRoomStateCheck();
     void sendRequestRoomPlayers(const std::string& nameFilter);
+    void sendRequestGlobalPlayerList(const std::string& nameFilter);
     void sendRequestLevelList();
     void sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings);
     void sendJoinRoom(uint32_t id, uint32_t passcode = 0);
+    void sendJoinRoomByToken(uint64_t token);
     void sendLeaveRoom();
     void sendRequestRoomList();
     void sendAssignTeam(int accountId, uint16_t teamId);
@@ -132,6 +134,7 @@ public:
     void sendGetTeamMembers();
     void sendRoomOwnerAction(RoomOwnerActionType type, int target = 0);
     void sendUpdateRoomSettings(const RoomSettings& settings);
+    void sendInvitePlayer(int32_t player);
     void sendFetchCredits();
 
     void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply);
