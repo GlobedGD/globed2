@@ -47,6 +47,8 @@ protected:
             .scaleMult(1.1f)
             .parent(m_rightMenu);
 
+        m_rightMenu->updateLayout();
+
         return true;
     }
 };
@@ -76,6 +78,8 @@ bool InvitePopup::setup() {
 }
 
 void InvitePopup::onLoaded(const std::vector<MinimalRoomPlayer>& players) {
+    log::debug("Got {} players", players.size());
+
     m_list->clear();
 
     for (auto& player : players) {

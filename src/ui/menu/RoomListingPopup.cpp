@@ -208,8 +208,11 @@ void RoomListingPopup::waitForResponse() {
 
 void RoomListingPopup::stopWaiting(std::optional<std::string> failReason) {
     log::debug("Stop waiting!");
-    m_loadingPopup->forceClose();
-    m_loadingPopup = nullptr;
+    if (m_loadingPopup) {
+        m_loadingPopup->forceClose();
+        m_loadingPopup = nullptr;
+    }
+
     m_failListener.reset();
     m_successListener.reset();
 
