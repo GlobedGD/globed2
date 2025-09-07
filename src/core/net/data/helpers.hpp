@@ -334,7 +334,7 @@ $implDecode(MinimalRoomPlayer, main::RoomPlayer::Reader& reader) {
 // Room player
 
 $implDecode(RoomPlayer, main::RoomPlayer::Reader& reader) {
-    RoomPlayer out{decodeUnchecked<RoomPlayer>(reader)};
+    RoomPlayer out{decodeUnchecked<MinimalRoomPlayer>(reader)};
     out.session = SessionId(reader.getSession());
     out.teamId = reader.getTeamId();
     return out;

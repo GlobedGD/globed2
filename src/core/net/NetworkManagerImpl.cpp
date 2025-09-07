@@ -247,6 +247,8 @@ NetworkManagerImpl::NetworkManagerImpl() {
                         log::debug("waiting for game connection to terminate..");
                         asp::time::sleep(Duration::fromMillis(25));
                     }
+
+                    log::debug("Connection abort finished");
                 }
             } break;
         }
