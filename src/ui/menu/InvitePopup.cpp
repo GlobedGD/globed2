@@ -93,7 +93,6 @@ void InvitePopup::onLoaded(const std::vector<MinimalRoomPlayer>& players) {
     }
 
     m_list->updateLayout();
-    m_list->scrollToTop();
 }
 
 }

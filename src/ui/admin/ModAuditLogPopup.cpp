@@ -324,6 +324,7 @@ bool ModAuditLogPopup::setup() {
     m_list = Build(cue::ListNode::create({LogCell::WIDTH, 200.f}, cue::Brown, cue::ListBorderStyle::Comments))
         .pos(this->fromCenter(0.f, -15.f))
         .parent(m_mainLayer);
+    m_list->setAutoUpdate(false);
 
     // fetch users
     auto& nm = NetworkManagerImpl::get();
@@ -353,7 +354,6 @@ void ModAuditLogPopup::populateLogs(const std::vector<AdminAuditLog>& logs, cons
     m_loadReqs--;
     m_loadingCircle->fadeOut();
 
-    m_list->setAutoUpdate(false);
     m_list->clear();
 
     for (const auto& log : logs) {
@@ -380,9 +380,7 @@ void ModAuditLogPopup::populateLogs(const std::vector<AdminAuditLog>& logs, cons
         m_list->addCell(LogCell::create(log, issuer ? *issuer : INVALID_DATA, target ? *target : INVALID_DATA));
     }
 
-    m_list->setAutoUpdate(true);
     m_list->updateLayout();
-    m_list->scrollToTop();
 }
 
 void ModAuditLogPopup::refetch() {

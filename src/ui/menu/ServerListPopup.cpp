@@ -162,8 +162,6 @@ void ServerListPopup::reloadList() {
         .collect();
 
     m_list->addCell(menu);
-    m_list->updateLayout();
-    m_list->scrollToTop();
 
     // additionally force reload the main layer
     m_menuLayer->onServerModified();

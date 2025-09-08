@@ -86,6 +86,7 @@ bool UserListPopup::setup() {
         .pos(this->fromTop(45.f))
         .parent(m_mainLayer);
     m_list->setCellColors(cue::DarkBrown, cue::Brown);
+    m_list->setAutoUpdate(false);
 
     this->hardRefresh();
 
@@ -167,7 +168,6 @@ bool UserListPopup::setup() {
 }
 
 void UserListPopup::hardRefresh() {
-    m_list->setAutoUpdate(false);
     m_list->clear();
 
     auto gjbgl = GlobedGJBGL::get();
@@ -220,9 +220,7 @@ void UserListPopup::hardRefresh() {
         return aName < bName;
     });
 
-    m_list->setAutoUpdate(true);
     m_list->updateLayout();
-    m_list->scrollToTop();
 }
 
 void UserListPopup::onVolumeChanged(double value) {

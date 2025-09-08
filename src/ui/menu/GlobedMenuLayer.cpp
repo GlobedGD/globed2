@@ -448,7 +448,7 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
     }
 
     m_playerList->setAutoUpdate(true);
-    m_playerList->updateLayout();
+    m_playerList->updateLayout(false);
     m_playerList->setScrollPos(scrollPos);
 
     cocos::handleTouchPriority(this, true);

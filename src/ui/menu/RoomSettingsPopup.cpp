@@ -130,8 +130,6 @@ bool RoomSettingsPopup::setup() {
         &RoomSettings::teams
     ));
 
-    m_list->scrollToTop();
-
     return true;
 }
 

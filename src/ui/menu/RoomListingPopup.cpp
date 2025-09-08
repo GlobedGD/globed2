@@ -33,6 +33,8 @@ bool RoomListingPopup::setup() {
         .zOrder(2)
         .parent(m_mainLayer);
 
+    m_list->setAutoUpdate(false);
+
     m_roomListListener = NetworkManagerImpl::get().listen<msg::RoomListMessage>([this](const auto& msg) {
         if (setting<bool>("core.dev.fake-data")) {
             log::debug("Using fake data for room listing");
@@ -103,7 +105,6 @@ void RoomListingPopup::updateTitle(size_t roomCount) {
 void RoomListingPopup::populateList(const std::vector<RoomListingInfo>& rooms) {
     this->updateTitle(rooms.size());
 
-    m_list->setAutoUpdate(false);
     m_list->clear();
 
     for (auto& room : rooms) {
@@ -114,9 +115,7 @@ void RoomListingPopup::populateList(const std::vector<RoomListingInfo>& rooms) {
         return a->getPlayerCount() > b->getPlayerCount();
     });
 
-    m_list->setAutoUpdate(true);
     m_list->updateLayout();
-    m_list->scrollToTop();
 
     cocos::handleTouchPriority(this, true);
 

@@ -159,6 +159,7 @@ bool LevelListLayer::init() {
         .pos(winSize / 2.f)
         .parent(this)
         .id("level-list"_spr);
+    m_list->setAutoUpdate(false);
 
     auto menu = Build<CCMenu>::create()
         .pos(0.f, 0.f)
@@ -384,7 +385,6 @@ void LevelListLayer::finishLoading() {
         return *aCount > *bCount;
     });
 
-    m_list->setAutoUpdate(false);
     m_list->clear();
 
     for (auto level : page) {
@@ -401,9 +401,7 @@ void LevelListLayer::finishLoading() {
         m_list->addCell(cell);
     }
 
-    m_list->setAutoUpdate(true);
     m_list->updateLayout();
-    m_list->scrollToTop();
 
     // CCArray* finalArray = CCArray::create();
     // for (auto level : page) {

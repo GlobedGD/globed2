@@ -194,12 +194,13 @@ bool CreditsPopup::setup() {
 }
 
 void CreditsPopup::onLoaded(const std::vector<CreditsCategory>& categories) {
+    m_list->clear();
+
     for (auto& cat : categories) {
         m_list->addCell(CategoryCell::create(cat));
     }
 
     m_list->updateLayout();
-    m_list->scrollToTop();
 }
 
 }

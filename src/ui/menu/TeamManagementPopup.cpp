@@ -209,6 +209,7 @@ bool TeamManagementPopup::setup(int assigningFor) {
         .visible(false)
         .parent(m_mainLayer);
 
+    m_list->setAutoUpdate(false);
     m_list->setCellHeight(CELL_HEIGHT);
     m_list->setJustify(cue::Justify::Center);
 
@@ -271,7 +272,6 @@ void TeamManagementPopup::startLoading() {
 void TeamManagementPopup::onLoaded(const std::vector<RoomTeam>& teams) {
     this->stopLoad();
 
-    m_list->setAutoUpdate(false);
     m_list->clear();
 
     // populate the list
@@ -283,9 +283,7 @@ void TeamManagementPopup::onLoaded(const std::vector<RoomTeam>& teams) {
     // add the plus button
     this->addPlusButton();
 
-    m_list->setAutoUpdate(true);
     m_list->updateLayout();
-    m_list->scrollToTop();
 
     cocos::handleTouchPriority(this, true);
 }
@@ -340,6 +338,7 @@ void TeamManagementPopup::addPlusButton() {
         .collect();
 
     m_list->addCell(menu);
+    m_list->updateLayout();
 }
 
 void TeamManagementPopup::stopLoad() {

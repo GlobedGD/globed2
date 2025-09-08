@@ -17,6 +17,7 @@ bool SettingsLayer::init() {
     m_list = Build(cue::ListNode::create({356.f, 220.f}, {191, 114, 62, 255}))
         .pos(winSize / 2.f)
         .parent(this);
+    m_list->setAutoUpdate(false);
 
     this->addSettings();
 
@@ -24,8 +25,6 @@ bool SettingsLayer::init() {
 }
 
 void SettingsLayer::addSettings() {
-    m_list->setAutoUpdate(false);
-
     // Player settings
     this->addHeader("core.player", "Players");
     this->addSetting<FloatSettingCell>("core.player.opacity", "Player Opacity", "");
@@ -61,9 +60,7 @@ void SettingsLayer::addSettings() {
         this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data", "");
     }
 
-    m_list->setAutoUpdate(true);
     m_list->updateLayout();
-    m_list->scrollToTop();
 }
 
 void SettingsLayer::addHeader(CStr key, CStr text) {
