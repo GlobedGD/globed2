@@ -3,6 +3,7 @@
 #include <globed/core/PlayerCacheManager.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <globed/util/algo.hpp>
+#include <globed/util/gd.hpp>
 #include <core/CoreImpl.hpp>
 #include <core/PreloadManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -150,12 +151,7 @@ void GlobedGJBGL::setupUi() {
 
     auto gm = globed::cachedSingleton<GameManager>();
 
-    fields.m_selfProgressIcon->updateIcons(cue::Icons {
-        .id = gm->m_playerFrame,
-        .color1 = gm->m_playerColor,
-        .color2 = gm->m_playerColor2,
-        .glowColor = gm->m_playerGlowColor,
-    });
+    fields.m_selfProgressIcon->updateIcons(globed::getPlayerIcons());
     fields.m_selfProgressIcon->setForceOnTop(true);
 
     // TODO: self status icons

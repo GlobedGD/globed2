@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+#include <cue/PlayerIcon.hpp>
 
 // Various gd related utilities
 
@@ -60,5 +61,7 @@ const char* difficultyToString(Difficulty diff);
 std::optional<Difficulty> difficultyFromString(std::string_view diff);
 
 Difficulty calcLevelDifficulty(GJGameLevel* level);
+
+cue::Icons getPlayerIcons();
 
 }

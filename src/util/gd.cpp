@@ -170,5 +170,16 @@ Difficulty calcLevelDifficulty(GJGameLevel* level) {
     return diff;
 }
 
+cue::Icons getPlayerIcons() {
+    auto gm = cachedSingleton<GameManager>();
+
+    return cue::Icons {
+        .type = IconType::Cube,
+        .id = gm->m_playerFrame,
+        .color1 = gm->m_playerColor,
+        .color2 = gm->m_playerColor2,
+        .glowColor = gm->m_playerGlow ? gm->m_playerGlowColor : -1,
+    };
+}
 
 }

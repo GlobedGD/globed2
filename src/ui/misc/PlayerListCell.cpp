@@ -2,6 +2,7 @@
 #include <globed/core/actions.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <globed/util/singleton.hpp>
+#include <globed/util/gd.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -83,13 +84,7 @@ bool PlayerListCell::initMyself(cocos2d::CCSize cellSize) {
         gam->m_accountID,
         gm->m_playerUserID,
         gam->m_username,
-        cue::Icons {
-            .type = IconType::Cube,
-            .id = gm->m_playerFrame,
-            .color1 = gm->m_playerColor,
-            .color2 = gm->m_playerColor2,
-            .glowColor = gm->m_playerGlow ? gm->m_playerGlowColor : -1,
-        },
+        getPlayerIcons(),
         cellSize
     );
 }

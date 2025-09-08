@@ -1,5 +1,6 @@
 #include "SupportPopup.hpp"
 #include <ui/misc/NameLabel.hpp>
+#include <globed/util/gd.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/RepeatingBackground.hpp>
@@ -145,13 +146,7 @@ bool SupportPopup::setup(CCSprite* bg) {
     auto* gm = GameManager::sharedState();
 
     cue::PlayerIcon* player;
-    Build<cue::PlayerIcon>::create(cue::Icons {
-        .type = IconType::Cube,
-        .id = gm->m_playerFrame,
-        .color1 = gm->m_playerColor,
-        .color2 = gm->m_playerColor2,
-        .glowColor = gm->m_playerGlow ? gm->m_playerGlowColor : -1,
-    })
+    Build<cue::PlayerIcon>::create(globed::getPlayerIcons())
         .anchorPoint(0.5f, 0.5f)
         .pos(-65.f, 81.5f)
         .parent(clippingNode)

@@ -7,6 +7,7 @@
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <globed/util/gd.hpp>
 #include <core/CoreImpl.hpp>
 #include "data/helpers.hpp"
 
