@@ -990,6 +990,14 @@ void NetworkManagerImpl::sendAdminLogin(const std::string& password) {
     });
 }
 
+void NetworkManagerImpl::sendAdminKick(int32_t accountId, const std::string& message) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto adminLogin = msg.initAdminKick();
+        adminLogin.setAccountId(accountId);
+        adminLogin.setMessage(message);
+    });
+}
+
 void NetworkManagerImpl::sendAdminFetchUser(const std::string& query) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto fetchUser = msg.initAdminFetchUser();
@@ -1012,6 +1020,54 @@ void NetworkManagerImpl::sendAdminFetchLogs(const FetchLogsFilters& filters) {
         flogs.setBefore(filters.before);
         flogs.setAfter(filters.after);
         flogs.setPage(filters.page);
+    });
+}
+
+void NetworkManagerImpl::sendAdminBan(int32_t accountId, const std::string& reason, int64_t expiresAt) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto pun = msg.initAdminBan();
+        pun.setAccountId(accountId);
+        pun.setReason(reason);
+        pun.setExpiresAt(expiresAt);
+    });
+}
+
+void NetworkManagerImpl::sendAdminUnban(int32_t accountId) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto unp = msg.initAdminUnban();
+        unp.setAccountId(accountId);
+    });
+}
+
+void NetworkManagerImpl::sendAdminRoomBan(int32_t accountId, const std::string& reason, int64_t expiresAt) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto pun = msg.initAdminRoomBan();
+        pun.setAccountId(accountId);
+        pun.setReason(reason);
+        pun.setExpiresAt(expiresAt);
+    });
+}
+
+void NetworkManagerImpl::sendAdminRoomUnban(int32_t accountId) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto unp = msg.initAdminRoomUnban();
+        unp.setAccountId(accountId);
+    });
+}
+
+void NetworkManagerImpl::sendAdminMute(int32_t accountId, const std::string& reason, int64_t expiresAt) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto pun = msg.initAdminMute();
+        pun.setAccountId(accountId);
+        pun.setReason(reason);
+        pun.setExpiresAt(expiresAt);
+    });
+}
+
+void NetworkManagerImpl::sendAdminUnmute(int32_t accountId) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto unp = msg.initAdminUnmute();
+        unp.setAccountId(accountId);
     });
 }
 

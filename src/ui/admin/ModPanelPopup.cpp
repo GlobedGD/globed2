@@ -9,14 +9,17 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize ModPanelPopup::POPUP_SIZE { 300.f, 150.f };
+const CCSize ModPanelPopup::POPUP_SIZE { 300.f, 128.f };
 
 bool ModPanelPopup::setup() {
+    this->setTitle("Admin Panel");
+    m_title->setPositionY(m_title->getPositionY() + 3.f);
+
     auto playerContainer = Build<CCMenu>::create()
         .layout(RowLayout::create()->setAutoScale(false))
         .anchorPoint(0.5f, 0.5f)
         .contentSize(270.f, 30.f)
-        .pos(this->fromCenter(0.f, 30.f))
+        .pos(this->fromCenter(0.f, 12.f))
         .parent(m_mainLayer)
         .collect();
 
@@ -36,6 +39,7 @@ bool ModPanelPopup::setup() {
             popup->startLoadingProfile(query);
             popup->show();
         })
+        .scaleMult(1.15f)
         .parent(playerContainer);
 
     playerContainer->updateLayout();
@@ -44,7 +48,7 @@ bool ModPanelPopup::setup() {
         .layout(RowLayout::create())
         .anchorPoint(0.5f, 0.5f)
         .contentSize(270.f, 35.f)
-        .pos(this->fromCenter(0.f, -10.f))
+        .pos(this->fromBottom(30.f))
         .parent(m_mainLayer)
         .collect();
 

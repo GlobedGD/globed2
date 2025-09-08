@@ -1,4 +1,6 @@
 #include "ModUserPopup.hpp"
+#include "ModPunishPopup.hpp"
+#include "ModNoticeSetupPopup.hpp"
 
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/actions.hpp>
@@ -150,8 +152,8 @@ void ModUserPopup::initUi() {
         .parent(m_rootMenu);
 
     auto role = NetworkManagerImpl::get().getUserHighestRole();
-    // TODO: only show the admin buttons to the admins? but we dont have perms..
 
+    // TODO: only show the admin buttons to the admins? but we dont have perms..
     if (true) {
         // Password button
         Build<CCSprite>::create("button-admin-password.png"_spr)
@@ -176,7 +178,9 @@ void ModUserPopup::initUi() {
     Build<CCSprite>::create("button-admin-notice.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this] {
-            // TODO: prompt
+            auto popup = ModNoticeSetupPopup::create();
+            popup->setupUser(m_data->accountId);
+            popup->show();
         })
         .zOrder(btnorder::Notice)
         .parent(m_rootMenu);
@@ -229,7 +233,7 @@ void ModUserPopup::createMuteAndBanButtons() {
     m_banButton = Build<CCSprite>::create(m_data->activeBan ? "button-admin-unban.png"_spr : "button-admin-ban.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this] {
-            // TODO: popup
+            ModPunishPopup::create(m_data->accountId, UserPunishmentType::Ban, m_data->activeBan)->show();
         })
         .zOrder(btnorder::Ban)
         .parent(m_rootMenu);
@@ -242,7 +246,7 @@ void ModUserPopup::createMuteAndBanButtons() {
             cue::rescaleToMatch(btn, expSize);
         })
         .intoMenuItem([this] {
-            // TODO: popup
+            ModPunishPopup::create(m_data->accountId, UserPunishmentType::Mute, m_data->activeMute)->show();
         })
         .zOrder(btnorder::Mute)
         .parent(m_rootMenu);
@@ -253,7 +257,7 @@ void ModUserPopup::createMuteAndBanButtons() {
             cue::rescaleToMatch(btn, expSize);
         })
         .intoMenuItem([this] {
-            // TODO: popup
+            ModPunishPopup::create(m_data->accountId, UserPunishmentType::RoomBan, m_data->activeRoomBan)->show();
         })
         .zOrder(btnorder::RoomBan)
         .parent(m_rootMenu);
@@ -312,11 +316,10 @@ void ModUserPopup::onUserInfoLoaded(geode::Result<GJUserScore*> res) {
     m_score = res.unwrap();
 
     if (!m_data) {
-        m_data = Data {
-            .accountId = m_score->m_accountID,
-            // .. rest are defaults ..
-        };
+        m_data = {};
     }
+
+    m_data->accountId = m_score->m_accountID;
 
     this->initUi();
 }

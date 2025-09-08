@@ -4,6 +4,12 @@
 
 namespace globed {
 
+enum class UserPunishmentType {
+    Ban,
+    Mute,
+    RoomBan
+};
+
 struct UserPunishment {
     int32_t issuedBy;
     int64_t issuedAt;

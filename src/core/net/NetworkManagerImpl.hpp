@@ -137,12 +137,19 @@ public:
     void sendInvitePlayer(int32_t player);
     void sendFetchCredits();
 
+    void sendAdminLogin(const std::string& password);
+    void sendAdminKick(int32_t accountId, const std::string& message);
     void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply);
     void sendAdminNoticeEveryone(const std::string& message);
-    void sendAdminLogin(const std::string& password);
     void sendAdminFetchUser(const std::string& query);
-    void sendAdminFetchMods();
     void sendAdminFetchLogs(const FetchLogsFilters& filters);
+    void sendAdminBan(int32_t accountId, const std::string& reason, int64_t expiresAt);
+    void sendAdminUnban(int32_t accountId);
+    void sendAdminRoomBan(int32_t accountId, const std::string& reason, int64_t expiresAt);
+    void sendAdminRoomUnban(int32_t accountId);
+    void sendAdminMute(int32_t accountId, const std::string& reason, int64_t expiresAt);
+    void sendAdminUnmute(int32_t accountId);
+    void sendAdminFetchMods();
 
     // Both servers
     void sendJoinSession(SessionId id, bool platformer);

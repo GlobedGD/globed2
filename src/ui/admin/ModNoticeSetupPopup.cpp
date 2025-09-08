@@ -21,6 +21,8 @@ namespace globed {
 const CCSize ModNoticeSetupPopup::POPUP_SIZE = {320.f, 200.f};
 
 bool ModNoticeSetupPopup::setup() {
+    this->setTitle("Send Notice");
+
     m_messageInput = Build<TextInput>::create(270.f, "Message", "chatFont.fnt")
         .pos(this->fromCenter(0.f, 44.f))
         .parent(m_mainLayer)
@@ -107,13 +109,21 @@ bool ModNoticeSetupPopup::setup() {
             this->submit();
         })
         .scaleMult(1.1f)
-        .pos(this->fromBottom(24.f))
+        .pos(this->fromBottom(27.f))
         .parent(m_buttonMenu);
 
-    this->onSelectMode(btn::User, true);
+    this->setupUser(0);
     m_userCheckbox->toggle(true);
 
     return true;
+}
+
+void ModNoticeSetupPopup::setupUser(int accountId) {
+    this->onSelectMode(btn::User, true);
+
+    if (accountId != 0) {
+        m_userInput->setString(fmt::to_string(accountId));
+    }
 }
 
 void ModNoticeSetupPopup::submit() {

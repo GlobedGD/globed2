@@ -8,6 +8,8 @@ class ModNoticeSetupPopup : public BasePopup<ModNoticeSetupPopup> {
 public:
     static const cocos2d::CCSize POPUP_SIZE;
 
+    void setupUser(int accountId);
+
 protected:
     geode::TextInput* m_messageInput;
     CCMenuItemToggler* m_userCheckbox;

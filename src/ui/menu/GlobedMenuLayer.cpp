@@ -525,7 +525,7 @@ void GlobedMenuLayer::initSideButtons() {
     /// Left side buttons
 
     makeButton(
-        CCSprite::create("icon-leave-server.png"_spr),
+        CCSprite::create("exit02.png"_spr),
         std::nullopt,
         m_leftSideMenu,
         LeftBtn::Disconnect,
@@ -562,7 +562,7 @@ void GlobedMenuLayer::initSideButtons() {
 
     if (rm.getSettings().teams) {
         makeButton(
-            CCSprite::create("teams01.png"_spr),
+            CCSprite::create("teams02.png"_spr),
             std::nullopt,
             m_leftSideMenu,
             LeftBtn::Teams,
@@ -654,7 +654,7 @@ void GlobedMenuLayer::initSideButtons() {
         std::nullopt,
         m_rightSideMenu,
         RightBtn::ClearSearch,
-        "btn-search",
+        "btn-clear-search",
         [this] {
             this->reloadWithFilter("");
         }
