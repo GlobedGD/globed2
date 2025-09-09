@@ -20,7 +20,10 @@ struct CentralLoginOkMessage {
     std::string newToken;
     std::vector<UserRole> allRoles;
     std::vector<UserRole> userRoles;
+    std::optional<MultiColor> nameColor;
     bool isModerator;
+    bool canBan;
+    bool canSetPassword;
 };
 
 // Rooms

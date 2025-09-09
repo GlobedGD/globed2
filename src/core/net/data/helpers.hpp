@@ -275,6 +275,23 @@ $implDecode(RoomSettings, main::RoomSettings::Reader& reader) {
     return out;
 }
 
+/// Multi color
+
+inline std::optional<MultiColor> decodeMultiColor(capnp::Data::Reader data) {
+    auto mc = MultiColor::decode({data.begin(), data.size()});
+    if (!mc) {
+        geode::log::warn(
+            "Failed to decode multicolor '{}': {}",
+            globed::hexEncode(data.begin(), data.size()),
+            mc.unwrapErr()
+        );
+
+        return std::nullopt;
+    } else {
+        return *mc;
+    }
+}
+
 // Display data
 
 $implDecode(PlayerDisplayData, shared::PlayerDisplayData::Reader& reader) {
@@ -294,6 +311,23 @@ $implDecode(PlayerDisplayData, shared::PlayerDisplayData::Reader& reader) {
         out.icons = *icons;
     } else {
         return std::nullopt;
+    }
+
+    if (reader.hasSpecialData()) {
+        SpecialUserData sud{};
+
+        auto sd = reader.getSpecialData();
+
+        if (sd.hasNameColor()) {
+            sud.nameColor = decodeMultiColor(sd.getNameColor());
+        }
+
+        auto roles = sd.getRoles();
+        sud.roleIds = {roles.begin(), roles.end()};
+
+        if (!sud.roleIds.empty() || sud.nameColor) {
+            out.specialUserData = std::move(sud);
+        }
     }
 
     return out;
@@ -337,6 +371,18 @@ $implDecode(RoomPlayer, main::RoomPlayer::Reader& reader) {
     RoomPlayer out{decodeUnchecked<MinimalRoomPlayer>(reader)};
     out.session = SessionId(reader.getSession());
     out.teamId = reader.getTeamId();
+
+    if (reader.hasSpecialData()) {
+        SpecialUserData sud{};
+        auto rsud = reader.getSpecialData();
+
+        if (rsud.hasNameColor()) {
+            sud.nameColor = decodeMultiColor(rsud.getNameColor());
+        }
+
+        sud.roleIds = {rsud.getRoles().begin(), rsud.getRoles().end()};
+    }
+
     return out;
 }
 
@@ -481,12 +527,20 @@ $implDecode(msg::ScriptLogsMessage, game::ScriptLogsMessage::Reader& reader) {
     return msg::ScriptLogsMessage { std::move(logs), reader.getRamUsage() };
 }
 
-inline UserRole decodeUserRole(const schema::shared::UserRole::Reader& reader, size_t idx) {
+/// User role
+
+inline std::optional<UserRole> decodeUserRole(const schema::shared::UserRole::Reader& reader, size_t idx) {
     UserRole role{};
     role.id = idx;
     role.stringId = reader.getStringId();
     role.icon = reader.getIcon();
-    role.nameColor = reader.getNameColor();
+
+    auto color = decodeMultiColor(reader.getNameColor());
+    if (!color) {
+        return std::nullopt;
+    }
+
+    role.nameColor = *color;
     return role;
 }
 
@@ -503,7 +557,13 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
 
         size_t idx = 0;
         for (auto role : roles) {
-            msg.allRoles.push_back(decodeUserRole(role, idx++));
+            auto r = decodeUserRole(role, idx++);
+            if (!r) {
+                geode::log::warn("Failed to decode user role sent by central server");
+                return std::nullopt;
+            }
+
+            msg.allRoles.push_back(std::move(*r));
         }
     }
 
@@ -519,7 +579,13 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
         }
     }
 
+    if (reader.hasNameColor()) {
+        msg.nameColor = decodeMultiColor(reader.getNameColor());
+    }
+
     msg.isModerator = reader.getIsModerator();
+    msg.canBan = reader.getCanBan();
+    msg.canSetPassword = reader.getCanSetPassword();
 
     return msg;
 }

@@ -392,7 +392,7 @@ void ModPunishPopup::startWaiting() {
         this->stopWaiting(msg);
         return ListenerResult::Stop;
     });
-    (**m_listener)->setPriority(-100);
+    m_listener->setPriority(-100);
 
     if (m_loadPopup) {
         m_loadPopup->forceClose();
@@ -413,6 +413,8 @@ void ModPunishPopup::stopWaiting(const msg::AdminResultMessage& msg) {
     if (!msg.success) {
         globed::alertFormat("Error", "Failed to punish user: <cy>{}</c>", msg.error);
     }
+
+    if (m_callback) m_callback();
 
     this->onClose(nullptr);
 }

@@ -18,6 +18,7 @@ public:
 protected:
     cue::LoadingCircle* m_loadCircle;
     std::optional<MessageListener<msg::AdminFetchResponseMessage>> m_listener;
+    std::optional<MessageListener<msg::AdminResultMessage>> m_resultListener;
     std::string m_query;
     cocos2d::CCMenu* m_nameLayout = nullptr;
     cocos2d::CCMenu* m_rootMenu = nullptr;
@@ -43,6 +44,9 @@ protected:
     void initUi();
     void recreateRoleButton();
     void createMuteAndBanButtons();
+    void fullRefresh();
+    void showPunishmentPopup(UserPunishmentType type);
+    void sendUpdateMessage();
 
     void onLoaded(const msg::AdminFetchResponseMessage& msg);
     void onUserInfoLoaded(geode::Result<GJUserScore*> res);

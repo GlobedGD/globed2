@@ -1,6 +1,7 @@
 #pragma once
 #include "PlayerAccountData.hpp"
-#include "PlayerIconData.hpp"
+#include "SpecialUserData.hpp"
+#include <globed/core/data/ColorId.hpp>
 #include <globed/core/SessionId.hpp>
 
 #include <cue/PlayerIcon.hpp>
@@ -22,6 +23,7 @@ struct MinimalRoomPlayer {
 struct RoomPlayer : MinimalRoomPlayer {
     SessionId session = SessionId{};
     uint16_t teamId;
+    std::optional<SpecialUserData> specialUserData;
 
     static RoomPlayer createMyself();
 };

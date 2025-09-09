@@ -1,4 +1,6 @@
 #pragma once
+#include "MultiColor.hpp"
+
 #include <string>
 #include <stdint.h>
 
@@ -8,7 +10,7 @@ struct UserRole {
     uint8_t id;
     std::string stringId;
     std::string icon;
-    std::string nameColor; // TODO: RichColor
+    MultiColor nameColor;
 };
 
 }

@@ -350,6 +350,7 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
     *m_pendingConnectUrl.lock() = std::string(url);
     m_pendingConnectNotify.notifyOne();
     m_manualDisconnect = false;
+    m_abortCause.lock()->clear();
 
     FriendListManager::get().refresh();
 
@@ -480,6 +481,11 @@ std::vector<UserRole> NetworkManagerImpl::getUserRoles() {
     return *lock ? (*lock)->m_userRoles : std::vector<UserRole>{};
 }
 
+std::vector<uint8_t> NetworkManagerImpl::getUserRoleIds() {
+    auto lock = m_connInfo.lock();
+    return *lock ? (*lock)->m_userRoleIds : std::vector<uint8_t>{};
+}
+
 std::optional<UserRole> NetworkManagerImpl::getUserHighestRole() {
     auto lock = m_connInfo.lock();
     if (!*lock) {
@@ -522,13 +528,28 @@ std::optional<UserRole> NetworkManagerImpl::findRole(std::string_view roleId) {
 }
 
 bool NetworkManagerImpl::isModerator() {
-    auto lock = m_connInfo.lock();
-    return *lock ? (*lock)->m_isModerator : false;
+    return this->getModPermissions().isModerator;
 }
 
 bool NetworkManagerImpl::isAuthorizedModerator() {
+    return this->getModPermissions().isAuthorizedModerator;
+}
+
+ModPermissions NetworkManagerImpl::getModPermissions() {
     auto lock = m_connInfo.lock();
-    return *lock ? (*lock)->m_isAuthorizedModerator : false;
+    return *lock ? (*lock)->m_perms : ModPermissions{};
+}
+
+std::optional<SpecialUserData> NetworkManagerImpl::getOwnSpecialData() {
+    auto lock = m_connInfo.lock();
+    if (*lock && ((**lock).m_userRoleIds.size() || (**lock).m_nameColor)) {
+        SpecialUserData data{};
+        data.roleIds = (**lock).m_userRoleIds;
+        data.nameColor = (**lock).m_nameColor;
+        return data;
+    }
+
+    return std::nullopt;
 }
 
 void NetworkManagerImpl::invalidateIcons() {
@@ -548,7 +569,7 @@ void NetworkManagerImpl::invalidateFriendList() {
 void NetworkManagerImpl::markAuthorizedModerator() {
     auto lock = m_connInfo.lock();
     if (*lock) {
-        (**lock).m_isAuthorizedModerator = true;
+        (**lock).m_perms.isAuthorizedModerator = true;
     }
 }
 
@@ -631,6 +652,7 @@ void NetworkManagerImpl::doArgonAuth(std::string token) {
 
 void NetworkManagerImpl::abortConnection(std::string reason) {
     log::warn("aborting connection to central server: {}", reason);
+    *m_abortCause.lock() = std::move(reason);
     (void) m_centralConn.disconnect();
 }
 
@@ -639,16 +661,26 @@ void NetworkManagerImpl::onCentralDisconnected() {
         globed::setValue<bool>("core.was-connected", false);
     }
 
-    auto err = m_centralConn.lastError();
     bool manual = m_manualDisconnect;
+    std::string message = "client initiated disconnect";
 
-    log::debug("connection to central server lost: {}", err.message());
+    if (!manual) {
+        auto abortCause = m_abortCause.lock();
 
-    Loader::get()->queueInMainThread([this, err, manual] {
+        if (!abortCause->empty()) {
+            message = std::move(*abortCause);
+        } else {
+            message = m_centralConn.lastError().message();
+        }
+    }
+
+    log::debug("connection to central server lost: {}", message);
+
+    Loader::get()->queueInMainThread([this, manual, message = std::move(message)] {
         CoreImpl::get().onServerDisconnected();
 
         if (!manual) {
-            auto alert = PopupManager::get().alertFormat("Globed Error", "Connection lost: <cy>{}</c>", err.message());
+            auto alert = PopupManager::get().alertFormat("Globed Error", "Connection lost: <cy>{}</c>", message);
             alert.showQueue();
         }
     });
@@ -1071,6 +1103,34 @@ void NetworkManagerImpl::sendAdminUnmute(int32_t accountId) {
     });
 }
 
+void NetworkManagerImpl::sendAdminEditRoles(int32_t accountId, const std::vector<uint8_t>& roles) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto m = msg.initAdminEditRoles();
+        m.setAccountId(accountId);
+        m.setRoles({roles.data(), roles.size()});
+    });
+}
+
+void NetworkManagerImpl::sendAdminSetPassword(int32_t accountId, const std::string& password) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto m = msg.initAdminSetPassword();
+        m.setAccountId(accountId);
+        m.setNewPassword(password);
+    });
+}
+
+void NetworkManagerImpl::sendAdminUpdateUser(int32_t accountId, const std::string& username, int16_t cube, uint16_t color1, uint16_t color2, uint16_t glowColor) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto m = msg.initAdminUpdateUser();
+        m.setAccountId(accountId);
+        m.setUsername(username);
+        m.setCube(cube);
+        m.setColor1(color1);
+        m.setColor2(color2);
+        m.setGlowColor(glowColor);
+    });
+}
+
 void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener) {
     std::type_index index{ty};
     auto listeners = m_listeners.lock();
@@ -1148,11 +1208,23 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
                 updateServers(connInfo.m_gameServers, servers);
             }
 
-            auto msg = data::decodeUnchecked<msg::CentralLoginOkMessage>(loginOk);
+            auto res = data::decodeOpt<msg::CentralLoginOkMessage>(loginOk);
+            if (!res) {
+                return Err("invalid CentralLoginOkMessage");
+            }
+
+            auto msg = std::move(res).value();
             connInfo.m_allRoles = msg.allRoles;
             connInfo.m_userRoles = msg.userRoles;
             connInfo.m_established = true;
-            connInfo.m_isModerator = msg.isModerator;
+            connInfo.m_perms.isModerator = msg.isModerator;
+            connInfo.m_perms.canBan = msg.canBan;
+            connInfo.m_perms.canSetPassword = msg.canSetPassword;
+            connInfo.m_nameColor = msg.nameColor;
+
+            for (auto& role : connInfo.m_userRoles) {
+                connInfo.m_userRoleIds.push_back(role.id);
+            }
 
             if (!msg.newToken.empty()) {
                 this->setUToken(msg.newToken);
@@ -1448,7 +1520,17 @@ void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reaso
         case ARGON_UNREACHABLE:
         case ARGON_INTERNAL_ERROR: {
             log::warn("Login failed: internal server error, argon is unreachable or failing");
-            this->abortConnection("Internal server error (auth system is failing)");
+            this->abortConnection("Internal server error (auth system is failing), please contact the developer!");
+        } break;
+
+        case INTERNAL_DB_ERROR: {
+            log::warn("Login failed: internal database error");
+            this->abortConnection("Internal server error (database error), please contact the developer!");
+        } break;
+
+        case INVALID_ACCOUNT_DATA: {
+            log::warn("Login failed: invalid account data");
+            this->abortConnection("Internal server error (invalid account data), please contact the developer!");
         } break;
 
         default: {

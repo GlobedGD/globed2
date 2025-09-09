@@ -1,6 +1,7 @@
 #include "UserListPopup.hpp"
 #include <globed/core/ValueManager.hpp>
 #include <globed/core/FriendListManager.hpp>
+#include <globed/core/PlayerCacheManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/CoreImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
@@ -30,12 +31,13 @@ public:
         int userId,
         const std::string& username,
         const cue::Icons& icons,
+        const std::optional<SpecialUserData>& sud,
         UserListPopup* popup
     ) {
         auto ret = new PlayerCell();
         ret->m_popup = popup;
 
-        if (ret->init(accountId, userId, username, icons, CELL_SIZE)) {
+        if (ret->init(accountId, userId, username, icons, sud, CELL_SIZE)) {
             ret->autorelease();
             return ret;
         }
@@ -183,13 +185,20 @@ void UserListPopup::hardRefresh() {
             createdSelf = true;
         } else if (player->isDataInitialized()) {
             auto& data = player->displayData();
-            m_list->addCell(PlayerCell::create(data.accountId, data.userId, data.username, cue::Icons {
-                .type = IconType::Cube,
-                .id = data.icons.cube,
-                .color1 = data.icons.color1.asIdx(),
-                .color2 = data.icons.color2.asIdx(),
-                .glowColor = data.icons.glowColor.asIdx(),
-            }, this));
+            m_list->addCell(PlayerCell::create(
+                data.accountId,
+                data.userId,
+                data.username,
+                cue::Icons {
+                    .type = IconType::Cube,
+                    .id = data.icons.cube,
+                    .color1 = data.icons.color1.asIdx(),
+                    .color2 = data.icons.color2.asIdx(),
+                    .glowColor = data.icons.glowColor.asIdx(),
+                },
+                data.specialUserData,
+                this
+            ));
         } else {
             log::warn("Uninitialized player, not adding to player list (ID {})", playerId);
         }

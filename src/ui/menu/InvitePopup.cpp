@@ -22,10 +22,11 @@ public:
         int userId,
         const std::string& username,
         const cue::Icons& icons,
+        const std::optional<SpecialUserData>& sud,
         cocos2d::CCSize cellSize
     ) {
         auto ret = new PlayerCell;
-        if (ret->init(accountId, userId, username, icons, cellSize)) {
+        if (ret->init(accountId, userId, username, icons, sud, cellSize)) {
             ret->autorelease();
             return ret;
         }
@@ -88,6 +89,7 @@ void InvitePopup::onLoaded(const std::vector<MinimalRoomPlayer>& players) {
             player.accountData.userId,
             player.accountData.username,
             player.toIcons(),
+            std::nullopt,
             CELL_SIZE
         ));
     }

@@ -157,10 +157,16 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
 
         // progress bar indicators
         auto gjbgl = GlobedGJBGL::get(this);
-        auto& fields = *gjbgl->m_fields.self();
+        if (gjbgl->active()) {
+            auto& fields = *gjbgl->m_fields.self();
 
-        if (fields.m_progressBarContainer && !fields.m_progressBarContainer->getParent()) {
-            m_progressBar->addChild(fields.m_progressBarContainer);
+            if (fields.m_progressBarContainer && !fields.m_progressBarContainer->getParent()) {
+                if (!m_progressBar) {
+                    log::error("Failed to position the progress bar container!");
+                } else {
+                    m_progressBar->addChild(fields.m_progressBarContainer);
+                }
+            }
         }
     }
 

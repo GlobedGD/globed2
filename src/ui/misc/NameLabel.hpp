@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+#include <globed/core/data/SpecialUserData.hpp>
 
 namespace globed {
 
@@ -13,8 +14,11 @@ public:
     void updateName(const char* name);
     void updateTeam(size_t idx, cocos2d::ccColor4B color);
     void updateNoTeam();
+    void updateWithRoles(const SpecialUserData& data);
     void updateOpacity(unsigned char opacity);
     void updateOpacity(float opacity);
+    void updateColor(const MultiColor& color);
+    void updateColor(const Color3& color);
     void setMultipleBadges(bool multiple);
     void setShadowEnabled(bool enabled);
 

@@ -2,6 +2,7 @@
 
 #include <globed/util/singleton.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
+#include <globed/core/data/SpecialUserData.hpp>
 
 namespace globed {
 

@@ -15,8 +15,8 @@ static CCSprite* createAny(const char* name) {
     return sprite;
 }
 
-CCSprite* createBadge(const char* spriteName) {
-    auto name = fmt::format("{}"_spr, spriteName);
+CCSprite* createBadge(CStr spriteName) {
+    auto name = fmt::format("{}"_spr, spriteName.get());
 
     auto sprite = createAny(name.c_str());
 

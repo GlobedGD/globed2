@@ -1,4 +1,5 @@
 #include "NameLabel.hpp"
+#include <ui/misc/Badges.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -16,6 +17,8 @@ bool NameLabel::init(const std::string& name, const char* font, bool alignMiddle
     auto bcLayout = RowLayout::create()->setAutoScale(false)->setGap(3.f);
     bcLayout->ignoreInvisibleChildren(true);
     m_badgeContainer = Build<CCNode>::create()
+        .id("badge-container")
+        .anchorPoint(0.f, 0.5f)
         .zOrder(99)
         .layout(bcLayout)
         .parent(this);
@@ -114,6 +117,41 @@ void NameLabel::updateNoTeam() {
     this->updateLayout();
 }
 
+void NameLabel::updateWithRoles(const SpecialUserData& data) {
+    bool colorSet = false;
+
+    if (data.nameColor) {
+        this->updateColor(*data.nameColor);
+        colorSet = true;
+    }
+
+    for (auto id : data.roleIds) {
+        // set name color to the highest prio role, if not overriden
+        // server guarantees that the roles are sorted by priority
+        if (!colorSet) {
+            if (auto role = NetworkManagerImpl::get().findRole(id)) {
+                this->updateColor(role->nameColor);
+                colorSet = true;
+            }
+        }
+
+        auto badge = createBadge(id);
+
+        if (!badge) {
+            log::warn("Failed to create badge for role ID {}", id);
+            continue;
+        }
+
+        m_badgeContainer->addChild(badge);
+
+        if (!m_multipleBadges) {
+            break;
+        }
+    }
+
+    this->resizeBadgeContainer();
+}
+
 void NameLabel::resizeBadgeContainer() {
     size_t elems = 0;
     float width = 0.f;
@@ -134,16 +172,22 @@ void NameLabel::updateOpacity(float opacity) {
     this->updateOpacity(static_cast<unsigned char>(opacity * 255.f));
 }
 
+void NameLabel::updateColor(const MultiColor& color) {
+    if (m_label) color.animateLabel(m_label);
+}
+
+void NameLabel::updateColor(const Color3& color) {
+    if (m_label) m_label->setColor(color);
+}
+
 void NameLabel::updateOpacity(unsigned char opacity) {
     if (m_label) {
         m_label->setOpacity(opacity);
         m_labelShadow->setOpacity(opacity * 0.75f);
     }
 
-    if (m_badgeContainer) {
-        for (auto child : m_badgeContainer->getChildrenExt<CCSprite>()) {
-            child->setOpacity(opacity);
-        }
+    for (auto child : m_badgeContainer->getChildrenExt<CCSprite>()) {
+        child->setOpacity(opacity);
     }
 }
 

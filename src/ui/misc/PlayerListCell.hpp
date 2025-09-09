@@ -13,15 +13,17 @@ public:
         int userId,
         const std::string& username,
         const cue::Icons& icons,
+        const std::optional<SpecialUserData>& sud,
         cocos2d::CCSize cellSize
     );
 
     static PlayerListCell* createMyself(cocos2d::CCSize cellSize);
 
-protected:
     int m_accountId;
     int m_userId;
     std::string m_username;
+
+protected:
     CCMenuItemSpriteExtra* m_usernameBtn;
     cue::PlayerIcon* m_cubeIcon;
     cocos2d::CCNode* m_leftContainer;
@@ -33,6 +35,7 @@ protected:
         int userId,
         const std::string& username,
         const cue::Icons& icons,
+        const std::optional<SpecialUserData>& sud,
         cocos2d::CCSize cellSize
     );
 

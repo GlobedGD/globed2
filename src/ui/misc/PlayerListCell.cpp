@@ -3,6 +3,7 @@
 #include <globed/core/RoomManager.hpp>
 #include <globed/util/singleton.hpp>
 #include <globed/util/gd.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -16,6 +17,7 @@ bool PlayerListCell::init(
     int userId,
     const std::string& username,
     const cue::Icons& icons,
+    const std::optional<SpecialUserData>& sud,
     CCSize cellSize
 ) {
     if (!CCNode::init()) return false;
@@ -58,6 +60,10 @@ bool PlayerListCell::init(
 
     m_nameLabel->setPositionY(m_nameLabel->getPositionY() + 1.f);
 
+    if (sud) {
+        m_nameLabel->updateWithRoles(*sud);
+    }
+
     m_leftContainer->updateLayout();
 
     m_rightMenu = Build<CCMenu>::create()
@@ -80,11 +86,14 @@ bool PlayerListCell::initMyself(cocos2d::CCSize cellSize) {
     auto gam = cachedSingleton<GJAccountManager>();
     auto gm = cachedSingleton<GameManager>();
 
+    auto sud = NetworkManagerImpl::get().getOwnSpecialData();
+
     return this->init(
         gam->m_accountID,
         gm->m_playerUserID,
         gam->m_username,
         getPlayerIcons(),
+        sud,
         cellSize
     );
 }
@@ -106,10 +115,11 @@ PlayerListCell* PlayerListCell::create(
     int userId,
     const std::string& username,
     const cue::Icons& icons,
+    const std::optional<SpecialUserData>& sud,
     CCSize cellSize
 ) {
     auto ret = new PlayerListCell();
-    if (ret->init(accountId, userId, username, icons, cellSize)) {
+    if (ret->init(accountId, userId, username, icons, sud, cellSize)) {
         ret->autorelease();
         return ret;
     }

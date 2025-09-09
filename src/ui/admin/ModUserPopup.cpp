@@ -1,5 +1,6 @@
 #include "ModUserPopup.hpp"
 #include "ModPunishPopup.hpp"
+#include "ModRoleModifyPopup.hpp"
 #include "ModNoticeSetupPopup.hpp"
 
 #include <globed/core/PopupManager.hpp>
@@ -38,6 +39,19 @@ bool ModUserPopup::setup(int accountId) {
         this->onLoaded(msg);
         return ListenerResult::Stop;
     });
+
+    m_resultListener = nm.listen<msg::AdminResultMessage>([this](const auto& msg) {
+        if (!msg.success) {
+            globed::alert("Error", fmt::format("Received error from the server: <cy>{}</c>", msg.error));
+        }
+
+        return ListenerResult::Stop;
+    });
+    m_resultListener->setPriority(10000);
+
+    // Loading has multiple steps:
+    // 1. Fetch various data from the globed server (punishments, roles, etc.)
+    // 2. Search for the user on the GD server to get their up-to-date account data
 
     if (accountId != 0) {
         this->startLoadingProfile(fmt::to_string(accountId));
@@ -169,7 +183,19 @@ void ModUserPopup::initUi() {
     Build<CCSprite>::create("button-admin-kick.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this] {
-            // TODO: prompt
+            // TODO: input popup and ask for reason
+
+            globed::quickPopup(
+                "Confirm",
+                "Are you sure you want to <cr>kick</c> this person from the server?",
+                "Cancel",
+                "Yes",
+                [this](auto, bool yeah) {
+                    if (!yeah) return;
+
+                    NetworkManagerImpl::get().sendAdminKick(m_data->accountId, "Kicked by moderator");
+                }
+            );
         })
         .zOrder(btnorder::Kick)
         .parent(m_rootMenu);
@@ -209,7 +235,11 @@ void ModUserPopup::recreateRoleButton() {
         .intoMenuItem([this] {
             // TODO: do nothing if the user has no perms to edit roles
 
-            // TODO: show the role modify popup
+            auto popup = ModRoleModifyPopup::create(m_data->accountId, m_data->roles);
+            popup->setCallback([this] {
+                this->fullRefresh();
+            });
+            popup->show();
         })
         .parent(m_nameLayout);
 
@@ -233,7 +263,7 @@ void ModUserPopup::createMuteAndBanButtons() {
     m_banButton = Build<CCSprite>::create(m_data->activeBan ? "button-admin-unban.png"_spr : "button-admin-ban.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this] {
-            ModPunishPopup::create(m_data->accountId, UserPunishmentType::Ban, m_data->activeBan)->show();
+            this->showPunishmentPopup(UserPunishmentType::Ban);
         })
         .zOrder(btnorder::Ban)
         .parent(m_rootMenu);
@@ -246,7 +276,7 @@ void ModUserPopup::createMuteAndBanButtons() {
             cue::rescaleToMatch(btn, expSize);
         })
         .intoMenuItem([this] {
-            ModPunishPopup::create(m_data->accountId, UserPunishmentType::Mute, m_data->activeMute)->show();
+            this->showPunishmentPopup(UserPunishmentType::Mute);
         })
         .zOrder(btnorder::Mute)
         .parent(m_rootMenu);
@@ -257,12 +287,29 @@ void ModUserPopup::createMuteAndBanButtons() {
             cue::rescaleToMatch(btn, expSize);
         })
         .intoMenuItem([this] {
-            ModPunishPopup::create(m_data->accountId, UserPunishmentType::RoomBan, m_data->activeRoomBan)->show();
+            this->showPunishmentPopup(UserPunishmentType::RoomBan);
         })
         .zOrder(btnorder::RoomBan)
         .parent(m_rootMenu);
 
     m_rootMenu->updateLayout();
+}
+
+void ModUserPopup::fullRefresh() {
+    // TODO
+}
+
+void ModUserPopup::showPunishmentPopup(UserPunishmentType type) {
+    auto& active =
+        type == UserPunishmentType::Ban ? m_data->activeBan :
+        type == UserPunishmentType::Mute ? m_data->activeMute :
+        m_data->activeRoomBan;
+
+    auto popup = ModPunishPopup::create(m_data->accountId, type, active);
+    popup->setCallback([this] {
+        this->fullRefresh();
+    });
+    popup->show();
 }
 
 void ModUserPopup::startLoadingProfile(const std::string& query) {
@@ -320,8 +367,20 @@ void ModUserPopup::onUserInfoLoaded(geode::Result<GJUserScore*> res) {
     }
 
     m_data->accountId = m_score->m_accountID;
+    this->sendUpdateMessage();
 
     this->initUi();
+}
+
+void ModUserPopup::sendUpdateMessage() {
+    NetworkManagerImpl::get().sendAdminUpdateUser(
+        m_data->accountId,
+        m_score->m_userName,
+        m_score->m_playerCube,
+        m_score->m_color1,
+        m_score->m_color2,
+        m_score->m_glowEnabled ? (uint16_t)m_score->m_color3 : (uint16_t)-1
+    );
 }
 
 void ModUserPopup::getUserInfoFinished(GJUserScore* p0) {
@@ -329,19 +388,19 @@ void ModUserPopup::getUserInfoFinished(GJUserScore* p0) {
 }
 
 void ModUserPopup::getUserInfoFailed(int p0) {
-    this->onUserInfoLoaded(Err("failed to fetch user data: {}", p0));
+    this->onUserInfoLoaded(Err("Failed to find the user.{}", p0 == 0 ? "" : fmt::format(" (error code {})", p0)));
 }
 
 void ModUserPopup::loadLevelsFinished(cocos2d::CCArray* levels, char const* key, int p2) {
     if (!levels || levels->count() == 0) {
-        this->onUserInfoLoaded(Err("failed to search for user (no results)"));
+        this->onUserInfoLoaded(Err("Failed to search for user (no results)"));
     } else {
         this->onUserInfoLoaded(Ok(CCArrayExt<GJUserScore>(levels)[0]));
     }
 }
 
 void ModUserPopup::loadLevelsFailed(char const* key, int p1) {
-    this->onUserInfoLoaded(Err("failed to search for user: error code {}", p1));
+    this->onUserInfoLoaded(Err("Failed to find the user.{}", p1 == 0 ? "" : fmt::format(" (error code {})", p1)));
 }
 
 }

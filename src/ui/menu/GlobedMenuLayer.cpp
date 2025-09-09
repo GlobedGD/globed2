@@ -35,6 +35,8 @@ static constexpr CCSize PLAYER_LIST_SIZE{PLAYER_LIST_MENU_SIZE.width * 0.8f, 180
 static constexpr float CELL_HEIGHT = 27.f;
 static constexpr CCSize CELL_SIZE{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
 
+static constexpr CCSize FAR_BTN_SIZE { 45.f, 45.f };
+
 static constexpr float CONNECT_MENU_WIDTH = 260.f;
 
 namespace globed {
@@ -48,12 +50,13 @@ public:
         int userId,
         const std::string& username,
         const cue::Icons& icons,
+        const std::optional<SpecialUserData>& sud,
         SessionId sessionId
     ) {
         auto ret = new PlayerCell();
         ret->m_sessionId = sessionId;
 
-        if (ret->init(accountId, userId, username, icons, CELL_SIZE)) {
+        if (ret->init(accountId, userId, username, icons, sud, CELL_SIZE)) {
             ret->autorelease();
             return ret;
         }
@@ -74,6 +77,8 @@ public:
         delete ret;
         return nullptr;
     }
+
+    void softRefresh(const RoomPlayer& rp) {}
 
 protected:
     SessionId m_sessionId;
@@ -223,14 +228,16 @@ bool GlobedMenuLayer::init() {
         .collect();
 
     Build<CCSprite>::create("settings01.png"_spr)
-        .scale(0.7f)
+        .with([&](auto spr) { cue::rescaleToMatch(spr, FAR_BTN_SIZE); })
         .intoMenuItem([this] {
             this->onSettings();
         })
         .scaleMult(1.1f)
         .parent(buttonMenu);
 
-    // TODO: more buttons here, discord, website, status website, etc.
+    for (auto btn : this->createCommonButtons()) {
+        buttonMenu->addChild(btn);
+    }
 
     buttonMenu->updateLayout();
 
@@ -289,7 +296,7 @@ bool GlobedMenuLayer::init() {
         .id("left-side-menu")
         .layout(colLayout)
         .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
-        .pos(7.f, PLAYER_LIST_MENU_SIZE.height - 6.f)
+        .pos(7.f, PLAYER_LIST_MENU_SIZE.height - 8.f)
         .anchorPoint(0.f, 1.f)
         .parent(m_playerListMenu);
 
@@ -297,7 +304,7 @@ bool GlobedMenuLayer::init() {
         .id("right-side-menu")
         .layout(colLayout)
         .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
-        .pos(PLAYER_LIST_MENU_SIZE - CCSize{7.f, 6.f})
+        .pos(PLAYER_LIST_MENU_SIZE - CCSize{7.f, 8.f})
         .anchorPoint(1.f, 1.f)
         .parent(m_playerListMenu);
 
@@ -364,6 +371,10 @@ void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<Room
 }
 
 void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
+    if (this->trySoftRefresh(players)) {
+        return;
+    }
+
     auto scrollPos = m_playerList->getScrollPos();
 
     m_playerList->setAutoUpdate(false);
@@ -377,9 +388,6 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
     int roomOwnerId = rm.getRoomOwner();
     int selfId = cachedSingleton<GJAccountManager>()->m_accountID;
     std::vector<RoomPlayer> sortedPlayers = players;
-
-    // add ourself
-    sortedPlayers.push_back(RoomPlayer::createMyself());
 
     // sort all the players
     std::sort(sortedPlayers.begin(), sortedPlayers.end(), [&](auto& a, auto& b) {
@@ -431,6 +439,8 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
         std::shuffle(firstNonFriend, sortedPlayers.end(), rng()->engine());
     }
 
+    m_playerList->addCell(PlayerCell::createMyself(SessionId{}));
+
     for (auto& player : sortedPlayers) {
         m_playerList->addCell(PlayerCell::create(
             player.accountData.accountId,
@@ -443,6 +453,7 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
                 .color2 = player.color2.asIdx(),
                 .glowColor = player.glowColor.asIdx(),
             },
+            player.specialUserData,
             player.session
         ));
     }
@@ -452,6 +463,56 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
     m_playerList->setScrollPos(scrollPos);
 
     cocos::handleTouchPriority(this, true);
+}
+
+bool GlobedMenuLayer::trySoftRefresh(const std::vector<RoomPlayer>& players) {
+    if (m_playerList->size() == 0) return false;
+
+    auto selfId = globed::cachedSingleton<GJAccountManager>()->m_accountID;
+
+    auto scrollPos = m_playerList->getScrollPos();
+
+    std::unordered_map<int, const RoomPlayer*> newp;
+    std::unordered_map<int, PlayerCell*> existing;
+
+    for (auto cell : m_playerList->iter<PlayerCell>()) {
+        if (cell->m_accountId == selfId) continue;
+
+        existing[cell->m_accountId] = cell;
+    }
+
+    for (auto& pl : players) {
+        if (pl.accountData.accountId == selfId) continue;
+
+        newp[pl.accountData.accountId] = &pl;
+
+        // safe refresh not done if there are any new players
+        if (!existing.contains(pl.accountData.accountId)) {
+            return false;
+        }
+    }
+
+    // remove any players that left, update existing players
+    for (auto it = existing.begin(); it != existing.end();) {
+        auto& [player, cell] = *it;
+        auto newit = newp.find(player);
+
+        if (newit == newp.end()) {
+            auto idx = m_playerList->indexForCell((cue::ListCell*)cell->getParent());
+            m_playerList->removeCell(idx);
+            it = existing.erase(it);
+        } else {
+            // soft refresh on the player
+            cell->softRefresh(*newit->second);
+
+            it++;
+        }
+    }
+
+    m_playerList->updateLayout(false);
+    m_playerList->setScrollPos(scrollPos);
+
+    return true;
 }
 
 void GlobedMenuLayer::initRoomButtons() {
@@ -686,8 +747,6 @@ void GlobedMenuLayer::initFarSideButtons() {
     m_farLeftMenu->removeAllChildren();
     m_farRightMenu->removeAllChildren();
 
-    CCSize btnSize { 45.f, 45.f };
-
     bool connected = m_state == MenuState::Connected;
 
     if (!connected) {
@@ -696,8 +755,13 @@ void GlobedMenuLayer::initFarSideButtons() {
         return;
     }
 
+    auto commons = this->createCommonButtons();
+    for (auto b : commons) {
+        m_farRightMenu->addChild(b);
+    }
+
     Build<CCSprite>::create("settings01.png"_spr)
-        .with([&](auto btn) { cue::rescaleToMatch(btn, btnSize); })
+        .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
         .intoMenuItem([this] {
             this->onSettings();
         })
@@ -706,7 +770,7 @@ void GlobedMenuLayer::initFarSideButtons() {
         .parent(m_farLeftMenu);
 
     Build<CCSprite>::create("levels01.png"_spr)
-        .with([&](auto btn) { cue::rescaleToMatch(btn, btnSize); })
+        .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
         .intoMenuItem([this] {
             LevelListLayer::create()->switchTo();
         })
@@ -714,29 +778,38 @@ void GlobedMenuLayer::initFarSideButtons() {
         .zOrder(FarLeftBtn::Levels)
         .parent(m_farLeftMenu);
 
+    m_farLeftMenu->updateLayout();
+    m_farRightMenu->updateLayout();
+}
+
+std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
+    std::vector<Ref<CCMenuItemSpriteExtra>> out;
+
     // credits
-    Build<CCSprite>::create("support01.png"_spr)
-        .with([&](auto btn) { cue::rescaleToMatch(btn, btnSize); })
+    out.push_back(Build<CCSprite>::create("support01.png"_spr)
+        .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
         .intoMenuItem([this] {
             CreditsPopup::create()->show();
         })
         .scaleMult(1.1f)
         .zOrder(FarRightBtn::Credits)
-        .parent(m_farRightMenu);
+        .collect()
+    );
 
     // supporter popup
-    Build<CCSprite>::create("support02.png"_spr)
-        .with([&](auto btn) { cue::rescaleToMatch(btn, btnSize); })
+    out.push_back(Build<CCSprite>::create("support02.png"_spr)
+        .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
         .intoMenuItem([this] {
             SupportPopup::create()->show();
         })
         .scaleMult(1.1f)
         .zOrder(FarRightBtn::Support)
-        .parent(m_farRightMenu);
+        .collect()
+    );
 
     // discord
-    Build<CCSprite>::create("discord01.png"_spr)
-        .with([&](auto btn) { cue::rescaleToMatch(btn, btnSize); })
+    out.push_back(Build<CCSprite>::create("discord01.png"_spr)
+        .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
         .intoMenuItem([this] {
             globed::quickPopup(
                 "Open Discord",
@@ -750,10 +823,10 @@ void GlobedMenuLayer::initFarSideButtons() {
         })
         .scaleMult(1.1f)
         .zOrder(FarRightBtn::Discord)
-        .parent(m_farRightMenu);
+        .collect()
+    );
 
-    m_farLeftMenu->updateLayout();
-    m_farRightMenu->updateLayout();
+    return out;
 }
 
 void GlobedMenuLayer::copyRoomIdToClipboard() {
@@ -974,8 +1047,6 @@ bool GlobedMenuLayer::ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* ev
     if (CCRect{{}, this->getContentSize()}.containsPoint(pos)) {
         m_lastInteraction = Instant::now();
     }
-
-    m_playerList->getScrollPos();
 
     return CCLayer::ccTouchBegan(touch, event);
 }

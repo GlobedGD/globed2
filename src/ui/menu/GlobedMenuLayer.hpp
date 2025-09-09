@@ -62,12 +62,14 @@ private:
     void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
     void updateRoom(const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
     void updatePlayerList(const std::vector<RoomPlayer>& players);
+    bool trySoftRefresh(const std::vector<RoomPlayer>& players);
     void initRoomButtons();
     void initSideButtons();
     void initFarSideButtons();
     void copyRoomIdToClipboard();
     void requestRoomState();
     bool shouldAutoRefresh();
+    std::vector<geode::Ref<CCMenuItemSpriteExtra>> createCommonButtons();
 
     void reloadWithFilter(const std::string& filter);
 

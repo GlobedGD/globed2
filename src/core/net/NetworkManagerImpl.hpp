@@ -41,6 +41,13 @@ struct DeferredSessionJoin {
     bool platformer;
 };
 
+struct ModPermissions {
+    bool isModerator;
+    bool isAuthorizedModerator;
+    bool canBan;
+    bool canSetPassword;
+};
+
 // Struct for fields that are the same across one connection but are cleared on disconnect
 struct ConnectionInfo {
     std::string m_knownArgonUrl;
@@ -60,8 +67,9 @@ struct ConnectionInfo {
     uint32_t m_gameTickrate = 0;
     std::vector<UserRole> m_allRoles;
     std::vector<UserRole> m_userRoles;
-    bool m_isModerator = false;
-    bool m_isAuthorizedModerator = false;
+    std::vector<uint8_t> m_userRoleIds;
+    std::optional<MultiColor> m_nameColor;
+    ModPermissions m_perms{};
 
     bool m_sentIcons = true; // icons are sent at login
     bool m_sentFriendList = false;
@@ -103,11 +111,14 @@ public:
     uint32_t getGameTickrate();
     std::vector<UserRole> getAllRoles();
     std::vector<UserRole> getUserRoles();
+    std::vector<uint8_t> getUserRoleIds();
     std::optional<UserRole> getUserHighestRole();
     std::optional<UserRole> findRole(uint8_t roleId);
     std::optional<UserRole> findRole(std::string_view roleId);
     bool isModerator();
     bool isAuthorizedModerator();
+    ModPermissions getModPermissions();
+    std::optional<SpecialUserData> getOwnSpecialData();
 
     /// Force the client to resend user icons to the connected server. Does nothing if not connected.
     void invalidateIcons();
@@ -149,6 +160,9 @@ public:
     void sendAdminRoomUnban(int32_t accountId);
     void sendAdminMute(int32_t accountId, const std::string& reason, int64_t expiresAt);
     void sendAdminUnmute(int32_t accountId);
+    void sendAdminEditRoles(int32_t accountId, const std::vector<uint8_t>& roles);
+    void sendAdminSetPassword(int32_t accountId, const std::string& password);
+    void sendAdminUpdateUser(int32_t accountId, const std::string& username, int16_t cube, uint16_t color1, uint16_t color2, uint16_t glowColor);
     void sendAdminFetchMods();
 
     // Both servers
@@ -199,6 +213,7 @@ private:
     asp::Notify m_disconnectNotify;
     asp::AtomicBool m_disconnectRequested;
     asp::AtomicBool m_manualDisconnect = false;
+    asp::Mutex<std::string> m_abortCause;
     asp::Notify m_finishedClosingNotify;
     bool m_destructing = false;
 

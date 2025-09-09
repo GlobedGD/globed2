@@ -111,6 +111,24 @@ public:
         }
     }
 
+    /// Set the priority of this listener. Lower values are called first. The default is 0.
+    void setPriority(int priority) {
+        m_impl->setPriority(priority);
+    }
+
+    int getPriority() const {
+        return m_impl->getPriority();
+    }
+
+    /// Set whether the listener is thread-safe. If `false` (the default), the listener will always be called on the main thread.
+    void setThreadSafe(bool threadSafe) {
+        m_impl->setThreadSafe(threadSafe);
+    }
+
+    bool isThreadSafe() const {
+        return m_impl->isThreadSafe();
+    }
+
 private:
     friend class NetworkManagerImpl;
     MessageListenerImpl<T>* m_impl;
