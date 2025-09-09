@@ -1,6 +1,7 @@
 #include "SupportPopup.hpp"
 #include <ui/misc/NameLabel.hpp>
 #include <globed/util/gd.hpp>
+#include <ui/misc/Badges.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/RepeatingBackground.hpp>
@@ -163,10 +164,8 @@ bool SupportPopup::setup(CCSprite* bg) {
         .store(player)
         .intoNewChild(NameLabel::create(gm->m_playerName.c_str(), "chatFont.fnt", true))
         .with([&](NameLabel* label) {
-            // TODO (high): add badges
-
-            // CCSprite::createWithSpriteFrameName("role-supporter.png"_spr),
-            // RichColor({154, 88, 255})
+            label->addBadge(createBadge("role-supporter.png"));
+            label->updateColor(Color3{ 154, 88, 255 });
         })
         .pos(15.f, 40.f);
 

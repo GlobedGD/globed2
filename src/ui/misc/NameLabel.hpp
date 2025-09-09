@@ -21,6 +21,7 @@ public:
     void updateColor(const Color3& color);
     void setMultipleBadges(bool multiple);
     void setShadowEnabled(bool enabled);
+    void addBadge(cocos2d::CCSprite* badge);
 
 private:
     cocos2d::CCLabelBMFont* m_label = nullptr;

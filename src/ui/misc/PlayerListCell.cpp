@@ -46,8 +46,8 @@ bool PlayerListCell::init(
     cue::rescaleToMatch(m_cubeIcon, cellSize.height * 0.7f);
 
     m_nameLabel = Build(NameLabel::create(username, "bigFont.fnt", false))
-        .scale(cellSize.height / 52.f)
         .with([&](auto lbl) {
+            lbl->setScale(cellSize.height * 0.65f / lbl->getContentHeight());
             lbl->makeClickable(
                 [this, username = username](auto) {
                    globed::openUserProfile(m_accountId, m_userId, username);

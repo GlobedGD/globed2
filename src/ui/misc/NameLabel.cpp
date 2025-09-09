@@ -30,7 +30,7 @@ bool NameLabel::init(const std::string& name, const char* font, bool alignMiddle
                 ->setAutoScale(false)
                 ->setAxisAlignment(alignMiddle ? AxisAlignment::Center : AxisAlignment::Start)
     );
-    this->setContentWidth(300.f);
+    this->setContentWidth(320.f);
     this->updateName(name);
 
     return true;
@@ -64,6 +64,11 @@ void NameLabel::updateName(const char* name) {
     m_label->setString(name);
     m_labelShadow->setString(name);
     m_labelShadow->setVisible(m_shadow);
+
+    float yScale = 20.f / m_label->getContentHeight();
+    m_label->setScale(yScale);
+    m_labelShadow->setScale(yScale);
+
     m_labelContainer->setScaledContentSize(m_label->getScaledContentSize());
 
     if (m_labelButton) {
@@ -148,6 +153,12 @@ void NameLabel::updateWithRoles(const SpecialUserData& data) {
             break;
         }
     }
+
+    this->resizeBadgeContainer();
+}
+
+void NameLabel::addBadge(cocos2d::CCSprite* badge) {
+    m_badgeContainer->addChild(badge);
 
     this->resizeBadgeContainer();
 }

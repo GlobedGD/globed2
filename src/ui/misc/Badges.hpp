@@ -7,7 +7,7 @@
 
 namespace globed {
 
-static constexpr cocos2d::CCSize BADGE_SIZE { 32.f, 32.f };
+static constexpr cocos2d::CCSize BADGE_SIZE { 16.f, 16.f };
 
 cocos2d::CCSprite* createBadge(CStr spriteName);
 cocos2d::CCSprite* createBadge(uint8_t roleId);
