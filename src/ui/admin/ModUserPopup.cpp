@@ -30,10 +30,6 @@ const CCSize ModUserPopup::POPUP_SIZE { 340.f, 210.f };
 constexpr static float btnScale = 0.85f;
 
 bool ModUserPopup::setup(int accountId) {
-    m_loadCircle = Build<cue::LoadingCircle>::create()
-        .pos(this->center())
-        .parent(m_mainLayer);
-
     auto& nm = NetworkManagerImpl::get();
     m_listener = nm.listen<msg::AdminFetchResponseMessage>([this](const auto& msg) {
         this->onLoaded(msg);
@@ -73,6 +69,7 @@ void ModUserPopup::initUi() {
         .intoMenuItem([this] {
             globed::openUserProfile(m_score->m_accountID, m_score->m_userID, m_score->m_userName);
         })
+        .scaleMult(1.15f)
         .parent(m_nameLayout)
         .collect();
 
@@ -165,10 +162,10 @@ void ModUserPopup::initUi() {
         .zOrder(btnorder::History)
         .parent(m_rootMenu);
 
-    auto role = NetworkManagerImpl::get().getUserHighestRole();
+    auto& nm = NetworkManagerImpl::get();
+    auto role = nm.getUserHighestRole();
 
-    // TODO: only show the admin buttons to the admins? but we dont have perms..
-    if (true) {
+    if (nm.getModPermissions().canSetPassword) {
         // Password button
         Build<CCSprite>::create("button-admin-password.png"_spr)
             .scale(btnScale)
@@ -215,10 +212,7 @@ void ModUserPopup::initUi() {
 }
 
 void ModUserPopup::recreateRoleButton() {
-    if (m_roleModifyButton) {
-        m_roleModifyButton->removeFromParent();
-        m_roleModifyButton = nullptr;
-    }
+    cue::resetNode(m_roleModifyButton);
 
     CCSprite* badgeIcon = nullptr;
 
@@ -233,7 +227,7 @@ void ModUserPopup::recreateRoleButton() {
 
     m_roleModifyButton = Build(badgeIcon)
         .intoMenuItem([this] {
-            // TODO: do nothing if the user has no perms to edit roles
+            if (!NetworkManagerImpl::get().getModPermissions().canEditRoles) return;
 
             auto popup = ModRoleModifyPopup::create(m_data->accountId, m_data->roles);
             popup->setCallback([this] {
@@ -247,17 +241,9 @@ void ModUserPopup::recreateRoleButton() {
 }
 
 void ModUserPopup::createMuteAndBanButtons() {
-    if (m_banButton) {
-        m_banButton->removeFromParent();
-    }
-
-    if (m_muteButton) {
-        m_muteButton->removeFromParent();
-    }
-
-    if (m_roomBanButton) {
-        m_roomBanButton->removeFromParent();
-    }
+    cue::resetNode(m_banButton);
+    cue::resetNode(m_muteButton);
+    cue::resetNode(m_roomBanButton);
 
     // Ban button
     m_banButton = Build<CCSprite>::create(m_data->activeBan ? "button-admin-unban.png"_spr : "button-admin-ban.png"_spr)
@@ -296,7 +282,7 @@ void ModUserPopup::createMuteAndBanButtons() {
 }
 
 void ModUserPopup::fullRefresh() {
-    // TODO
+    this->startLoadingProfile(fmt::to_string(m_data->accountId));
 }
 
 void ModUserPopup::showPunishmentPopup(UserPunishmentType type) {
@@ -313,6 +299,21 @@ void ModUserPopup::showPunishmentPopup(UserPunishmentType type) {
 }
 
 void ModUserPopup::startLoadingProfile(const std::string& query) {
+    // remove all custom nodes
+    cue::resetNode(m_roleModifyButton);
+    cue::resetNode(m_banButton);
+    cue::resetNode(m_muteButton);
+    cue::resetNode(m_roomBanButton);
+    cue::resetNode(m_loadCircle);
+    cue::resetNode(m_nameLayout);
+    cue::resetNode(m_rootMenu);
+
+    m_data.reset();
+
+    m_loadCircle = Build<cue::LoadingCircle>::create()
+        .pos(this->center())
+        .parent(m_mainLayer);
+
     m_loadCircle->fadeIn();
     m_query = query;
 
@@ -335,6 +336,12 @@ void ModUserPopup::onLoaded(const msg::AdminFetchResponseMessage& msg) {
         queryAccountId = msg.accountId;
     }
 
+    // if this is a refresh, reuse the user score
+    if (m_score) {
+        this->onUserInfoLoaded(Ok(m_score), false);
+        return;
+    }
+
     // query the user in gd
     auto glm = GameLevelManager::get();
 
@@ -347,7 +354,7 @@ void ModUserPopup::onLoaded(const msg::AdminFetchResponseMessage& msg) {
     }
 }
 
-void ModUserPopup::onUserInfoLoaded(geode::Result<GJUserScore*> res) {
+void ModUserPopup::onUserInfoLoaded(geode::Result<GJUserScore*> res, bool sendUpdate) {
     auto glm = GameLevelManager::get();
     glm->m_userInfoDelegate = nullptr;
     glm->m_levelManagerDelegate = nullptr;
@@ -367,9 +374,11 @@ void ModUserPopup::onUserInfoLoaded(geode::Result<GJUserScore*> res) {
     }
 
     m_data->accountId = m_score->m_accountID;
-    this->sendUpdateMessage();
-
     this->initUi();
+
+    if (sendUpdate) {
+        this->sendUpdateMessage();
+    }
 }
 
 void ModUserPopup::sendUpdateMessage() {

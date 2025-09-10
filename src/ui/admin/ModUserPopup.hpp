@@ -49,7 +49,7 @@ protected:
     void sendUpdateMessage();
 
     void onLoaded(const msg::AdminFetchResponseMessage& msg);
-    void onUserInfoLoaded(geode::Result<GJUserScore*> res);
+    void onUserInfoLoaded(geode::Result<GJUserScore*> res, bool sendUpdate = true);
 
     void getUserInfoFinished(GJUserScore* p0) override;
     void getUserInfoFailed(int p0) override;

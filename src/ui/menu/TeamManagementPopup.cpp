@@ -172,9 +172,7 @@ private:
     }
 
     void recreateJoinButton(bool joined) {
-        if (m_joinBtn) {
-            m_joinBtn->removeFromParent();
-        }
+        cue::resetNode(m_joinBtn);
 
         m_joinBtn = Build<CCSprite>::createSpriteName(joined ? "GJ_selectSongOnBtn_001.png" : "GJ_playBtn2_001.png")
             .with([&](auto btn) { cue::rescaleToMatch(btn, CELL_HEIGHT * 0.85f); })

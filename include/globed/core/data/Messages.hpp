@@ -11,6 +11,7 @@
 #include "UserPunishment.hpp"
 #include "FetchedMod.hpp"
 #include "Credits.hpp"
+#include "ModPermissions.hpp"
 
 namespace globed::msg {
 
@@ -21,9 +22,7 @@ struct CentralLoginOkMessage {
     std::vector<UserRole> allRoles;
     std::vector<UserRole> userRoles;
     std::optional<MultiColor> nameColor;
-    bool isModerator;
-    bool canBan;
-    bool canSetPassword;
+    ModPermissions perms;
 };
 
 // Rooms

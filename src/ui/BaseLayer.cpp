@@ -1,6 +1,8 @@
 #include "BaseLayer.hpp"
-#include <UIBuilder.hpp>
 #include <globed/util/gd.hpp>
+
+#include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
@@ -37,10 +39,7 @@ bool BaseLayer::init(bool background) {
 }
 
 void BaseLayer::initBackground(ccColor3B color) {
-    if (m_background) {
-        m_background->removeFromParent();
-        m_background = nullptr;
-    }
+    cue::resetNode(m_background);
 
     auto winSize = CCDirector::get()->getWinSize();
     auto bg = CCSprite::create("GJ_gradientBG.png");

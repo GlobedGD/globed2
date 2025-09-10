@@ -3,6 +3,7 @@
 #include <core/hooks/GJBaseGameLayer.hpp>
 
 #include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
@@ -17,9 +18,7 @@ bool ProgressArrow::init() {
 }
 
 void ProgressArrow::updateIcons(const cue::Icons& icons) {
-    if (m_icon) {
-        m_icon->removeFromParent();
-    }
+    cue::resetNode(m_icon);
 
     float progressOpacity = globed::setting<float>("core.level.progress-opacity");
 

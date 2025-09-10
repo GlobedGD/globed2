@@ -4,6 +4,7 @@
 #include <core/hooks/GJBaseGameLayer.hpp>
 
 #include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
@@ -59,8 +60,8 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
 }
 
 RemotePlayer::~RemotePlayer() {
-    if (m_progArrow) m_progArrow->removeFromParent();
-    if (m_progIcon) m_progIcon->removeFromParent();
+    cue::resetNode(m_progArrow);
+    cue::resetNode(m_progIcon);
 
     m_player1->cleanupObjectLayer();
     m_player2->cleanupObjectLayer();

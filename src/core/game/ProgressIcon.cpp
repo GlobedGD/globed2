@@ -3,6 +3,7 @@
 #include <globed/util/singleton.hpp>
 
 #include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
@@ -17,13 +18,8 @@ bool ProgressIcon::init() {
 }
 
 void ProgressIcon::updateIcons(const cue::Icons& data) {
-    if (m_line) {
-        m_line->removeFromParent();
-    }
-
-    if (m_icon) {
-        m_icon->removeFromParent();
-    }
+    cue::resetNode(m_line);
+    cue::resetNode(m_icon);
 
     auto col1 = cachedSingleton<GameManager>()->colorForIdx(data.color1);
 

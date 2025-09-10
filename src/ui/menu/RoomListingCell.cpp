@@ -257,9 +257,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
 }
 
 void RoomListingCell::recreateButton() {
-    if (m_rightButton) {
-        m_rightButton->removeFromParent();
-    }
+    cue::resetNode(m_rightButton);
 
     if (m_modActions) {
         // TODO

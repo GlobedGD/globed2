@@ -583,9 +583,13 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
         msg.nameColor = decodeMultiColor(reader.getNameColor());
     }
 
-    msg.isModerator = reader.getIsModerator();
-    msg.canBan = reader.getCanBan();
-    msg.canSetPassword = reader.getCanSetPassword();
+    msg.perms.isModerator = reader.getIsModerator();
+    msg.perms.canMute = reader.getCanMute();
+    msg.perms.canBan = reader.getCanBan();
+    msg.perms.canSetPassword = reader.getCanSetPassword();
+    msg.perms.canEditRoles = reader.getCanEditRoles();
+    msg.perms.canSendFeatures = reader.getCanSendFeatures();
+    msg.perms.canRateFeatures = reader.getCanRateFeatures();
 
     return msg;
 }

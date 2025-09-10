@@ -8,6 +8,7 @@
 #include <globed/core/data/UserRole.hpp>
 #include <globed/core/data/AdminLogs.hpp>
 #include <globed/core/data/Event.hpp>
+#include <globed/core/data/ModPermissions.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
 #include <typeindex>
@@ -41,12 +42,6 @@ struct DeferredSessionJoin {
     bool platformer;
 };
 
-struct ModPermissions {
-    bool isModerator;
-    bool isAuthorizedModerator;
-    bool canBan;
-    bool canSetPassword;
-};
 
 // Struct for fields that are the same across one connection but are cleared on disconnect
 struct ConnectionInfo {
@@ -70,6 +65,7 @@ struct ConnectionInfo {
     std::vector<uint8_t> m_userRoleIds;
     std::optional<MultiColor> m_nameColor;
     ModPermissions m_perms{};
+    bool m_authorizedModerator;
 
     bool m_sentIcons = true; // icons are sent at login
     bool m_sentFriendList = false;

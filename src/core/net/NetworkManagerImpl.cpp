@@ -532,7 +532,8 @@ bool NetworkManagerImpl::isModerator() {
 }
 
 bool NetworkManagerImpl::isAuthorizedModerator() {
-    return this->getModPermissions().isAuthorizedModerator;
+    auto lock = m_connInfo.lock();
+    return *lock ? (*lock)->m_authorizedModerator : false;
 }
 
 ModPermissions NetworkManagerImpl::getModPermissions() {
@@ -569,7 +570,7 @@ void NetworkManagerImpl::invalidateFriendList() {
 void NetworkManagerImpl::markAuthorizedModerator() {
     auto lock = m_connInfo.lock();
     if (*lock) {
-        (**lock).m_perms.isAuthorizedModerator = true;
+        (**lock).m_authorizedModerator = true;
     }
 }
 
@@ -1217,9 +1218,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             connInfo.m_allRoles = msg.allRoles;
             connInfo.m_userRoles = msg.userRoles;
             connInfo.m_established = true;
-            connInfo.m_perms.isModerator = msg.isModerator;
-            connInfo.m_perms.canBan = msg.canBan;
-            connInfo.m_perms.canSetPassword = msg.canSetPassword;
+            connInfo.m_perms = msg.perms;
             connInfo.m_nameColor = msg.nameColor;
 
             for (auto& role : connInfo.m_userRoles) {
