@@ -105,7 +105,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
         .parent(this)
         .collect();
 
-    auto roomNameLabel = Build<CCLabelBMFont>::create(info.roomName.c_str(), "bigFont.fnt")
+    auto roomNameLabel = Build<Label>::create(info.roomName.c_str(), "bigFont.fnt")
         .id("room-name")
         .parent(roomNameLayout)
         .collect();
@@ -208,8 +208,8 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
         ? fmt::to_string(info.playerCount)
         : fmt::format("{}/{}", info.playerCount, info.settings.playerLimit);
 
-    auto playerCountLabel = Build<CCLabelBMFont>::create(playerCountText.c_str(), "bigFont.fnt")
-        .limitLabelWidth(35.f, 0.35f, 0.1f)
+    auto playerCountLabel = Build<Label>::create(playerCountText, "bigFont.fnt")
+        .with([&](auto lbl) { lbl->limitLabelWidth(35.f, 0.35f, 0.1f); })
         .parent(playerCountWrapper)
         .collect();
 
