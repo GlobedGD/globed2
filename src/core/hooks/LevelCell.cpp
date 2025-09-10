@@ -33,12 +33,17 @@ void HookedLevelCell::updatePlayerCount(int count, bool inLists) {
             .parent(this)
             .id("player-count-label"_spr);
 
-        fields.m_playerCountIcon = Build<CCSprite>::createSpriteName("icon-person.png"_spr)
+        fields.m_playerCountIcon = Build<CCSprite>::create("icon-person.png"_spr)
             .scale(iconScale)
             .anchorPoint(1.f, 0.5f)
             .pos(xPos, yPos)
             .parent(this)
             .id("player-count-icon"_spr);
+    }
+
+    if (!fields.m_playerCountLabel || !fields.m_playerCountLabel) {
+        log::error("failed to create sprite in LevelCell");
+        return;
     }
 
     if (count == 0) {

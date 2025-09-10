@@ -45,7 +45,7 @@ void NameLabel::updateName(const char* name) {
         m_labelContainer = Build<CCNode>::create()
             .zOrder(-2);
 
-        Build<CCLabelBMFont>::create("", m_font)
+        Build<GradientLabel>::create("", m_font)
             .zOrder(-1)
             .anchorPoint(0.f, 0.f)
             .parent(m_labelContainer)
@@ -184,7 +184,13 @@ void NameLabel::updateOpacity(float opacity) {
 }
 
 void NameLabel::updateColor(const MultiColor& color) {
-    if (m_label) color.animateLabel(m_label);
+    if (color.isGradient()) {
+        m_label->setGradientColors(color);
+    } else if (color.isTint()) {
+        color.animateNode(m_label);
+    } else {
+        m_label->setColor(color.getColor());
+    }
 }
 
 void NameLabel::updateColor(const Color3& color) {

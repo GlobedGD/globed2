@@ -2,6 +2,7 @@
 
 #include <Geode/Geode.hpp>
 #include <globed/core/data/SpecialUserData.hpp>
+#include <ui/misc/GradientLabel.hpp>
 
 namespace globed {
 
@@ -24,7 +25,7 @@ public:
     void addBadge(cocos2d::CCSprite* badge);
 
 private:
-    cocos2d::CCLabelBMFont* m_label = nullptr;
+    GradientLabel* m_label = nullptr;
     cocos2d::CCLabelBMFont* m_labelShadow = nullptr;
     cocos2d::CCLabelBMFont* m_teamLabel = nullptr;
     geode::Ref<cocos2d::CCNode> m_labelContainer = nullptr;

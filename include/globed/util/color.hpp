@@ -30,4 +30,18 @@ constexpr cocos2d::ccColor4B colorFromHex(const char* str) {
     return {r, g, b, a};
 }
 
+constexpr cocos2d::ccColor3B color3FromHex(const char* str) {
+    if (str[0] == '#') str++;
+
+    int len = 0;
+    while (str[len] != '\0') ++len;
+    if (len != 6) throw "Invalid hex color length";
+
+    uint8_t r = hexByte(str[0], str[1]);
+    uint8_t g = hexByte(str[2], str[3]);
+    uint8_t b = hexByte(str[4], str[5]);
+
+    return {r, g, b};
+}
+
 }

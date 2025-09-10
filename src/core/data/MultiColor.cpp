@@ -33,6 +33,14 @@ bool MultiColor::isMultiple() const {
     return m_colors.size() > 1;
 }
 
+bool MultiColor::isGradient() const {
+    return m_type == Type::Gradient;
+}
+
+bool MultiColor::isTint() const {
+    return m_type == Type::Tinting;
+}
+
 const std::vector<Color3>& MultiColor::getColors() const {
     return m_colors;
 }
@@ -42,12 +50,16 @@ Color3 MultiColor::getColor() const {
     return m_colors[0];
 }
 
-void MultiColor::animateLabel(CCLabelBMFont* label) const {
+void MultiColor::animateNode(CCRGBAProtocol* label) const {
     constexpr int tag = 34925671;
 
-    if (!label) return;
+    log::debug("re animating");
 
-    label->stopActionByTag(tag);
+    auto node = typeinfo_cast<CCNode*>(label);
+
+    if (!label || !node) return;
+
+    node->stopActionByTag(tag);
 
     if (!this->isMultiple()) {
         label->setColor(m_colors[0]);
@@ -67,7 +79,7 @@ void MultiColor::animateLabel(CCLabelBMFont* label) const {
     CCRepeat* action = CCRepeat::create(CCSequence::create(actions), 99999999);
     action->setTag(tag);
 
-    label->runAction(action);
+    node->runAction(action);
 }
 
 Result<MultiColor> MultiColor::decode(std::span<const uint8_t> data) {
