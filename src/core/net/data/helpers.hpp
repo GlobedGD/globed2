@@ -751,6 +751,26 @@ $implDecode(msg::CreditsMessage, main::CreditsMessage::Reader& reader) {
     return out;
 }
 
+/// Discord link stae
+
+$implDecode(msg::DiscordLinkStateMessage, main::DiscordLinkStateMessage::Reader& reader) {
+    msg::DiscordLinkStateMessage out{};
+    out.id = reader.getId();
+    out.username = reader.getUsername();
+    out.avatarUrl = reader.getAvatarUrl();
+    return out;
+}
+
+/// Discord link attempt
+
+$implDecode(msg::DiscordLinkAttemptMessage, main::DiscordLinkAttemptMessage::Reader& reader) {
+    msg::DiscordLinkAttemptMessage out{};
+    out.id = reader.getId();
+    out.username = reader.getUsername();
+    out.avatarUrl = reader.getAvatarUrl();
+    return out;
+}
+
 /// Invited
 
 $implDecode(msg::InvitedMessage, main::InvitedMessage::Reader& reader) {

@@ -149,6 +149,22 @@ struct CreditsMessage {
     bool unavailable;
 };
 
+// Discord link state
+
+struct DiscordLinkStateMessage {
+    uint64_t id;
+    std::string username;
+    std::string avatarUrl;
+};
+
+// Discord link attempt
+
+struct DiscordLinkAttemptMessage {
+    uint64_t id;
+    std::string username;
+    std::string avatarUrl;
+};
+
 // Admin
 
 struct AdminResultMessage {

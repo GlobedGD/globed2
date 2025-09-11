@@ -143,6 +143,9 @@ public:
     void sendUpdateRoomSettings(const RoomSettings& settings);
     void sendInvitePlayer(int32_t player);
     void sendFetchCredits();
+    void sendGetDiscordLinkState();
+    void sendSetDiscordPairingState(bool state);
+    void sendDiscordLinkConfirm(int64_t id, bool confirm);
 
     void sendAdminLogin(const std::string& password);
     void sendAdminKick(int32_t accountId, const std::string& message);

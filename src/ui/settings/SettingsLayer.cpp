@@ -2,6 +2,8 @@
 #include "BoolSettingCell.hpp"
 #include "FloatSettingCell.hpp"
 #include "TitleSettingCell.hpp"
+#include "ButtonSettingCell.hpp"
+#include "DiscordLinkPopup.hpp"
 
 #include <UIBuilder.hpp>
 
@@ -25,6 +27,15 @@ bool SettingsLayer::init() {
 }
 
 void SettingsLayer::addSettings() {
+    // TODO: descriptions
+    // Globed
+    this->addSetting<BoolSettingCell>("core.autoconnect", "Autoconnect", "");
+    this->addSetting<BoolSettingCell>("core.ui.increase-level-list", "Increase Level List", "");
+    this->addSetting<BoolSettingCell>("core.ui.compressed-player-count", "Simple Player Count", "");
+    this->addSetting(ButtonSettingCell::create("Discord Linking", "", "Link", [this] {
+        DiscordLinkPopup::create()->show();
+    }, CELL_SIZE));
+
     // Player settings
     this->addHeader("core.player", "Players");
     this->addSetting<FloatSettingCell>("core.player.opacity", "Player Opacity", "");
@@ -38,6 +49,13 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.player.rotate-names", "Rotate Names", "");
     this->addSetting<BoolSettingCell>("core.player.death-effects", "Death Effects", "");
     this->addSetting<BoolSettingCell>("core.player.default-death-effects", "Default Death Effects", "");
+
+    // Level UI
+    this->addHeader("core.level", "Level UI");
+    this->addSetting<BoolSettingCell>("core.level.progress-indicators", "Progress Icons", "");
+    this->addSetting<FloatSettingCell>("core.level.progress-opacity", "Progress Opacity", "");
+    this->addSetting<BoolSettingCell>("core.level.voice-overlay", "Voice Chat Overlay", "");
+    this->addSetting<BoolSettingCell>("core.level.force-progressbar", "Force progressbar", "");
 
     // Preload
     this->addHeader("core.player", "Preloading");

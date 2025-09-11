@@ -17,6 +17,8 @@ protected:
     CCMenuItemSpriteExtra* m_infoButton = nullptr;
 
     bool init(CStr key, CStr name, CStr desc, cocos2d::CCSize cellSize);
+    bool initNoSetting(CStr name, CStr desc, cocos2d::CCSize cellSize);
+
     virtual void setup() = 0;
 };
 

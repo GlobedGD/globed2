@@ -13,14 +13,19 @@ bool BaseSettingCellBase::init(
     CStr desc,
     cocos2d::CCSize size
 ) {
+    m_key = key;
+    return this->initNoSetting(name, desc, size);
+}
+
+bool BaseSettingCellBase::initNoSetting(CStr name, CStr desc, cocos2d::CCSize size) {
     CCMenu::init();
+
     this->ignoreAnchorPointForPosition(false);
     this->setCascadeColorEnabled(false);
 
-    m_key = key;
-    m_desc = desc;
-    m_name = name;
     m_size = size;
+    m_name = name;
+    m_desc = desc;
 
     this->setContentSize(m_size);
 

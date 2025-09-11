@@ -997,6 +997,27 @@ void NetworkManagerImpl::sendFetchCredits() {
     });
 }
 
+void NetworkManagerImpl::sendGetDiscordLinkState() {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        msg.initGetDiscordLinkState();
+    });
+}
+
+void NetworkManagerImpl::sendSetDiscordPairingState(bool state) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto m = msg.initSetDiscordPairingState();
+        m.setState(state);
+    });
+}
+
+void NetworkManagerImpl::sendDiscordLinkConfirm(int64_t id, bool confirm) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto m = msg.initDiscordLinkConfirm();
+        m.setId(id);
+        m.setAccept(confirm);
+    });
+}
+
 void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto adminNotice = msg.initAdminNotice();
@@ -1383,6 +1404,16 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         case CentralMessage::CREDITS: {
             this->invokeListeners(data::decodeUnchecked<msg::CreditsMessage>(msg.getCredits()));
         } break;
+
+        case CentralMessage::DISCORD_LINK_STATE: {
+            this->invokeListeners(data::decodeUnchecked<msg::DiscordLinkStateMessage>(msg.getDiscordLinkState()));
+        } break;
+
+        case CentralMessage::DISCORD_LINK_ATTEMPT: {
+            this->invokeListeners(data::decodeUnchecked<msg::DiscordLinkAttemptMessage>(msg.getDiscordLinkAttempt()));
+        } break;
+
+        //
 
         case CentralMessage::ADMIN_RESULT: {
             auto adminResult = msg.getAdminResult();
