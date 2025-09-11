@@ -4,6 +4,8 @@
 #include "TitleSettingCell.hpp"
 #include "ButtonSettingCell.hpp"
 #include "DiscordLinkPopup.hpp"
+#include <globed/core/PopupManager.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -33,6 +35,11 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.ui.increase-level-list", "Increase Level List", "");
     this->addSetting<BoolSettingCell>("core.ui.compressed-player-count", "Simple Player Count", "");
     this->addSetting(ButtonSettingCell::create("Discord Linking", "", "Link", [this] {
+        if (!NetworkManagerImpl::get().isConnected()) {
+            globed::alert("Error", "Cannot do this while not connected to a server.");
+            return;
+        }
+
         DiscordLinkPopup::create()->show();
     }, CELL_SIZE));
 

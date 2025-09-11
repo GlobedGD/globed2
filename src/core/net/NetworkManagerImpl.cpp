@@ -428,7 +428,8 @@ std::vector<GameServer> NetworkManagerImpl::getGameServers() {
 }
 
 bool NetworkManagerImpl::isConnected() const {
-    return (**m_connInfo.lock()).m_established;
+    auto lock = m_connInfo.lock();
+    return *lock && (*lock)->m_established;
 }
 
 Duration NetworkManagerImpl::getGamePing() {
