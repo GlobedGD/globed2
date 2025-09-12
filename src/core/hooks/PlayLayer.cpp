@@ -136,22 +136,21 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         // Override it and temporarily set death effect to 0, to prevent it from being unloaded.
 
         auto& pm = PreloadManager::get();
-        if (!pm.deathEffectsLoaded()) {
+        if (pm.deathEffectsLoaded()) {
+            auto gm = globed::cachedSingleton<GameManager>();
+            int effect = gm->m_playerDeathEffect;
+
+            gm->m_loadedDeathEffect = 0;
+            gm->m_playerDeathEffect = 0;
+
+            PlayLayer::setupHasCompleted();
+
+            gm->m_playerDeathEffect = effect;
+            gm->m_loadedDeathEffect = effect;
+        } else {
             // if they were not preloaded, skip custom behavior and let the game handle it normally
             PlayLayer::setupHasCompleted();
-            return;
         }
-
-        auto gm = globed::cachedSingleton<GameManager>();
-        int effect = gm->m_playerDeathEffect;
-
-        gm->m_loadedDeathEffect = 0;
-        gm->m_playerDeathEffect = 0;
-
-        PlayLayer::setupHasCompleted();
-
-        gm->m_playerDeathEffect = effect;
-        gm->m_loadedDeathEffect = effect;
 
         m_fields->m_setupWasCompleted = true;
 

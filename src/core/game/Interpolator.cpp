@@ -56,7 +56,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
 
     state.totalFrames++;
 
-    if (!state.frames.empty() && !culled) {
+    if (!state.frames.empty()) {
         auto& prevFrame = state.newestFrame();
         // ignore repeated frames
         if (player.timestamp == prevFrame.timestamp) {
@@ -69,29 +69,29 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
             state.lastDeath = PlayerDeath { player.isLastDeathReal };
         }
 
-        // detect spider tp
-        if (auto sptp1 = detectSpiderTp(*player.player1, *prevFrame.player1)) {
-            state.lastSpiderTp1 = sptp1;
-        }
-
-        if (player.player2 && prevFrame.player2) {
-            if (auto sptp2 = detectSpiderTp(*player.player2, *prevFrame.player2)) {
-                state.lastSpiderTp2 = sptp2;
+        if (!culled) {
+            // detect spider tp
+            if (auto sptp1 = detectSpiderTp(*player.player1, *prevFrame.player1)) {
+                state.lastSpiderTp1 = sptp1;
             }
+
+            if (player.player2 && prevFrame.player2) {
+                if (auto sptp2 = detectSpiderTp(*player.player2, *prevFrame.player2)) {
+                    state.lastSpiderTp2 = sptp2;
+                }
+            }
+
+            LERP_LOG("[Interpolator] new frame for {}, X progression: {} ({}) ... {} ({}) -> {} ({})",
+                player.accountId,
+                state.oldestFrame().player1->position.x,
+                state.oldestFrame().timestamp,
+                prevFrame.player1->position.x,
+                prevFrame.timestamp,
+                player.player1->position.x,
+                player.timestamp
+            );
         }
-
-        LERP_LOG("[Interpolator] new frame for {}, X progression: {} ({}) ... {} ({}) -> {} ({})",
-            player.accountId,
-            state.oldestFrame().player1->position.x,
-            state.oldestFrame().timestamp,
-            prevFrame.player1->position.x,
-            prevFrame.timestamp,
-            player.player1->position.x,
-            player.timestamp
-        );
     }
-
-    // TODO: pending frame flags like jump, spider teleport
 
     // assert that the frame is newer than the last one
     if (!state.frames.empty()) {
