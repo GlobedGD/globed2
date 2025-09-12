@@ -278,6 +278,8 @@ $implDecode(RoomSettings, main::RoomSettings::Reader& reader) {
 /// Multi color
 
 inline std::optional<MultiColor> decodeMultiColor(capnp::Data::Reader data) {
+    if (data.size() == 0) return std::nullopt;
+
     auto mc = MultiColor::decode({data.begin(), data.size()});
     if (!mc) {
         geode::log::warn(
@@ -381,6 +383,7 @@ $implDecode(RoomPlayer, main::RoomPlayer::Reader& reader) {
         }
 
         sud.roleIds = {rsud.getRoles().begin(), rsud.getRoles().end()};
+        out.specialUserData = std::move(sud);
     }
 
     return out;
@@ -648,6 +651,24 @@ $implDecode(msg::TeamsUpdatedMessage, main::TeamsUpdatedMessage::Reader& reader)
             .color = decodeColor4(team),
         });
     }
+
+    return out;
+}
+
+/// UserDataChangedMessage
+
+$implDecode(msg::UserDataChangedMessage, main::UserDataChangedMessage::Reader& reader) {
+    msg::UserDataChangedMessage out{};
+
+    out.roles = {reader.getRoles().begin(), reader.getRoles().end()};
+    out.nameColor = decodeMultiColor(reader.getNameColor());
+    out.perms.isModerator = reader.getIsModerator();
+    out.perms.canMute = reader.getCanMute();
+    out.perms.canBan = reader.getCanBan();
+    out.perms.canSetPassword = reader.getCanSetPassword();
+    out.perms.canEditRoles = reader.getCanEditRoles();
+    out.perms.canSendFeatures = reader.getCanSendFeatures();
+    out.perms.canRateFeatures = reader.getCanRateFeatures();
 
     return out;
 }

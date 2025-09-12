@@ -123,6 +123,8 @@ void NameLabel::updateNoTeam() {
 }
 
 void NameLabel::updateWithRoles(const SpecialUserData& data) {
+    this->removeAllBadges();
+
     bool colorSet = false;
 
     if (data.nameColor) {
@@ -161,6 +163,13 @@ void NameLabel::addBadge(cocos2d::CCSprite* badge) {
     m_badgeContainer->addChild(badge);
 
     this->resizeBadgeContainer();
+}
+
+void NameLabel::removeAllBadges() {
+    for (auto child : m_badgeContainer->getChildrenExt()) {
+        if (child == m_teamLabel) continue;
+        child->removeFromParent();
+    }
 }
 
 void NameLabel::resizeBadgeContainer() {

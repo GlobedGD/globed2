@@ -1285,6 +1285,27 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             updateServers(connInfo.m_gameServers, servers);
         } break;
 
+        case CentralMessage::USER_DATA_CHANGED: {
+            auto outp = data::decodeUnchecked<msg::UserDataChangedMessage>(msg.getUserDataChanged());
+            auto lock = m_connInfo.lock();
+            auto& connInfo = **lock;
+
+            connInfo.m_perms = outp.perms;
+            connInfo.m_nameColor = outp.nameColor;
+            connInfo.m_userRoleIds = outp.roles;
+
+            connInfo.m_userRoles.clear();
+            for (auto id : outp.roles) {
+                if (id < connInfo.m_allRoles.size()) {
+                    connInfo.m_userRoles.push_back(connInfo.m_allRoles[id]);
+                } else {
+                    log::warn("Unknown role ID: {}", id);
+                }
+            }
+
+            this->invokeListeners(std::move(outp));
+        } break;
+
         case CentralMessage::PLAYER_COUNTS: {
             this->invokeListeners(data::decodeUnchecked<msg::PlayerCountsMessage>(msg.getPlayerCounts()));
         } break;

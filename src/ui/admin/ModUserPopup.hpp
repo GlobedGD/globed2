@@ -13,13 +13,15 @@ class ModUserPopup : public BasePopup<ModUserPopup, int>, public UserInfoDelegat
 public:
     static const cocos2d::CCSize POPUP_SIZE;
 
-    void startLoadingProfile(const std::string& query);
+    void startLoadingProfile(const std::string& query, bool isId);
+    void startLoadingProfile(int id);
 
 protected:
     cue::LoadingCircle* m_loadCircle;
     std::optional<MessageListener<msg::AdminFetchResponseMessage>> m_listener;
     std::optional<MessageListener<msg::AdminResultMessage>> m_resultListener;
     std::string m_query;
+    bool m_queryIsId = false;
     cocos2d::CCMenu* m_nameLayout = nullptr;
     cocos2d::CCMenu* m_rootMenu = nullptr;
     CCMenuItemSpriteExtra* m_roleModifyButton = nullptr;

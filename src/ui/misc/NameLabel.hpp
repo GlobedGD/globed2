@@ -23,6 +23,7 @@ public:
     void setMultipleBadges(bool multiple);
     void setShadowEnabled(bool enabled);
     void addBadge(cocos2d::CCSprite* badge);
+    void removeAllBadges();
 
 private:
     GradientLabel* m_label = nullptr;

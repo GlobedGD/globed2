@@ -50,6 +50,7 @@ private:
     std::optional<asp::time::Instant> m_lastInteraction;
     std::optional<cue::ScrollPos> m_lastScrollPos;
     std::string m_curFilter;
+    bool m_hardRefresh = false;
 
     bool init() override;
     void update(float dt) override;

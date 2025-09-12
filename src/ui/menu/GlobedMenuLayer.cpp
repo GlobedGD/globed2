@@ -9,6 +9,7 @@
 #include <globed/util/Random.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
+#include <ui/admin/ModUserPopup.hpp>
 #include <ui/misc/InputPopup.hpp>
 #include <ui/menu/RoomListingPopup.hpp>
 #include <ui/menu/ServerListPopup.hpp>
@@ -78,33 +79,45 @@ public:
         return nullptr;
     }
 
-    void softRefresh(const RoomPlayer& rp) {}
+    void softRefresh(const RoomPlayer& rp) {
+        if (rp.specialUserData) {
+            m_nameLabel->updateWithRoles(*rp.specialUserData);
+        }
+
+        if (rp.session != m_sessionId) {
+            m_sessionId = rp.session;
+            this->recreateSessionButton();
+        }
+    }
 
 protected:
     SessionId m_sessionId;
+    CCMenuItemSpriteExtra* m_joinBtn = nullptr;
+    static constexpr CCSize BTN_SIZE { 22.f, 22.f };
 
     bool customSetup() {
-        CCSize btnSize { 22.f, 22.f };
+        this->recreateSessionButton();
 
-        if (m_sessionId.asU64() != 0) {
-            // add button to join the session
-            Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
-                .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
-                .intoMenuItem([this] {
-                    globed::warpToSession(m_sessionId, false, true);
-                })
-                .zOrder(10)
-                .scaleMult(1.1f)
-                .parent(m_rightMenu);
+        // if we are room host or a moderator, add a button that allows us kicking/banning the person or opening mod panel
+        auto& rm = RoomManager::get();
+        bool isMod = NetworkManagerImpl::get().isAuthorizedModerator();
+        bool isOwner = rm.isOwner();
+        bool isInRoom = !rm.isInGlobal();
 
-        }
-
-        // if we are room host, add a button that allows us kicking/banning the person
-        if (RoomManager::get().isOwner()) {
+        if (isInRoom && (isMod || isOwner)) {
             Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
-                .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
+                .with([&](auto spr) { cue::rescaleToMatch(spr, BTN_SIZE); })
                 .intoMenuItem([this] {
                     this->openUserControls();
+                })
+                .zOrder(9)
+                .scaleMult(1.1f)
+                .parent(m_rightMenu);
+        } else if (isMod) {
+            Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+                .with([&](auto spr) { cue::rescaleToMatch(spr, BTN_SIZE); })
+                .intoMenuItem([this] {
+                    this->openModPanel();
                 })
                 .zOrder(9)
                 .scaleMult(1.1f)
@@ -116,8 +129,30 @@ protected:
         return true;
     }
 
+    void recreateSessionButton() {
+        cue::resetNode(m_joinBtn);
+
+        if (m_sessionId.asU64() != 0) {
+            // add button to join the session
+            m_joinBtn = Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
+                .with([&](auto spr) { cue::rescaleToMatch(spr, BTN_SIZE); })
+                .intoMenuItem([this] {
+                    globed::warpToSession(m_sessionId, false, true);
+                })
+                .zOrder(10)
+                .scaleMult(1.1f)
+                .parent(m_rightMenu);
+        }
+
+        m_rightMenu->updateLayout();
+    }
+
     void openUserControls() {
         RoomUserControlsPopup::create(m_accountId, m_username)->show();
+    }
+
+    void openModPanel() {
+        ModUserPopup::create(m_accountId)->show();
     }
 };
 
@@ -371,9 +406,13 @@ void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<Room
 }
 
 void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
-    if (this->trySoftRefresh(players)) {
-        return;
+    if (!m_hardRefresh) {
+        if (this->trySoftRefresh(players)) {
+            return;
+        }
     }
+
+    m_hardRefresh = false;
 
     auto scrollPos = m_playerList->getScrollPos();
 
@@ -730,6 +769,8 @@ void GlobedMenuLayer::initSideButtons() {
         RightBtn::Refresh,
         "btn-refresh",
         [this] {
+            m_hardRefresh = true;
+
             if (m_curFilter.empty()) {
                 this->requestRoomState();
             } else {

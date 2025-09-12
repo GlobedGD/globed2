@@ -50,7 +50,7 @@ bool ModUserPopup::setup(int accountId) {
     // 2. Search for the user on the GD server to get their up-to-date account data
 
     if (accountId != 0) {
-        this->startLoadingProfile(fmt::to_string(accountId));
+        this->startLoadingProfile(accountId);
     }
 
     return true;
@@ -282,7 +282,7 @@ void ModUserPopup::createMuteAndBanButtons() {
 }
 
 void ModUserPopup::fullRefresh() {
-    this->startLoadingProfile(fmt::to_string(m_data->accountId));
+    this->startLoadingProfile(m_data->accountId);
 }
 
 void ModUserPopup::showPunishmentPopup(UserPunishmentType type) {
@@ -298,7 +298,11 @@ void ModUserPopup::showPunishmentPopup(UserPunishmentType type) {
     popup->show();
 }
 
-void ModUserPopup::startLoadingProfile(const std::string& query) {
+void ModUserPopup::startLoadingProfile(int id) {
+    this->startLoadingProfile(fmt::to_string(id), true);
+}
+
+void ModUserPopup::startLoadingProfile(const std::string& query, bool isId) {
     // remove all custom nodes
     cue::resetNode(m_roleModifyButton);
     cue::resetNode(m_banButton);
@@ -316,6 +320,7 @@ void ModUserPopup::startLoadingProfile(const std::string& query) {
 
     m_loadCircle->fadeIn();
     m_query = query;
+    m_queryIsId = isId;
 
     auto& nm = NetworkManagerImpl::get();
     nm.sendAdminFetchUser(query);
@@ -334,6 +339,8 @@ void ModUserPopup::onLoaded(const msg::AdminFetchResponseMessage& msg) {
             .activeMute = std::move(msg.activeMute),
         };
         queryAccountId = msg.accountId;
+    } else if (m_queryIsId) {
+        queryAccountId = utils::numFromString<int>(m_query).unwrapOr(0);
     }
 
     // if this is a refresh, reuse the user score
