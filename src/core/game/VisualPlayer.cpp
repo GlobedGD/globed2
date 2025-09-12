@@ -35,7 +35,7 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     bool showName = setting<bool>("core.player.show-names") && (!isSecond || setting<bool>("core.player.dual-name"));
     m_forceHideName = !showName;
 
-    m_nameLabel = Build<NameLabel>::create("", "chatFont.fnt", true)
+    m_nameLabel = Build<NameLabel>::create("", "chatFont.fnt")
         .visible(showName)
         .pos(0.f, NAME_OFFSET)
         .parent(playerNode)

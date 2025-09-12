@@ -8,7 +8,7 @@ namespace globed {
 
 class NameLabel : public cocos2d::CCMenu {
 public:
-    static NameLabel* create(const std::string& name, const char* font = "chatFont.fnt", bool alignMiddle = false);
+    static NameLabel* create(const std::string& name, const char* font = "chatFont.fnt");
 
     void makeClickable(std::function<void(CCMenuItemSpriteExtra*)> callback);
     void updateName(const std::string& name);
@@ -24,6 +24,7 @@ public:
     void setShadowEnabled(bool enabled);
     void addBadge(cocos2d::CCSprite* badge);
     void removeAllBadges();
+    void updateSelfWidth();
 
 private:
     GradientLabel* m_label = nullptr;
@@ -37,7 +38,7 @@ private:
     bool m_multipleBadges = false;
     bool m_shadow = true;
 
-    bool init(const std::string& name, const char* font, bool alignMiddle);
+    bool init(const std::string& name, const char* font);
     void resizeBadgeContainer();
     void onClick(CCMenuItemSpriteExtra* btn);
 };

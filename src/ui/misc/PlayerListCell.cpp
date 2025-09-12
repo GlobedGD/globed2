@@ -45,7 +45,7 @@ bool PlayerListCell::init(
 
     cue::rescaleToMatch(m_cubeIcon, cellSize.height * 0.7f);
 
-    m_nameLabel = Build(NameLabel::create(username, "bigFont.fnt", false))
+    m_nameLabel = Build(NameLabel::create(username, "bigFont.fnt"))
         .with([&](auto lbl) {
             lbl->setScale(cellSize.height * 0.65f / lbl->getContentHeight());
             lbl->makeClickable(

@@ -162,7 +162,7 @@ bool SupportPopup::setup(CCSprite* bg) {
             player->runAction(playerSequence);
         })
         .store(player)
-        .intoNewChild(NameLabel::create(gm->m_playerName.c_str(), "chatFont.fnt", true))
+        .intoNewChild(NameLabel::create(gm->m_playerName.c_str(), "chatFont.fnt"))
         .with([&](NameLabel* label) {
             label->addBadge(createBadge("role-supporter.png"));
             label->updateColor(Color3{ 154, 88, 255 });

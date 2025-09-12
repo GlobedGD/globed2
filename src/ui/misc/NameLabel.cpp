@@ -8,7 +8,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool NameLabel::init(const std::string& name, const char* font, bool alignMiddle) {
+bool NameLabel::init(const std::string& name, const char* font) {
     if (!CCMenu::init()) return false;
 
     m_font = font;
@@ -28,9 +28,7 @@ bool NameLabel::init(const std::string& name, const char* font, bool alignMiddle
     this->setLayout(RowLayout::create()
                 ->setGap(4.f)
                 ->setAutoScale(false)
-                ->setAxisAlignment(alignMiddle ? AxisAlignment::Center : AxisAlignment::Start)
     );
-    this->setContentWidth(320.f);
     this->updateName(name);
 
     return true;
@@ -82,6 +80,13 @@ void NameLabel::updateName(const char* name) {
         .scaleMult(1.1f)
         .enabled(false)
         .parent(this);
+
+    this->updateSelfWidth();
+}
+
+void NameLabel::updateSelfWidth() {
+    float width = m_labelButton->getScaledContentWidth() + static_cast<AxisLayout*>(this->getLayout())->getGap() + m_badgeContainer->getScaledContentWidth();
+    this->setContentWidth(width);
 
     this->updateLayout();
 }
@@ -186,6 +191,8 @@ void NameLabel::resizeBadgeContainer() {
 
     m_badgeContainer->setContentWidth(width);
     m_badgeContainer->updateLayout();
+
+    this->updateSelfWidth();
 }
 
 void NameLabel::updateOpacity(float opacity) {
@@ -236,9 +243,9 @@ void NameLabel::setShadowEnabled(bool enabled) {
     }
 }
 
-NameLabel* NameLabel::create(const std::string& name, const char* font, bool alignMiddle) {
+NameLabel* NameLabel::create(const std::string& name, const char* font) {
     auto ret = new NameLabel();
-    if (ret->init(name, font, alignMiddle)) {
+    if (ret->init(name, font)) {
         ret->autorelease();
         return ret;
     }

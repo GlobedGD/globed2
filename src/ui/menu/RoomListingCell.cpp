@@ -53,25 +53,15 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
         .collect();
 
     auto playerIcon = Build(info.roomOwner.createIcon())
-        .scale(0.35f)
+        .scale(0.43f)
         .parent(playerMenu)
         .zOrder(-1)
         .collect();
 
-    // auto nameButton = Build<CCLabelBMFont>::create(info.roomOwner.accountData.username.c_str(), "goldFont.fnt")
-    //     .scale(0.5f)
-    //     .id("player-name")
-    //     .intoMenuItem([this] {
-    //         globed::openUserProfile(m_info.roomOwner);
-    //     })
-    //     .pos(3.f, 50.f)
-    //     .zOrder(0)
-    //     .scaleMult(1.1f)
-    //     .parent(playerMenu)
-    //     .collect();
+    bool customNameColor = info.roomOwner.specialUserData && info.roomOwner.specialUserData->nameColor;
 
-    auto nameButton = Build(NameLabel::create(info.roomOwner.accountData.username, "goldFont.fnt", false))
-        .scale(0.5f)
+    auto nameButton = Build(NameLabel::create(info.roomOwner.accountData.username, customNameColor ? "bigFont.fnt" : "goldFont.fnt"))
+        .scale(customNameColor ? 0.68f : 0.7f)
         .id("player-name")
         .pos(3.f, 50.f)
         .zOrder(0)
@@ -82,7 +72,9 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
         globed::openUserProfile(m_info.roomOwner);
     });
 
-    // TODO Badges
+    if (info.roomOwner.specialUserData) {
+        nameButton->updateWithRoles(*info.roomOwner.specialUserData);
+    }
 
     playerMenu->updateLayout();
     nameButton->setPositionY(nameButton->getPositionY() + 1.f); // move text slightly up
@@ -260,7 +252,7 @@ void RoomListingCell::recreateButton() {
     cue::resetNode(m_rightButton);
 
     if (m_modActions) {
-        // TODO
+        // TODO mod actions
     } else {
         m_rightButton = Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .scale(0.7f)

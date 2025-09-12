@@ -13,8 +13,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize RoomListingPopup::POPUP_SIZE = {420.f, 240.f};
-const CCSize RoomListingPopup::LIST_SIZE = {375.f, 160.f};
+const CCSize RoomListingPopup::POPUP_SIZE = {420.f, 280.f};
+const CCSize RoomListingPopup::LIST_SIZE = {375.f, 200.f};
 
 static std::vector<RoomListingInfo> makeFakeData();
 

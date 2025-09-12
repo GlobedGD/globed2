@@ -9,7 +9,7 @@ namespace globed {
 
 class RoomListingCell : public cocos2d::CCLayerColor {
 public:
-    static constexpr float CELL_HEIGHT = 35.f;
+    static constexpr float CELL_HEIGHT = 37.f;
 
     static RoomListingCell* create(const RoomListingInfo& info, RoomListingPopup* popup);
     void toggleModActions(bool enabled);
