@@ -1036,6 +1036,8 @@ void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
         case MenuState::Connected: {
             m_connectMenu->setVisible(false);
             m_playerListMenu->setVisible(true);
+            m_playerList->clear();
+            m_hardRefresh = true;
         } break;
     }
 
