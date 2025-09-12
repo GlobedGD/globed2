@@ -26,6 +26,7 @@ public:
 
     void addPlayer(int playerId);
     void removePlayer(int playerId);
+    void resetPlayer(int playerId);
     bool hasPlayer(int playerId) const;
     void updatePlayer(const PlayerState& player, float curTimestamp);
     void updateNoop(int accountId, float curTimestamp);
@@ -60,6 +61,7 @@ private:
         float timeCounter = -100.0f;
         float lastDriftCorrection = -100.0f;
         float updatedAt = 0.0f;
+        size_t hugeLagCounter = 0;
 
         std::optional<PlayerDeath> takeDeath();
         std::optional<SpiderTeleportData> takeSpiderTp(bool p1);

@@ -501,6 +501,9 @@ void VisualPlayer::updateDisplayData() {
 
     m_nameLabel->updateName(ddata.username);
     m_nameLabel->updateOpacity(globed::setting<float>("core.player.name-opacity"));
+    if (ddata.specialUserData) {
+        m_nameLabel->updateWithRoles(*ddata.specialUserData);
+    }
 
     // TODO: i dont know why this was here
     this->togglePlatformerMode(m_gameLayer->m_level->isPlatformer());

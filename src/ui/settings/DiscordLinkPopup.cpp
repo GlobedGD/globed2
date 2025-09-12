@@ -38,6 +38,20 @@ bool DiscordLinkPopup::setup() {
         .scaleMult(1.1f)
         .parent(m_buttonMenu);
 
+    Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+        .with([&](auto spr) { cue::rescaleToMatch(spr, 20.f); })
+        .intoMenuItem([this] {
+            globed::alert(
+                "Discord Link",
+                "In this menu you can link your <cb>Discord</c> account to your <cg>Geometry Dash</c> account.\n\n"
+                "This unlocks some benefits, such as the ability to use <cj>voice chat</c> and sync your <cb>Discord</c> roles (for <cp>Supporters</c> or <cl>Moderators</c>).\n\n"
+                "To start, you <cr>must</c> join our <cb>Discord</c> server, by clicking the button in the bottom left."
+            );
+        })
+        .pos(this->fromBottomRight(18.f, 18.f))
+        .scaleMult(1.1f)
+        .parent(m_buttonMenu);
+
     m_playerCard = Build<CCNode>::create()
         .anchorPoint(0.5f, 0.5f)
         .contentSize(POPUP_SIZE.width * 0.85f, POPUP_SIZE.height * 0.55f)

@@ -23,6 +23,10 @@ void Interpolator::removePlayer(int playerId) {
     m_players.erase(playerId);
 }
 
+void Interpolator::resetPlayer(int playerId) {
+    m_players[playerId] = LerpState{};
+}
+
 bool Interpolator::hasPlayer(int playerId) const {
     return m_players.contains(playerId);
 }
@@ -90,11 +94,25 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
     // TODO: pending frame flags like jump, spider teleport
 
     // assert that the frame is newer than the last one
-    if (!state.frames.empty() && player.timestamp <= state.newestFrame().timestamp) {
-        LERP_LOG("[Interpolator] Frame for player {} is not newer than the last one: {} <= {}",
-            player.accountId, player.timestamp, state.newestFrame().timestamp
-        );
-        return;
+    if (!state.frames.empty()) {
+        float timeDifference = player.timestamp - state.newestFrame().timestamp;
+        if (timeDifference <= 0.f) {
+            LERP_LOG("[Interpolator] Frame for player {} is not newer than the last one: {} <= {}",
+                player.accountId, player.timestamp, state.newestFrame().timestamp
+            );
+
+            if (timeDifference < -1.f) {
+                // more than 1 second behind, increment huge lag counter
+                state.hugeLagCounter++;
+
+                // if this happened 3 times in a row, it's very safe to assume that the player quickly rejoined the level, so reset the player state
+                if (state.hugeLagCounter >= 3) {
+                    this->resetPlayer(player.accountId);
+                }
+            }
+
+            return;
+        }
     }
 
     state.frames.push_back(player);
