@@ -57,6 +57,7 @@ void HookedLevelCell::updatePlayerCount(int count, bool inLists) {
     if (globed::setting<bool>("core.ui.compressed-player-count")) {
         fields.m_playerCountIcon->setVisible(true);
         fields.m_playerCountLabel->setString(fmt::format("{}", count).c_str());
+        fields.m_playerCountLabel->setPositionX(fields.m_playerCountIcon->getPositionX() - 13.f);
     } else {
         fields.m_playerCountIcon->setVisible(false);
         fields.m_playerCountLabel->setString(fmt::format("{} {}", count, count == 1 ? "player" : "players").c_str());
