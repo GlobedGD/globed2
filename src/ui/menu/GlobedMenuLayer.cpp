@@ -1038,6 +1038,7 @@ void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
             m_playerListMenu->setVisible(true);
             m_playerList->clear();
             m_hardRefresh = true;
+            this->requestRoomState();
         } break;
     }
 
