@@ -10,6 +10,7 @@
 #include <globed/util/gd.hpp>
 #include <core/CoreImpl.hpp>
 #include "data/helpers.hpp"
+#include <bb_public.hpp>
 
 #include <argon/argon.hpp>
 #include <qunet/Pinger.hpp>
@@ -95,6 +96,8 @@ std::string_view connectionStateToStr(qn::ConnectionState state) {
 }
 
 NetworkManagerImpl::NetworkManagerImpl() {
+    m_hasSecure = bb_init();
+
     // TODO: measure how much of an impact those have on bandwidth
     m_centralConn.setActiveKeepaliveInterval(Duration::fromSecs(45));
     m_gameConn.setActiveKeepaliveInterval(Duration::fromSecs(10));
@@ -223,8 +226,24 @@ NetworkManagerImpl::NetworkManagerImpl() {
             } break;
 
             case qn::ConnectionState::Connected: {
-                this->thrPingGameServers();
-                this->thrMaybeResendOwnData();
+                auto lock = m_connInfo.lock();
+                if (*lock) {
+                    auto& info = **lock;
+                    this->thrPingGameServers(info);
+                    this->thrMaybeResendOwnData(info);
+
+                    // this is a mess
+                    bool timedOut = info.m_authenticating && info.m_triedAuthAt.elapsed() > Duration::fromSecs(5);
+
+                    if (timedOut && !info.m_waitingForArgon && !info.m_established) {
+                        // cancel connection
+                        lock.unlock();
+                        this->abortConnection("Authentication timed out");
+                        return;
+                    }
+                }
+
+                lock.unlock();
 
                 if (m_disconnectNotify.wait(Duration::fromMillis(10), [&] {
                     return m_disconnectRequested.load();
@@ -271,9 +290,8 @@ NetworkManagerImpl& NetworkManagerImpl::get() {
     return *NetworkManager::get().m_impl;
 }
 
-void NetworkManagerImpl::thrPingGameServers() {
-    auto connInfo = m_connInfo.lock();
-    auto& servers = (*connInfo)->m_gameServers;
+void NetworkManagerImpl::thrPingGameServers(ConnectionInfo& connInfo) {
+    auto& servers = connInfo.m_gameServers;
 
     for (auto& [srvkey, server] : servers) {
         if (server.lastPingTime.elapsed() > getPingInterval(server.sentPings)) {
@@ -308,13 +326,12 @@ void NetworkManagerImpl::thrPingGameServers() {
     }
 }
 
-void NetworkManagerImpl::thrMaybeResendOwnData() {
+void NetworkManagerImpl::thrMaybeResendOwnData(ConnectionInfo& connInfo) {
     auto& flm = FriendListManager::get();
 
     // check if icons or friend list need to be resent
-    auto connInfo = m_connInfo.lock();
-    bool friendList = !(**connInfo).m_sentFriendList && flm.isLoaded();
-    bool icons = !(**connInfo).m_sentIcons;
+    bool friendList = !connInfo.m_sentFriendList && flm.isLoaded();
+    bool icons = !connInfo.m_sentIcons;
 
     if (!icons && !friendList) {
         return;
@@ -338,8 +355,8 @@ void NetworkManagerImpl::thrMaybeResendOwnData() {
         }
     });
 
-    (**connInfo).m_sentIcons = true;
-    (**connInfo).m_sentFriendList = true;
+    connInfo.m_sentIcons = true;
+    connInfo.m_sentFriendList = true;
 }
 
 Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
@@ -364,8 +381,7 @@ Result<> NetworkManagerImpl::disconnectCentral() {
         return Err("Not connected to central server");
     }
 
-    m_disconnectRequested.store(true);
-    m_disconnectNotify.notifyOne();
+    this->disconnectInner();
 
     return Ok();
 }
@@ -597,12 +613,15 @@ void NetworkManagerImpl::tryAuth() {
     auto& connInfo = **lock;
 
     if (auto stoken = this->getUToken()) {
+        connInfo.startedAuth();
+
+        auto uid = this->computeUident(accountId);
+
         this->sendToCentral([&](CentralMessage::Builder& msg) {
             log::debug("attempting login with user token {}", *stoken);
             auto loginUToken = msg.initLoginUToken();
             loginUToken.setToken(*stoken);
             loginUToken.setAccountId(accountId);
-            auto uid = this->computeUident();
             loginUToken.setUident(kj::ArrayPtr(uid.data(), uid.size()));
             data::encode(gatherIconData(), loginUToken.initIcons());
         });
@@ -612,7 +631,10 @@ void NetworkManagerImpl::tryAuth() {
         lock.unlock();
 
         auto res = argon::startAuth([&](Result<std::string> res) {
-            (**m_connInfo.lock()).m_waitingForArgon = false;
+            auto lock = m_connInfo.lock();
+            (**lock).m_waitingForArgon = false;
+            (**lock).startedAuth();
+            lock.unlock();
 
             if (!res) {
                 this->abortConnection(fmt::format("failed to complete Argon auth: {}", res.unwrapErr()));
@@ -628,6 +650,8 @@ void NetworkManagerImpl::tryAuth() {
             return;
         }
     } else {
+        connInfo.startedAuth();
+
         this->sendToCentral([&](CentralMessage::Builder& msg) {
             log::debug("attempting plain login");
             auto loginPlain = msg.initLoginPlain();
@@ -642,11 +666,13 @@ void NetworkManagerImpl::tryAuth() {
 
 void NetworkManagerImpl::doArgonAuth(std::string token) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
-        log::debug("attempting login with argon token");
+        auto accountId = GJAccountManager::get()->m_accountID;
+        auto uid = this->computeUident(accountId);
+
+        log::debug("attempting login with argon token ({})", accountId);
         auto loginArgon = msg.initLoginArgon();
         loginArgon.setToken(token);
-        loginArgon.setAccountId(GJAccountManager::get()->m_accountID);
-        auto uid = this->computeUident();
+        loginArgon.setAccountId(accountId);
         loginArgon.setUident(kj::ArrayPtr(uid.data(), uid.size()));
         data::encode(gatherIconData(), loginArgon.initIcons());
     });
@@ -1648,6 +1674,11 @@ void NetworkManagerImpl::sendToGame(std::function<void(GameMessage::Builder&)> f
     }
 }
 
+void NetworkManagerImpl::disconnectInner() {
+    m_disconnectRequested.store(true);
+    m_disconnectNotify.notifyOne();
+}
+
 std::optional<std::string> NetworkManagerImpl::getUToken() {
     return globed::value<std::string>(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
 }
@@ -1660,45 +1691,26 @@ void NetworkManagerImpl::clearUToken() {
     ValueManager::get().erase(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
 }
 
-std::array<uint8_t, 32> NetworkManagerImpl::computeUident() {
-    static auto fprint = [this]{
-        auto res = this->computeUidentInner();
+std::vector<uint8_t> NetworkManagerImpl::computeUident(int accountId) {
+    static asp::Mutex<std::pair<int, std::vector<uint8_t>>> mtx;
 
-        if (!res) {
-            log::error("Failed to compute fingerprint: {}", res.unwrapErr());
+    auto lock = mtx.lock();
+    if (lock->first == accountId) {
+        return lock->second;
+    }
 
-            // use a static predetermined value
-            auto data = globed::hexDecode("fecc8b3da5e8ed1b9dcd66f6213b6f891416c4c5f957a4a6d0c7fef540a5f05b").unwrap();
-            std::array<uint8_t, 32> arr;
-            std::copy_n(data.begin(), 32, arr.begin());
+    uint8_t buf[512];
+    size_t outLen = bb_work(accountId, (char*)buf, 512);
 
-            return arr;
-        } else {
-            auto arr = res.unwrap();
+    if (outLen == 0) {
+        log::error("Failed to compute uident!");
+        return {};
+    }
 
-            uint8_t platnib = 0; // top 4 bits indicate platform
-#ifdef GEODE_IS_WINDOWS
-            platnib = 1;
-#elif defined(GEODE_IS_ANDROID64)
-            platnib = 2;
-#elif defined(GEODE_IS_ANDROID64)
-            platnib = 3;
-#elif defined(GEODE_IS_INTEL_MAC)
-            platnib = 4;
-#elif defined(GEODE_IS_ARM_MAC)
-            platnib = 5;
-#elif defined(GEODE_IS_IOS)
-            platnib = 6;
-#endif
+    lock->first = accountId;
+    lock->second = std::vector<uint8_t>{buf, buf + outLen};
 
-            uint8_t topByte = platnib << 4;
-            arr[0] = topByte;
-
-            return arr;
-        }
-    }();
-
-    return fprint;
+    return lock->second;
 }
 
 }

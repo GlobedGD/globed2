@@ -8,14 +8,14 @@
 #include <Geode/platform/platform.hpp>
 #include <Geode/loader/Log.hpp>
 
-#define BB_VERSION "0.3.0"
+#define BB_VERSION "1.0.0"
 
 #ifdef GLOBED_OSS_BUILD
 inline bool bb_init(const char* v = BB_VERSION) {
     return false;
 }
 
-inline size_t bb_work(const char* s, char* o, size_t ol) {
+inline size_t bb_work(int s, char* o, size_t ol) {
     return 0;
 }
 
@@ -28,14 +28,14 @@ inline void _bblogFunc(const uint8_t* ptr, size_t size) {
 
 extern "C" {
     bool _bb_init(const char* v, size_t base, void (*)(const uint8_t*, size_t));
-    size_t _bb_work(const char* s, char* o, size_t ol);
+    size_t _bb_work(int s, char* o, size_t ol);
 }
 
 inline bool bb_init(const char* v = BB_VERSION) {
     return _bb_init(v, geode::base::get(), &_bblogFunc);
 }
 
-inline size_t bb_work(const char* s, char* o, size_t ol) {
+inline size_t bb_work(int s, char* o, size_t ol) {
     return _bb_work(s, o, ol);
 }
 

@@ -48,6 +48,8 @@ struct ConnectionInfo {
     std::string m_knownArgonUrl;
     bool m_waitingForArgon = false;
     bool m_established;
+    bool m_authenticating = false;
+    asp::time::Instant m_triedAuthAt;
 
     std::unordered_map<std::string, GameServer> m_gameServers;
 
@@ -69,6 +71,11 @@ struct ConnectionInfo {
 
     bool m_sentIcons = true; // icons are sent at login
     bool m_sentFriendList = false;
+
+    void startedAuth() {
+        m_authenticating = true;
+        m_triedAuthAt = asp::time::Instant::now();
+    }
 };
 
 class NetworkManagerImpl {
@@ -215,6 +222,7 @@ private:
     asp::Mutex<std::string> m_abortCause;
     asp::Notify m_finishedClosingNotify;
     bool m_destructing = false;
+    bool m_hasSecure = false;
 
     // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
     asp::Mutex<std::unordered_map<std::type_index, std::vector<void*>>, true> m_listeners;
@@ -227,6 +235,7 @@ private:
     void sendToCentral(std::function<void(CentralMessage::Builder&)> func);
     void sendToGame(std::function<void(GameMessage::Builder&)> func, bool reliable = true);
 
+    void disconnectInner();
     void resetGameVars();
 
     // Returns the user token for the current central server
@@ -234,8 +243,7 @@ private:
     void setUToken(std::string token);
     void clearUToken();
 
-    std::array<uint8_t, 32> computeUident();
-    geode::Result<std::array<uint8_t, 32>> computeUidentInner();
+    std::vector<uint8_t> computeUident(int accountId);
 
     void tryAuth();
     void doArgonAuth(std::string token);
@@ -250,8 +258,8 @@ private:
     void handleLoginFailed(schema::main::LoginFailedReason reason);
 
     // Thread functions
-    void thrPingGameServers();
-    void thrMaybeResendOwnData();
+    void thrPingGameServers(ConnectionInfo& info);
+    void thrMaybeResendOwnData(ConnectionInfo& info);
 
     template <typename T>
     void invokeListeners(T&& message) {
