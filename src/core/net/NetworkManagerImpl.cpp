@@ -471,7 +471,7 @@ std::string NetworkManagerImpl::getStoredModPassword() {
 
     auto pwkey = fmt::format("core.mod.last-password-{}", this->getCentralIdent());
 
-    return globed::value<std::string>(pwkey).value_or({});
+    return globed::value<std::string>(pwkey).value_or(std::string{});
 }
 
 void NetworkManagerImpl::storeModPassword(const std::string& pw) {

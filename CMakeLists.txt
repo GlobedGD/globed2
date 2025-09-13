@@ -122,10 +122,10 @@ CPMAddPackage(
             "WITH_FIBERS OFF"
 )
 
-CPMAddPackage("gh:GlobedGD/server-shared#46908c19")
+CPMAddPackage("gh:GlobedGD/server-shared#aec0f08")
 CPMAddPackage("gh:dankmeme01/qunet-cpp#4be96352")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
-CPMAddPackage("gh:dankmeme01/cue#eae5ddb")
+CPMAddPackage("gh:dankmeme01/cue#b86dd10")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 CPMAddPackage("gh:Prevter/sinaps#2541d6d")
 CPMAddPackage("gh:Prevter/AdvancedLabel#d78d7f82")
