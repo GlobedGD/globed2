@@ -139,6 +139,20 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} CapnProto::capnp ServerShared qunet asp argon cue UIBuilder sinaps advanced_label)
 
+if (ANDROID)
+    if (ANDROID_ABI STREQUAL "arm64-v8a")
+        set(LIB_PLATFORM "android64")
+    else()
+        set(LIB_PLATFORM "android32")
+    endif()
+elseif (WIN32)
+    set(LIB_PLATFORM "win64")
+elseif (GLOBED_IOS)
+    set(LIB_PLATFORM "ios")
+else()
+    set(LIB_PLATFORM "macos")
+endif()
+
 # link to bb
 if (GLOBED_OSS_BUILD)
     message(STATUS "Building open-source version, not linking to bb")
