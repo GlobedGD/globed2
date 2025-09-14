@@ -72,6 +72,7 @@ list(APPEND MODULE_SOURCES ${UI_SOURCES})
 # Configure rest of sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     src/core/*.cpp
+    src/audio/*.cpp
     src/util/*.cpp
     src/ui/*.cpp
     ${PLATFORM_SOURCES}
@@ -94,6 +95,8 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 setup_geode_mod(${PROJECT_NAME})
 
+# Setup compile definitions
+
 if (GLOBED_DEBUG)
     target_compile_definitions(${PROJECT_NAME} PUBLIC GLOBED_DEBUG)
     set(QUNET_DEBUG ON)
@@ -110,6 +113,14 @@ endif()
 
 if (GLOBED_MODULE_TCD_HNS)
     target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_MODULE_TCD_HNS=1)
+endif()
+
+if (GLOBED_VOICE_SUPPORT)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC GLOBED_VOICE_SUPPORT)
+
+    if (NOT APPLE)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC GLOBED_VOICE_CAN_TALK)
+    endif()
 endif()
 
 # Dependencies

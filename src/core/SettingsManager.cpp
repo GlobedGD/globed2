@@ -14,6 +14,11 @@ SettingsManager::SettingsManager() {
     // Various
     this->registerSetting("core.autoconnect", true);
 
+    // Keybinds
+    this->registerSetting("core.keybinds.voice-chat", (int)KEY_V);
+    this->registerSetting("core.keybinds.deafen", (int)KEY_B);
+    this->registerSetting("core.keybinds.hide-players", (int)KEY_None);
+
     // UI settings
     this->registerSetting("core.ui.allow-custom-servers", false);
     this->registerSetting("core.ui.increase-level-list", false);
@@ -37,6 +42,13 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.level.progress-opacity", 1.0f);
     this->registerSetting("core.level.voice-overlay", true);
     this->registerSetting("core.level.force-progressbar", false);
+
+    // Audio
+    this->registerSetting("core.audio.voice-chat-enabled", true);
+    this->registerSetting("core.audio.input-device", -1);
+    this->registerSetting("core.audio.buffer-size", 4); // TODO: limit from 1 to 10
+    this->registerSetting("core.audio.playback-volume", 1.f); // TODO: limit from 0 to 2
+    this->registerSetting("core.audio.voice-loopback", false);
 
     // Mod settings
     this->registerSetting("core.mod.remember-password", false);

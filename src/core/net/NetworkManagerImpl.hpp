@@ -2,6 +2,7 @@
 
 #include <qunet/Connection.hpp>
 #include <Geode/Result.hpp>
+#include <globed/audio/EncodedAudioFrame.hpp>
 #include <globed/core/SessionId.hpp>
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/RoomSettings.hpp>
@@ -185,6 +186,7 @@ public:
     void queueLevelScript(const std::vector<EmbeddedScript>& scripts);
     void sendLevelScript(const std::vector<EmbeddedScript>& scripts);
     void queueGameEvent(OutEvent&& event);
+    void sendVoiceData(const EncodedAudioFrame& frame);
 
     // Listeners
 

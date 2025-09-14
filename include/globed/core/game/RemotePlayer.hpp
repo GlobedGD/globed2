@@ -16,7 +16,7 @@ public:
     RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, cocos2d::CCNode* parentNode);
     ~RemotePlayer();
 
-    void update(const PlayerState& state, const GameCameraState& camState);
+    void update(const PlayerState& state, const GameCameraState& camState, bool forceHide = false);
     void handleDeath(const PlayerDeath& death);
     void handleSpiderTp(const SpiderTeleportData& tp, bool p1);
     bool isDataInitialized() const;

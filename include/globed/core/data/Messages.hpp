@@ -12,6 +12,7 @@
 #include "FetchedMod.hpp"
 #include "Credits.hpp"
 #include "ModPermissions.hpp"
+#include <globed/audio/EncodedAudioFrame.hpp>
 
 namespace globed::msg {
 
@@ -133,6 +134,13 @@ struct LevelDataMessage {
     std::vector<PlayerState> players;
     std::vector<PlayerDisplayData> displayDatas;
     std::vector<InEvent> events;
+};
+
+// Voice broadcast
+
+struct VoiceBroadcastMessage {
+    int accountId;
+    EncodedAudioFrame frame;
 };
 
 // Script logs

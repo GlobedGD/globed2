@@ -530,6 +530,24 @@ $implDecode(msg::ScriptLogsMessage, game::ScriptLogsMessage::Reader& reader) {
     return msg::ScriptLogsMessage { std::move(logs), reader.getRamUsage() };
 }
 
+/// Voice broadcast
+
+$implDecode(msg::VoiceBroadcastMessage, game::VoiceBroadcastMessage::Reader& reader) {
+    EncodedAudioFrame out{};
+    int user = reader.getAccountId();
+
+    for (auto frame : reader.getFrames()) {
+        auto ptr = frame.begin();
+        size_t size = frame.size();
+
+        auto data = std::make_shared<uint8_t[]>(size);
+        std::memcpy(data.get(), ptr, size);
+        (void) out.pushOpusFrame({ .data = std::move(data), .size = size });
+    }
+
+    return msg::VoiceBroadcastMessage { .accountId = user, .frame = std::move(out) };
+}
+
 /// User role
 
 inline std::optional<UserRole> decodeUserRole(const schema::shared::UserRole::Reader& reader, size_t idx) {

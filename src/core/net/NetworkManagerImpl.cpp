@@ -896,6 +896,18 @@ void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
     (**lock).m_gameEventQueue.push(std::move(event));
 }
 
+void NetworkManagerImpl::sendVoiceData(const EncodedAudioFrame& frame) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto voice = msg.initVoiceData();
+        auto frames = voice.initFrames(frame.size());
+
+        for (size_t i = 0; i < frame.size(); ++i) {
+            auto& fr = frame.getFrames()[i];
+            frames.set(i, kj::arrayPtr(fr.data.get(), fr.size));
+        }
+    }, false);
+}
+
 void NetworkManagerImpl::sendRoomStateCheck() {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         msg.setCheckRoomState();
@@ -1559,6 +1571,10 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
 
         case GameMessage::SCRIPT_LOGS: {
             this->invokeListeners(data::decodeUnchecked<msg::ScriptLogsMessage>(msg.getScriptLogs()));
+        } break;
+
+        case GameMessage::VOICE_BROADCAST: {
+            this->invokeListeners(data::decodeUnchecked<msg::VoiceBroadcastMessage>(msg.getVoiceBroadcast()));
         } break;
 
         case GameMessage::KICKED: {

@@ -4,6 +4,7 @@
 #include "TitleSettingCell.hpp"
 #include "ButtonSettingCell.hpp"
 #include "DiscordLinkPopup.hpp"
+#include "KeybindsPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
@@ -42,6 +43,9 @@ void SettingsLayer::addSettings() {
 
         DiscordLinkPopup::create()->show();
     }, CELL_SIZE));
+    this->addSetting(ButtonSettingCell::create("Keybinds", "", "Edit", [this] {
+        KeybindsPopup::create()->show();
+    }, CELL_SIZE));
 
     // Player settings
     this->addHeader("core.player", "Players");
@@ -63,6 +67,15 @@ void SettingsLayer::addSettings() {
     this->addSetting<FloatSettingCell>("core.level.progress-opacity", "Progress Opacity", "");
     this->addSetting<BoolSettingCell>("core.level.voice-overlay", "Voice Chat Overlay", "");
     this->addSetting<BoolSettingCell>("core.level.force-progressbar", "Force progressbar", "");
+
+    // Audio
+    this->addHeader("core.audio", "Audio");
+    this->addSetting<BoolSettingCell>("core.audio.voice-chat-enabled", "Voice Chat", "");
+    this->addSetting<FloatSettingCell>("core.audio.playback-volume", "Voice Volume", "");
+    this->addSetting(ButtonSettingCell::create("Audio Device", "", "Set", [this] {
+        // TODO: popup with choosing audio device
+    }, CELL_SIZE));
+    this->addSetting<BoolSettingCell>("core.audio.voice-loopback", "Voice Loopback", "");
 
     // Preload
     this->addHeader("core.player", "Preloading");

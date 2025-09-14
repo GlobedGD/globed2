@@ -116,7 +116,9 @@ bool HookedGJEffectManager::updateCountForCustomItem(int itemId, int value) {
 
 void HookedGJEffectManager::reset() {
     GJEffectManager::reset();
-    m_fields->m_customItems.clear();
+
+    // dont actually reset
+    // m_fields->m_customItems.clear();
 }
 
 }

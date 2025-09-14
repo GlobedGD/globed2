@@ -45,6 +45,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         std::vector<int> m_unknownPlayers;
         float m_lastDataRequest = 0.f;
         std::optional<MessageListener<msg::LevelDataMessage>> m_levelDataListener;
+        std::optional<MessageListener<msg::VoiceBroadcastMessage>> m_voiceListener;
 
         uint8_t m_deathCount = 0;
         bool m_lastLocalDeathReal = false;
@@ -52,6 +53,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_manualReset = false;
         bool m_safeMode = false;
         bool m_permanentSafeMode = false;
+        bool m_playersHidden = false;
+        bool m_isVoiceProximity = false;
 
         CCNode* m_playerNode = nullptr;
         geode::Ref<CCNode> m_progressBarContainer = nullptr;
@@ -114,12 +117,19 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     GameCameraState getCameraState();
     RemotePlayer* getPlayer(int playerId);
 
+    void toggleHidePlayers();
+    void toggleDeafen();
+    void resumeVoiceRecording();
+    void pauseVoiceRecording();
+
     void customSchedule(const std::string& id, std::function<void(GlobedGJBGL*, float)>&& f, float interval);
     void customUnschedule(const std::string& id);
     void customUnscheduleAll();
 
 private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);
+    void onVoiceDataReceived(const msg::VoiceBroadcastMessage& message);
+    float calculateVolumeFor(int playerId);
 };
 
 }

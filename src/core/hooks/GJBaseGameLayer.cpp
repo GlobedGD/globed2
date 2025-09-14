@@ -1,7 +1,10 @@
 #include "GJBaseGameLayer.hpp"
+#include <globed/audio/AudioManager.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/PlayerCacheManager.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <globed/core/KeybindsManager.hpp>
+#include <globed/core/PopupManager.hpp>
 #include <globed/util/algo.hpp>
 #include <globed/util/gd.hpp>
 #include <core/CoreImpl.hpp>
@@ -69,6 +72,9 @@ void GlobedGJBGL::setupPostInit() {
 
     if (!fields.m_active) return;
 
+    auto& km = KeybindsManager::get();
+    km.refreshBinds();
+
     // setup everything else
     this->setupAssetLoading();
     this->setupAudio();
@@ -100,7 +106,35 @@ void GlobedGJBGL::setupAssetLoading() {
 }
 
 void GlobedGJBGL::setupAudio() {
-    // TODO
+    if (!globed::setting<bool>("core.audio.voice-chat-enabled")) return;
+
+    auto& am = AudioManager::get();
+
+#ifdef GLOBED_VOICE_CAN_TALK
+    // set audio device
+    am.refreshDevices();
+    am.setRecordBufferCapacity(globed::setting<int>("core.audio.buffer-size"));
+    auto result = am.startRecordingEncoded([this](const auto& frame) {
+        NetworkManagerImpl::get().sendVoiceData(frame);
+
+        if (globed::setting<bool>("core.audio.voice-loopback")) {
+            log::debug("Playing loopback voice frame");
+            auto& am = AudioManager::get();
+            if (auto err = am.playFrameStreamed(-1, frame).err()) {
+                log::warn("Failed to play loopback voice frame: {}", err);
+            }
+        }
+    });
+    am.setPassiveMode(true);
+    am.setGlobalPlaybackVolume(globed::setting<float>("core.audio.playback-volume"));
+
+    if (!result) {
+        log::warn("[Globed] Failed to start recording audio: {}", result.unwrapErr());
+        globed::toastError("[Globed] Failed to start recording audio");
+    }
+#endif
+
+    // TODO: setup voice overlay here..
 }
 
 void GlobedGJBGL::setupUpdateLoop() {
@@ -162,14 +196,24 @@ void GlobedGJBGL::setupUi() {
 
 void GlobedGJBGL::setupListeners() {
     auto& fields = *m_fields.self();
+    auto& nm = NetworkManagerImpl::get();
 
-    fields.m_levelDataListener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& message) {
+    fields.m_levelDataListener = nm.listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& message) {
         this->onLevelDataReceived(message);
+        return ListenerResult::Continue;
+    });
+
+    fields.m_voiceListener = nm.listen<msg::VoiceBroadcastMessage>([this](const msg::VoiceBroadcastMessage& message) {
+        this->onVoiceDataReceived(message);
         return ListenerResult::Continue;
     });
 }
 
 void GlobedGJBGL::onQuit() {
+    auto& am = AudioManager::get();
+    am.haltRecording();
+    am.stopAllOutputStreams();
+
     auto& fields = *m_fields.self();
 
     if (!fields.m_active) {
@@ -227,7 +271,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
 
         OutFlags flags;
         auto& vstate = fields.m_interpolator.getPlayerState(playerId, flags);
-        player->update(vstate, camState);
+        player->update(vstate, camState, fields.m_playersHidden);
 
         // if the player just died, handle the death
         if (flags.death.has_value()) {
@@ -481,6 +525,9 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
 }
 
 void GlobedGJBGL::handlePlayerLeave(int playerId) {
+    auto& am = AudioManager::get();
+    am.stopOutputStream(playerId);
+
     auto& fields = *m_fields.self();
 
     if (!fields.m_players.contains(playerId)) {
@@ -490,7 +537,6 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     auto& player = fields.m_players.at(playerId);
     CoreImpl::get().onPlayerLeave(this, playerId);
 
-    // TODO: more cleanup?
     fields.m_players.erase(playerId);
     fields.m_interpolator.removePlayer(playerId);
     PlayerCacheManager::get().evictToLayer2(playerId);
@@ -597,6 +643,30 @@ RemotePlayer* GlobedGJBGL::getPlayer(int playerId) {
     return it == players.end() ? nullptr : it->second.get();
 }
 
+void GlobedGJBGL::toggleHidePlayers() {
+    auto& fields = *m_fields.self();
+    fields.m_playersHidden = !fields.m_playersHidden;
+
+    Notification::create(
+        fields.m_playersHidden ? "All Players Hidden" : "All Players Visible",
+        NotificationIcon::Success,
+        0.2f
+    )->show();
+}
+
+void GlobedGJBGL::toggleDeafen() {
+
+}
+
+void GlobedGJBGL::resumeVoiceRecording() {
+    log::debug("Resuming voice recording");
+    AudioManager::get().resumePassiveRecording();
+}
+
+void GlobedGJBGL::pauseVoiceRecording() {
+    AudioManager::get().pausePassiveRecording();
+}
+
 void GlobedGJBGL::customSchedule(const std::string& id, std::function<void(GlobedGJBGL*, float)>&& f, float interval) {
     auto sched = CustomSchedule::create(std::move(f), interval, this);
     this->setUserObject(id, sched);
@@ -644,6 +714,53 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
     if (!message.displayDatas.empty()) {
         fields.m_lastDataRequest = 0.f; // reset the time, so that we can request more players
     }
+}
+
+void GlobedGJBGL::onVoiceDataReceived(const msg::VoiceBroadcastMessage& message) {
+    auto& am = AudioManager::get();
+
+    if (am.getDeafen() || !globed::setting<bool>("core.audio.voice-chat-enabled")) {
+        return;
+    }
+
+    // TODO: allow muting a player, reject packet here
+
+    auto res = am.playFrameStreamed(message.accountId, message.frame);
+    if (!res) {
+        log::warn("Failed to play voice data from {}: {}", message.accountId, res.unwrapErr());
+        return;
+    }
+
+    float vol = this->calculateVolumeFor(message.accountId);
+    am.setStreamVolume(message.accountId, vol);
+}
+
+float GlobedGJBGL::calculateVolumeFor(int playerId) {
+    // how many units before the voice disappears
+    constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
+
+    auto& fields = *m_fields.self();
+    auto& am = AudioManager::get();
+
+    if (am.getDeafen() || !fields.m_isVoiceProximity) {
+        return globed::setting<float>("core.audio.playback-volume");
+    }
+
+    if (!fields.m_interpolator.hasPlayer(playerId)) {
+        return 0.f;
+    }
+
+    OutFlags flags;
+    auto& vstate = fields.m_interpolator.getPlayerState(playerId, flags);
+
+    float distance = ccpDistance(m_player1->getPosition(), vstate.player1->position);
+    float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
+    if (vstate.isInEditor) {
+        volume = 1.f;
+    }
+
+    volume *= globed::setting<float>("core.audio.playback-volume");
+    return volume;
 }
 
 }

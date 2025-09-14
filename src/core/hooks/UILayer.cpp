@@ -1,4 +1,6 @@
 #include "GJBaseGameLayer.hpp"
+#include <globed/core/KeybindsManager.hpp>
+
 #include <Geode/modify/UILayer.hpp>
 
 using namespace geode::prelude;
@@ -13,8 +15,10 @@ struct GLOBED_MODIFY_ATTR HookedUILayer : geode::Modify<HookedUILayer, UILayer> 
     void handleKeypress(enumKeyCodes p0, bool down) {
         auto gjbgl = GlobedGJBGL::get();
 
-        // auto& km = KeybindsManager::get();
-        // down ? km.handleKeyDown(p0) : km.handleKeyUp(p0);
+        if (p0 != KEY_None && p0 != KEY_Unknown) {
+            auto& km = KeybindsManager::get();
+            down ? km.handleKeyDown(p0) : km.handleKeyUp(p0);
+        }
 
         if (gjbgl) gjbgl->m_fields->m_manualReset = true;
 

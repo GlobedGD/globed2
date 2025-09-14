@@ -69,7 +69,9 @@ RemotePlayer::~RemotePlayer() {
     m_player2->removeFromParent();
 }
 
-void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState) {
+void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState, bool forceHide) {
+    // TODO: impl forceHide
+
     m_state = state;
 
     if (m_state.player1) {
