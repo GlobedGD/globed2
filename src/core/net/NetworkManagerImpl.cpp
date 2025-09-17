@@ -935,6 +935,8 @@ void NetworkManagerImpl::sendRequestLevelList() {
 }
 
 void NetworkManagerImpl::sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings) {
+    RoomManager::get().setAttemptedPasscode(passcode);
+
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto createRoom = msg.initCreateRoom();
         createRoom.setName(name);
@@ -945,11 +947,12 @@ void NetworkManagerImpl::sendCreateRoom(const std::string& name, uint32_t passco
 }
 
 void NetworkManagerImpl::sendJoinRoom(uint32_t id, uint32_t passcode) {
+    RoomManager::get().setAttemptedPasscode(passcode);
+
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto joinRoom = msg.initJoinRoom();
         joinRoom.setRoomId(id);
         joinRoom.setPasscode(passcode);
-        RoomManager::get().setAttemptedPasscode(passcode);
     });
 }
 

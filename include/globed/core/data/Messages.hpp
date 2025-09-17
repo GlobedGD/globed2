@@ -35,6 +35,7 @@ struct RoomStateMessage {
     std::vector<RoomPlayer> players;
     RoomSettings settings;
     std::vector<RoomTeam> teams;
+    uint32_t passcode;
 };
 
 struct RoomPlayersMessage {

@@ -31,6 +31,10 @@ bool NameLabel::init(const std::string& name, const char* font) {
     );
     this->updateName(name);
 
+    if (std::string_view{font} == "chatFont.fnt") {
+        this->setShadowEnabled(true);
+    }
+
     return true;
 }
 

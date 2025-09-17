@@ -131,6 +131,7 @@ RoomManager::RoomManager() {
         m_teams = msg.teams;
         m_roomOwner = msg.roomOwner;
         m_roomName = msg.roomName;
+        m_passcode = msg.passcode;
 
         if (!msg.players.empty()) {
             m_teamMembers.clear();
