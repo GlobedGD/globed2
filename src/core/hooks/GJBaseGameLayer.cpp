@@ -588,16 +588,15 @@ void GlobedGJBGL::toggleSafeMode() {
 void GlobedGJBGL::pausedUpdate(float dt) {
     // unpause dash effects and death effects
     for (auto* child : CCArrayExt<CCNode*>(m_objectLayer->getChildren())) {
-        // TODO
-        // int tag1 = ComplexVisualPlayer::SPIDER_DASH_CIRCLE_WAVE_TAG;
-        // int tag2 = ComplexVisualPlayer::SPIDER_DASH_SPRITE_TAG;
-        // int tag3 = ComplexVisualPlayer::DEATH_EFFECT_TAG;
+        int tag1 = SPIDER_DASH_CIRCLE_WAVE_TAG;
+        int tag2 = SPIDER_DASH_SPRITE_TAG;
+        int tag3 = DEATH_EFFECT_TAG;
 
-        // int ctag = child->getTag();
+        int ctag = child->getTag();
 
-        // if (ctag == tag1 || ctag == tag2 || ctag == tag3) {
-        //     child->resumeSchedulerAndActions();
-        // }
+        if (ctag == tag1 || ctag == tag2 || ctag == tag3) {
+            child->resumeSchedulerAndActions();
+        }
     }
 }
 
