@@ -2,6 +2,7 @@
 
 #include <globed/core/data/MultiColor.hpp>
 
+#include <asp/time/Instant.hpp>
 #include <Geode/Geode.hpp>
 #include <AdvancedLabel.hpp>
 
@@ -33,6 +34,7 @@ private:
     geode::Ref<cocos2d::CCGLProgram> m_shader;
     std::array<Color3F, MAX_COLORS + 1> m_colors;
     size_t m_colorCount;
+    asp::time::Instant m_startTime;
     bool m_shaderEnabled;
 };
 

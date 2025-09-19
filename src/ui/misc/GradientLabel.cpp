@@ -3,6 +3,7 @@
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 constexpr auto vertex = R"(
 attribute vec4 a_position;
@@ -43,11 +44,12 @@ varying vec2 v_texCoordRaw;
 uniform int colorCount;
 uniform vec3 colors[32];
 uniform bool enabled;
+uniform float customTime;
 uniform sampler2D CC_Texture0;
 
 void main() {
     if (enabled) {
-        float t = mod(v_texCoord.x + CC_Time.g / 5.0, 1.0);
+        float t = mod(v_texCoord.x + customTime / 5.0, 1.0);
 
         vec3 col = colors[0]; // default
 
@@ -102,6 +104,8 @@ bool GradientLabel::init(std::string_view text, const std::string& font) {
     m_label = Build<Label>::create(text, font)
         .anchorPoint(0.f, 0.f)
         .parent(this);
+
+    m_startTime = Instant::now();
 
     this->setCascadeColorEnabled(true);
     this->setCascadeOpacityEnabled(true);
@@ -183,6 +187,10 @@ void GradientLabel::draw() {
 
     GLint colorsLoc = m_shader->getUniformLocationForName("colors");
     m_shader->setUniformLocationWith3fv(colorsLoc, (GLfloat*)m_colors.data(), m_colors.size());
+
+    float time = m_startTime.elapsed().seconds<float>();
+    GLint timeLoc = m_shader->getUniformLocationForName("customTime");
+    m_shader->setUniformLocationWith1f(timeLoc, time);
 
     CCNode::draw();
 }
