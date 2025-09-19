@@ -11,7 +11,7 @@
 # endif
 #else
 # ifdef globed2_EXPORTS
-#  define GLOBED_API __attribute__((visibility("default")))
+#  define GLOBED_DLL __attribute__((visibility("default")))
 # else
 #  define GLOBED_DLL
 # endif

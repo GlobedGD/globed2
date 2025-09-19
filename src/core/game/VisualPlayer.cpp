@@ -116,7 +116,6 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     }
 
     this->setVisible(shouldBeVisible);
-    m_nameLabel->setVisible(shouldBeVisible && !m_forceHideName);
     if (!shouldBeVisible) {
         m_playEffects = false;
         if (m_regularTrail) m_regularTrail->setVisible(false);
@@ -682,6 +681,14 @@ CCPoint VisualPlayer::getLastPosition() {
 
 float VisualPlayer::getLastRotation() {
     return m_prevRotation;
+}
+
+void VisualPlayer::setVisible(bool vis) {
+    if (vis == m_bVisible) return;
+    PlayerObject::setVisible(vis);
+
+    m_nameLabel->setVisible(vis && !m_forceHideName);
+    if (m_statusIcons) m_statusIcons->setVisible(vis);
 }
 
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {

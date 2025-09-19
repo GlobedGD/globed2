@@ -86,6 +86,26 @@ Result<FollowRotationEvent> FollowRotationEvent::decode(qn::ByteReader& reader) 
     return Ok(GEODE_UNWRAP(decodeFollowRotationData(reader)));
 }
 
+Result<ActivePlayerSwitchEvent> ActivePlayerSwitchEvent::decode(qn::ByteReader& reader) {
+    auto bits = READER_UNWRAP(reader.readU32());
+    int playerId = bits & 0x7fffffff;
+    bool fullReset = (bits & 0x80000000) != 0;
+
+    return Ok(ActivePlayerSwitchEvent { playerId, fullReset });
+}
+
+Result<> ActivePlayerSwitchEvent::encode(qn::HeapByteWriter& writer) {
+    writer.writeU16(EVENT_ACTIVE_PLAYER_SWITCH);
+
+    uint32_t rawData =
+        (static_cast<uint32_t>(this->playerId) & 0x7fffffff) |
+        (static_cast<uint32_t>(this->fullReset) << 31);
+
+    writer.writeU32(rawData);
+
+    return Ok();
+}
+
 Result<InEvent> InEvent::decode(ByteReader& reader) {
     auto type = READER_UNWRAP(reader.readU16());
 
@@ -100,10 +120,22 @@ Result<InEvent> InEvent::decode(ByteReader& reader) {
         MAP_TO(EVENT_SCR_FOLLOW_ROTATION, FollowRotationEvent);
         MAP_TO(EVENT_2P_LINK_REQUEST, TwoPlayerLinkRequestEvent);
         MAP_TO(EVENT_2P_UNLINK, TwoPlayerUnlinkEvent);
+        MAP_TO(EVENT_ACTIVE_PLAYER_SWITCH, ActivePlayerSwitchEvent);
     }
 #undef MAP_TO
 
-    return Err("unknown event: {}", type);
+#ifdef GLOBED_DEBUG
+    geode::log::debug("Received unknown event type: {}", type);
+#endif
+
+    size_t remSize = reader.remainingSize();
+    std::vector<uint8_t> rawData;
+    rawData.resize(remSize);
+    reader.readBytes(rawData.data(), remSize).unwrap();
+
+    return Ok(InEvent {
+        UnknownEvent { std::move(rawData) }
+    });
 }
 
 // Out events

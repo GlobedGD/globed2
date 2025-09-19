@@ -310,7 +310,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
 
     // the server might not send any updates if there are no players on the level,
     // if we receive no response for a while, assume all players have left
-    if (fields.m_timeCounter - fields.m_lastServerUpdate > 1.25f && fields.m_players.size() <= 2) {
+    if (fields.m_timeCounter - fields.m_lastServerUpdate > 1.5f && fields.m_players.size() <= 2) {
         for (auto& it : fields.m_players) {
             int playerId = it.first;
             this->handlePlayerLeave(playerId);
@@ -513,6 +513,10 @@ bool GlobedGJBGL::isSafeMode() {
 void GlobedGJBGL::handlePlayerJoin(int playerId) {
     auto& fields = *m_fields.self();
 
+#ifdef GLOBED_DEBUG
+    log::debug("Player joined: {}", playerId);
+#endif
+
     if (fields.m_players.contains(playerId)) {
         return;
     }
@@ -529,6 +533,10 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     am.stopOutputStream(playerId);
 
     auto& fields = *m_fields.self();
+
+#ifdef GLOBED_DEBUG
+    log::debug("Player left: {}", playerId);
+#endif
 
     if (!fields.m_players.contains(playerId)) {
         return;

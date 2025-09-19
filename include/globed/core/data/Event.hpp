@@ -1,5 +1,6 @@
 #pragma once
 
+#include <globed/prelude.hpp>
 #include <qunet/buffers/ByteReader.hpp>
 #include <qunet/buffers/HeapByteWriter.hpp>
 
@@ -36,7 +37,10 @@ constexpr uint16_t EVENT_SCR_FOLLOW_ROTATION = 0xf016;
 constexpr uint16_t EVENT_2P_LINK_REQUEST = 0xf100;
 constexpr uint16_t EVENT_2P_UNLINK = 0xf101;
 
+constexpr uint16_t EVENT_ACTIVE_PLAYER_SWITCH =  0xf140;
+
 constexpr uint16_t EVENT_CUSTOM_BASE = 0xf800;
+
 
 // In n out events
 
@@ -45,23 +49,23 @@ struct CounterChangeEvent {
     uint32_t itemId;
     uint32_t rawValue;
 
-    static geode::Result<CounterChangeEvent> decode(qn::ByteReader& reader);
-    geode::Result<> encode(qn::HeapByteWriter& writer);
+    static Result<CounterChangeEvent> decode(qn::ByteReader& reader);
+    Result<> encode(qn::HeapByteWriter& writer);
 };
 
 struct TwoPlayerLinkRequestEvent {
     int playerId;
     bool player1;
 
-    static geode::Result<TwoPlayerLinkRequestEvent> decode(qn::ByteReader& reader);
-    geode::Result<> encode(qn::HeapByteWriter& writer);
+    static Result<TwoPlayerLinkRequestEvent> decode(qn::ByteReader& reader);
+    Result<> encode(qn::HeapByteWriter& writer);
 };
 
 struct TwoPlayerUnlinkEvent {
     int playerId;
 
-    static geode::Result<TwoPlayerUnlinkEvent> decode(qn::ByteReader& reader);
-    geode::Result<> encode(qn::HeapByteWriter& writer);
+    static Result<TwoPlayerUnlinkEvent> decode(qn::ByteReader& reader);
+    Result<> encode(qn::HeapByteWriter& writer);
 };
 
 // Incoming events
@@ -69,37 +73,49 @@ struct TwoPlayerUnlinkEvent {
 struct SpawnGroupEvent {
     SpawnData data;
 
-    static geode::Result<SpawnGroupEvent> decode(qn::ByteReader& reader);
+    static Result<SpawnGroupEvent> decode(qn::ByteReader& reader);
 };
 
 struct SetItemEvent {
     SetItemData data;
 
-    static geode::Result<SetItemEvent> decode(qn::ByteReader& reader);
+    static Result<SetItemEvent> decode(qn::ByteReader& reader);
 };
 
 struct MoveGroupEvent {
     MoveGroupData data;
 
-    static geode::Result<MoveGroupEvent> decode(qn::ByteReader& reader);
+    static Result<MoveGroupEvent> decode(qn::ByteReader& reader);
 };
 
 struct MoveGroupAbsoluteEvent {
     MoveAbsGroupData data;
 
-    static geode::Result<MoveGroupAbsoluteEvent> decode(qn::ByteReader& reader);
+    static Result<MoveGroupAbsoluteEvent> decode(qn::ByteReader& reader);
 };
 
 struct FollowPlayerEvent {
     FollowPlayerData data;
 
-    static geode::Result<FollowPlayerEvent> decode(qn::ByteReader& reader);
+    static Result<FollowPlayerEvent> decode(qn::ByteReader& reader);
 };
 
 struct FollowRotationEvent {
     FollowRotationData data;
 
-    static geode::Result<FollowRotationEvent> decode(qn::ByteReader& reader);
+    static Result<FollowRotationEvent> decode(qn::ByteReader& reader);
+};
+
+struct ActivePlayerSwitchEvent {
+    int playerId;
+    bool fullReset;
+
+    static Result<ActivePlayerSwitchEvent> decode(qn::ByteReader& reader);
+    Result<> encode(qn::HeapByteWriter& writer);
+};
+
+struct UnknownEvent {
+    std::vector<uint8_t> rawData;
 };
 
 struct InEvent {
@@ -112,12 +128,14 @@ struct InEvent {
         FollowPlayerEvent,
         FollowRotationEvent,
         TwoPlayerLinkRequestEvent,
-        TwoPlayerUnlinkEvent
+        TwoPlayerUnlinkEvent,
+        ActivePlayerSwitchEvent,
+        UnknownEvent
     >;
 
     Kind m_kind;
 
-    static geode::Result<InEvent> decode(qn::ByteReader& reader);
+    static Result<InEvent> decode(qn::ByteReader& reader);
 
     template <typename T>
     bool is() const {
@@ -141,11 +159,11 @@ struct ScriptedEvent {
     uint16_t type;
     std::vector<std::variant<int, float>> args;
 
-    geode::Result<> encode(qn::HeapByteWriter& writer);
+    Result<> encode(qn::HeapByteWriter& writer);
 };
 
 struct RequestScriptLogsEvent {
-    geode::Result<> encode(qn::HeapByteWriter& writer);
+    Result<> encode(qn::HeapByteWriter& writer);
 };
 
 struct OutEvent {
@@ -154,7 +172,8 @@ struct OutEvent {
         TwoPlayerLinkRequestEvent,
         TwoPlayerUnlinkEvent,
         ScriptedEvent,
-        RequestScriptLogsEvent
+        RequestScriptLogsEvent,
+        ActivePlayerSwitchEvent
     >;
 
     OutEvent(Kind&& k) : m_kind(std::move(k)) {}
@@ -163,10 +182,11 @@ struct OutEvent {
     OutEvent(TwoPlayerUnlinkEvent e) : m_kind(std::move(e)) {}
     OutEvent(ScriptedEvent e) : m_kind(std::move(e)) {}
     OutEvent(RequestScriptLogsEvent e) : m_kind(std::move(e)) {}
+    OutEvent(ActivePlayerSwitchEvent e) : m_kind(std::move(e)) {}
 
     Kind m_kind;
 
-    geode::Result<> encode(qn::HeapByteWriter& writer);
+    Result<> encode(qn::HeapByteWriter& writer);
 };
 
 }

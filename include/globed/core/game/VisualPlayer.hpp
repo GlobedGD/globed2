@@ -32,6 +32,8 @@ public:
     cocos2d::CCPoint getLastPosition();
     float getLastRotation();
 
+    void setVisible(bool vis) override;
+
 private:
     friend class RemotePlayer;
 
