@@ -18,6 +18,17 @@ enum class PlayerIconType : uint16_t {
     Jetpack = 9,
 };
 
+struct ExtendedPlayerData {
+    float velocityX;
+    float velocityY;
+    bool accelerating;
+    float acceleration;
+    float fallStartY;
+    bool isOnGround2;
+    float gravityMod;
+    float gravity;
+};
+
 struct PlayerObjectData {
     cocos2d::CCPoint position;
     float rotation;
@@ -33,6 +44,8 @@ struct PlayerObjectData {
     bool isFalling;
     bool isRotating;
     bool isSideways;
+
+    std::optional<ExtendedPlayerData> extData;
 
     /// Copies everything except position and rotation from another `PlayerObjectData`
     void copyFlagsFrom(const PlayerObjectData& other) {

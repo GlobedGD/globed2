@@ -120,6 +120,19 @@ $implEncode(const PlayerState& state, game::PlayerData::Builder& data) {
         dst.setIsFalling(src.isFalling);
         dst.setIsRotating(src.isRotating);
         dst.setIsSideways(src.isSideways);
+
+        if (src.extData) {
+            auto ed = *src.extData;
+            auto ext = dst.initExtData();
+            ext.setVelocityX(ed.velocityX);
+            ext.setVelocityY(ed.velocityY);
+            ext.setAccelerating(ed.accelerating);
+            ext.setAcceleration(ed.acceleration);
+            ext.setFallStartY(ed.fallStartY);
+            ext.setIsOnGround2(ed.isOnGround2);
+            ext.setGravityMod(ed.gravityMod);
+            ext.setGravity(ed.gravity);
+        }
     };
 
     GLOBED_ASSERT(state.player1.has_value());
@@ -167,6 +180,20 @@ $implDecode(PlayerState, game::PlayerData::Reader& reader) {
         dst.isFalling = src.getIsFalling();
         dst.isRotating = src.getIsRotating();
         dst.isSideways = src.getIsSideways();
+
+        if (src.hasExtData()) {
+            auto ed = src.getExtData();
+            ExtendedPlayerData ext{};
+            ext.velocityX = ed.getVelocityX();
+            ext.velocityY = ed.getVelocityY();
+            ext.accelerating = ed.getAccelerating();
+            ext.acceleration = ed.getAcceleration();
+            ext.fallStartY = ed.getFallStartY();
+            ext.isOnGround2 = ed.getIsOnGround2();
+            ext.gravityMod = ed.getGravityMod();
+            ext.gravity = ed.getGravity();
+            dst.extData = ext;
+        }
     };
 
     if (reader.isDual()) {

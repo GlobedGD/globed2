@@ -120,6 +120,7 @@ void GlobedGJBGL::setupAudio() {
         if (globed::setting<bool>("core.audio.voice-loopback")) {
             log::debug("Playing loopback voice frame");
             auto& am = AudioManager::get();
+
             if (auto err = am.playFrameStreamed(-1, frame).err()) {
                 log::warn("Failed to play loopback voice frame: {}", err);
             }
@@ -387,7 +388,10 @@ void GlobedGJBGL::selSendPlayerData(float dt) {
     auto coverage = camState.cameraCoverage();
 
     CCPoint camCenter = camState.cameraOrigin + coverage / 2.f;
-    float camRadius = std::max(coverage.width, coverage.height) / 2.f * 2.75f;
+
+    float camRadius = fields.m_noGlobalCulling
+        ? INFINITY
+        : std::max(coverage.width, coverage.height) / 2.f * 2.75f;
 
     NetworkManagerImpl::get().sendPlayerState(state, toRequest, camCenter, camRadius);
 }
@@ -461,6 +465,21 @@ PlayerState GlobedGJBGL::getPlayerState() {
         // TODO: set didJustJump
         out.isRotating = obj->m_isRotating;
         out.isSideways = obj->m_isSideways;
+
+        if (fields.m_sendExtData) {
+            // gather some extra data
+            auto ed = ExtendedPlayerData{};
+            ed.velocityX = obj->m_platformerXVelocity;
+            ed.velocityY = obj->m_yVelocity;
+            ed.accelerating = obj->m_isAccelerating;
+            ed.acceleration = obj->m_accelerationOrSpeed;
+            ed.fallStartY = obj->m_fallStartY;
+            ed.isOnGround2 = obj->m_isOnGround2;
+            ed.gravityMod = obj->m_gravityMod;
+            ed.gravity = obj->m_gravity;
+
+            out.extData = ed;
+        }
     };
 
     out.player1 = PlayerObjectData{};
@@ -650,6 +669,14 @@ RemotePlayer* GlobedGJBGL::getPlayer(int playerId) {
     return it == players.end() ? nullptr : it->second.get();
 }
 
+void GlobedGJBGL::toggleCullingEnabled(bool culling) {
+    m_fields->m_noGlobalCulling = !culling;
+}
+
+void GlobedGJBGL::toggleExtendedData(bool extended) {
+    m_fields->m_sendExtData = extended;
+}
+
 void GlobedGJBGL::toggleHidePlayers() {
     auto& fields = *m_fields.self();
     fields.m_playersHidden = !fields.m_playersHidden;
@@ -662,7 +689,7 @@ void GlobedGJBGL::toggleHidePlayers() {
 }
 
 void GlobedGJBGL::toggleDeafen() {
-
+    // TODO
 }
 
 void GlobedGJBGL::resumeVoiceRecording() {

@@ -47,6 +47,10 @@ public:
     /// but lost, delayed or misplaced packets will cause jitter.
     void setRealtimeMode(bool enable);
 
+    /// Enables or disables camera corrections. When enabled, extra smoothing may be applied to players' movement using camera delta.
+    /// This is useful to make players have no jitter on screen, but will interfere if camera movement isn't predictable, for example when spectating a player.
+    void setCameraCorrections(bool enable);
+
     void setPlatformer(bool enable);
 
 private:
@@ -74,6 +78,7 @@ private:
     bool m_realtime = false;
     bool m_lowLatency = false;
     bool m_platformer = false;
+    bool m_cameraCorrections = true;
 
     bool isCameraStationary();
 };

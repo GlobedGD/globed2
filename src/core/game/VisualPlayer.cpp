@@ -101,6 +101,37 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     m_prevPosition = data.position;
     m_prevRotation = data.rotation;
 
+    // set some PlayerObject members
+
+    m_isGoingLeft = data.isLookingLeft;
+    m_isDead = state.isDead;
+    // m_isUpsideDown = data.isUpsideDown;
+    m_isOnGround = data.isGrounded;
+    // m_isRotating = data.isRotating;
+    // m_isSideways = data.isSideways;
+
+    // m_isShip = data.iconType == PlayerIconType::Ship;
+    // m_isBall = data.iconType == PlayerIconType::Ball;
+    // m_isBird = data.iconType == PlayerIconType::Ufo;
+    // m_isDart = data.iconType == PlayerIconType::Wave;
+    // m_isRobot = data.iconType == PlayerIconType::Robot;
+    // m_isSpider = data.iconType == PlayerIconType::Spider;
+    // m_isSwing = data.iconType == PlayerIconType::Swing;
+
+    if (data.extData) {
+        auto& ed = *data.extData;
+        m_platformerXVelocity = ed.velocityX;
+        m_yVelocity = ed.velocityY;
+        m_isAccelerating = ed.accelerating;
+        m_accelerationOrSpeed = ed.acceleration;
+        m_fallStartY = ed.fallStartY;
+        m_gravityMod = ed.gravityMod;
+        m_isOnGround2 = ed.isOnGround2;
+        m_gravity = ed.gravity;
+    }
+
+    // calculate visibility n stuff
+
     bool isNearby = this->isPlayerNearby(data, camState);
 
     bool cameNearby = isNearby && !m_prevNearby;

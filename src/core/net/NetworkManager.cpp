@@ -9,7 +9,7 @@ namespace globed {
 NetworkManager::NetworkManager() : m_impl(std::make_unique<NetworkManagerImpl>()) {}
 
 NetworkManager::~NetworkManager() {
-    log::debug("goodbye from networkmanager!");
+    log::info("goodbye from networkmanager!");
 }
 
 Result<> NetworkManager::connectCentral(std::string_view url) {

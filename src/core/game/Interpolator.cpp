@@ -167,6 +167,7 @@ struct LerpContext {
     CCPoint cameraVector;
     bool camStationary;
     bool platformer;
+    bool cameraCorrections;
 };
 
 static inline void lerpSpecific(
@@ -207,38 +208,59 @@ static inline void lerpSpecific(
     // if both us and this player are moving, try to use the guessed position as long as it is close enough,
     // this will result in smoother movement for an FPS that is not a factor of 240
 
-    constexpr float closeAllowance = 25.0f;
-    constexpr float stillAllowance = 7.0f;
+    if (ctx.cameraCorrections) {
+        constexpr float closeAllowance = 25.0f;
+        constexpr float stillAllowance = 7.0f;
 
-    bool cameraMovesX = std::fabs(ctx.cameraVector.x) > stillAllowance;
-    bool cameraMovesY = std::fabs(ctx.cameraVector.y) > stillAllowance;
+        bool cameraMovesX = std::fabs(ctx.cameraVector.x) > stillAllowance;
+        bool cameraMovesY = std::fabs(ctx.cameraVector.y) > stillAllowance;
 
-    bool playerMovesX = std::fabs(speedVec.first) >= stillAllowance;
-    bool playerMovesY = std::fabs(speedVec.second) >= stillAllowance;
+        bool playerMovesX = std::fabs(speedVec.first) >= stillAllowance;
+        bool playerMovesY = std::fabs(speedVec.second) >= stillAllowance;
 
-    bool similarSpeedX = std::fabs(speedVec.first - ctx.cameraVector.x) < closeAllowance;
-    bool similarSpeedY = std::fabs(speedVec.second - ctx.cameraVector.y) < closeAllowance;
+        bool similarSpeedX = std::fabs(speedVec.first - ctx.cameraVector.x) < closeAllowance;
+        bool similarSpeedY = std::fabs(speedVec.second - ctx.cameraVector.y) < closeAllowance;
 
-    float guessAllowanceX = std::fabs(ctx.cameraVector.x) / 50.f;
-    float guessAllowanceY = std::fabs(ctx.cameraVector.y) / 50.f;
+        float guessAllowanceX = std::fabs(ctx.cameraVector.x) / 50.f;
+        float guessAllowanceY = std::fabs(ctx.cameraVector.y) / 50.f;
 
-    LERP_LOG(
-        "[Interpolator] speedVec: {}, cameraVec: {}, guessallowx: {}, newx: {}, outx: {}",
-        speedVec.first,
-        ctx.cameraVector.x,
-        guessAllowanceX,
-        newGuessed.x,
-        out.position.x
-    );
+        LERP_LOG(
+            "[Interpolator] speedVec: {}, cameraVec: {}, guessallowx: {}, newx: {}, outx: {}",
+            speedVec.first,
+            ctx.cameraVector.x,
+            guessAllowanceX,
+            newGuessed.x,
+            out.position.x
+        );
 
-    if (cameraMovesX && playerMovesX && similarSpeedX && std::abs(newGuessed.x - out.position.x) < guessAllowanceX) {
-        LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessed.x);
-        out.position.x = newGuessed.x;
+        if (cameraMovesX && playerMovesX && similarSpeedX && std::abs(newGuessed.x - out.position.x) < guessAllowanceX) {
+            LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessed.x);
+            out.position.x = newGuessed.x;
+        }
+
+        if (cameraMovesY && playerMovesY && similarSpeedY && std::abs(newGuessed.y - out.position.y) < guessAllowanceY) {
+            LERP_LOG("[Interpolator] Rounding up Y position from {} to {} for player", out.position.y, newGuessed.y);
+            out.position.y = newGuessed.y;
+        }
     }
 
-    if (cameraMovesY && playerMovesY && similarSpeedY && std::abs(newGuessed.y - out.position.y) < guessAllowanceY) {
-        LERP_LOG("[Interpolator] Rounding up Y position from {} to {} for player", out.position.y, newGuessed.y);
-        out.position.y = newGuessed.y;
+    // interpolate ext data
+
+    if (older.extData && newer.extData) {
+        auto& a = *older.extData;
+        auto& b = *newer.extData;
+
+        auto ed = ExtendedPlayerData{};
+        ed.velocityX = std::lerp(a.velocityX, b.velocityX, ctx.t);
+        ed.velocityY = std::lerp(a.velocityY, b.velocityY, ctx.t);
+        ed.accelerating = a.accelerating;
+        ed.acceleration = std::lerp(a.acceleration, b.acceleration, ctx.t);
+        ed.fallStartY = a.fallStartY;
+        ed.isOnGround2 = a.isOnGround2;
+        ed.gravityMod = a.gravityMod;
+        ed.gravity = a.gravity;
+
+        out.extData = ed;
     }
 }
 
@@ -351,6 +373,7 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
             cameraVector,
             camStationary,
             m_platformer,
+            m_cameraCorrections,
         };
         lerpPlayer(*older, *newer, player.interpolatedState, ctx, player.p1speedTracker, player.p2speedTracker);
 
@@ -391,6 +414,10 @@ void Interpolator::setLowLatencyMode(bool enable) {
 
 void Interpolator::setRealtimeMode(bool enable) {
     m_realtime = enable;
+}
+
+void Interpolator::setCameraCorrections(bool enable) {
+    m_cameraCorrections = enable;
 }
 
 void Interpolator::setPlatformer(bool enable) {

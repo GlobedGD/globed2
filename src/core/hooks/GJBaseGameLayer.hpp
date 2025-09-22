@@ -55,6 +55,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_permanentSafeMode = false;
         bool m_playersHidden = false;
         bool m_isVoiceProximity = false;
+        bool m_noGlobalCulling = false;
+        bool m_sendExtData = false;
 
         CCNode* m_playerNode = nullptr;
         geode::Ref<CCNode> m_progressBarContainer = nullptr;
@@ -117,6 +119,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     GameCameraState getCameraState();
     RemotePlayer* getPlayer(int playerId);
 
+    void toggleCullingEnabled(bool culling);
+    void toggleExtendedData(bool extended);
     void toggleHidePlayers();
     void toggleDeafen();
     void resumeVoiceRecording();
