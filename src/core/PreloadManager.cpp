@@ -318,7 +318,7 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
             auto& loaded = self.m_loadedFrames;
 
             if (std::find(loaded.begin(), loaded.end(), plistKey) != loaded.end()) {
-                log::debug("PreloadManager: already loaded frames for '{}', skipping", state.item.image);
+                log::info("PreloadManager: already loaded frames for '{}', skipping", state.item.image);
                 return;
             }
 
@@ -333,9 +333,11 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
 
                 dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
                 if (!dict) {
-                    log::debug("PreloadManager: dict is nullptr for {}, trying slower fallback option", fullPlistPath);
-                    auto fallbackPath = self.fullPathForFilename(fullPlistPath);
-                    log::debug("PreloadManager: attempted fallback: {}", fallbackPath);
+                    log::info("PreloadManager: dict is nullptr for {}, trying slower fallback option", fullPlistPath);
+                    auto slashPos = fullPlistPath.find_last_of("/\\");
+
+                    auto fallbackPath = self.fullPathForFilename(slashPos == std::string::npos ? fullPlistPath : fullPlistPath.substr(slashPos + 1));
+                    log::info("PreloadManager: attempted fallback: {}", fallbackPath);
                     dict = CCDictionary::createWithContentsOfFileThreadSafe(fallbackPath.c_str());
                 }
             }
