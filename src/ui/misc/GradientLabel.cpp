@@ -33,6 +33,42 @@ void main() {
 }
 )";
 
+// Old, less optimized shader
+// constexpr auto multiFrag = R"(
+// #ifdef GL_ES
+// precision mediump float;
+// #endif
+
+// varying vec4 v_fragmentColor;
+// varying vec2 v_texCoord;
+// varying vec2 v_texCoordRaw;
+// uniform int colorCount;
+// uniform vec3 colors[32];
+// uniform bool enabled;
+// uniform float customTime;
+// uniform sampler2D CC_Texture0;
+
+// void main() {
+//     if (enabled) {
+//         float t = mod(v_texCoord.x + customTime / 5.0, 1.0);
+
+//         vec3 col = colors[0]; // default
+
+//         for (int i = 0; i < 31; i++) { // one less than array size
+//             if (i >= colorCount - 1) break;
+//             if (t >= float(i)/float(colorCount - 1) && t <= float(i+1)/float(colorCount - 1)) {
+//                 float localT = (t - float(i)/float(colorCount - 1)) / (1.0/float(colorCount - 1));
+//                 col = mix(colors[i], colors[i+1], localT);
+//             }
+//         }
+
+//         gl_FragColor = vec4(col, 1.0) * v_fragmentColor * texture2D(CC_Texture0, v_texCoordRaw);
+//     } else {
+//         gl_FragColor = v_fragmentColor * texture2D(CC_Texture0, v_texCoordRaw);
+//     }
+// }
+// )";
+
 constexpr auto multiFrag = R"(
 #ifdef GL_ES
 precision mediump float;
@@ -48,23 +84,29 @@ uniform float customTime;
 uniform sampler2D CC_Texture0;
 
 void main() {
-    if (enabled) {
-        float t = mod(v_texCoord.x + customTime / 5.0, 1.0);
-
-        vec3 col = colors[0]; // default
-
-        for (int i = 0; i < 31; i++) { // one less than array size
-            if (i >= colorCount - 1) break;
-            if (t >= float(i)/float(colorCount - 1) && t <= float(i+1)/float(colorCount - 1)) {
-                float localT = (t - float(i)/float(colorCount - 1)) / (1.0/float(colorCount - 1));
-                col = mix(colors[i], colors[i+1], localT);
-            }
-        }
-
-        gl_FragColor = vec4(col, 1.0) * v_fragmentColor * texture2D(CC_Texture0, v_texCoordRaw);
-    } else {
+    if (!enabled) {
         gl_FragColor = v_fragmentColor * texture2D(CC_Texture0, v_texCoordRaw);
+        return;
     }
+
+    // keep t in [0,1)
+    float t = fract(v_texCoord.x + customTime * 0.2); // customTime/5.0 == customTime*0.2
+
+    // default
+    vec3 col = colors[0];
+
+    // need at least two colors to interpolate
+    if (colorCount > 1) {
+        float segments = float(colorCount - 1);   // number of intervals
+        float scaledT  = t * segments;            // which interval + fractional part
+        int   idx      = int(floor(scaledT));    // interval index in [0, segments-1]
+        float localT   = scaledT - float(idx);   // fractional position inside interval
+
+        // safe dynamic indexing (matches your original usage of colors[i])
+        col = mix(colors[idx], colors[idx + 1], localT);
+    }
+
+    gl_FragColor = vec4(col, 1.0) * v_fragmentColor * texture2D(CC_Texture0, v_texCoordRaw);
 }
 )";
 

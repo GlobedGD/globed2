@@ -1,4 +1,5 @@
 #include "PreloadManager.hpp"
+#include <globed/prelude.hpp>
 #include <globed/util/SpinLock.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <asp/fs.hpp>
@@ -74,6 +75,32 @@ struct HookedFileUtils : public CCFileUtils {
         }
     }
 };
+
+static std::string_view relativizeIconPath(std::string_view fullpath) {
+    auto countSlashes = [](std::string_view sv) {
+        return std::count_if(sv.begin(), sv.end(), [](char c) { return c == '/' || c == '\\'; });
+    };
+
+    while (countSlashes(fullpath) > 1) {
+        auto slashPos = fullpath.find_first_of("/\\");
+        GLOBED_ASSERT(slashPos != std::string::npos);
+
+        fullpath = fullpath.substr(slashPos + 1);
+    }
+
+    // now there is <= 1 slash! if this is the `icons/` subfolder, keep it
+    // otherwise remove that part
+    if (fullpath.starts_with("icons/") || fullpath.starts_with("icons\\")) {
+        return fullpath;
+    } else {
+        auto slashPos = fullpath.find_first_of("/\\");
+        if (slashPos != fullpath.npos) {
+            return fullpath.substr(slashPos + 1);
+        } else {
+            return fullpath;
+        }
+    }
+}
 
 // mutex that guards ccfileutils file reading
 static asp::Mutex<> g_fileMutex;
@@ -334,9 +361,10 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
                 dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
                 if (!dict) {
                     log::info("PreloadManager: dict is nullptr for {}, trying slower fallback option", fullPlistPath);
-                    auto slashPos = fullPlistPath.find_last_of("/\\");
 
-                    auto fallbackPath = self.fullPathForFilename(slashPos == std::string::npos ? fullPlistPath : fullPlistPath.substr(slashPos + 1));
+                    std::string_view attemptedPlist = relativizeIconPath(fullPlistPath);
+
+                    auto fallbackPath = self.fullPathForFilename(attemptedPlist);
                     log::info("PreloadManager: attempted fallback: {}", fallbackPath);
                     dict = CCDictionary::createWithContentsOfFileThreadSafe(fallbackPath.c_str());
                 }
