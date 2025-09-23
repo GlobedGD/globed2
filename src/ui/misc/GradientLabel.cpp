@@ -92,17 +92,15 @@ void main() {
     // keep t in [0,1)
     float t = fract(v_texCoord.x + customTime * 0.2); // customTime/5.0 == customTime*0.2
 
-    // default
+    // default color
     vec3 col = colors[0];
 
-    // need at least two colors to interpolate
     if (colorCount > 1) {
-        float segments = float(colorCount - 1);   // number of intervals
-        float scaledT  = t * segments;            // which interval + fractional part
+        float segments = float(colorCount - 1);
+        float scaledT  = t * segments;
         int   idx      = int(floor(scaledT));    // interval index in [0, segments-1]
-        float localT   = scaledT - float(idx);   // fractional position inside interval
+        float localT   = scaledT - float(idx);   // position inside interval
 
-        // safe dynamic indexing (matches your original usage of colors[i])
         col = mix(colors[idx], colors[idx + 1], localT);
     }
 
