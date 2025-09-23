@@ -55,8 +55,8 @@ void main() {
 
         for (int i = 0; i < 31; i++) { // one less than array size
             if (i >= colorCount - 1) break;
-            if (t >= float(i)/(colorCount - 1) && t <= float(i+1)/(colorCount - 1)) {
-                float localT = (t - float(i)/(colorCount - 1)) / (1.0/(colorCount - 1));
+            if (t >= float(i)/float(colorCount - 1) && t <= float(i+1)/float(colorCount - 1)) {
+                float localT = (t - float(i)/float(colorCount - 1)) / (1.0/float(colorCount - 1));
                 col = mix(colors[i], colors[i+1], localT);
             }
         }
