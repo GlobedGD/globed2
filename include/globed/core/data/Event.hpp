@@ -108,7 +108,7 @@ struct FollowRotationEvent {
 
 struct ActivePlayerSwitchEvent {
     int playerId;
-    bool fullReset;
+    uint8_t type; // 0 - warning, 1 - switch, 2 - full reset
 
     static Result<ActivePlayerSwitchEvent> decode(qn::ByteReader& reader);
     Result<> encode(qn::HeapByteWriter& writer);

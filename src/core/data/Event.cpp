@@ -87,21 +87,16 @@ Result<FollowRotationEvent> FollowRotationEvent::decode(qn::ByteReader& reader) 
 }
 
 Result<ActivePlayerSwitchEvent> ActivePlayerSwitchEvent::decode(qn::ByteReader& reader) {
-    auto bits = READER_UNWRAP(reader.readU32());
-    int playerId = bits & 0x7fffffff;
-    bool fullReset = (bits & 0x80000000) != 0;
+    auto playerId = READER_UNWRAP(reader.readI32());
+    auto type = READER_UNWRAP(reader.readU8());
 
-    return Ok(ActivePlayerSwitchEvent { playerId, fullReset });
+    return Ok(ActivePlayerSwitchEvent { playerId, type });
 }
 
 Result<> ActivePlayerSwitchEvent::encode(qn::HeapByteWriter& writer) {
     writer.writeU16(EVENT_ACTIVE_PLAYER_SWITCH);
-
-    uint32_t rawData =
-        (static_cast<uint32_t>(this->playerId) & 0x7fffffff) |
-        (static_cast<uint32_t>(this->fullReset) << 31);
-
-    writer.writeU32(rawData);
+    writer.writeI32(playerId);
+    writer.writeU8(type);
 
     return Ok();
 }
