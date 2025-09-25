@@ -141,7 +141,7 @@ CPMAddPackage(
 CPMAddPackage("gh:GlobedGD/server-shared#ae01ada5f")
 CPMAddPackage("gh:dankmeme01/qunet-cpp#aa632417")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
-CPMAddPackage("gh:dankmeme01/cue#b86dd10")
+CPMAddPackage("gh:dankmeme01/cue#cdf57a13")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 CPMAddPackage("gh:Prevter/sinaps#2541d6d")
 CPMAddPackage("gh:Prevter/AdvancedLabel#d78d7f82")
