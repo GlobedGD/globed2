@@ -64,7 +64,6 @@ GameLevelKind classifyLevel(int levelId) {
     // m_mainLevels contains (blank) levels from gd world and spinoffs. yikes!
     // we should not return these to the user, instead returning a Custom kind.
 
-
     // main levels, tower levels, the challenge
     bool isRealMain = (levelId >= 1 && levelId <= 127) || (levelId >= 5001 && levelId <= 5024) || (levelId == 3001);
 
@@ -80,13 +79,13 @@ GameLevelKind classifyLevel(int levelId) {
     if (levelId >= 1 && levelId <= 22) {
         // classic main levels
         return GameLevelKind {
-            .level = mlevel,
+            .level = glm->getMainLevel(levelId, false),
             .kind = GameLevelKind::Main
         };
     } else {
         // tower levels or the challenge
         return GameLevelKind {
-            .level = mlevel,
+            .level = glm->getMainLevel(levelId, false),
             .kind = GameLevelKind::Tower
         };
     }
