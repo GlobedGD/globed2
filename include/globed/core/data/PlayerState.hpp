@@ -27,6 +27,7 @@ struct ExtendedPlayerData {
     bool isOnGround2;
     float gravityMod;
     float gravity;
+    bool touchedPad;
 };
 
 struct PlayerObjectData {

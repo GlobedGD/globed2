@@ -259,6 +259,7 @@ static inline void lerpSpecific(
         ed.isOnGround2 = a.isOnGround2;
         ed.gravityMod = a.gravityMod;
         ed.gravity = a.gravity;
+        ed.touchedPad = a.touchedPad;
 
         out.extData = ed;
     }

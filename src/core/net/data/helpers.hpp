@@ -132,6 +132,7 @@ $implEncode(const PlayerState& state, game::PlayerData::Builder& data) {
             ext.setIsOnGround2(ed.isOnGround2);
             ext.setGravityMod(ed.gravityMod);
             ext.setGravity(ed.gravity);
+            ext.setTouchedPad(ed.touchedPad);
         }
     };
 
@@ -192,6 +193,7 @@ $implDecode(PlayerState, game::PlayerData::Reader& reader) {
             ext.isOnGround2 = ed.getIsOnGround2();
             ext.gravityMod = ed.getGravityMod();
             ext.gravity = ed.getGravity();
+            ext.touchedPad = ed.getTouchedPad();
             dst.extData = ext;
         }
     };

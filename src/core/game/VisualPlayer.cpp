@@ -105,7 +105,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
     m_isGoingLeft = data.isLookingLeft;
     m_isDead = state.isDead;
-    // m_isUpsideDown = data.isUpsideDown;
+    m_isUpsideDown = data.isUpsideDown;
     m_isOnGround = data.isGrounded;
     // m_isRotating = data.isRotating;
     // m_isSideways = data.isSideways;
@@ -125,9 +125,10 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         m_isAccelerating = ed.accelerating;
         m_accelerationOrSpeed = ed.acceleration;
         m_fallStartY = ed.fallStartY;
-        m_gravityMod = ed.gravityMod;
         m_isOnGround2 = ed.isOnGround2;
+        m_gravityMod = ed.gravityMod;
         m_gravity = ed.gravity;
+        m_touchedPad = ed.touchedPad;
     }
 
     // calculate visibility n stuff
@@ -356,7 +357,7 @@ void VisualPlayer::updateOpacity() {
 void VisualPlayer::updateIconType(PlayerIconType iconType) {
     auto& icons = this->icons();
 
-    this->toggleFlyMode(false, false);
+    this->toggleFlyMode(false, true);
     this->toggleRollMode(false, false);
     this->toggleBirdMode(false, false);
     this->toggleDartMode(false, false);
@@ -399,7 +400,7 @@ void VisualPlayer::updateIconType(PlayerIconType iconType) {
             this->updatePlayerSwingFrame(icons.swing);
         } break;
         case PlayerIconType::Jetpack: {
-            this->toggleFlyMode(true, false);
+            this->toggleFlyMode(true, true);
             this->updatePlayerJetpackFrame(icons.jetpack);
         } break;
     }
