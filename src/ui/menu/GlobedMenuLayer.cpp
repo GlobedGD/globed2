@@ -171,6 +171,7 @@ namespace LeftBtn {
     constexpr int RegionSwitch = 110;
     constexpr int Teams = 300;
     constexpr int Settings = 400;
+    constexpr int CloseRoom = 500;
 }
 
 namespace FarRightBtn {
@@ -682,6 +683,29 @@ void GlobedMenuLayer::initSideButtons() {
             "btn-settings",
             [this] {
                 RoomSettingsPopup::create()->show();
+            }
+        );
+    }
+
+    // close room button
+    if (!rm.isInGlobal() && (rm.isOwner() || NetworkManagerImpl::get().isAuthorizedModerator())) {
+        makeButton(
+            CCSprite::create("exit01.png"_spr),
+            std::nullopt,
+            m_leftSideMenu,
+            LeftBtn::CloseRoom,
+            "btn-close-room",
+            [this] {
+                globed::quickPopup(
+                    "Close Room",
+                    "Are you sure you want to <cr>close</c> the room? All players will be <cy>kicked</c> from the room and it will be <cy>deleted</c>.",
+                    "Cancel", "Ok",
+                    [this](auto, bool yup) {
+                        if (!yup) return;
+
+                        NetworkManagerImpl::get().sendRoomOwnerAction(RoomOwnerActionType::CLOSE_ROOM);
+                    }
+                );
             }
         );
     }
