@@ -39,6 +39,7 @@ SettingsManager::SettingsManager() {
 
     // Level UI
     this->registerSetting("core.level.progress-indicators", true);
+    this->registerSetting("core.level.progress-indicators-plat", true);
     this->registerSetting("core.level.progress-opacity", 1.0f);
     this->registerSetting("core.level.voice-overlay", true);
     this->registerSetting("core.level.force-progressbar", false);

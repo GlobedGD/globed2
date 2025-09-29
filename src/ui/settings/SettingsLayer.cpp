@@ -63,7 +63,8 @@ void SettingsLayer::addSettings() {
 
     // Level UI
     this->addHeader("core.level", "Level UI");
-    this->addSetting<BoolSettingCell>("core.level.progress-indicators", "Progress Icons", "");
+    this->addSetting<BoolSettingCell>("core.level.progress-indicators", "Progress Icons (Classic)", "");
+    this->addSetting<BoolSettingCell>("core.level.progress-indicators-plat", "Progress Icons (Plat)", "");
     this->addSetting<FloatSettingCell>("core.level.progress-opacity", "Progress Opacity", "");
     this->addSetting<BoolSettingCell>("core.level.voice-overlay", "Voice Chat Overlay", "");
     this->addSetting<BoolSettingCell>("core.level.force-progressbar", "Force progressbar", "");

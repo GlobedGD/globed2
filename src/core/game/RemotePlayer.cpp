@@ -42,13 +42,15 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
 
     bool plat = gameLayer->m_level->isPlatformer();
 
-    if (globed::setting<bool>("core.level.progress-indicators") && !gameLayer->m_isEditor) {
-        if (plat) {
+    // progress icon
+    if (!gameLayer->m_isEditor) {
+        if (plat && globed::setting<bool>("core.level.progress-indicators-plat")) {
             m_progArrow = Build<ProgressArrow>::create()
                 .zOrder(2)
                 .id(fmt::format("remote-player-progress-{}"_spr, playerId))
                 .parent(gameLayer);
-        } else {
+
+        } else if (!plat && globed::setting<bool>("core.level.progress-indicators")) {
             auto gjbgl = GlobedGJBGL::get(gameLayer);
 
             m_progIcon = Build<ProgressIcon>::create()
