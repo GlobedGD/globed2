@@ -2,6 +2,7 @@
 #include <globed/util/color.hpp>
 
 #include <UIBuilder.hpp>
+#include <asp/iter.hpp>
 
 using namespace geode::prelude;
 
@@ -152,11 +153,7 @@ void CodeEditor::updateState(bool recreate) {
 
     // calculate amount of lines and build the line string
 
-    size_t lines = 1;
-
-    for (char c : m_textBuffer) {
-        if (c == '\n') lines++;
-    }
+    size_t lines = 1 + asp::iter::from(m_textBuffer).filter([](char c) { return c == '\n'; }).count();
 
     std::string outStr;
     for (size_t i = 0; i < lines; i++) {

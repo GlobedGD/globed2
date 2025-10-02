@@ -1,6 +1,8 @@
 #include <globed/util/gd.hpp>
 #include <globed/util/singleton.hpp>
 
+#include <asp/iter.hpp>
+
 using namespace geode::prelude;
 
 namespace globed {
@@ -9,18 +11,14 @@ void reorderDownloadedLevel(GJGameLevel* level) {
     // thank you cvolton :D
     // this is needed so the level appears at the top of the saved list (unless Manual Level Order is enabled)
 
-    auto* levels = GameLevelManager::get()->m_onlineLevels;
-
+    CCDictionaryExt<gd::string, GJGameLevel*> levels = GameLevelManager::get()->m_onlineLevels;
     bool putAtLowest = cachedSingleton<GameManager>()->getGameVariable("0084");
 
-    int idx = 0;
-    for (const auto& [k, level] : CCDictionaryExt<gd::string, GJGameLevel*>(levels)) {
-        if (putAtLowest) {
-            idx = std::min(idx, level->m_levelIndex);
-        } else {
-            idx = std::max(idx, level->m_levelIndex);
-        }
-    }
+    auto iter = asp::iter::from(levels).map([](const auto& pair) {
+        return pair.second->m_levelIndex;
+    });
+
+    int idx = (putAtLowest ? std::move(iter).min() : std::move(iter).max()).value_or(0);
 
     if (putAtLowest) {
         idx -= 1;

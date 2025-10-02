@@ -5,6 +5,7 @@
 #include <core/hooks/LevelCell.hpp>
 
 #include <UIBuilder.hpp>
+#include <asp/iter.hpp>
 
 using namespace geode::prelude;
 
@@ -467,13 +468,9 @@ bool LevelListLayer::loadNextBatch() {
 }
 
 std::optional<size_t> LevelListLayer::findPlayerCountForLevel(int levelId) {
-    for (const auto& [id, count] : m_playerCounts) {
-        if (id.levelId() == levelId) {
-            return count;
-        }
-    }
-
-    return std::nullopt;
+    return asp::iter::from(m_playerCounts)
+        .find([&](const auto& pair) { return pair.first.levelId() == levelId; })
+        .transform([](const auto& pair) { return pair.second; });
 }
 
 bool LevelListLayer::isMatchingFilters(GJGameLevel* level) {
@@ -680,12 +677,7 @@ static std::vector<std::pair<globed::SessionId, uint16_t>> getFakeLevels() {
         {123, 45},
     };
 
-    std::vector<std::pair<globed::SessionId, uint16_t>> out;
-    out.reserve(levels.size());
-
-    for (auto [id, count] : levels) {
-        out.push_back({globed::SessionId{id}, count});
-    }
-
-    return out;
+    return asp::iter::from(levels).map([](auto pair) {
+        return std::make_pair(globed::SessionId{pair.first}, pair.second);
+    }).collect<std::vector<std::pair<globed::SessionId, uint16_t>>>();
 }

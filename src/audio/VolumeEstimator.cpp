@@ -1,4 +1,5 @@
 #include <globed/audio/VolumeEstimator.hpp>
+#include <asp/iter.hpp>
 
 using namespace geode::prelude;
 
@@ -22,10 +23,7 @@ void VolumeEstimator::feedData(const float* pcm, size_t samples) {
 }
 
 static float calculatePcmVolume(const float* pcm, size_t samples) {
-    double sum = 0.0;
-    for (size_t i = 0; i < samples; i++) {
-        sum += pcm[i] * pcm[i];
-    }
+    double sum = asp::iter::from(pcm, samples).map([](float v) { return v * v; }).sum();
 
     return static_cast<float>(sqrt(sum / (double)samples));
 }
