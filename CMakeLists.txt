@@ -23,7 +23,7 @@ option(GLOBED_MODULE_GLOBAL_TRIGGERS "Global triggers module" OFF)
 option(GLOBED_MODULE_SCRIPTING "Scripting module" OFF)
 option(GLOBED_MODULE_SCRIPTING_UI "Scripting UI module" OFF)
 option(GLOBED_MODULE_TCD_HNS "" OFF)
-option(GLOBED_DEFAULT_MAIN_SERVER_URL "Default main server URL" "qunet://globed.dev")
+set(GLOBED_DEFAULT_MAIN_SERVER_URL "qunet://globed.dev" CACHE STRING "Default main server URL")
 
 # Configure platform sources
 if (ANDROID)
