@@ -5,6 +5,7 @@
 #include "PlayerState.hpp"
 #include "PlayerDisplayData.hpp"
 #include "RoomListingInfo.hpp"
+#include "FeaturedLevel.hpp"
 #include "UserRole.hpp"
 #include "Event.hpp"
 #include "RoomTeam.hpp"
@@ -24,6 +25,7 @@ struct CentralLoginOkMessage {
     std::vector<UserRole> userRoles;
     std::optional<MultiColor> nameColor;
     ModPermissions perms;
+    std::optional<FeaturedLevelMeta> featuredLevel;
 };
 
 // Rooms
@@ -172,6 +174,20 @@ struct DiscordLinkAttemptMessage {
     uint64_t id;
     std::string username;
     std::string avatarUrl;
+};
+
+// Featured level
+
+struct FeaturedLevelMessage {
+    std::optional<FeaturedLevelMeta> meta;
+};
+
+// Featured list
+
+struct FeaturedListMessage {
+    std::vector<FeaturedLevelMeta> levels;
+    uint32_t page;
+    uint32_t totalPages;
 };
 
 // User data changed

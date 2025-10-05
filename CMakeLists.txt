@@ -23,6 +23,7 @@ option(GLOBED_MODULE_GLOBAL_TRIGGERS "Global triggers module" OFF)
 option(GLOBED_MODULE_SCRIPTING "Scripting module" OFF)
 option(GLOBED_MODULE_SCRIPTING_UI "Scripting UI module" OFF)
 option(GLOBED_MODULE_TCD_HNS "" OFF)
+option(GLOBED_DEFAULT_MAIN_SERVER_URL "Default main server URL" "qunet://globed.dev")
 
 # Configure platform sources
 if (ANDROID)
@@ -128,6 +129,8 @@ if (GLOBED_VOICE_SUPPORT)
     endif()
 endif()
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_DEFAULT_MAIN_SERVER_URL="${GLOBED_DEFAULT_MAIN_SERVER_URL}")
+
 # Dependencies
 CPMAddPackage(
     NAME capnproto
@@ -138,7 +141,7 @@ CPMAddPackage(
             "WITH_FIBERS OFF"
 )
 
-CPMAddPackage("gh:GlobedGD/server-shared#c097894a")
+CPMAddPackage("gh:GlobedGD/server-shared#cf2f0b3")
 CPMAddPackage("gh:dankmeme01/qunet-cpp#7813e8a")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
 CPMAddPackage("gh:dankmeme01/cue#cdf57a13")

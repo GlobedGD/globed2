@@ -1,6 +1,8 @@
 #include <globed/core/ServerManager.hpp>
 #include <globed/core/ValueManager.hpp>
 
+#include <asp/fs.hpp>
+
 using namespace geode::prelude;
 
 namespace globed {
@@ -55,24 +57,51 @@ void ServerManager::commit() {
     globed::setValue("core.central-servers", m_storage);
 }
 
+static std::string getMainServerUrl() {
+#ifdef GEODE_IS_WINDOWS
+    char envbuf[1024];
+    size_t count = 0;
+    if (0 == getenv_s(&count, envbuf, "GLOBED_MAIN_SERVER_URL") && count > 0) {
+        log::debug("Found server override in environment: {}", envbuf);
+        return envbuf;
+    }
+#endif
+
+    auto path1 = geode::dirs::getGameDir();
+    auto path2 = Mod::get()->getConfigDir(false);
+    auto path3 = Mod::get()->getSaveDir();
+
+    for (const auto& p : {path1, path2, path3}) {
+        auto path = p / "globed-server-url.txt";
+
+        if (asp::fs::exists(path)) {
+            log::debug("Found server override in: {}", path);
+            auto res = asp::fs::readToString(path);
+            if (!res) {
+                log::warn("Failed to read file: {}", path);
+                continue;
+            }
+
+            return std::move(res).unwrap();
+        }
+    }
+
+    return GLOBED_DEFAULT_MAIN_SERVER_URL;
+}
+
 void ServerManager::reload() {
     if (auto opt = globed::value<Storage>("core.central-servers")) {
-        m_storage = *opt;
+        m_storage = std::move(*opt);
     } else {
         m_storage = {};
     }
 
     // ensure the main server is always present and is the first one
-    // TODO: let gdps override this
-#ifdef GLOBED_MODULE_TCD_HNS
-    constexpr static auto mainServerUrl = "tcp://15.204.223.9:6010";
-#else
-    constexpr static auto mainServerUrl = "qunet://globed.dev";
-#endif
+    auto mainServerUrl = getMainServerUrl();
 
     auto it = std::find_if(
         m_storage.servers.begin(), m_storage.servers.end(),
-        [](const CentralServerData& server) { return server.url == mainServerUrl; }
+        [&](const CentralServerData& server) { return server.url == mainServerUrl; }
     );
 
     if (it == m_storage.servers.end()) {

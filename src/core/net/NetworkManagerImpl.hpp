@@ -154,6 +154,16 @@ public:
     void sendGetDiscordLinkState();
     void sendSetDiscordPairingState(bool state);
     void sendDiscordLinkConfirm(int64_t id, bool confirm);
+    void sendGetFeaturedList(uint32_t page);
+    void sendSendFeaturedLevel(
+        int32_t levelId,
+        const std::string& levelName,
+        int32_t authorId,
+        const std::string& authorName,
+        uint8_t rateTier,
+        const std::string& note,
+        bool queue
+    );
 
     void sendAdminLogin(const std::string& password);
     void sendAdminKick(int32_t accountId, const std::string& message);

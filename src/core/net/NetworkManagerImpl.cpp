@@ -1060,6 +1060,34 @@ void NetworkManagerImpl::sendDiscordLinkConfirm(int64_t id, bool confirm) {
     });
 }
 
+void NetworkManagerImpl::sendGetFeaturedList(uint32_t page) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto m = msg.initGetFeaturedList();
+        m.setPage(page);
+    });
+}
+
+void NetworkManagerImpl::sendSendFeaturedLevel(
+    int32_t levelId,
+    const std::string& levelName,
+    int32_t authorId,
+    const std::string& authorName,
+    uint8_t rateTier,
+    const std::string& note,
+    bool queue
+) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto m = msg.initSendFeaturedLevel();
+        m.setLevelId(levelId);
+        m.setLevelName(levelName);
+        m.setAuthorId(authorId);
+        m.setAuthorName(authorName);
+        m.setRateTier(rateTier);
+        m.setNote(note);
+        m.setQueue(queue);
+    });
+}
+
 void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto adminNotice = msg.initAdminNotice();
@@ -1474,6 +1502,14 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::DISCORD_LINK_ATTEMPT: {
             this->invokeListeners(data::decodeUnchecked<msg::DiscordLinkAttemptMessage>(msg.getDiscordLinkAttempt()));
+        } break;
+
+        case CentralMessage::FEATURED_LEVEL: {
+            this->invokeListeners(data::decodeUnchecked<msg::FeaturedLevelMessage>(msg.getFeaturedLevel()));
+        } break;
+
+        case CentralMessage::FEATURED_LIST: {
+            this->invokeListeners(data::decodeUnchecked<msg::FeaturedListMessage>(msg.getFeaturedList()));
         } break;
 
         //

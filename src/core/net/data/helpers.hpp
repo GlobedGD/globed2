@@ -549,13 +549,7 @@ $implDecode(msg::LevelDataMessage, game::LevelDataMessage::Reader& reader) {
 /// Script logs
 
 $implDecode(msg::ScriptLogsMessage, game::ScriptLogsMessage::Reader& reader) {
-    std::vector<std::string> logs;
-    auto in = reader.getLogs();
-    logs.reserve(in.size());
-
-    for (auto r : in) {
-        logs.push_back(r);
-    }
+    std::vector<std::string> logs = {reader.getLogs().begin(), reader.getLogs().end()};
 
     return msg::ScriptLogsMessage { std::move(logs), reader.getRamUsage() };
 }
@@ -593,6 +587,10 @@ inline std::optional<UserRole> decodeUserRole(const schema::shared::UserRole::Re
 
     role.nameColor = *color;
     return role;
+}
+
+static FeatureTier decodeFeatureTier(uint8_t tier) {
+    return (FeatureTier)std::clamp<uint8_t>(tier, 0, 2);
 }
 
 $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
@@ -641,6 +639,14 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
     msg.perms.canEditRoles = reader.getCanEditRoles();
     msg.perms.canSendFeatures = reader.getCanSendFeatures();
     msg.perms.canRateFeatures = reader.getCanRateFeatures();
+
+    FeaturedLevelMeta flm{};
+    flm.levelId = reader.getFeaturedLevel();
+    flm.rateTier = decodeFeatureTier(reader.getFeaturedLevelTier());
+
+    if (flm.levelId != 0) {
+        msg.featuredLevel = flm;
+    }
 
     return msg;
 }
@@ -840,6 +846,40 @@ $implDecode(msg::DiscordLinkAttemptMessage, main::DiscordLinkAttemptMessage::Rea
     return out;
 }
 
+/// Featured level
+
+$implDecode(msg::FeaturedLevelMessage, main::FeaturedLevelMessage::Reader& reader) {
+    msg::FeaturedLevelMessage out{};
+    FeaturedLevelMeta flm{};
+    flm.levelId = reader.getLevelId();
+    flm.rateTier = decodeFeatureTier(reader.getRateTier());
+
+    if (flm.levelId != 0) {
+        out.meta = flm;
+    }
+
+    return out;
+}
+
+/// Featured list
+
+$implDecode(msg::FeaturedListMessage, main::FeaturedListMessage::Reader& reader) {
+    msg::FeaturedListMessage out{};
+    auto levelIds = reader.getLevelIds();
+    auto rateTiers = reader.getRateTiers();
+
+    for (size_t i = 0; i < std::min(levelIds.size(), rateTiers.size()); i++) {
+        out.levels.push_back(FeaturedLevelMeta {
+            .levelId = levelIds[i],
+            .rateTier = decodeFeatureTier(rateTiers[i]),
+        });
+    }
+
+    out.page = reader.getPage();
+    out.totalPages = reader.getTotalPages();
+    return out;
+}
+
 /// Invited
 
 $implDecode(msg::InvitedMessage, main::InvitedMessage::Reader& reader) {
@@ -882,13 +922,7 @@ $implDecode(msg::AdminFetchResponseMessage, main::AdminFetchResponseMessage::Rea
     out.found = reader.getFound();
     out.whitelisted = reader.getWhitelisted();
     out.punishmentCount = reader.getPunishmentCount();
-
-    auto roles = reader.getRoles();
-    out.roles.reserve(roles.size());
-
-    for (auto role : roles) {
-        out.roles.push_back(role);
-    }
+    out.roles = {reader.getRoles().begin(), reader.getRoles().end()};
 
     if (reader.hasActiveBan()) {
         out.activeBan = data::decodeUnchecked<UserPunishment>(reader.getActiveBan());
