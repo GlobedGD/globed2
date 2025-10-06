@@ -247,6 +247,7 @@ void FeaturedLevelCell::reload(bool fromFullReload) {
     if (g_cachedLevel && g_cachedLevel->m_levelID == m_levelMeta->levelId) {
         m_level = g_cachedLevel;
         this->createCell();
+        this->hideLoading();
         return;
     }
 
