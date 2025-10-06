@@ -1,5 +1,4 @@
 #include <globed/core/RoomManager.hpp>
-#include <globed/core/SessionId.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/actions.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -25,6 +24,10 @@ void RoomManager::joinLevel(int levelId, bool platformer) {
 void RoomManager::leaveLevel() {
     auto& nm = NetworkManagerImpl::get();
     nm.sendLeaveSession();
+}
+
+SessionId RoomManager::makeSessionId(int levelId) {
+    return SessionId::fromParts(this->pickServerId().value_or(0), m_roomId, levelId);
 }
 
 bool RoomManager::isInGlobal() {

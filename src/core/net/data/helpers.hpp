@@ -643,6 +643,7 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
     FeaturedLevelMeta flm{};
     flm.levelId = reader.getFeaturedLevel();
     flm.rateTier = decodeFeatureTier(reader.getFeaturedLevelTier());
+    flm.edition = reader.getFeaturedLevelEdition();
 
     if (flm.levelId != 0) {
         msg.featuredLevel = flm;
@@ -853,6 +854,7 @@ $implDecode(msg::FeaturedLevelMessage, main::FeaturedLevelMessage::Reader& reade
     FeaturedLevelMeta flm{};
     flm.levelId = reader.getLevelId();
     flm.rateTier = decodeFeatureTier(reader.getRateTier());
+    flm.edition = reader.getEdition();
 
     if (flm.levelId != 0) {
         out.meta = flm;

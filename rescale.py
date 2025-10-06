@@ -34,6 +34,9 @@ large = [
     "settings01.png",
     "support01.png",
     "support02.png",
+    "feature01.png",
+    "spit-on-that-thang01.png",
+    "moonSendBtn.png",
 ]
 
 for s in small:

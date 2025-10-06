@@ -21,6 +21,7 @@
 #include <ui/menu/RoomSettingsPopup.hpp>
 #include <ui/menu/SupportPopup.hpp>
 #include <ui/menu/CreditsPopup.hpp>
+#include <ui/menu/FeaturedPopup.hpp>
 #include <ui/menu/levels/LevelListLayer.hpp>
 #include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
@@ -842,6 +843,49 @@ void GlobedMenuLayer::initFarSideButtons() {
         .scaleMult(1.1f)
         .zOrder(FarLeftBtn::Levels)
         .parent(m_farLeftMenu);
+
+    auto& nm = NetworkManagerImpl::get();
+    auto flevel = nm.getFeaturedLevel();
+
+    if (flevel) {
+        bool isNew = !nm.hasViewedFeaturedLevel();
+
+        auto fbutton = Build<CCSprite>::create("feature01.png"_spr)
+            .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
+            .intoMenuItem([](auto self) {
+                FeaturedPopup::create()->show();
+
+                // make it not new
+                NetworkManagerImpl::get().setViewedFeaturedLevel();
+
+                if (auto spr = self->getChildByID("btn-daily-extra"_spr)) {
+                    spr->setVisible(false);
+                }
+            })
+            .scaleMult(1.1f)
+            .zOrder(FarLeftBtn::Levels - 1)
+            .parent(m_farLeftMenu)
+            .collect();
+
+        if (isNew) {
+            Build<CCSprite>::createSpriteName("newMusicIcon_001.png")
+                .id("btn-daily-extra"_spr)
+                .anchorPoint({0.5, 0.5})
+                .pos({fbutton->getScaledContentWidth() * 0.85f, fbutton->getScaledContentHeight() * 0.15f})
+                .zOrder(2)
+                .visible(false)
+                .parent(fbutton)
+                .with([&](auto spr) {
+                    spr->runAction(
+                        CCRepeatForever::create(CCSequence::create(
+                            CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.2f)),
+                            CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.0f)),
+                            nullptr
+                        ))
+                    );
+                });
+        }
+    }
 
     m_farLeftMenu->updateLayout();
     m_farRightMenu->updateLayout();

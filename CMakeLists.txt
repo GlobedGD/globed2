@@ -141,10 +141,10 @@ CPMAddPackage(
             "WITH_FIBERS OFF"
 )
 
-CPMAddPackage("gh:GlobedGD/server-shared#cf2f0b3")
+CPMAddPackage("gh:GlobedGD/server-shared#243f332")
 CPMAddPackage("gh:dankmeme01/qunet-cpp#7813e8a")
-CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
-CPMAddPackage("gh:dankmeme01/cue#cdf57a13")
+CPMAddPackage("gh:camila314/uibuilder#51e1620")
+CPMAddPackage("gh:dankmeme01/cue#5ac9f76d")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 CPMAddPackage("gh:Prevter/sinaps#2541d6d")
 CPMAddPackage("gh:Prevter/AdvancedLabel#d78d7f82")

@@ -390,6 +390,7 @@ void LevelListLayer::finishLoading() {
 
     for (auto level : page) {
         auto cell = new LevelCell("", 356.f, 90.f);
+        cell->autorelease();
         cell->loadFromLevel(level);
         cell->setContentSize({356.f, 90.f});
 

@@ -1,5 +1,6 @@
 #include "LevelCell.hpp"
 #include <globed/core/SettingsManager.hpp>
+#include <ui/menu/FeatureCommon.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -61,6 +62,26 @@ void HookedLevelCell::updatePlayerCount(int count, bool inLists) {
     } else {
         fields.m_playerCountIcon->setVisible(false);
         fields.m_playerCountLabel->setString(fmt::format("{} {}", count, count == 1 ? "player" : "players").c_str());
+    }
+}
+
+void HookedLevelCell::setGlobedFeature(FeatureTier tier) {
+    auto& fields = *m_fields.self();
+    fields.m_rateTier = tier;
+
+    if (auto diff = globed::findDifficultySprite(this)) {
+        globed::attachRatingSprite(diff, tier);
+
+        auto gradient = Build<CCSprite>::create("friend-gradient.png"_spr)
+            .color(ccColor3B{255, 255, 255})
+            .anchorPoint({0.f, 0.f})
+            .opacity(90)
+            .zOrder(-1)
+            .parent(this)
+            .collect();
+
+        gradient->setScaleX(this->getScaledContentWidth() / gradient->getScaledContentWidth() / 2);
+        gradient->setScaleY(this->getScaledContentHeight() / gradient->getScaledContentHeight());
     }
 }
 

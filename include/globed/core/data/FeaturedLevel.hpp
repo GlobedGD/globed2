@@ -11,6 +11,7 @@ enum class FeatureTier : uint8_t {
 
 struct FeaturedLevelMeta {
     int levelId;
+    int edition;
     FeatureTier rateTier;
 };
 

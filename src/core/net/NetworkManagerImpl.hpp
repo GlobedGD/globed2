@@ -9,6 +9,7 @@
 #include <globed/core/data/UserRole.hpp>
 #include <globed/core/data/AdminLogs.hpp>
 #include <globed/core/data/Event.hpp>
+#include <globed/core/data/FeaturedLevel.hpp>
 #include <globed/core/data/ModPermissions.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
@@ -63,6 +64,7 @@ struct ConnectionInfo {
     bool m_gameEstablished = false;
 
     uint32_t m_gameTickrate = 0;
+    std::optional<FeaturedLevelMeta> m_featuredLevel;
     std::vector<UserRole> m_allRoles;
     std::vector<UserRole> m_userRoles;
     std::vector<uint8_t> m_userRoleIds;
@@ -130,6 +132,11 @@ public:
     void invalidateFriendList();
     void markAuthorizedModerator();
 
+    /// Get the ID of the current featured level on this server
+    std::optional<FeaturedLevelMeta> getFeaturedLevel();
+    bool hasViewedFeaturedLevel();
+    void setViewedFeaturedLevel();
+
     // Message sending functions
 
     // Central server
@@ -137,6 +144,8 @@ public:
     void sendRequestRoomPlayers(const std::string& nameFilter);
     void sendRequestGlobalPlayerList(const std::string& nameFilter);
     void sendRequestLevelList();
+    void sendRequestPlayerCounts(const std::vector<uint64_t>& sessions);
+    void sendRequestPlayerCounts(uint64_t session);
     void sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings);
     void sendJoinRoom(uint32_t id, uint32_t passcode = 0);
     void sendJoinRoomByToken(uint64_t token);
@@ -155,6 +164,7 @@ public:
     void sendSetDiscordPairingState(bool state);
     void sendDiscordLinkConfirm(int64_t id, bool confirm);
     void sendGetFeaturedList(uint32_t page);
+    void sendGetFeaturedLevel();
     void sendSendFeaturedLevel(
         int32_t levelId,
         const std::string& levelName,
@@ -254,6 +264,10 @@ private:
     std::optional<std::string> getUToken();
     void setUToken(std::string token);
     void clearUToken();
+
+    // Returns the last known featured level ID on this server
+    int32_t getLastFeaturedLevelId();
+    void setLastFeaturedLevelId(int32_t id);
 
     std::vector<uint8_t> computeUident(int accountId);
 

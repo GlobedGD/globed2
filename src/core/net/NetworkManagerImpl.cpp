@@ -591,6 +591,19 @@ void NetworkManagerImpl::markAuthorizedModerator() {
     }
 }
 
+std::optional<FeaturedLevelMeta> NetworkManagerImpl::getFeaturedLevel() {
+    auto lock = m_connInfo.lock();
+    return *lock ? (**lock).m_featuredLevel : std::nullopt;
+}
+
+bool NetworkManagerImpl::hasViewedFeaturedLevel() {
+    return this->getLastFeaturedLevelId() == this->getFeaturedLevel().value_or(FeaturedLevelMeta{}).levelId;
+}
+
+void NetworkManagerImpl::setViewedFeaturedLevel() {
+    this->setLastFeaturedLevelId(this->getFeaturedLevel().value_or(FeaturedLevelMeta{}).levelId);
+}
+
 void NetworkManagerImpl::onCentralConnected() {
     globed::setValue<bool>("core.was-connected", true);
 
@@ -934,6 +947,20 @@ void NetworkManagerImpl::sendRequestLevelList() {
     });
 }
 
+void NetworkManagerImpl::sendRequestPlayerCounts(const std::vector<uint64_t>& sessions) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto reqr = msg.initRequestPlayerCounts();
+        reqr.setLevels(kj::arrayPtr(sessions.data(), sessions.size()));
+    });
+}
+
+void NetworkManagerImpl::sendRequestPlayerCounts(uint64_t session) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto reqr = msg.initRequestPlayerCounts();
+        reqr.setLevels(kj::arrayPtr(&session, 1));
+    });
+}
+
 void NetworkManagerImpl::sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings) {
     RoomManager::get().setAttemptedPasscode(passcode);
 
@@ -1064,6 +1091,12 @@ void NetworkManagerImpl::sendGetFeaturedList(uint32_t page) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto m = msg.initGetFeaturedList();
         m.setPage(page);
+    });
+}
+
+void NetworkManagerImpl::sendGetFeaturedLevel() {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        msg.setGetFeaturedLevel();
     });
 }
 
@@ -1311,6 +1344,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             connInfo.m_established = true;
             connInfo.m_perms = msg.perms;
             connInfo.m_nameColor = msg.nameColor;
+            connInfo.m_featuredLevel = msg.featuredLevel;
 
             for (auto& role : connInfo.m_userRoles) {
                 connInfo.m_userRoleIds.push_back(role.id);
@@ -1505,7 +1539,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::FEATURED_LEVEL: {
-            this->invokeListeners(data::decodeUnchecked<msg::FeaturedLevelMessage>(msg.getFeaturedLevel()));
+            auto out = data::decodeUnchecked<msg::FeaturedLevelMessage>(msg.getFeaturedLevel());
+            (**m_connInfo.lock()).m_featuredLevel = out.meta;
+
+            this->invokeListeners(std::move(out));
         } break;
 
         case CentralMessage::FEATURED_LIST: {
@@ -1744,6 +1781,14 @@ void NetworkManagerImpl::setUToken(std::string token) {
 
 void NetworkManagerImpl::clearUToken() {
     ValueManager::get().erase(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
+}
+
+int32_t NetworkManagerImpl::getLastFeaturedLevelId() {
+    return globed::value<int32_t>(fmt::format("core.last-featured-id.{}", this->getCentralIdent())).value_or(0);
+}
+
+void NetworkManagerImpl::setLastFeaturedLevelId(int32_t id) {
+    ValueManager::get().set(fmt::format("core.last-featured-id.{}", this->getCentralIdent()), id);
 }
 
 std::vector<uint8_t> NetworkManagerImpl::computeUident(int accountId) {

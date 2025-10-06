@@ -3,6 +3,7 @@
 #include <globed/util/singleton.hpp>
 #include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/data/RoomTeam.hpp>
+#include <globed/core/SessionId.hpp>
 
 namespace globed {
 
@@ -12,6 +13,7 @@ class RoomManager : public SingletonLeakBase<RoomManager> {
 public:
     void joinLevel(int levelId, bool platformer);
     void leaveLevel();
+    SessionId makeSessionId(int levelId);
 
     bool isInGlobal();
     bool isInFollowerRoom();

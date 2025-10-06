@@ -206,6 +206,10 @@ void GradientLabel::setGradientColors(const std::vector<Color3>& inp) {
     m_shaderEnabled = true;
 }
 
+void GradientLabel::setGradientSpeed(float mod) {
+    m_speedMod = mod;
+}
+
 void GradientLabel::setGlobalTime(bool global) {
     m_globalTime = global;
 }
@@ -234,7 +238,7 @@ void GradientLabel::draw() {
 
     float time = (m_globalTime ? g_globalTimer : m_startTime).elapsed().seconds<float>();
     GLint timeLoc = m_shader->getUniformLocationForName("customTime");
-    m_shader->setUniformLocationWith1f(timeLoc, time);
+    m_shader->setUniformLocationWith1f(timeLoc, time * m_speedMod);
 
     CCNode::draw();
 }

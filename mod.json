@@ -30,6 +30,7 @@
             "resources/misc/*.png",
             "resources/menu/*.png",
             "resources/editor/*.png",
+            "resources/featured/*.png",
             "resources/roles/*.png",
             "resources/mod/*.png",
             "resources/game/*.png"
