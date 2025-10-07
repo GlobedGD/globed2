@@ -3,6 +3,7 @@
 #include <globed/util/gd.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/LevelCell.hpp>
+#include <ui/menu/FeatureCommon.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -164,13 +165,15 @@ void FeaturedListLayer::loadPageFromCache() {
         }
 
         auto lvl = it->second;
+        auto tier = m_levelToRateTier[level.levelId];
         globed::reorderDownloadedLevel(lvl);
+        globed::setFeatureTierForLevel(lvl, tier);
 
         auto cell = new LevelCell("", 356.f, 90.f);
         cell->autorelease();
         cell->loadFromLevel(lvl);
         cell->setContentSize({356.f, 90.f});
-        static_cast<HookedLevelCell*>(cell)->setGlobedFeature(m_levelToRateTier[level.levelId]);
+        static_cast<HookedLevelCell*>(cell)->setGlobedFeature(tier);
 
         m_list->addCell(cell);
 

@@ -216,6 +216,7 @@ void GlobedGJBGL::onQuit() {
     am.stopAllOutputStreams();
 
     auto& fields = *m_fields.self();
+    fields.m_quitting = true;
 
     if (!fields.m_active) {
         return;
@@ -530,6 +531,10 @@ bool GlobedGJBGL::isManuallyResetting() {
 
 bool GlobedGJBGL::isSafeMode() {
     return m_fields->m_safeMode;
+}
+
+bool GlobedGJBGL::isQuitting() {
+    return m_fields->m_quitting;
 }
 
 void GlobedGJBGL::handlePlayerJoin(int playerId) {

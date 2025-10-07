@@ -10,4 +10,7 @@ void attachRatingSprite(CCNode* parent, FeatureTier tier);
 void findAndAttachRatingSprite(CCNode* node, FeatureTier tier);
 CCSprite* createRatingSprite(FeatureTier tier);
 
+std::optional<FeatureTier> featureTierFromLevel(GJGameLevel* level);
+void setFeatureTierForLevel(GJGameLevel* level, FeatureTier tier);
+
 }

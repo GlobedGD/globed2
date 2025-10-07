@@ -1,18 +1,34 @@
-#include <Geode/Geode.hpp>
-#include <Geode/modify/LevelInfoLayer.hpp>
 #include <globed/config.hpp>
 #include <globed/core/actions.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
+#include <core/hooks/GJBaseGameLayer.hpp>
+#include <ui/menu/levels/LevelListLayer.hpp>
+#include <ui/menu/FeaturedListLayer.hpp>
+#include <ui/menu/SendFeaturePopup.hpp>
+#include <ui/menu/FeatureCommon.hpp>
 #include <modules/ui/UIModule.hpp>
+#include <globed/util/gd.hpp>
+
+#include <Geode/Geode.hpp>
+#include <Geode/modify/LevelInfoLayer.hpp>
+#include <UIBuilder.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
+
 struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLayer, LevelInfoLayer> {
+    struct Fields {
+        bool m_allowAnyway = false;
+    };
+
     static void onModify(auto& self) {
         GLOBED_CLAIM_HOOKS(UIModule::get(), self,
             "LevelInfoLayer::init",
             "LevelInfoLayer::onBack",
+            "LevelInfoLayer::onPlay",
+            "LevelInfoLayer::tryCloneLevel",
         );
     }
 
@@ -22,7 +38,53 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
             return false;
         }
 
+        auto& nm = NetworkManagerImpl::get();
+        if (nm.getModPermissions().canSendFeatures) {
+            this->addLevelSendButton();
+        }
+
+        // i hate myself
+        if (level->m_levelIndex == 0) {
+            for (auto child : CCArrayExt<CCNode*>(CCScene::get()->getChildren())) {
+                if (typeinfo_cast<LevelListLayer*>(child) || typeinfo_cast<FeaturedListLayer*>(child)) {
+                    globed::reorderDownloadedLevel(level);
+                    break;
+                }
+            }
+        }
+
+        if (auto rating = featureTierFromLevel(level)) {
+            globed::findAndAttachRatingSprite(this, *rating);
+        }
+
         return true;
+    }
+
+    void addLevelSendButton() {
+        auto* leftMenu = typeinfo_cast<CCMenu*>(this->getChildByIDRecursive("left-side-menu"));
+        if (!leftMenu) {
+            return;
+        }
+
+        bool plat = m_level->isPlatformer();
+
+        Build<CCSprite>::create("icon-send-btn.png"_spr)
+            .intoMenuItem([this, plat] {
+                if (plat) {
+                    SendFeaturePopup::create(m_level)->show();
+                } else {
+                    PopupManager::get().alert("Error", "Only <cj>Platformer levels</c> are eligible to be <cg>Globed Featured!</c>").showInstant();
+                }
+            })
+            .with([&](auto* btn) {
+                if (!plat) {
+                    btn->setColor({100, 100, 100});
+                }
+            })
+            .id("send-btn"_spr)
+            .parent(leftMenu);
+
+        leftMenu->updateLayout();
     }
 
     $override
@@ -33,6 +95,46 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
         }
 
         LevelInfoLayer::onBack(sender);
+    }
+
+    $override
+    void onPlay(CCObject* s) {
+        if (m_fields->m_allowAnyway) {
+            m_fields->m_allowAnyway = false;
+            LevelInfoLayer::onPlay(s);
+            return;
+        }
+
+        // if we are already in a playlayer, don't allow sillyness
+        if (NetworkManagerImpl::get().isConnected() && GJBaseGameLayer::get() != nullptr) {
+            geode::createQuickPopup(
+                "Warning",
+                "You are already inside of a level, opening another level may cause Globed to <cr>crash</c>. <cy>Do you still want to proceed?</c>",
+                "Cancel", "Play",
+                [this, s](auto, bool play) {
+                if (play) {
+                    this->forcePlay(s);
+                }
+            });
+            return;
+        }
+
+        LevelInfoLayer::onPlay(s);
+    }
+
+    void forcePlay(CCObject* s) {
+        m_fields->m_allowAnyway = true;
+        LevelInfoLayer::onPlay(s);
+    }
+
+    $override
+    void tryCloneLevel(CCObject* s) {
+        if (NetworkManagerImpl::get().isConnected() && GJBaseGameLayer::get() != nullptr) {
+            globed::alert("Globed Error", "Cannot perform this action while in a level");
+            return;
+        }
+
+        LevelInfoLayer::tryCloneLevel(s);
     }
 };
 

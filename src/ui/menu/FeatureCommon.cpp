@@ -91,4 +91,14 @@ CCSprite* createRatingSprite(FeatureTier tier) {
     return spr;
 }
 
+std::optional<FeatureTier> featureTierFromLevel(GJGameLevel* level) {
+    auto obj = typeinfo_cast<CCInteger*>(level->getUserObject("feature-tier"_spr));
+
+    return obj ? std::optional((FeatureTier)obj->getValue()) : std::nullopt;
+}
+
+void setFeatureTierForLevel(GJGameLevel* level, FeatureTier tier) {
+    level->setUserObject("feature-tier"_spr, CCInteger::create((int)tier));
+}
+
 }

@@ -31,6 +31,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_active = false;
         bool m_editor = false;
         bool m_didSchedule = false;
+        bool m_quitting = false;
         float m_sendDataInterval = 0.0f;
         std::vector<std::string> m_customSchedules;
 
@@ -97,6 +98,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     bool isCurrentPlayLayer();
     bool isManuallyResetting();
     bool isSafeMode();
+    bool isQuitting();
     void handlePlayerJoin(int playerId);
     void handlePlayerLeave(int playerId);
     void handleLocalPlayerDeath(PlayerObject*);

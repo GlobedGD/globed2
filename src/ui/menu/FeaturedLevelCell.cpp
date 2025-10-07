@@ -305,6 +305,7 @@ void FeaturedLevelCell::levelLoaded(Result<GJGameLevel*, int> result) {
     }
 
     m_level = result.unwrap();
+    globed::setFeatureTierForLevel(m_level, m_levelMeta->rateTier);
     g_cachedLevel = m_level;
     this->createCell();
 }
