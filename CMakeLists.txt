@@ -150,6 +150,8 @@ CPMAddPackage("gh:Prevter/sinaps#2541d6d")
 CPMAddPackage("gh:Prevter/AdvancedLabel#d78d7f82")
 # CPMAddPackage("gh:dankmeme01/asp2#c0f3d6ea")
 
+target_compile_definitions(${PROJECT_NAME} PUBLIC UIBUILDER_NO_ARROW=1)
+
 if (GLOBED_VOICE_SUPPORT)
     CPMAddPackage("gh:xiph/opus#v1.5.2")
     target_compile_definitions(${PROJECT_NAME} PUBLIC GLOBED_VOICE_SUPPORT)
