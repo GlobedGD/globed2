@@ -77,6 +77,7 @@ void SettingsLayer::addSettings() {
         // TODO: popup with choosing audio device
     }, CELL_SIZE));
     this->addSetting<BoolSettingCell>("core.audio.voice-loopback", "Voice Loopback", "");
+    // TODO: buffer size setting? might need a new IntSettingCell
 
     // Preload
     this->addHeader("core.player", "Preloading");

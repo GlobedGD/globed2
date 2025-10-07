@@ -30,6 +30,8 @@ public:
 
 class SettingsManager : public SingletonBase<SettingsManager> {
 public:
+    using Validator = std::function<bool(const matjson::Value&)>;
+
     template <typename T>
     SettingAccessor<T> setting(std::string_view key) {
         return SettingAccessor<T>(key);
@@ -44,15 +46,18 @@ public:
 
         auto set = m_settings.at(hash);
         if (auto res = set.as<T>()) {
+            auto it = m_validators.find(hash);
+            if (it == m_validators.end() || it->second(set)) {
+                return *res;
+            }
+        }
+
+        // type mismatch or validation failed, return default
+        if (auto res = m_defaults[hash].as<T>()) {
             return *res;
         } else {
-            // type mismatch, user may have edited the config? who knows, just return the default
-            if (auto res = m_defaults[hash].as<T>()) {
-                return *res;
-            } else {
-                // no default either, this is a serious error
-                throw std::runtime_error(fmt::format("setting with hash {} has no default value or the default value is of an invalid type", hash));
-            }
+            // no default either, this is a serious error
+            throw std::runtime_error(fmt::format("setting with hash {} has no default value or the default value is of an invalid type", hash));
         }
     }
 
@@ -63,9 +68,20 @@ public:
             throw std::runtime_error(fmt::format("setting not found with hash {}", hash));
         }
 
-        m_settings[hash] = value;
-        ValueManager::get().set(m_fullKeys[hash], value);
+        matjson::Value val = value;
+        auto it = m_validators.find(hash);
+        if (it != m_validators.end()) {
+            if (!it->second(val)) {
+                geode::log::warn("Failed to save setting {}, validation failed: {}", m_fullKeys[hash], val.dump(matjson::NO_INDENTATION));
+                return;
+            }
+        }
+
+        m_settings[hash] = val;
+        ValueManager::get().set(m_fullKeys[hash], std::move(val));
     }
+
+    std::optional<std::pair<matjson::Value, matjson::Value>> getLimits(std::string_view key);
 
     bool hasSetting(uint64_t hash);
 
@@ -75,6 +91,17 @@ public:
         std::string_view key,
         matjson::Value defaultVal
         // TODO: limits
+    );
+
+    void registerValidator(
+        std::string_view key,
+        Validator func
+    );
+
+    void registerLimits(
+        std::string_view key,
+        matjson::Value min,
+        matjson::Value max
     );
 
 private:
@@ -87,6 +114,8 @@ private:
     std::unordered_map<uint64_t, matjson::Value, NoHashHasher<uint64_t>> m_settings;
     std::unordered_map<uint64_t, matjson::Value, NoHashHasher<uint64_t>> m_defaults;
     std::unordered_map<uint64_t, std::string, NoHashHasher<uint64_t>> m_fullKeys;
+    std::unordered_map<uint64_t, Validator, NoHashHasher<uint64_t>> m_validators;
+    std::unordered_map<uint64_t, std::pair<matjson::Value, matjson::Value>, NoHashHasher<uint64_t>> m_limits;
 
     SettingsManager();
 

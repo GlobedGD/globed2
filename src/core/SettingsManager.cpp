@@ -47,9 +47,13 @@ SettingsManager::SettingsManager() {
     // Audio
     this->registerSetting("core.audio.voice-chat-enabled", true);
     this->registerSetting("core.audio.input-device", -1);
-    this->registerSetting("core.audio.buffer-size", 4); // TODO: limit from 1 to 10
-    this->registerSetting("core.audio.playback-volume", 1.f); // TODO: limit from 0 to 2
     this->registerSetting("core.audio.voice-loopback", false);
+
+    this->registerSetting("core.audio.buffer-size", 4);
+    this->registerLimits("core.audio.buffer-size", 1, 10);
+
+    this->registerSetting("core.audio.playback-volume", 1.f);
+    this->registerLimits("core.audio.playback-volume", 0.f, 2.f);
 
     // Mod settings
     this->registerSetting("core.mod.remember-password", false);
@@ -167,6 +171,40 @@ void SettingsManager::registerSetting(
         // this should never happen!
         throw std::runtime_error(fmt::format("failed to apply default value for setting {}", key));
     }
+}
+
+void SettingsManager::registerValidator(
+    std::string_view key,
+    Validator func
+) {
+    if (m_frozen) {
+        log::error("Tried to add validator for {} after SettingsManager was frozen", key);
+        return;
+    }
+
+    auto hash = this->keyHash(key);
+    m_validators[hash] = std::move(func);
+}
+
+void SettingsManager::registerLimits(
+    std::string_view key,
+    matjson::Value min,
+    matjson::Value max
+) {
+    if (m_frozen) {
+        log::error("Tried to add limits for {} after SettingsManager was frozen", key);
+        return;
+    }
+
+    auto hash = this->keyHash(key);
+    m_limits[hash] = std::make_pair(std::move(min), std::move(max));
+}
+
+std::optional<std::pair<matjson::Value, matjson::Value>> SettingsManager::getLimits(std::string_view key) {
+    auto hash = this->keyHash(key);
+    auto it = m_limits.find(hash);
+
+    return it == m_limits.end() ? std::nullopt : std::optional(it->second);
 }
 
 bool SettingsManager::hasSetting(uint64_t hash) {
