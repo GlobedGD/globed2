@@ -179,7 +179,7 @@ void FeaturedListLayer::loadPageFromCache() {
 
     auto& nm = NetworkManagerImpl::get();
 
-    int highest = nm.getFeaturedLevel().value_or({}).edition;
+    int highest = nm.getFeaturedLevel().value_or(FeaturedLevelMeta{}).edition;
     int pageMin = m_page * 10 + 1;
     int pageMax = std::min<int>((m_page + 1) * 10, highest);
 
