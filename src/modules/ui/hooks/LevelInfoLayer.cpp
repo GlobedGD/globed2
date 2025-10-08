@@ -21,6 +21,7 @@ namespace globed {
 struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLayer, LevelInfoLayer> {
     struct Fields {
         bool m_allowAnyway = false;
+        std::optional<FeatureTier> m_attachedTier;
     };
 
     static void onModify(auto& self) {
@@ -54,6 +55,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
         }
 
         if (auto rating = featureTierFromLevel(level)) {
+            m_fields->m_attachedTier = *rating;
             globed::findAndAttachRatingSprite(this, *rating);
         }
 
@@ -69,6 +71,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
         bool plat = m_level->isPlatformer();
 
         Build<CCSprite>::create("icon-send-btn.png"_spr)
+            .with([&](auto spr) { cue::rescaleToMatch(spr, 46.f); })
             .intoMenuItem([this, plat] {
                 if (plat) {
                     SendFeaturePopup::create(m_level)->show();
@@ -120,6 +123,15 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
         }
 
         LevelInfoLayer::onPlay(s);
+    }
+
+    $override
+    void playStep3() {
+        if (auto tier = m_fields->m_attachedTier) {
+            globed::setFeatureTierForLevel(m_level, *tier);
+        }
+
+        LevelInfoLayer::playStep3();
     }
 
     void forcePlay(CCObject* s) {
