@@ -140,8 +140,6 @@ private:
 bool RegionSelectPopup::setup() {
     this->setTitle("Select Preferred Server");
 
-    // TODO: info button in top left
-
     m_list = Build(cue::ListNode::create(LIST_SIZE, cue::Brown, cue::ListBorderStyle::Comments))
         .pos(this->fromCenter(0.f, -10.f))
         .parent(m_mainLayer);

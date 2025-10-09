@@ -5,7 +5,7 @@
 #include <asp/time/Instant.hpp>
 #include <queue>
 
-// TODO: it's time consuming so postponing for later, but we should add background preloading,
+// TODO (very low): it's time consuming so postponing for later, but we should add background preloading,
 // which allows the assets to be loaded when the game is running, rather than blocking during loading
 
 namespace globed {

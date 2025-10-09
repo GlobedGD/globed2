@@ -176,7 +176,7 @@ void SetupEmbeddedScriptPopup::loadCodeFromString(std::string&& code) {
 
 void SetupEmbeddedScriptPopup::invalidateSignature() {
     m_script.signature.reset();
-    // TODO: some ui way to show
+    // TODO (scr): some ui way to show
 }
 
 void SetupEmbeddedScriptPopup::onClose(CCObject* obj) {

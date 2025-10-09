@@ -28,7 +28,7 @@ bool FeaturedListLayer::init() {
 
     Build<CCSprite>::create("icon-featured-label.png"_spr)
         .zOrder(10)
-        .pos(LIST_SIZE.width / 2.f, LIST_SIZE.height / 2.f + 133.f) // TODO
+        .pos(LIST_SIZE.width / 2.f, LIST_SIZE.height / 2.f + 133.f)
         .parent(m_list);
 
     // refresh button

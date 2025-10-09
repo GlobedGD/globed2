@@ -14,7 +14,7 @@ public:
 
 protected:
     cue::ListNode* m_list;
-    std::optional<MessageListener<msg::CreditsMessage>> m_listener; // TODO
+    std::optional<MessageListener<msg::CreditsMessage>> m_listener;
 
     bool setup() override;
     void onLoaded(const std::vector<CreditsCategory>& categories);

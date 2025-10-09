@@ -375,17 +375,6 @@ void SCBaseGameLayer::handleEvent(const InEvent& event) {
 
         this->customFollowPlayerRot(data.player, data.group, data.center, data.enable);
     }
-
-
-    // auto it = fields.m_customListeners.find(event.type);
-    // if (it == fields.m_customListeners.end()) {
-    //     return;
-    // }
-
-    // for (auto groupId : it->second) {
-    //     // TODO: figure out the arguments to pass
-    //     this->spawnGroup(groupId, true, 0.0, {}, 0, 0);
-    // }
 }
 
 void SCBaseGameLayer::addEventListener(const ListenEventPayload& obj) {

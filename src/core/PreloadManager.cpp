@@ -327,7 +327,7 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
     log::debug("PreloadManager: initialized {} textures in {}, adding frames", inited, timePreInit.elapsed().toString());
     auto timePreFrames = Instant::now();
 
-    // TODO: bring over the pugixml sprite frame parsing code from blaze
+    // TODO: bring over the pugixml sprite frame parsing code from blaze?
 
     for (size_t i = 0; i < itemStates.size(); i++) {
         pool.pushTask([i, &itemStates] {
@@ -566,7 +566,8 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
         filename = input;
     }
 
-    // TODO: we disregard CCFileUtils m_pFilenameLookupDict / getNewFilename() here
+    // we disregard CCFileUtils m_pFilenameLookupDict / getNewFilename() here,
+    // no one uses it anyway fortunately
 
     std::string fullpath;
     auto& searchPaths = fu.getSearchPaths();

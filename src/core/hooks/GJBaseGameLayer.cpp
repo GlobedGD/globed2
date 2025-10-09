@@ -18,6 +18,8 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
+// TODO: check m_active in these hooks, same for playlayer and lel?
+
 namespace {
 
 class CustomSchedule : public CCObject {
@@ -86,7 +88,7 @@ void GlobedGJBGL::setupPostInit() {
 }
 
 void GlobedGJBGL::setupNecessary() {
-    // TODO: ping overlay
+    // TODO (medium): ping overlay
 }
 
 void GlobedGJBGL::setupAssetLoading() {

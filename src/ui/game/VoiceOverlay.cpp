@@ -22,7 +22,7 @@ bool VoiceOverlay::init() {
 }
 
 void VoiceOverlay::update(float) {
-    // TODO: implement
+    // TODO (medium): implement
 }
 
 VoiceOverlay* VoiceOverlay::create() {

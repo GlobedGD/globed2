@@ -240,7 +240,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         m_statusIcons->updateStatus(flags);
     }
 
-    // TODO: dashing
+    // TODO (low): dashing
 
     // animate robot and spider
     if (data.iconType == PlayerIconType::Robot || data.iconType == PlayerIconType::Spider) {

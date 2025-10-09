@@ -43,7 +43,6 @@ bool HookedGJEffectManager::updateCountForCustomItem(int itemId, int value) {
 
     // update count triggers haha
     // please dont even begin to try to understand any of this
-    // TODO clean this up
 
     if (!m_countTriggerActions.contains(itemId)) {
         return ret;

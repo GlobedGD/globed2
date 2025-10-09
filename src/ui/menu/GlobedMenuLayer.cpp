@@ -645,7 +645,6 @@ void GlobedMenuLayer::initSideButtons() {
 
     // region switching button
     makeButton(
-        // TODO: icon
         CCSprite::create("server02.png"_spr),
         std::nullopt,
         m_leftSideMenu,
@@ -1124,7 +1123,6 @@ void GlobedMenuLayer::keyBackClicked() {
         // only the owner of a follower room can leave to the main menu
         BaseLayer::keyBackClicked();
     } else {
-        // TODO: make this not the case
         globed::alert(
             "Error",
             "You are in a follower room, you <cr>cannot</c> leave to the main menu. Only the room owner can choose which levels to play."

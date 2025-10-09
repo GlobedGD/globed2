@@ -207,7 +207,6 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
 
     auto playerCountIcon = Build<CCSprite>::create("icon-person.png"_spr)
         .with([&](auto* s) {
-            // TODO: dont hardcode like this
             cue::rescaleToMatch(s, CCSize {11.52f, 11.52f});
         })
         .parent(playerCountWrapper)

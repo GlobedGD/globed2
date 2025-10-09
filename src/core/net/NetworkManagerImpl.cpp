@@ -98,7 +98,7 @@ std::string_view connectionStateToStr(qn::ConnectionState state) {
 NetworkManagerImpl::NetworkManagerImpl() {
     m_hasSecure = bb_init();
 
-    // TODO: measure how much of an impact those have on bandwidth
+    // TODO (low): measure how much of an impact those have on bandwidth
     m_centralConn.setActiveKeepaliveInterval(Duration::fromSecs(45));
     m_gameConn.setActiveKeepaliveInterval(Duration::fromSecs(10));
 

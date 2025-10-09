@@ -3,7 +3,7 @@
 
 using namespace geode::prelude;
 
-// TODO: bring back save slot support
+// TODO (medium): bring back save slot support
 
 namespace globed {
 

@@ -3,6 +3,7 @@
 #include <globed/core/SettingsManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/LevelCell.hpp>
+#include <ui/menu/FeatureCommon.hpp>
 
 #include <UIBuilder.hpp>
 #include <asp/iter.hpp>
@@ -210,12 +211,6 @@ bool LevelListLayer::init() {
     m_loadingCircle->setZOrder(11);
     m_loadingCircle->addToLayer(m_list);
 
-    // TODO idk
-    // DailyManager::get().getCurrentLevelMeta([this](const GlobedFeaturedLevel& meta) {
-    //     currentFeaturedLevel = meta;
-    // });
-
-
     if (auto filtersJson = globed::value<Filters>("core.ui.saved-level-filters")) {
         m_filters = *filtersJson;
     }
@@ -405,29 +400,19 @@ void LevelListLayer::finishLoading() {
 
     m_list->updateLayout();
 
-    // CCArray* finalArray = CCArray::create();
-    // for (auto level : page) {
-    //     finalArray->addObject(level);
-    // }
+    for (auto cell : m_list->iter<HookedLevelCell>()) {
+        // TODO: editorcollab?
+        // int levelId = HookedGJGameLevel::getLevelIDFrom(cell->m_level);
 
-    // if (listLayer->m_listView) listLayer->m_listView->removeFromParent();
-    // listLayer->m_listView = Build<CustomListView>::create(finalArray, BoomListType::Level, LIST_HEIGHT, LIST_WIDTH)
-    //     .parent(listLayer)
-    //     .collect();
+        // TODO: player counts?
+        int id = cell->m_level->m_levelID;
+        auto flevel = NetworkManagerImpl::get().getFeaturedLevel();
 
-    // TODO: featured stuff
-    // guys we are about to do a funny
-    // for (LevelCell* cell : CCArrayExt<LevelCell*>(listLayer->m_listView->m_tableView->m_contentLayer->getChildren())) {
-    //     int levelId = HookedGJGameLevel::getLevelIDFrom(cell->m_level);
-    //     if (!playerCounts.contains(levelId)) continue;
-
-    //     auto globedCell = static_cast<GlobedLevelCell*>(cell);
-    //     globedCell->updatePlayerCount(playerCounts.at(levelId));
-    //     if (globedCell->m_level->m_levelID == currentFeaturedLevel.levelId) {
-    //         globedCell->modifyToFeaturedCell(currentFeaturedLevel.rateTier);
-    //         globedCell->m_fields->rateTier = currentFeaturedLevel.rateTier;
-    //     }
-    // }
+        if (flevel && flevel->levelId == id) {
+            globed::setFeatureTierForLevel(cell->m_level, flevel->rateTier);
+            cell->setGlobedFeature(flevel->rateTier);
+        }
+    }
 
     // show the buttons
     this->toggleLoadingUi(false);
@@ -567,10 +552,9 @@ bool LevelListLayer::isMatchingFilters(GJGameLevel* level) {
 
     // if (filters.song) {
     //     log::debug("Song id = {}, ids = {}", level->m_songID, level->m_songIDs);
-    //     // TODO
     // }
 
-    // if (filters.verifiedCoins && !level->m_coinsVerified) {
+    // if (m_filters.verifiedCoins && !level->m_coinsVerified) {
     //     return false;
     // }
 

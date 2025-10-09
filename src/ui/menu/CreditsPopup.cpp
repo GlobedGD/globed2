@@ -190,6 +190,8 @@ bool CreditsPopup::setup() {
 
     nm.sendFetchCredits();
 
+    // TODO: if not connected, use a cached version?
+
     return true;
 }
 
