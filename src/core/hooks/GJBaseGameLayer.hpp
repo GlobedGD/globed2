@@ -66,6 +66,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         Ref<CCNode> m_progressBarContainer;
         ProgressIcon* m_selfProgressIcon = nullptr;
         Ref<PlayerStatusIcons> m_selfStatusIcons;
+        Ref<NameLabel> m_selfNameLabel;
     };
 
     // Setup functions

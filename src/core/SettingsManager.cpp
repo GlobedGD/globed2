@@ -43,6 +43,8 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.level.progress-opacity", 1.0f);
     this->registerSetting("core.level.voice-overlay", true);
     this->registerSetting("core.level.force-progressbar", false);
+    this->registerSetting("core.level.self-status-icons", true);
+    this->registerSetting("core.level.self-name", false);
 
     // Audio
     this->registerSetting("core.audio.voice-chat-enabled", true);

@@ -68,6 +68,8 @@ void SettingsLayer::addSettings() {
     this->addSetting<FloatSettingCell>("core.level.progress-opacity", "Progress Opacity", "");
     this->addSetting<BoolSettingCell>("core.level.voice-overlay", "Voice Chat Overlay", "");
     this->addSetting<BoolSettingCell>("core.level.force-progressbar", "Force progressbar", "");
+    this->addSetting<BoolSettingCell>("core.level.self-status-icons", "Show Own Status Icons", "");
+    this->addSetting<BoolSettingCell>("core.level.self-name", "Show Own Name", "");
 
     // Audio
     this->addHeader("core.audio", "Audio");

@@ -193,8 +193,12 @@ void GlobedGJBGL::setupUi() {
         .parent(fields.m_playerNode)
         .id("self-player-status-icons"_spr);
 
-    // TODO: own username
-
+    fields.m_selfNameLabel = Build(NameLabel::create(GJAccountManager::get()->m_username.c_str(), "chatFont.fnt"))
+        .opacity(globed::setting<float>("core.player.name-opacity") * 255.f)
+        .pos(0.f, 28.f)
+        .parent(fields.m_playerNode)
+        .id("self-player-name"_spr);
+    fields.m_selfNameLabel->setShadowEnabled(true);
 }
 
 void GlobedGJBGL::setupListeners() {
@@ -356,14 +360,26 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     flags.speaking = AudioManager::get().isPassiveRecording();
     flags.speakingMuted = flags.speaking && fields.m_knownServerMuted;
 
-    if (flags.speaking) {
+    bool showSelfName = globed::setting<bool>("core.level.self-name");
+    bool showSelfIcons = flags.speaking && globed::setting<bool>("core.ui.self-status-icons");
+
+    if (showSelfIcons) {
         fields.m_selfStatusIcons->setVisible(true);
         fields.m_selfStatusIcons->updateStatus(flags);
         fields.m_selfStatusIcons->setPosition({
-            m_player1->getPosition() + CCPoint{0.f, 40.f} // TODO
+            m_player1->getPosition() + CCPoint{0.f, showSelfName ? 43.f : 28.f} // TODO
         });
     } else {
         fields.m_selfStatusIcons->setVisible(false);
+    }
+
+    if (showSelfName) {
+        fields.m_selfNameLabel->setVisible(true);
+        fields.m_selfNameLabel->setPosition({
+            m_player1->getPosition() + CCPoint{0.f, 28.f}
+        });
+    } else {
+        fields.m_selfNameLabel->setVisible(false);
     }
 }
 
