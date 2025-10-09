@@ -198,6 +198,10 @@ struct UserDataChangedMessage {
     ModPermissions perms;
 };
 
+// Chat not permitted
+
+struct ChatNotPermittedMessage {};
+
 // Admin
 
 struct AdminResultMessage {

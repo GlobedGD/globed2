@@ -1653,6 +1653,10 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
             this->invokeListeners(data::decodeUnchecked<msg::VoiceBroadcastMessage>(msg.getVoiceBroadcast()));
         } break;
 
+        case GameMessage::CHAT_NOT_PERMITTED: {
+            this->invokeListeners(msg::ChatNotPermittedMessage{});
+        } break;
+
         case GameMessage::KICKED: {
             // TODO
         } break;

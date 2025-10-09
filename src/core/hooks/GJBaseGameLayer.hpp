@@ -47,6 +47,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         float m_lastDataRequest = 0.f;
         std::optional<MessageListener<msg::LevelDataMessage>> m_levelDataListener;
         std::optional<MessageListener<msg::VoiceBroadcastMessage>> m_voiceListener;
+        std::optional<MessageListener<msg::ChatNotPermittedMessage>> m_mutedListener;
 
         uint8_t m_deathCount = 0;
         bool m_lastLocalDeathReal = false;
@@ -58,10 +59,13 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_isVoiceProximity = false;
         bool m_noGlobalCulling = false;
         bool m_sendExtData = false;
+        bool m_knownServerMuted = false;
+        bool m_deafened = false;
 
         CCNode* m_playerNode = nullptr;
-        geode::Ref<CCNode> m_progressBarContainer = nullptr;
+        Ref<CCNode> m_progressBarContainer;
         ProgressIcon* m_selfProgressIcon = nullptr;
+        Ref<PlayerStatusIcons> m_selfStatusIcons;
     };
 
     // Setup functions

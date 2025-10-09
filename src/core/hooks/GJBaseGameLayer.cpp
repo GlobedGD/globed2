@@ -189,7 +189,9 @@ void GlobedGJBGL::setupUi() {
     fields.m_selfProgressIcon->updateIcons(globed::getPlayerIcons());
     fields.m_selfProgressIcon->setForceOnTop(true);
 
-    // TODO: self status icons
+    fields.m_selfStatusIcons = Build(PlayerStatusIcons::create(255))
+        .parent(fields.m_playerNode)
+        .id("self-player-status-icons"_spr);
 
     // TODO: own username
 
@@ -206,6 +208,11 @@ void GlobedGJBGL::setupListeners() {
 
     fields.m_voiceListener = nm.listen<msg::VoiceBroadcastMessage>([this](const msg::VoiceBroadcastMessage& message) {
         this->onVoiceDataReceived(message);
+        return ListenerResult::Continue;
+    });
+
+    fields.m_mutedListener = nm.listen<msg::ChatNotPermittedMessage>([this](const msg::ChatNotPermittedMessage&) {
+        m_fields->m_knownServerMuted = true;
         return ListenerResult::Continue;
     });
 }
@@ -342,6 +349,21 @@ void GlobedGJBGL::selUpdate(float tsdt) {
             fields.m_lastDataSend += fields.m_sendDataInterval;
             this->selSendPlayerData(dt);
         }
+    }
+
+    // update position for self icons / username
+    PlayerStatusFlags flags{};
+    flags.speaking = AudioManager::get().isPassiveRecording();
+    flags.speakingMuted = flags.speaking && fields.m_knownServerMuted;
+
+    if (flags.speaking) {
+        fields.m_selfStatusIcons->setVisible(true);
+        fields.m_selfStatusIcons->updateStatus(flags);
+        fields.m_selfStatusIcons->setPosition({
+            m_player1->getPosition() + CCPoint{0.f, 40.f} // TODO
+        });
+    } else {
+        fields.m_selfStatusIcons->setVisible(false);
     }
 }
 
@@ -697,7 +719,10 @@ void GlobedGJBGL::toggleHidePlayers() {
 }
 
 void GlobedGJBGL::toggleDeafen() {
-    // TODO
+    bool& deafen = m_fields->m_deafened;
+    deafen = !deafen;
+
+    AudioManager::get().setDeafen(deafen);
 }
 
 void GlobedGJBGL::resumeVoiceRecording() {
