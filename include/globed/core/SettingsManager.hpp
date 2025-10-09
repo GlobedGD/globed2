@@ -90,7 +90,6 @@ public:
     void registerSetting(
         std::string_view key,
         matjson::Value defaultVal
-        // TODO: limits
     );
 
     void registerValidator(

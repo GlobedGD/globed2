@@ -102,11 +102,7 @@ void NameLabel::onClick(CCMenuItemSpriteExtra* btn) {
 }
 
 void NameLabel::updateTeam(size_t idx, cocos2d::ccColor4B color) {
-    // TODO: make this an option
-
-    bool colorbmode = false;
-
-    if (!colorbmode) {
+    if (!globed::setting<bool>("core.ui.colorblind-mode")) {
         if (m_label) {
             m_label->setColor(cue::into<ccColor3B>(color));
             m_label->setOpacity(color.a);
@@ -236,7 +232,7 @@ void NameLabel::makeClickable(std::function<void(CCMenuItemSpriteExtra*)> callba
 void NameLabel::setMultipleBadges(bool multiple) {
     m_multipleBadges = multiple;
 
-    // TODO
+    // TODO (low) impl
 }
 
 void NameLabel::setShadowEnabled(bool enabled) {
