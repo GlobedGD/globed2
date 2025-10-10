@@ -192,6 +192,7 @@ void GlobedGJBGL::setupUi() {
     fields.m_selfProgressIcon->setForceOnTop(true);
 
     fields.m_selfStatusIcons = Build(PlayerStatusIcons::create(255))
+        .anchorPoint(0.5f, 0.f)
         .parent(fields.m_playerNode)
         .id("self-player-status-icons"_spr);
 
@@ -363,7 +364,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     flags.speakingMuted = flags.speaking && fields.m_knownServerMuted;
 
     bool showSelfName = globed::setting<bool>("core.level.self-name");
-    bool showSelfIcons = flags.speaking && globed::setting<bool>("core.ui.self-status-icons");
+    bool showSelfIcons = flags.speaking && globed::setting<bool>("core.level.self-status-icons");
 
     if (showSelfIcons) {
         fields.m_selfStatusIcons->setVisible(true);

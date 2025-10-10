@@ -73,7 +73,7 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
             sprite = "speaker-icon.png"_spr;
         }
 
-        addButton(CCSprite::createWithSpriteFrameName(sprite), "icon-speaking");
+        addButton(CCSprite::create(sprite), "icon-speaking");
     }
 
     if (flags.editing) {

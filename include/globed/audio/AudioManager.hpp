@@ -75,7 +75,7 @@ public:
 
     void resumePassiveRecording();
     void pausePassiveRecording();
-    inline bool isPassiveRecording() { return m_recordingPassive; }
+    inline bool isPassiveRecording() { return m_recordingPassiveActive; }
 
     /* Playback API */
 

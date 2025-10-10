@@ -15,6 +15,7 @@ public:
 
 private:
     uint64_t hash;
+    std::string_view key;
 };
 
 template <typename T>
@@ -132,11 +133,20 @@ SettingAccessor<T> setting(std::string_view key) {
 }
 
 template <typename T>
-SettingAccessor<T>::SettingAccessor(std::string_view key) : hash(SettingsManager::keyHash(key)) {}
+SettingAccessor<T>::SettingAccessor(std::string_view key) : key(key), hash(SettingsManager::keyHash(key)) {}
 
 template <typename T>
 SettingAccessor<T>::operator T() const {
+#ifdef GLOBED_DEBUG
+    try {
+        return SettingsManager::get().getSettingRaw<T>(hash);
+    } catch (const std::exception& e) {
+        geode::log::error("Invalid setting '{}': {}", key, e.what());
+        throw;
+    }
+#else
     return SettingsManager::get().getSettingRaw<T>(hash);
+#endif
 }
 
 template <typename T>
