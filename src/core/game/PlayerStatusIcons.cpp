@@ -68,7 +68,7 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
         const char* sprite;
 
         if (flags.speakingMuted) {
-            sprite = "speaking-icon-mute.png"_spr;
+            sprite = "speaker-icon-mute.png"_spr;
         } else {
             sprite = "speaker-icon.png"_spr;
         }
