@@ -1,4 +1,5 @@
 #include "EditServerPopup.hpp"
+#include <globed/core/PopupManager.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -43,8 +44,16 @@ bool EditServerPopup::setup(bool adding, const std::string& name, const std::str
     Build<ButtonSprite>::create(adding ? "Create" : "Save", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .scale(0.9f)
         .intoMenuItem([this] {
+            auto name = geode::utils::string::trim(m_nameInput->getString());
+            auto url  = geode::utils::string::trim(m_urlInput->getString());
+
+            if (name.empty() || url.empty()) {
+                globed::alert("Error", "Both name and URL fields must be filled out.");
+                return;
+            }
+
             if (m_callback) {
-                m_callback(m_nameInput->getString(), m_urlInput->getString());
+                m_callback(name, url);
                 this->onClose(nullptr);
             }
         })
