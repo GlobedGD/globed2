@@ -42,10 +42,7 @@ private:
     bool m_teamInitialized = false;
     geode::Ref<NameLabel> m_nameLabel;
     geode::Ref<PlayerStatusIcons> m_statusIcons;
-
-#ifdef GLOBED_DEBUG_INTERPOLATION
     geode::Ref<cocos2d::CCDrawNode> m_playerTrajectory = nullptr;
-#endif
 
     bool m_isSecond = false;
     bool m_isPlatformer = false;
@@ -91,6 +88,8 @@ private:
     void updatePlayerObjectIcons(bool skipFrames);
     bool isPlayerNearby(const PlayerObjectData& data, const GameCameraState& camState);
     void spiderTeleportUpdateColor();
+
+    void updateLerpTrajectory(const PlayerObjectData& data);
 };
 
 }

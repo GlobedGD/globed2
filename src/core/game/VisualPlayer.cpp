@@ -15,6 +15,17 @@ using namespace geode::prelude;
 
 namespace globed {
 
+#ifdef GLOBED_DEBUG
+static inline bool lerpDebug() {
+    static bool val = Loader::get()->getLaunchFlag("globed/core.dev.lerp-debug");
+    return val;
+}
+#else
+static inline bool lerpDebug() {
+    return false;
+}
+#endif
+
 bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {
     if (!PlayerObject::init(1, 1, gameLayer, gameLayer->m_objectLayer, gameLayer->m_isEditor)) {
         return false;
@@ -53,49 +64,22 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
             .id("status-icons"_spr);
     }
 
-#ifdef GLOBED_DEBUG_INTERPOLATION
-    Build<CCDrawNode>::create()
-        .id(fmt::format("debug-trajectory"_spr).c_str())
-        .parent(gameLayer->m_objectLayer)
-        .store(m_playerTrajectory);
+    if (lerpDebug()) {
+        Build<CCDrawNode>::create()
+            .id(fmt::format("debug-trajectory"_spr).c_str())
+            .parent(gameLayer->m_objectLayer)
+            .store(m_playerTrajectory);
 
-    m_playerTrajectory->m_bUseArea = false;
-#endif
+        m_playerTrajectory->m_bUseArea = false;
+    }
 
     return true;
 }
 
 void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState) {
-#ifdef GLOBED_DEBUG_INTERPOLATION
-    if (m_playerTrajectory) {
-        m_playerTrajectory->drawSegment(
-            m_prevPosition, data.position,
-            0.5f,
-            ccColor4F{0.f, 1.f, 0.1f, 1.f}
-        );
-
-        auto& interpolator = GlobedGJBGL::get()->m_fields->m_interpolator;
-        int accountId = m_remotePlayer->m_state.accountId;
-
-        if (interpolator.hasPlayer(accountId)) {
-            auto& newstate = interpolator.getNewerState(m_remotePlayer->m_state.accountId);
-
-            m_playerTrajectory->drawCircle(
-                m_isSecond ? (newstate.player2 ? newstate.player2->position : CCPoint{}) : newstate.player1->position,
-                1.5f,
-                ccColor4F{0.1f, 0.9f, 0.2f, 1.f},
-                0.3f,
-                ccColor4F{1.f, 0.f, 0.f, 0.f},
-                8
-            );
-        }
-
-        // detect if the player reset
-        if (ccpDistance(m_prevPosition, data.position) > 50.f && data.position.x < m_prevPosition.x) {
-            m_playerTrajectory->clear();
-        }
+    if (lerpDebug()) {
+        this->updateLerpTrajectory(data);
     }
-#endif
 
     m_prevRotating = data.isRotating;
     m_prevPosition = data.position;
@@ -304,6 +288,39 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         } else {
             CCNode::onEnter();
         }
+    }
+}
+
+void VisualPlayer::updateLerpTrajectory(const PlayerObjectData& data) {
+    if (!m_playerTrajectory) {
+        return;
+    }
+
+    m_playerTrajectory->drawSegment(
+        m_prevPosition, data.position,
+        0.5f,
+        ccColor4F{0.f, 1.f, 0.1f, 1.f}
+    );
+
+    auto& interpolator = GlobedGJBGL::get()->m_fields->m_interpolator;
+    int accountId = m_remotePlayer->m_state.accountId;
+
+    if (interpolator.hasPlayer(accountId)) {
+        auto& newstate = interpolator.getNewerState(m_remotePlayer->m_state.accountId);
+
+        m_playerTrajectory->drawCircle(
+            m_isSecond ? (newstate.player2 ? newstate.player2->position : CCPoint{}) : newstate.player1->position,
+            1.5f,
+            ccColor4F{0.1f, 0.9f, 0.2f, 1.f},
+            0.3f,
+            ccColor4F{1.f, 0.f, 0.f, 0.f},
+            8
+        );
+    }
+
+    // detect if the player reset
+    if (ccpDistance(m_prevPosition, data.position) > 50.f && data.position.x < m_prevPosition.x) {
+        m_playerTrajectory->clear();
     }
 }
 

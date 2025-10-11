@@ -1,8 +1,9 @@
 #include "Interpolator.hpp"
 #include <globed/util/algo.hpp>
+#include <globed/core/ValueManager.hpp>
 
-#ifdef GLOBED_DEBUG_INTERPOLATION
-# define LERP_LOG(...) log::debug(__VA_ARGS__)
+#ifdef GLOBED_DEBUG
+# define LERP_LOG(...) if (::lerpDebug()) log::debug(__VA_ARGS__)
 #else
 # define LERP_LOG(...) do {} while (0)
 #endif
@@ -12,6 +13,11 @@ constexpr float TIME_DRIFT_SMALL_THRESHOLD = 0.05f; // 50ms
 constexpr float TIME_DRIFT_SMALL_ADJ_DEADLINE = 30.0f; // 30s
 
 using namespace geode::prelude;
+
+static inline bool lerpDebug() {
+    static bool val = Loader::get()->getLaunchFlag("globed/core.dev.lerp-debug");
+    return val;
+}
 
 namespace globed {
 
@@ -54,12 +60,18 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
 
     bool culled = !player.player1;
 
+    // if the player paused and tabbed out, no update packets are sent, in which case
+    // the timestamp will not increase. if we just happen to join the level, the player will thus be stuck at 0,0,
+    // since we will only have 1 unique frame until they unpause
+    // for this reason, we forcibly ignore repeated frames if there is only 1 frame
+    bool ignoreRepeated = state.frames.size() < 2;
+
     state.totalFrames++;
 
     if (!state.frames.empty()) {
         auto& prevFrame = state.newestFrame();
-        // ignore repeated frames
-        if (player.timestamp == prevFrame.timestamp) {
+        // ignore repeated frames (except if there is < 2 frames)
+        if (player.timestamp == prevFrame.timestamp && !ignoreRepeated) {
             LERP_LOG("[Interpolator] Ignoring repeated frame for player {} at timestamp {}", player.accountId, player.timestamp);
             return;
         }
@@ -94,7 +106,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
     }
 
     // assert that the frame is newer than the last one
-    if (!state.frames.empty()) {
+    if (!state.frames.empty() && !ignoreRepeated) {
         float timeDifference = player.timestamp - state.newestFrame().timestamp;
         if (timeDifference <= 0.f) {
             LERP_LOG("[Interpolator] Frame for player {} is not newer than the last one: {} <= {}",
@@ -326,7 +338,7 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
             auto& a = player.frames[i];
             auto& b = player.frames[i + 1];
 
-            if (a.timestamp <= player.timeCounter && b.timestamp > player.timeCounter) {
+            if (a.timestamp <= player.timeCounter && b.timestamp >= player.timeCounter) {
                 older = &a;
                 newer = &b;
                 break;
@@ -366,7 +378,7 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
         }
 
         float frameDelta = newer->timestamp - older->timestamp;
-        float t = (player.timeCounter - older->timestamp) / frameDelta;
+        float t = frameDelta == 0.0f ? 0.0f : (player.timeCounter - older->timestamp) / frameDelta;
 
         LerpContext ctx {
             t,
