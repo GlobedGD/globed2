@@ -1461,7 +1461,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::ROOM_BANNED: {
-            // TODO
+            this->invokeListeners(data::decodeUnchecked<msg::RoomBannedMessage>(msg.getRoomBanned()));
         } break;
 
         case CentralMessage::ROOM_LIST: {

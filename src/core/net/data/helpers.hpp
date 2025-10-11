@@ -670,6 +670,15 @@ $implDecode(msg::MutedMessage, main::MutedMessage::Reader& reader) {
     return out;
 }
 
+// Room banned
+
+$implDecode(msg::RoomBannedMessage, main::RoomBannedMessage::Reader& reader) {
+    msg::RoomBannedMessage out{};
+    out.reason = reader.getReason();
+    out.expiresAt = reader.getExpiresAt();
+    return out;
+}
+
 /// Team creation result
 
 $implDecode(msg::TeamCreationResultMessage, main::TeamCreationResultMessage::Reader& reader) {

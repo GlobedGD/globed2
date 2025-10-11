@@ -42,6 +42,13 @@ struct MutedMessage {
     int64_t expiresAt;
 };
 
+// Room banned
+
+struct RoomBannedMessage {
+    std::string reason;
+    int64_t expiresAt;
+};
+
 // Rooms
 
 struct RoomStateMessage {

@@ -8,6 +8,7 @@
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 namespace globed {
 
@@ -18,6 +19,17 @@ static constexpr int TAG_COLLISION = 1023;
 static constexpr int TAG_TWO_PLAYER= 1024;
 static constexpr int TAG_DEATHLINK = 1025;
 static constexpr int TAG_TEAMS = 1026;
+
+static std::string formatDateTime(const asp::time::SystemTime& tp, bool ms) {
+    std::time_t curTime = tp.to_time_t();
+
+    if (ms) {
+        auto millis = tp.timeSinceEpoch().subsecMillis();
+        return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:03}", fmt::localtime(curTime), millis);
+    } else {
+        return fmt::format("{:%Y-%m-%d %H:%M:%S}", fmt::localtime(curTime));
+    }
+}
 
 bool CreateRoomPopup::setup() {
     this->setID("create-room-popup"_spr);
@@ -401,7 +413,9 @@ void CreateRoomPopup::waitForResponse() {
     m_loadingPopup->setClosable(true);
     m_loadingPopup->show();
 
-    m_successListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
+    auto& nm = NetworkManagerImpl::get();
+
+    m_successListener = nm.listen<msg::RoomStateMessage>([this](const auto& msg) {
         // small sanity check to make sure it is actually the response we need
         if (msg.roomOwner == cachedSingleton<GJAccountManager>()->m_accountID) {
             this->stopWaiting(std::nullopt);
@@ -411,7 +425,7 @@ void CreateRoomPopup::waitForResponse() {
     });
     m_successListener.value()->setPriority(-100);
 
-    m_failListener = NetworkManagerImpl::get().listen<msg::RoomCreateFailedMessage>([this](const auto& msg) {
+    m_failListener = nm.listen<msg::RoomCreateFailedMessage>([this](const auto& msg) {
         using enum msg::RoomCreateFailedReason;
         std::string reason;
 
@@ -427,6 +441,16 @@ void CreateRoomPopup::waitForResponse() {
 
         this->stopWaiting(reason);
 
+        return ListenerResult::Stop;
+    });
+
+    m_bannedListener = nm.listen<msg::RoomBannedMessage>([this](const auto& msg) {
+        this->stopWaiting(fmt::format(
+            "You are banned from creating rooms{}{}. Reason: {}",
+            msg.expiresAt == 0 ? " " : " until ",
+            msg.expiresAt == 0 ? std::string{"forever"} : formatDateTime(SystemTime::fromUnix(msg.expiresAt), false),
+            msg.reason.empty() ? "(no reason given)" : msg.reason
+        ));
         return ListenerResult::Stop;
     });
 }
