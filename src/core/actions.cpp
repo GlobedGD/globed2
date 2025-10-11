@@ -12,6 +12,7 @@
 #include <ui/admin/ModPanelPopup.hpp>
 #include <ui/admin/ModUserPopup.hpp>
 #include <ui/admin/ModLoginPopup.hpp>
+#include <ui/menu/UserPunishmentPopup.hpp>
 
 using namespace geode::prelude;
 
@@ -183,6 +184,16 @@ $on_mod(Loaded) {
 
         // TODO: canReply
 
+        return ListenerResult::Continue;
+    });
+
+    nm.listenGlobal<msg::BannedMessage>([](const msg::BannedMessage& msg) {
+        UserPunishmentPopup::create(msg.reason, msg.expiresAt, true)->show();
+        return ListenerResult::Continue;
+    });
+
+    nm.listenGlobal<msg::MutedMessage>([](const msg::MutedMessage& msg) {
+        UserPunishmentPopup::create(msg.reason, msg.expiresAt, false)->show();
         return ListenerResult::Continue;
     });
 }

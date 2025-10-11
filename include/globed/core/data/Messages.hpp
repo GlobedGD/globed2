@@ -28,6 +28,20 @@ struct CentralLoginOkMessage {
     std::optional<FeaturedLevelMeta> featuredLevel;
 };
 
+// Banned
+
+struct BannedMessage {
+    std::string reason;
+    int64_t expiresAt;
+};
+
+// Muted
+
+struct MutedMessage {
+    std::string reason;
+    int64_t expiresAt;
+};
+
 // Rooms
 
 struct RoomStateMessage {

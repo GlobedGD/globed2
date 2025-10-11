@@ -652,6 +652,24 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
     return msg;
 }
 
+// Banned
+
+$implDecode(msg::BannedMessage, main::BannedMessage::Reader& reader) {
+    msg::BannedMessage out{};
+    out.reason = reader.getReason();
+    out.expiresAt = reader.getExpiresAt();
+    return out;
+}
+
+// Muted
+
+$implDecode(msg::MutedMessage, main::MutedMessage::Reader& reader) {
+    msg::MutedMessage out{};
+    out.reason = reader.getReason();
+    out.expiresAt = reader.getExpiresAt();
+    return out;
+}
+
 /// Team creation result
 
 $implDecode(msg::TeamCreationResultMessage, main::TeamCreationResultMessage::Reader& reader) {

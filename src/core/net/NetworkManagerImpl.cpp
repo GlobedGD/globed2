@@ -367,7 +367,7 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
     *m_pendingConnectUrl.lock() = std::string(url);
     m_pendingConnectNotify.notifyOne();
     m_manualDisconnect = false;
-    m_abortCause.lock()->clear();
+    m_abortCause.lock()->first.clear();
 
     FriendListManager::get().refresh();
 
@@ -691,9 +691,9 @@ void NetworkManagerImpl::doArgonAuth(std::string token) {
     });
 }
 
-void NetworkManagerImpl::abortConnection(std::string reason) {
+void NetworkManagerImpl::abortConnection(std::string reason, bool silent) {
     log::warn("aborting connection to central server: {}", reason);
-    *m_abortCause.lock() = std::move(reason);
+    *m_abortCause.lock() = std::make_pair(std::move(reason), silent);
     (void) m_centralConn.disconnect();
 }
 
@@ -702,25 +702,30 @@ void NetworkManagerImpl::onCentralDisconnected() {
         globed::setValue<bool>("core.was-connected", false);
     }
 
-    bool manual = m_manualDisconnect;
+    bool showPopup = !m_manualDisconnect;
     std::string message = "client initiated disconnect";
 
-    if (!manual) {
+    if (!m_manualDisconnect) {
         auto abortCause = m_abortCause.lock();
 
-        if (!abortCause->empty()) {
-            message = std::move(*abortCause);
+        if (!abortCause->first.empty()) {
+            message = std::move(abortCause->first);
         } else {
             message = m_centralConn.lastError().message();
+        }
+
+        // if this was a silent abort, don't show a popup
+        if (abortCause->second) {
+            showPopup = false;
         }
     }
 
     log::debug("connection to central server lost: {}", message);
 
-    Loader::get()->queueInMainThread([this, manual, message = std::move(message)] {
+    Loader::get()->queueInMainThread([this, showPopup, message = std::move(message)] {
         CoreImpl::get().onServerDisconnected();
 
-        if (!manual) {
+        if (showPopup) {
             auto alert = PopupManager::get().alertFormat("Globed Error", "Connection lost: <cy>{}</c>", message);
             alert.showQueue();
         }
@@ -1375,7 +1380,13 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::BANNED: {
-            // TODO
+            auto m = data::decodeUnchecked<msg::BannedMessage>(msg.getBanned());
+            this->invokeListeners(m);
+            this->abortConnection("User is banned from the server", true);
+        } break;
+
+        case CentralMessage::MUTED: {
+            this->invokeListeners(data::decodeUnchecked<msg::MutedMessage>(msg.getMuted()));
         } break;
 
         case CentralMessage::SERVERS_CHANGED: {

@@ -241,7 +241,7 @@ private:
     asp::Notify m_disconnectNotify;
     asp::AtomicBool m_disconnectRequested;
     asp::AtomicBool m_manualDisconnect = false;
-    asp::Mutex<std::string> m_abortCause;
+    asp::Mutex<std::pair<std::string, bool>> m_abortCause;
     asp::Notify m_finishedClosingNotify;
     bool m_destructing = false;
     bool m_hasSecure = false;
@@ -273,7 +273,7 @@ private:
 
     void tryAuth();
     void doArgonAuth(std::string token);
-    void abortConnection(std::string reason);
+    void abortConnection(std::string reason, bool silent = false);
 
     void joinSessionWith(std::string_view serverUrl, SessionId id, bool platformer);
     void sendGameLoginJoinRequest(SessionId id, bool platformer);
