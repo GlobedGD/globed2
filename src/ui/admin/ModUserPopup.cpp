@@ -57,10 +57,15 @@ bool ModUserPopup::setup(int accountId) {
 }
 
 void ModUserPopup::initUi() {
+    cue::resetNode(m_loadCircle);
+    cue::resetNode(m_nameLayout);
+    cue::resetNode(m_rootLayout);
+
     // name layout
     m_nameLayout = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f)->setAutoScale(false))
         .pos(this->fromTop(20.f))
+        .id("name-layout"_spr)
         .parent(m_mainLayer);
 
     // name label
@@ -77,7 +82,7 @@ void ModUserPopup::initUi() {
 
     m_nameLayout->updateLayout();
 
-    auto* rootLayout = Build<CCNode>::create()
+    m_rootLayout = Build<CCNode>::create()
         .pos(this->fromCenter(0.f, -5.f))
         .anchorPoint(0.5f, 0.5f)
         .contentSize(m_size.width * 0.8f, m_size.height * 0.6f)
@@ -88,7 +93,7 @@ void ModUserPopup::initUi() {
     Build<CCScale9Sprite>::create("square02_001.png", CCRect{0.f, 0.f, 80.f, 80.f})
         .opacity(60)
         .id("bg")
-        .parent(rootLayout)
+        .parent(m_rootLayout)
         .with([&](auto spr) {
             auto cs = spr->getParent()->getContentSize();
             cs.height *= 2.f;
@@ -101,10 +106,10 @@ void ModUserPopup::initUi() {
 
     m_rootMenu = Build<CCMenu>::create()
         .ignoreAnchorPointForPos(false)
-        .contentSize(rootLayout->getScaledContentSize() * 0.95f)
+        .contentSize(m_rootLayout->getScaledContentSize() * 0.95f)
         .anchorPoint(0.5f, 0.5f)
-        .pos(rootLayout->getScaledContentSize() / 2.f)
-        .parent(rootLayout)
+        .pos(m_rootLayout->getScaledContentSize() / 2.f)
+        .parent(m_rootLayout)
         .layout(RowLayout::create()
                     ->setGap(5.f)
                     ->setAutoScale(false)
@@ -377,7 +382,7 @@ void ModUserPopup::onUserInfoLoaded(geode::Result<GJUserScore*> res, bool sendUp
     m_score = res.unwrap();
 
     if (!m_data) {
-        m_data = {};
+        m_data = Data{};
     }
 
     m_data->accountId = m_score->m_accountID;

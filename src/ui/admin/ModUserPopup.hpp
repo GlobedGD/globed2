@@ -17,13 +17,14 @@ public:
     void startLoadingProfile(int id);
 
 protected:
-    cue::LoadingCircle* m_loadCircle;
+    cue::LoadingCircle* m_loadCircle = nullptr;
     std::optional<MessageListener<msg::AdminFetchResponseMessage>> m_listener;
     std::optional<MessageListener<msg::AdminResultMessage>> m_resultListener;
     std::string m_query;
     bool m_queryIsId = false;
-    cocos2d::CCMenu* m_nameLayout = nullptr;
-    cocos2d::CCMenu* m_rootMenu = nullptr;
+    CCMenu* m_nameLayout = nullptr;
+    CCMenu* m_rootMenu = nullptr;
+    CCNode* m_rootLayout = nullptr;
     CCMenuItemSpriteExtra* m_roleModifyButton = nullptr;
     CCMenuItemSpriteExtra* m_banButton = nullptr;
     CCMenuItemSpriteExtra* m_muteButton = nullptr;

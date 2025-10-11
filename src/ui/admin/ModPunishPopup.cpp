@@ -286,6 +286,9 @@ bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional
         }
 
         this->setReason(m_punishment->reason);
+    } else {
+        // default to 1 day
+        this->setDuration(Duration::fromDays(1));
     }
 
     return true;
