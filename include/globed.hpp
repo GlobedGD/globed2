@@ -7,3 +7,4 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "settings.hpp"
+#include "room.hpp"

@@ -3,6 +3,8 @@
 
 #include <util/gd.hpp>
 
+#include <room.hpp>
+
 using namespace geode::prelude;
 
 RoomManager::RoomManager() {
@@ -31,6 +33,7 @@ bool RoomManager::isInRoom() {
 
 void RoomManager::setInfo(const RoomInfo& info) {
     bool levelChanged = info.settings.levelId != roomInfo.settings.levelId;
+    bool roomIdChanged = info.id != roomInfo.id;
 
     roomInfo = info;
 
@@ -41,6 +44,23 @@ void RoomManager::setInfo(const RoomInfo& info) {
             this->fetchRoomLevel(info.settings.levelId);
         }
     }
+
+    Loader::get()->queueInMainThread([roomIdChanged] {
+        auto data = globed::room::getRoomData();
+        if (!data) {
+            // now in global room
+            if (roomIdChanged) globed::RoomLeaveEvent().post();
+            return;
+        }
+
+        // now in another room or the same room but updated
+        if (roomIdChanged) {
+            globed::RoomLeaveEvent().post();
+            globed::RoomJoinEvent(data.unwrap()).post();
+        } else {
+            globed::RoomUpdateEvent(data.unwrap()).post();
+        }
+    });
 }
 
 void RoomManager::setGlobal() {
