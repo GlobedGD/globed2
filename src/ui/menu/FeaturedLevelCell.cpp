@@ -104,8 +104,6 @@ void FeaturedLevelCell::createCell() {
         .parent(m_loadedContainer)
         .collect();
 
-    int frameValue = static_cast<int>(m_level->m_difficulty);
-
     auto levelcell = new NewLevelCell("baller", CELL_WIDTH - 15, CELL_HEIGHT - 25);
     levelcell->autorelease();
     levelcell->loadFromLevel(m_level);
