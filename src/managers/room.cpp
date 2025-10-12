@@ -114,22 +114,26 @@ void RoomManager::fetchRoomLevel(int levelId) {
             return;
         }
 
-        fetchNode->downloadCallback = [this, glm](Result<GJGameLevel*, int> level) {
-            glm->m_levelDownloadDelegate = nullptr;
+        // fetchNode->downloadCallback = [this, glm](Result<GJGameLevel*, int> level) {
+        //     glm->m_levelDownloadDelegate = nullptr;
 
-            if (level.isOk()) {
-                this->onRoomLevelDownloaded(level.unwrap());
-            } else {
-                log::warn("Failed to download level id {} for room: code {}", roomInfo.settings.levelId, level.unwrapErr());
-            }
+        //     if (level.isOk()) {
+        //         this->onRoomLevelDownloaded(level.unwrap());
+        //     } else {
+        //         log::warn("Failed to download level id {} for room: code {}", roomInfo.settings.levelId, level.unwrapErr());
+        //     }
 
-            fetchNode->downloadCallback = {};
-        };
+        //     fetchNode->downloadCallback = {};
+        // };
 
         auto arr = level.unwrap();
         if (arr->count()) {
-            glm->m_levelDownloadDelegate = fetchNode;
-            glm->downloadLevel(static_cast<GJGameLevel*>(arr->objectAtIndex(0))->m_levelID, false);
+            // this caused issues with data not saving when you pin a level, unless you exit levelinfolayer and reopen it
+            // glm->m_levelDownloadDelegate = fetchNode;
+            // glm->downloadLevel(static_cast<GJGameLevel*>(arr->objectAtIndex(0))->m_levelID, false);
+
+            auto level = static_cast<GJGameLevel*>(arr->objectAtIndex(0));
+            this->onRoomLevelDownloaded(level);
         }
 
         fetchNode->fetchCallback = {};
