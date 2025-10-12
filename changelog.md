@@ -1,3 +1,9 @@
+## v1.8.6
+
+* Add jitless iOS support
+* Fix bug causing progress on a level to not save after pinning it in a room
+* Fix being able to open some glitched levels through the player list
+
 ## v1.8.5
 
 * Fix crash when receiving a notice in the editor
