@@ -1718,6 +1718,11 @@ void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reaso
             this->abortConnection("Internal server error (invalid account data), please contact the developer!");
         } break;
 
+        case NOT_WHITELISTED: {
+            log::warn("Login failed: user is not whitelisted");
+            this->abortConnection("You are not whitelisted on this server!");
+        } break;
+
         default: {
             log::warn("Login failed: unknown reason {}", static_cast<int>(reason));
             this->abortConnection(fmt::format("Login failed due to unknown server error: {}", static_cast<int>(reason)));
