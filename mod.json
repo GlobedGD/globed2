@@ -35,6 +35,11 @@
             "resources/mod/*.png",
             "resources/game/*.png"
         ],
+        "spritesheets": {
+            "emojis": [
+                "resources/emoji/*.png"
+            ]
+        },
         "fonts": {
             "Consolas": {
                 "path": "resources/fonts/Consolas-Regular.ttf",

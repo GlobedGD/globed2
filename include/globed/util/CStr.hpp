@@ -25,6 +25,10 @@ public:
         return m_ptr;
     }
 
+    inline operator bool() const {
+        return !this->empty();
+    }
+
     inline const char* get() const {
         return m_ptr;
     }
