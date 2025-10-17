@@ -342,6 +342,10 @@ void toast(geode::NotificationIcon icon, float duration, const std::string& mess
     Notification::create(message, icon, duration)->show();
 }
 
+
+// Below - taken from
+// https://github.com/EclipseMenu/EclipseMenu/blob/3a6094b5de6ca478d7c375f29375477a3869be78/src/modules/gui/cocos/nodes/FallbackBMFont.cpp#L58
+
 template <size_t N>
 struct EmojiToHexConverter {
     static constexpr size_t length = N - 1;
