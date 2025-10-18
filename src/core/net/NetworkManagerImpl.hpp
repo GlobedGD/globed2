@@ -229,6 +229,10 @@ public:
     void removeListener(const std::type_info& ty, void* listener);
 
 private:
+    enum AuthKind {
+        Utoken, Argon, Plain
+    };
+
     qn::Connection m_centralConn;
     qn::Connection m_gameConn;
 
@@ -272,12 +276,11 @@ private:
     std::vector<uint8_t> computeUident(int accountId);
 
     void tryAuth();
-    void doArgonAuth(std::string token);
+    void sendCentralAuth(AuthKind kind, const std::string& token = "");
     void abortConnection(std::string reason, bool silent = false);
 
     void joinSessionWith(std::string_view serverUrl, SessionId id, bool platformer);
-    void sendGameLoginJoinRequest(SessionId id, bool platformer);
-    void sendGameLoginRequest();
+    void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false);
     void sendGameJoinRequest(SessionId id, bool platformer);
 
     // Handlers for messages

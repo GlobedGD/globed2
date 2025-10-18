@@ -150,7 +150,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
             // if there was a deferred join, try to login with session, otherwise just login
             if (connInfo.m_gsDeferredJoin) {
                 auto& join = *connInfo.m_gsDeferredJoin;
-                this->sendGameLoginJoinRequest(join.id, join.platformer);
+                this->sendGameLoginRequest(join.id, join.platformer);
             } else {
                 this->sendGameLoginRequest();
             }
@@ -627,17 +627,7 @@ void NetworkManagerImpl::tryAuth() {
 
     if (auto stoken = this->getUToken()) {
         connInfo.startedAuth();
-
-        auto uid = this->computeUident(accountId);
-
-        this->sendToCentral([&](CentralMessage::Builder& msg) {
-            log::debug("attempting login with user token {}", *stoken);
-            auto loginUToken = msg.initLoginUToken();
-            loginUToken.setToken(*stoken);
-            loginUToken.setAccountId(accountId);
-            loginUToken.setUident(kj::ArrayPtr(uid.data(), uid.size()));
-            data::encode(gatherIconData(), loginUToken.initIcons());
-        });
+        this->sendCentralAuth(AuthKind::Utoken, *stoken);
     } else if (!connInfo.m_knownArgonUrl.empty()) {
         (void) argon::setServerUrl(connInfo.m_knownArgonUrl);
         connInfo.m_waitingForArgon = true;
@@ -654,7 +644,7 @@ void NetworkManagerImpl::tryAuth() {
                 return;
             }
 
-            this->doArgonAuth(std::move(*res));
+            this->sendCentralAuth(AuthKind::Argon, *res);
         });
 
         if (!res) {
@@ -664,30 +654,43 @@ void NetworkManagerImpl::tryAuth() {
         }
     } else {
         connInfo.startedAuth();
-
-        this->sendToCentral([&](CentralMessage::Builder& msg) {
-            log::debug("attempting plain login");
-            auto loginPlain = msg.initLoginPlain();
-            auto data = loginPlain.initData();
-            data.setUsername(gam->m_username);
-            data.setAccountId(accountId);
-            data.setUserId(userId);
-            data::encode(gatherIconData(), loginPlain.initIcons());
-        });
+        this->sendCentralAuth(AuthKind::Plain);
     }
 }
 
-void NetworkManagerImpl::doArgonAuth(std::string token) {
+void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
-        auto accountId = GJAccountManager::get()->m_accountID;
-        auto uid = this->computeUident(accountId);
+        int accountId = GJAccountManager::get()->m_accountID;
+        int userId = GameManager::get()->m_playerUserID;
 
-        log::debug("attempting login with argon token ({})", accountId);
-        auto loginArgon = msg.initLoginArgon();
-        loginArgon.setToken(token);
-        loginArgon.setAccountId(accountId);
-        loginArgon.setUident(kj::ArrayPtr(uid.data(), uid.size()));
-        data::encode(gatherIconData(), loginArgon.initIcons());
+        auto login = msg.initLogin();
+        login.setAccountId(accountId);
+        data::encode(gatherIconData(), login.initIcons());
+        if (kind != AuthKind::Plain) {
+            auto uid = this->computeUident(accountId);
+            login.setUident(kj::arrayPtr(uid.data(), uid.size()));
+        }
+        // TODO: user settings
+
+        switch (kind) {
+            case AuthKind::Utoken: {
+                log::debug("attempting login with user token {}", token);
+                login.setUtoken(token);
+            } break;
+
+            case AuthKind::Argon: {
+                log::debug("attempting login with argon token ({})", accountId);
+                login.setArgon(token);
+            } break;
+
+            case AuthKind::Plain: {
+                log::debug("attempting plain login");
+                auto plain = login.initPlain();
+                plain.setAccountId(accountId);
+                plain.setUserId(userId);
+                plain.setUsername(GJAccountManager::get()->m_username);
+            } break;
+        }
     });
 }
 
@@ -798,7 +801,7 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
             // same server, just send the join request
             this->sendGameJoinRequest(id, platformer);
         } else {
-            this->sendGameLoginJoinRequest(id, platformer);
+            this->sendGameLoginRequest(id, platformer);
         }
     } else {
         // not connected, connect to the game server and join later
@@ -818,24 +821,19 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
     }
 }
 
-void NetworkManagerImpl::sendGameLoginJoinRequest(SessionId id, bool platformer) {
+void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer) {
     this->sendToGame([&](GameMessage::Builder& msg) {
-        auto loginJoin = msg.initLoginUTokenAndJoin();
-        loginJoin.setAccountId(GJAccountManager::get()->m_accountID);
-        loginJoin.setToken(this->getUToken().value_or(""));
-        loginJoin.setSessionId(id);
-        loginJoin.setPasscode(RoomManager::get().getPasscode());
-        loginJoin.setPlatformer(platformer);
-        data::encode(gatherIconData(), loginJoin.initIcons());
-    });
-}
-
-void NetworkManagerImpl::sendGameLoginRequest() {
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        auto login = msg.initLoginUToken();
+        auto login = msg.initLogin();
         login.setAccountId(GJAccountManager::get()->m_accountID);
         login.setToken(this->getUToken().value_or(""));
         data::encode(gatherIconData(), login.initIcons());
+        // TODO: settings
+
+        if (id.asU64() != 0) {
+            login.setSessionId(id);
+            login.setPasscode(RoomManager::get().getPasscode());
+            login.setPlatformer(platformer);
+        }
     });
 }
 

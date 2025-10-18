@@ -206,6 +206,7 @@ PopupRef PopupManager::quickPopup(
     FLAlertLayer* alert;
 
     if (!callback) {
+        // TODO: only use custom alert if emojis are needed
         alert = CustomFLAlert::create(title, content, btn1, btn2.getOrNull(), width);
     } else {
         alert = geode::createQuickPopup(title, content, btn1, btn2.getOrNull(), [callback = std::move(callback)](auto alert, bool btn2) {
