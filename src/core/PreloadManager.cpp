@@ -603,7 +603,7 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
     return filename;
 }
 
-static TextureQuality getTextureQuality() {
+TextureQuality getTextureQuality() {
     float sf = CCDirector::get()->getContentScaleFactor();
     if (sf >= 4.f) {
         return TextureQuality::High;

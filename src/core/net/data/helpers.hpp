@@ -8,6 +8,7 @@
 #include <modules/scripting/data/EmbeddedScript.hpp>
 
 #include <qunet/buffers/ByteReader.hpp>
+#include <capnp/compat/std-iterator.h>
 
 namespace globed::data {
 

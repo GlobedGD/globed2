@@ -12,7 +12,7 @@ struct SpawnData {
     std::optional<float> delay;
     float delayVariance;
     bool ordered;
-    gd::vector<int> remaps;
+    gd::vector<int> remaps{};
 };
 
 inline geode::Result<SpawnData> decodeSpawnData(qn::ByteReader& reader) {

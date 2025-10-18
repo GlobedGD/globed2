@@ -4,8 +4,8 @@
 
 using namespace geode::prelude;
 
-constexpr int POP_SCENE_ENUM = 13481341753;
-constexpr int NOOP_SCENE_ENUM = 13481341754;
+constexpr int POP_SCENE_ENUM = 1381341753;
+constexpr int NOOP_SCENE_ENUM = 1381341754;
 
 namespace globed {
 

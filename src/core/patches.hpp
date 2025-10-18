@@ -1,5 +1,5 @@
 #pragma once
-#include <Geode/platform/cplatform.h>
+#include <Geode/platform/platform.hpp>
 
 namespace globed {
 
@@ -14,10 +14,12 @@ struct PatchDef {
     template <typename Ty = void*>
     Ty addr() const {
         static_assert(Version == GEODE_COMP_GD_VERSION, "Patch must be updated to a new version!");
-
+#ifdef GEODE_IS_WINDOWS
         if constexpr (Cocos) {
             return (Ty)(geode::base::getCocos() + Offset);
-        } else {
+        } else
+#endif
+        {
             return (Ty)(geode::base::get() + Offset);
         }
     }
