@@ -103,13 +103,13 @@ bool UserListPopup::setup() {
 
     Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
         .scale(0.5f)
-        .intoMenuItem([this](auto) {
+        .intoMenuItem(+[] {
             createQuickPopup(
                 "Reporting",
                 "Someone <cr>breaking</c> the <cl>Globed</c> rules?\n<cg>Join</c> the <cl>Globed</c> discord and <cr>report</c> them there!",
                 "Cancel",
                 "Join",
-                [this](auto, bool btn2) {
+                +[](FLAlertLayer*, bool btn2) {
                     if (btn2) {
                         geode::utils::web::openLinkInBrowser(globed::constant<"discord">());
                     }

@@ -7,6 +7,7 @@
 #include <globed/core/PopupManager.hpp>
 #include <globed/util/algo.hpp>
 #include <globed/util/gd.hpp>
+#include <globed/util/FunctionQueue.hpp>
 #include <core/CoreImpl.hpp>
 #include <core/PreloadManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -24,7 +25,7 @@ namespace {
 
 class CustomSchedule : public CCObject {
 public:
-    using Fn = std::function<void(globed::GlobedGJBGL*, float)>;
+    using Fn = std23::move_only_function<void(globed::GlobedGJBGL*, float)>;
 
     static CustomSchedule* create(Fn&& fn, float interval, globed::GlobedGJBGL* gjbgl) {
         auto ret = new CustomSchedule;
@@ -144,7 +145,7 @@ void GlobedGJBGL::setupUpdateLoop() {
     auto& fields = *m_fields.self();
 
     // this has to be deferred. why? i don't know! but bugs happen otherwise
-    Loader::get()->queueInMainThread([this] {
+    FunctionQueue::get().queue([this] {
         auto self = GlobedGJBGL::get();
         if (!self || !self->active()) {
             return;
@@ -753,7 +754,7 @@ void GlobedGJBGL::pauseVoiceRecording() {
     AudioManager::get().pausePassiveRecording();
 }
 
-void GlobedGJBGL::customSchedule(const std::string& id, std::function<void(GlobedGJBGL*, float)>&& f, float interval) {
+void GlobedGJBGL::customSchedule(const std::string& id, std23::move_only_function<void(GlobedGJBGL*, float)>&& f, float interval) {
     auto sched = CustomSchedule::create(std::move(f), interval, this);
     this->setUserObject(id, sched);
 }

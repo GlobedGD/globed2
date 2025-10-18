@@ -74,7 +74,7 @@ void InputPopup::setDefaultText(const std::string& text) {
     m_input->setString(text);
 }
 
-void InputPopup::setCallback(std::function<void(InputPopupOutcome)> callback) {
+void InputPopup::setCallback(std23::move_only_function<void(InputPopupOutcome)> callback) {
     m_callback = std::move(callback);
 }
 

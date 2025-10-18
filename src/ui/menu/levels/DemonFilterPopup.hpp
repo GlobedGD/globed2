@@ -5,13 +5,14 @@
 #include "LevelListLayer.hpp"
 
 #include <Geode/Geode.hpp>
+#include <std23/move_only_function.h>
 
 namespace globed {
 
 class DemonFilterPopup : public BasePopup<DemonFilterPopup, const LevelListLayer::Filters&> {
 public:
     // Callback takes in a bool and set<util::gd::Difficulty>&&, bool is true if user chose to filter by demons, false otherwise
-    using Callback = std::function<void (bool, std::set<Difficulty>&&)>;
+    using Callback = std23::move_only_function<void (bool, std::set<Difficulty>&&)>;
 
     static const cocos2d::CCSize POPUP_SIZE;
 

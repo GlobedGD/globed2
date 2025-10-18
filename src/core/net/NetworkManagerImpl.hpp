@@ -1,7 +1,5 @@
 #pragma once
 
-#include <qunet/Connection.hpp>
-#include <Geode/Result.hpp>
 #include <globed/audio/EncodedAudioFrame.hpp>
 #include <globed/core/SessionId.hpp>
 #include <globed/core/data/PlayerState.hpp>
@@ -12,12 +10,15 @@
 #include <globed/core/data/FeaturedLevel.hpp>
 #include <globed/core/data/ModPermissions.hpp>
 #include <globed/core/net/MessageListener.hpp>
+#include <globed/util/FunctionQueue.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
-#include <typeindex>
 
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include "data/generated.hpp"
+#include <qunet/Connection.hpp>
+#include <Geode/Result.hpp>
+#include <typeindex>
 
 namespace globed {
 
@@ -258,8 +259,53 @@ private:
     void onCentralDisconnected();
     geode::Result<> onCentralDataReceived(CentralMessage::Reader& msg);
     geode::Result<> onGameDataReceived(GameMessage::Reader& msg);
-    void sendToCentral(std::function<void(CentralMessage::Builder&)> func);
-    void sendToGame(std::function<void(GameMessage::Builder&)> func, bool reliable = true);
+
+    static Result<> sendMessageToConnection(qn::Connection& conn, capnp::MallocMessageBuilder& msg, bool reliable) {
+        if (!conn.connected()) {
+            return Err("not connected");
+        }
+
+        size_t unpackedSize = capnp::computeSerializedSizeInWords(msg) * 8;
+        qn::HeapByteWriter writer;
+        writer.writeVarUint(unpackedSize).unwrap();
+        auto unpSizeBuf = writer.written();
+
+        kj::VectorOutputStream vos;
+        vos.write(unpSizeBuf.data(), unpSizeBuf.size());
+        capnp::writePackedMessage(vos, msg);
+
+        auto data = std::vector<uint8_t>(vos.getArray().begin(), vos.getArray().end());
+
+        conn.sendData(std::move(data), reliable);
+
+        return Ok();
+    }
+
+    template <typename F>
+    void sendToCentral(F&& func) {
+        capnp::MallocMessageBuilder msg;
+        auto root = msg.initRoot<CentralMessage>();
+        func(root);
+
+        auto res = sendMessageToConnection(m_centralConn, msg, true);
+
+        if (!res) {
+            log::warn("Failed to send message to central server: {}", res.unwrapErr());
+        }
+    }
+
+    template <typename F>
+    void sendToGame(F&& func, bool reliable = true) {
+        capnp::MallocMessageBuilder msg;
+        auto root = msg.initRoot<GameMessage>();
+        func(root);
+
+        auto res = sendMessageToConnection(m_gameConn, msg, reliable);
+
+        if (!res) {
+            log::warn("Failed to send message to game server: {}", res.unwrapErr());
+        }
+    }
 
     void disconnectInner();
     void resetGameVars();
@@ -310,7 +356,7 @@ private:
         }
 
         if (hasThreadUnsafe) {
-            geode::Loader::get()->queueInMainThread([this, message = std::forward<T>(message)]() mutable {
+            FunctionQueue::get().queue([this, message = std::forward<T>(message)]() mutable {
                 this->invokeUnchecked(std::forward<T>(message));
             });
         } else {

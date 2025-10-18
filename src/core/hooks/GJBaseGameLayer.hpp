@@ -133,7 +133,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void resumeVoiceRecording();
     void pauseVoiceRecording();
 
-    void customSchedule(const std::string& id, std::function<void(GlobedGJBGL*, float)>&& f, float interval);
+    void customSchedule(const std::string& id, std23::move_only_function<void(GlobedGJBGL*, float)>&& f, float interval);
     void customUnschedule(const std::string& id);
     void customUnscheduleAll();
 

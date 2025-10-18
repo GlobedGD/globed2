@@ -3,6 +3,8 @@
 #include <globed/util/singleton.hpp>
 #include "ValueManager.hpp"
 
+#include <std23/move_only_function.h>
+
 namespace globed {
 
 template <typename T>
@@ -31,7 +33,7 @@ public:
 
 class SettingsManager : public SingletonBase<SettingsManager> {
 public:
-    using Validator = std::function<bool(const matjson::Value&)>;
+    using Validator = std23::move_only_function<bool(const matjson::Value&)>;
 
     template <typename T>
     SettingAccessor<T> setting(std::string_view key) {

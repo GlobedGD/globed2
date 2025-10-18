@@ -186,7 +186,7 @@ void AudioManager::setRecordBufferCapacity(size_t frames) {
 }
 
 Result<> AudioManager::startRecordingEncoded(
-    std::function<void(const EncodedAudioFrame&)>&& encodedCallback
+    std23::move_only_function<void(const EncodedAudioFrame&)>&& encodedCallback
 ) {
     GEODE_UNWRAP(this->startRecordingInternal());
     m_callback = std::move(encodedCallback);
@@ -196,7 +196,7 @@ Result<> AudioManager::startRecordingEncoded(
 }
 
 Result<> AudioManager::startRecordingRaw(
-    std::function<void(const float*, size_t)>&& rawCallback
+    std23::move_only_function<void(const float*, size_t)>&& rawCallback
 ) {
     GEODE_UNWRAP(this->startRecordingInternal());
     m_rawCallback = std::move(rawCallback);

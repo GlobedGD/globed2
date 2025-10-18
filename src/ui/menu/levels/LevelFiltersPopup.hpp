@@ -5,13 +5,14 @@
 #include "LevelListLayer.hpp"
 
 #include <Geode/Geode.hpp>
+#include <std23/move_only_function.h>
 
 namespace globed {
 
 class LevelFiltersPopup : public BasePopup<LevelFiltersPopup, LevelListLayer*> {
 public:
     using Filters = LevelListLayer::Filters;
-    using Callback = std::function<void(Filters)>;
+    using Callback = std23::move_only_function<void(Filters)>;
 
     static const cocos2d::CCSize POPUP_SIZE;
 

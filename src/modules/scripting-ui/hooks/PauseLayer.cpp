@@ -36,7 +36,7 @@ struct GLOBED_MODIFY_ATTR SCPauseLayer : Modify<SCPauseLayer, PauseLayer> {
 
         Build<ButtonSprite>::create("Logs", "bigFont.fnt", "GJ_button_01.png", 0.7f)
             .scale(0.7f)
-            .intoMenuItem([this] {
+            .intoMenuItem(+[] {
                 ScriptLogPanelPopup::create()->show();
             })
             .parent(menu);

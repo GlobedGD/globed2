@@ -215,7 +215,7 @@ CCNode* SetupFireServerPopup::createInputBox(size_t idx, int value) {
     return menu;
 }
 
-CCNode* SetupFireServerPopup::addBaseCheckbox(const char* label, CCMenuItemToggler** store, std::function<void(CCMenuItemToggler*)> callback) {
+CCNode* SetupFireServerPopup::addBaseCheckbox(const char* label, CCMenuItemToggler** store, std23::move_only_function<void(CCMenuItemToggler*)> callback) {
     auto toggler = CCMenuItemExt::createTogglerWithStandardSprites(0.8f, std::move(callback));
 
     *store = toggler;

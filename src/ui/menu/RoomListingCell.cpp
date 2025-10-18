@@ -132,7 +132,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
     auto lockSpr = Build<CCSprite>::create("room-icon-lock.png"_spr)
         .scale(0.38f)
         .opacity(info.hasPassword ? 255 : 80)
-        .intoMenuItem([] {
+        .intoMenuItem(+[] {
             globed::alert("Locked room", "This room requires a password to join.");
         })
         .parent(roomSettingsMenu)
@@ -146,7 +146,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
             cue::rescaleToMatch(s, lockSpr->getScaledContentSize());
         })
         .opacity(info.settings.collision ? 255 : 80)
-        .intoMenuItem([] {
+        .intoMenuItem(+[] {
             globed::alert("Collision",
                 "This room has collision enabled, meaning you can collide with other players.\n\n"
                 "<cy>Note: this means the room has safe mode, making it impossible to make progress on levels.</c>"
@@ -163,7 +163,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
             cue::rescaleToMatch(s, lockSpr->getScaledContentSize());
         })
         .opacity(info.settings.deathlink ? 255 : 80)
-        .intoMenuItem([] {
+        .intoMenuItem(+[] {
             globed::alert("Death Link",
                 "This room has Death Link enabled, which means that if a player dies, everyone in the level dies as well. "
                 "<cy>Originally invented by </c> <cg>Alphalaneous</c>."
@@ -180,7 +180,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
             cue::rescaleToMatch(s, lockSpr->getScaledContentSize());
         })
         .opacity(info.settings.twoPlayerMode ? 255 : 80)
-        .intoMenuItem([] {
+        .intoMenuItem(+[] {
             globed::alert("2 Player",
                 "This room has 2 Player enabled, which means you can play 2-player levels with a remote friend."
             );

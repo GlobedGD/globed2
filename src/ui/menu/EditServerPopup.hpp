@@ -1,11 +1,13 @@
 #pragma once
 #include <ui/BasePopup.hpp>
 
+#include <std23/move_only_function.h>
+
 namespace globed {
 
 class EditServerPopup : public BasePopup<EditServerPopup, bool, const std::string&, const std::string&> {
 public:
-    using Callback = std::function<void(const std::string& name, const std::string& url)>;
+    using Callback = std23::move_only_function<void(const std::string& name, const std::string& url)>;
 
     void setCallback(Callback&& fn);
 

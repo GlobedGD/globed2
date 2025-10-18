@@ -5,6 +5,7 @@
 #include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
+#include <std23/move_only_function.h>
 
 using namespace geode::prelude;
 
@@ -17,7 +18,7 @@ static constexpr float CELL_HEIGHT = 28.f;
 namespace {
 class Cell : public CCMenu {
 public:
-    using Callback = std::function<void(bool)>;
+    using Callback = std23::move_only_function<void(bool)>;
 
     static Cell* create(CStr name, CStr desc, bool value, Callback&& cb) {
         auto ret = new Cell;

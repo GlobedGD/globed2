@@ -6,12 +6,13 @@
 #include <ui/misc/LoadingPopup.hpp>
 
 #include <Geode/Geode.hpp>
+#include <std23/move_only_function.h>
 
 namespace globed {
 
 class ModRoleModifyPopup : public BasePopup<ModRoleModifyPopup, int32_t, std::vector<uint8_t>> {
 public:
-    using Callback = std::function<void()>;
+    using Callback = std23::move_only_function<void()>;
 
     static cocos2d::CCSize POPUP_SIZE;
 

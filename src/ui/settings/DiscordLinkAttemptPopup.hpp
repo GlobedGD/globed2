@@ -2,12 +2,14 @@
 
 #include <ui/BasePopup.hpp>
 
+#include <std23/move_only_function.h>
+
 namespace globed {
 
 class DiscordLinkAttemptPopup : public BasePopup<DiscordLinkAttemptPopup, uint64_t, const std::string&, const std::string&> {
 public:
     static const cocos2d::CCSize POPUP_SIZE;
-    using Callback = std::function<void(bool)>;
+    using Callback = std23::move_only_function<void(bool)>;
 
     void setCallback(Callback&& cb);
 

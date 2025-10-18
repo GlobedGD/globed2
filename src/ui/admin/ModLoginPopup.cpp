@@ -1,6 +1,7 @@
 #include "ModLoginPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <globed/util/FunctionQueue.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
@@ -11,7 +12,7 @@ namespace globed {
 
 const CCSize ModLoginPopup::POPUP_SIZE { 280.f, 130.f };
 
-bool ModLoginPopup::setup(std::function<void()> callback) {
+bool ModLoginPopup::setup(std23::move_only_function<void()> callback) {
     m_callback = std::move(callback);
 
     this->setTitle("Mod Login");
@@ -92,9 +93,7 @@ void ModLoginPopup::wait() {
 void ModLoginPopup::stopWaiting() {
     m_loadPopup->forceClose();
 
-    Loader::get()->queueInMainThread([cb = std::move(m_callback)] {
-        cb();
-    });
+    FunctionQueue::get().queue(std::move(m_callback));
 
     this->onClose(nullptr);
 }

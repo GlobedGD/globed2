@@ -57,7 +57,7 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
 
         Build<CCSprite>::create("icon-players.png"_spr)
             .scale(0.9f)
-            .intoMenuItem([](auto) {
+            .intoMenuItem(+[] {
                 UserListPopup::create()->show();
             })
             .id("btn-open-playerlist"_spr)

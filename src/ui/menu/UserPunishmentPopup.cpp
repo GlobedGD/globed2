@@ -61,7 +61,7 @@ bool UserPunishmentPopup::setup() {
     if (true) {
         Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
             .scale(0.85f)
-            .intoMenuItem([this] {
+            .intoMenuItem(+[] {
                 web::openLinkInBrowser(globed::constant<"discord">());
             })
             .pos(this->fromBottomRight(20.f, 20.f))

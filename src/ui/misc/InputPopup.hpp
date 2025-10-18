@@ -3,6 +3,8 @@
 #include <Geode/ui/TextInput.hpp>
 #include <ui/BasePopup.hpp>
 
+#include <std23/move_only_function.h>
+
 namespace globed {
 
 struct InputPopupOutcome {
@@ -22,14 +24,14 @@ public:
     void setMaxCharCount(size_t length);
     void setPasswordMode(bool password);
     void setDefaultText(const std::string& text);
-    void setCallback(std::function<void(InputPopupOutcome)> callback);
+    void setCallback(std23::move_only_function<void(InputPopupOutcome)> callback);
     void setWidth(float width);
     void show() override;
 
 protected:
     geode::Ref<geode::TextInput> m_input;
     CCMenuItemSpriteExtra* m_submitBtn;
-    std::function<void(InputPopupOutcome)> m_callback;
+    std23::move_only_function<void(InputPopupOutcome)> m_callback;
     cocos2d::CCSize m_mySize{};
     size_t m_maxCharCount = 0;
 

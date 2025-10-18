@@ -31,7 +31,7 @@ bool DiscordLinkPopup::setup() {
 
     m_discordBtn = Build<CCSprite>::create("discord01.png"_spr)
         .with([&](auto spr) { cue::rescaleToMatch(spr, 32.f); })
-        .intoMenuItem([this] {
+        .intoMenuItem(+[] {
             utils::web::openLinkInBrowser(globed::constant<"discord">());
         })
         .pos(this->fromBottomLeft(22.f, 22.f))
@@ -40,7 +40,7 @@ bool DiscordLinkPopup::setup() {
 
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .with([&](auto spr) { cue::rescaleToMatch(spr, 20.f); })
-        .intoMenuItem([this] {
+        .intoMenuItem(+[] {
             globed::alert(
                 "Discord Link",
                 "In this menu you can link your <cb>Discord</c> account to your <cg>Geometry Dash</c> account.\n\n"

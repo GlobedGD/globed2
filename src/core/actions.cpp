@@ -4,6 +4,7 @@
 #include <globed/core/PopupManager.hpp>
 #include <globed/util/gd.hpp>
 #include <globed/util/singleton.hpp>
+#include <globed/util/FunctionQueue.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/hooks/GameManager.hpp>
@@ -32,7 +33,7 @@ void warpToSession(SessionId session, bool openLevel, bool force) {
     auto putOnHold = [&] {
         g_awaitingWarp = session;
 
-        Loader::get()->queueInMainThread([openLevel, force] {
+        FunctionQueue::get().queue([openLevel, force] {
             if (g_awaitingWarp.has_value()) {
                 warpToSession(g_awaitingWarp.value(), openLevel, force);
             }

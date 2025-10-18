@@ -5,6 +5,7 @@
 #include "AudioStream.hpp"
 #include <globed/prelude.hpp>
 
+#include <std23/move_only_function.h>
 #include <asp/sync.hpp>
 #include <asp/thread.hpp>
 #include <fmod.hpp>
@@ -62,8 +63,8 @@ public:
     // start recording the voice and call the callback whenever new data is ready.
     // same rules apply as with `startRecording`, except the callback includes raw PCM samples,
     // and is called much more often.
-    Result<> startRecordingEncoded(std::function<void(const EncodedAudioFrame&)>&& encodedCallback);
-    Result<> startRecordingRaw(std::function<void(const float*, size_t)>&& rawCallback);
+    Result<> startRecordingEncoded(std23::move_only_function<void(const EncodedAudioFrame&)>&& encodedCallback);
+    Result<> startRecordingRaw(std23::move_only_function<void(const float*, size_t)>&& rawCallback);
     // tell the audio thread to stop recording
     void stopRecording();
     // tell the audio thread to stop recording, don't call the callback with leftover data
@@ -120,8 +121,8 @@ private:
     asp::AtomicBool m_recordingPassiveActive = false;
     FMOD::Sound* m_recordSound = nullptr;
     size_t m_recordChunkSize = 0;
-    std::function<void(const EncodedAudioFrame&)> m_callback;
-    std::function<void(const float*, size_t)> m_rawCallback;
+    std23::move_only_function<void(const EncodedAudioFrame&)> m_callback;
+    std23::move_only_function<void(const float*, size_t)> m_rawCallback;
     AudioSampleQueue m_recordQueue;
     unsigned int m_recordLastPosition = 0;
     EncodedAudioFrame m_recordFrame;

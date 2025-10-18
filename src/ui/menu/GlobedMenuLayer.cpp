@@ -567,21 +567,21 @@ void GlobedMenuLayer::initRoomButtons() {
         // global room, show buttons to create / join a room
 
         Build(ButtonSprite::create("Join Room", "bigFont.fnt", "GJ_button_01.png", BtnScale))
-            .intoMenuItem([] {
+            .intoMenuItem(+[] {
                 if (auto p = RoomListingPopup::create()) p->show();
             })
             .scaleMult(1.1f)
             .parent(m_roomButtonsMenu);
 
         Build(ButtonSprite::create("Create Room", "bigFont.fnt", "GJ_button_01.png", BtnScale))
-            .intoMenuItem([] {
+            .intoMenuItem(+[] {
                 CreateRoomPopup::create()->show();
             })
             .scaleMult(1.1f)
             .parent(m_roomButtonsMenu);
     } else {
         Build(ButtonSprite::create("Leave Room", "bigFont.fnt", "GJ_button_01.png", BtnScale))
-            .intoMenuItem([] {
+            .intoMenuItem(+[] {
                 NetworkManagerImpl::get().sendLeaveRoom();
             })
             .scaleMult(1.1f)
@@ -851,7 +851,7 @@ void GlobedMenuLayer::initFarSideButtons() {
 
         auto fbutton = Build<CCSprite>::create("feature01.png"_spr)
             .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
-            .intoMenuItem([](auto self) {
+            .intoMenuItem(+[](CCMenuItemSpriteExtra* self) {
                 FeaturedPopup::create()->show();
 
                 // make it not new

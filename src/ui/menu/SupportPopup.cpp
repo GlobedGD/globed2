@@ -127,7 +127,7 @@ bool SupportPopup::setup(CCSprite* bg) {
     // create kofi btn
 
     Build<ButtonSprite>::create("Open Ko-fi", "goldFont.fnt", "GJ_button_03.png", 1.f)
-        .intoMenuItem([this](auto* o) {
+        .intoMenuItem(+[] {
             geode::utils::web::openLinkInBrowser("https://ko-fi.com/globed");
         })
         .intoNewParent(CCMenu::create())

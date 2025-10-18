@@ -2,12 +2,14 @@
 
 #include <ui/BasePopup.hpp>
 
+#include <std23/move_only_function.h>
+
 namespace globed {
 
 class KeybindSetupPopup : public BasePopup<KeybindSetupPopup, cocos2d::enumKeyCodes> {
 public:
     static const cocos2d::CCSize POPUP_SIZE;
-    using Callback = std::function<void(cocos2d::enumKeyCodes)>;
+    using Callback = std23::move_only_function<void(cocos2d::enumKeyCodes)>;
 
     void setCallback(Callback&& cb);
 

@@ -7,7 +7,7 @@ namespace globed {
 
 ExtendedObjectBase::ExtendedObjectBase() {}
 
-void ExtendedObjectBase::encodePayload(std::function<bool(qn::HeapByteWriter&)>&& writefn) {
+void ExtendedObjectBase::encodePayload(std23::function_ref<bool(qn::HeapByteWriter&)>&& writefn) {
     qn::HeapByteWriter writer;
     writefn(writer);
 

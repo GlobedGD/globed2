@@ -4,13 +4,15 @@
 #include <globed/core/data/SpecialUserData.hpp>
 #include <ui/misc/GradientLabel.hpp>
 
+#include <std23/move_only_function.h>
+
 namespace globed {
 
 class NameLabel : public cocos2d::CCMenu {
 public:
     static NameLabel* create(const std::string& name, const char* font = "chatFont.fnt");
 
-    void makeClickable(std::function<void(CCMenuItemSpriteExtra*)> callback);
+    void makeClickable(std23::move_only_function<void(CCMenuItemSpriteExtra*)> callback);
     void updateName(const std::string& name);
     void updateName(const char* name);
     void updateTeam(size_t idx, cocos2d::ccColor4B color);
@@ -33,7 +35,7 @@ private:
     geode::Ref<cocos2d::CCNode> m_labelContainer = nullptr;
     CCMenuItemSpriteExtra* m_labelButton = nullptr;
     cocos2d::CCNode* m_badgeContainer = nullptr;
-    std::function<void(CCMenuItemSpriteExtra*)> m_callback;
+    std23::move_only_function<void(CCMenuItemSpriteExtra*)> m_callback;
     const char* m_font = nullptr;
     bool m_multipleBadges = false;
     bool m_shadow = true;

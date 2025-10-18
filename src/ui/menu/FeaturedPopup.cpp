@@ -29,7 +29,7 @@ bool FeaturedPopup::setup() {
         .parent(m_mainLayer);
 
     auto infoBtn = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-        .intoMenuItem([](auto) {
+        .intoMenuItem(+[] {
             globed::alert(
                 "Featured Guide",
 

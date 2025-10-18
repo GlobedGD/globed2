@@ -633,7 +633,7 @@ void NetworkManagerImpl::tryAuth() {
         connInfo.m_waitingForArgon = true;
         lock.unlock();
 
-        auto res = argon::startAuth([&](Result<std::string> res) {
+        auto res = argon::startAuth([this](Result<std::string> res) {
             auto lock = m_connInfo.lock();
             (**lock).m_waitingForArgon = false;
             (**lock).startedAuth();
@@ -725,7 +725,7 @@ void NetworkManagerImpl::onCentralDisconnected() {
 
     log::debug("connection to central server lost: {}", message);
 
-    Loader::get()->queueInMainThread([this, showPopup, message = std::move(message)] {
+    FunctionQueue::get().queue([this, showPopup, message = std::move(message)] {
         CoreImpl::get().onServerDisconnected();
 
         if (showPopup) {
@@ -1725,62 +1725,6 @@ void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reaso
             log::warn("Login failed: unknown reason {}", static_cast<int>(reason));
             this->abortConnection(fmt::format("Login failed due to unknown server error: {}", static_cast<int>(reason)));
         } break;
-    }
-}
-
-static Result<> encodeAndSend(
-    qn::Connection& conn,
-    std::function<void(capnp::MallocMessageBuilder&)> func,
-    bool reliable
-) {
-    capnp::MallocMessageBuilder msg;
-    func(msg);
-
-    size_t unpackedSize = capnp::computeSerializedSizeInWords(msg) * 8;
-    qn::HeapByteWriter writer;
-    writer.writeVarUint(unpackedSize).unwrap();
-    auto unpSizeBuf = writer.written();
-
-    kj::VectorOutputStream vos;
-    vos.write(unpSizeBuf.data(), unpSizeBuf.size());
-    capnp::writePackedMessage(vos, msg);
-
-    auto data = std::vector<uint8_t>(vos.getArray().begin(), vos.getArray().end());
-
-    conn.sendData(std::move(data), reliable);
-
-    return Ok();
-}
-
-void NetworkManagerImpl::sendToCentral(std::function<void(CentralMessage::Builder&)> func) {
-    if (!m_centralConn.connected()) {
-        log::warn("Failed to send message: not connected to central server!");
-        return;
-    }
-
-    auto res = encodeAndSend(m_centralConn, [&](capnp::MallocMessageBuilder& msg) {
-        auto root = msg.initRoot<CentralMessage>();
-        func(root);
-    }, true);
-
-    if (!res) {
-        log::warn("Failed to send message to central server: {}", res.unwrapErr());
-    }
-}
-
-void NetworkManagerImpl::sendToGame(std::function<void(GameMessage::Builder&)> func, bool reliable) {
-    if (!m_gameConn.connected()) {
-        log::warn("Failed to send message: not connected to game server!");
-        return;
-    }
-
-    auto res = encodeAndSend(m_gameConn, [&](capnp::MallocMessageBuilder& msg) {
-        auto root = msg.initRoot<GameMessage>();
-        func(root);
-    }, reliable);
-
-    if (!res) {
-        log::warn("Failed to send message to game server: {}", res.unwrapErr());
     }
 }
 

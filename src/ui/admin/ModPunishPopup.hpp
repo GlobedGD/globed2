@@ -8,6 +8,7 @@
 
 #include <asp/time/Duration.hpp>
 #include <Geode/Geode.hpp>
+#include <std23/move_only_function.h>
 
 namespace globed {
 
@@ -16,7 +17,7 @@ class ModUserPopup;
 class ModPunishPopup : public BasePopup<ModPunishPopup, int, UserPunishmentType, std::optional<UserPunishment>> {
 public:
     static const cocos2d::CCSize POPUP_SIZE;
-    using Callback = std::function<void()>;
+    using Callback = std23::move_only_function<void()>;
 
     void setCallback(Callback&& cb);
 

@@ -2,11 +2,13 @@
 
 #include "BaseSettingCell.hpp"
 
+#include <std23/move_only_function.h>
+
 namespace globed {
 
 class ButtonSettingCell : public BaseSettingCell<ButtonSettingCell> {
 public:
-    using Callback = std::function<void()>;
+    using Callback = std23::move_only_function<void()>;
 
     static ButtonSettingCell* create(
         CStr name,

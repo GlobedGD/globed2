@@ -4,6 +4,7 @@
 #include <modules/scripting/objects/FireServerObject.hpp>
 
 #include <Geode/Geode.hpp>
+#include <std23/move_only_function.h>
 
 namespace globed {
 
@@ -33,7 +34,7 @@ private:
 
     FireServerPayload getPayload();
 
-    CCNode* addBaseCheckbox(const char* label, CCMenuItemToggler** store, std::function<void(CCMenuItemToggler*)> callback);
+    CCNode* addBaseCheckbox(const char* label, CCMenuItemToggler** store, std23::move_only_function<void(CCMenuItemToggler*)> callback);
     void setTriggerState(bool spawn, bool touch);
 };
 

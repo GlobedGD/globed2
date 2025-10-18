@@ -54,7 +54,7 @@ bool ModPanelPopup::setup() {
 
     Build<ButtonSprite>::create("Notice", "bigFont.fnt", "GJ_button_01.png", 0.7f)
         .scale(0.9f)
-        .intoMenuItem([this] {
+        .intoMenuItem(+[] {
             ModNoticeSetupPopup::create()->show();
         })
         .scaleMult(1.1f)
@@ -62,7 +62,7 @@ bool ModPanelPopup::setup() {
 
     Build<ButtonSprite>::create("Logs", "bigFont.fnt", "GJ_button_01.png", 0.7f)
         .scale(0.9f)
-        .intoMenuItem([this] {
+        .intoMenuItem(+[] {
             ModAuditLogPopup::create()->show();
         })
         .scaleMult(1.1f)
