@@ -137,7 +137,7 @@ CPMAddPackage(
 )
 
 CPMAddPackage("gh:GlobedGD/server-shared#60ebb1bc")
-CPMAddPackage("gh:dankmeme01/qunet-cpp#dedc5bee")
+CPMAddPackage("gh:dankmeme01/qunet-cpp#934f241a")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b") # TODO: before bumping this, fix NameLabel (and potentially more) where Build(x) is done where x may have a parent sill
 CPMAddPackage("gh:dankmeme01/cue#5ac9f76d")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
