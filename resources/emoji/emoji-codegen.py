@@ -1,5 +1,4 @@
 from pathlib import Path
-import codecs
 import json
 
 data = json.loads((Path(__file__).parent / "emoji-data").read_text())
@@ -22,6 +21,9 @@ for item in data["emojis"]:
 
     names[name] = item["names"]
 
+# Add some custom ones that discord doesn't have yet
+names["1fae9"] = ["face_with_bags_under_eyes", "exhausted_face", "exhausted"]
+
 for name, altnames in names.items():
     print(f'{name}: {", ".join(altnames)}')
 
@@ -37,30 +39,41 @@ print('--------------')
 #     else:
 #         print(f'{cp}: (no name)')
 
-print("----------------")
+# print("----------------")
 
 second_phase = []
 missing = []
 
-for file in Path(__file__).parent.iterdir():
+first_str = ""
+second_str = ""
+
+paths = list(Path(__file__).parent.iterdir())
+paths.sort(key=lambda p: p.name)
+
+for file in paths:
     if not file.name.endswith('.png'):
         continue
 
     cp = file.name[:-4]
-    print(f"        U\"{utf32_to_c(cp)}\"_emoji,")
+    first_str += f"        U\"{utf32_to_c(cp)}\"_emoji,\n"
 
     if cp in names:
         for alt in names[cp]:
-            second_phase.append((alt, cp))
+            second_str += f"        {{ \"{alt}\", u8\"{utf32_to_utf8_c(cp)}\", }},\n"
     else:
-        missing.append(cp)
+        print(f"WARN: Missing names for emoji: {cp}")
 
-print('----------------')
+source_path = Path(__file__).parent.parent.parent / "src" / "ui" / "Emojis.cpp"
+source = source_path.read_text()
 
-for (alt, cp) in second_phase:
-    print(f"        {{ \"{alt}\", u8\"{utf32_to_utf8_c(cp)}\", }},")
+def replace_section(source: str, start_marker: str, end_marker: str, new_content: str) -> str:
+    start_index = source.index(start_marker) + len(start_marker)
+    end_index = source.index(end_marker, start_index)
+    return source[:start_index] + "\n" + new_content + source[end_index:]
 
-print('----------------')
+source = replace_section(source, "// ## BEGIN CODEGEN 1", "// ## END CODEGEN", first_str)
+source = replace_section(source, "// ## BEGIN CODEGEN 2", "// ## END CODEGEN", second_str)
 
-for cp in missing:
-    print(f"Missing names for emoji: {cp}")
+source_path.write_text(source)
+
+print(f"Done! Code written to {source_path}")
