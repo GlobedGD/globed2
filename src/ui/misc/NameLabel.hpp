@@ -18,6 +18,7 @@ public:
     void updateTeam(size_t idx, cocos2d::ccColor4B color);
     void updateNoTeam();
     void updateWithRoles(const SpecialUserData& data);
+    void updateNoRoles();
     void updateOpacity(unsigned char opacity);
     void updateOpacity(float opacity);
     void updateColor(const MultiColor& color);

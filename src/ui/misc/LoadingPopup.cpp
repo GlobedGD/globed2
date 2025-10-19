@@ -12,6 +12,7 @@ bool LoadingPopup::setup() {
     m_circle->setPositionY(35.f);
     m_circle->setScale(0.65f);
     m_circle->fadeIn();
+    this->setClosable(false);
 
     return true;
 }

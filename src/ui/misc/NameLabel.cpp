@@ -164,6 +164,12 @@ void NameLabel::updateWithRoles(const SpecialUserData& data) {
     this->resizeBadgeContainer();
 }
 
+void NameLabel::updateNoRoles() {
+    this->removeAllBadges();
+    this->updateColor({255, 255, 255});
+    this->resizeBadgeContainer();
+}
+
 void NameLabel::addBadge(cocos2d::CCSprite* badge) {
     m_badgeContainer->addChild(badge);
 

@@ -84,7 +84,11 @@ public:
     void softRefresh(const RoomPlayer& rp) {
         if (rp.specialUserData) {
             m_nameLabel->updateWithRoles(*rp.specialUserData);
+        } else {
+            m_nameLabel->updateNoRoles();
         }
+
+        m_leftContainer->updateLayout();
 
         if (rp.session != m_sessionId) {
             m_sessionId = rp.session;
