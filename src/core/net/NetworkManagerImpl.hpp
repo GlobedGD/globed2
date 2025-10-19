@@ -147,6 +147,8 @@ public:
     void sendRequestGlobalPlayerList(const std::string& nameFilter);
     void sendRequestLevelList();
     void sendRequestPlayerCounts(const std::vector<uint64_t>& sessions);
+    void sendRequestPlayerCounts(std::span<const uint64_t> sessions);
+    void sendRequestPlayerCounts(std::span<const SessionId> sessions);
     void sendRequestPlayerCounts(uint64_t session);
     void sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings);
     void sendJoinRoom(uint32_t id, uint32_t passcode = 0);

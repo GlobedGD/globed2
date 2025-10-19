@@ -31,8 +31,8 @@ public:
 
 private:
     GradientLabel* m_label = nullptr;
-    cocos2d::CCLabelBMFont* m_labelShadow = nullptr;
-    cocos2d::CCLabelBMFont* m_teamLabel = nullptr;
+    Label* m_labelShadow = nullptr;
+    Label* m_teamLabel = nullptr;
     geode::Ref<cocos2d::CCNode> m_labelContainer = nullptr;
     CCMenuItemSpriteExtra* m_labelButton = nullptr;
     cocos2d::CCNode* m_badgeContainer = nullptr;

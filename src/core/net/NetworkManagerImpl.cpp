@@ -973,10 +973,18 @@ void NetworkManagerImpl::sendRequestLevelList() {
 }
 
 void NetworkManagerImpl::sendRequestPlayerCounts(const std::vector<uint64_t>& sessions) {
+    return this->sendRequestPlayerCounts(std::span{sessions.data(), sessions.size()});
+}
+
+void NetworkManagerImpl::sendRequestPlayerCounts(std::span<const uint64_t> sessions) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto reqr = msg.initRequestPlayerCounts();
         reqr.setLevels(kj::arrayPtr(sessions.data(), sessions.size()));
     });
+}
+
+void NetworkManagerImpl::sendRequestPlayerCounts(std::span<const SessionId> sessions) {
+    return this->sendRequestPlayerCounts(std::span{(const uint64_t*)sessions.data(), sessions.size()});
 }
 
 void NetworkManagerImpl::sendRequestPlayerCounts(uint64_t session) {

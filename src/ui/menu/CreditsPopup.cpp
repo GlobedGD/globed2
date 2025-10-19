@@ -13,6 +13,10 @@ namespace globed {
 const CCSize CreditsPopup::POPUP_SIZE {380.f, 260.f };
 static constexpr CCSize LIST_SIZE { 340.f, 200.f};
 
+// TODO: credits data
+static const std::vector<CreditsCategory> g_defaultData {
+};
+
 namespace {
 class CreditsPlayerNode : public CCNode {
 public:
@@ -188,9 +192,11 @@ bool CreditsPopup::setup() {
         return ListenerResult::Stop;
     });
 
-    nm.sendFetchCredits();
-
-    // TODO: if not connected, use a cached version?
+    if (nm.isConnected()) {
+        nm.sendFetchCredits();
+    } else {
+        this->onLoaded(g_defaultData);
+    }
 
     return true;
 }

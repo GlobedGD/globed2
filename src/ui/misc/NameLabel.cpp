@@ -53,7 +53,7 @@ void NameLabel::updateName(const char* name) {
             .parent(m_labelContainer)
             .store(m_label);
 
-        Build<CCLabelBMFont>::create("", m_font)
+        Build<Label>::create("", m_font)
             .zOrder(-2)
             .color(0, 0, 0)
             .anchorPoint(0.f, 0.0f)
@@ -109,7 +109,7 @@ void NameLabel::updateTeam(size_t idx, cocos2d::ccColor4B color) {
         }
     } else {
         if (!m_teamLabel) {
-            m_teamLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
+            m_teamLabel = Build<Label>::create("", "bigFont.fnt")
                 .parent(m_badgeContainer);
         }
 
@@ -194,6 +194,10 @@ void NameLabel::resizeBadgeContainer() {
     }
 
     width += (elems - 1) * 3.f;
+
+    if (elems == 0) {
+        width = 0.f;
+    }
 
     m_badgeContainer->setContentWidth(width);
     m_badgeContainer->updateLayout();
