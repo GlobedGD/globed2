@@ -52,6 +52,7 @@ void UserSettingsPopup::addButton(std::string_view key, const char* onSprite, co
                     "Warning",
                     "This setting will make you <cr>invisible to all players</c> until disabled."
                 );
+                btn->toggle(true);
                 return;
             }
 
