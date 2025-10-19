@@ -22,6 +22,7 @@
 #include <ui/menu/SupportPopup.hpp>
 #include <ui/menu/CreditsPopup.hpp>
 #include <ui/menu/FeaturedPopup.hpp>
+#include <ui/menu/UserSettingsPopup.hpp>
 #include <ui/menu/levels/LevelListLayer.hpp>
 #include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
@@ -159,7 +160,7 @@ protected:
 
 // order of buttons in right side menu
 namespace RightBtn {
-    constexpr int Invisibility = 3;
+    constexpr int PrivacySettings = 3;
     constexpr int AdminPanel = 4;
     constexpr int Search = 5;
     constexpr int ClearSearch = 6;
@@ -711,6 +712,18 @@ void GlobedMenuLayer::initSideButtons() {
     }
 
     /// Right side buttons
+
+    // user settings button
+    makeButton(
+        CCSprite::create("privacy-settings.png"_spr),
+        std::nullopt,
+        m_rightSideMenu,
+        RightBtn::PrivacySettings,
+        "btn-privacy-settings",
+        [this] {
+            UserSettingsPopup::create()->show();
+        }
+    );
 
     // mod panel button
     if (NetworkManagerImpl::get().isModerator()) {

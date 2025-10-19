@@ -141,6 +141,7 @@ public:
     // Message sending functions
 
     // Central server
+    void sendUpdateUserSettings();
     void sendRoomStateCheck();
     void sendRequestRoomPlayers(const std::string& nameFilter);
     void sendRequestGlobalPlayerList(const std::string& nameFilter);

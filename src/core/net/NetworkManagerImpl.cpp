@@ -58,6 +58,12 @@ static globed::PlayerIconData gatherIconData() {
     return out;
 }
 
+static void gatherUserSettings(auto&& out) {
+    out.setHideInLevel(globed::setting<bool>("core.user.hide-in-levels"));
+    out.setHideInMenus(globed::setting<bool>("core.user.hide-in-menus"));
+    out.setHideRoles(globed::setting<bool>("core.user.hide-roles"));
+}
+
 static Duration getPingInterval(uint32_t sentPings) {
     switch (sentPings) {
         case 0: return Duration::fromSecs(1);
@@ -68,6 +74,8 @@ static Duration getPingInterval(uint32_t sentPings) {
         default: return Duration::fromSecs(300); // rare, because we already know the average latency
     }
 }
+
+static argon::AccountData g_argonData{};
 
 namespace globed {
 
@@ -364,6 +372,8 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
         return Err("Already connected to central server");
     }
 
+    g_argonData = argon::getGameAccountData();
+
     *m_pendingConnectUrl.lock() = std::string(url);
     m_pendingConnectNotify.notifyOne();
     m_manualDisconnect = false;
@@ -633,7 +643,7 @@ void NetworkManagerImpl::tryAuth() {
         connInfo.m_waitingForArgon = true;
         lock.unlock();
 
-        auto res = argon::startAuth([this](Result<std::string> res) {
+        auto res = argon::startAuthWithAccount(g_argonData, [this](Result<std::string> res) {
             auto lock = m_connInfo.lock();
             (**lock).m_waitingForArgon = false;
             (**lock).startedAuth();
@@ -670,7 +680,7 @@ void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token
             auto uid = this->computeUident(accountId);
             login.setUident(kj::arrayPtr(uid.data(), uid.size()));
         }
-        // TODO: user settings
+        gatherUserSettings(login.initSettings());
 
         switch (kind) {
             case AuthKind::Utoken: {
@@ -827,7 +837,7 @@ void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer) {
         login.setAccountId(GJAccountManager::get()->m_accountID);
         login.setToken(this->getUToken().value_or(""));
         data::encode(gatherIconData(), login.initIcons());
-        // TODO: settings
+        gatherUserSettings(login.initSettings());
 
         if (id.asU64() != 0) {
             login.setSessionId(id);
@@ -922,6 +932,13 @@ void NetworkManagerImpl::sendVoiceData(const EncodedAudioFrame& frame) {
             frames.set(i, kj::arrayPtr(fr.data.get(), fr.size));
         }
     }, false);
+}
+
+void NetworkManagerImpl::sendUpdateUserSettings() {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto update = msg.initUpdateUserSettings();
+        gatherUserSettings(update.initSettings());
+    });
 }
 
 void NetworkManagerImpl::sendRoomStateCheck() {

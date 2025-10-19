@@ -5,6 +5,8 @@
 #include <globed/core/ServerManager.hpp>
 #include <ui/menu/GlobedMenuLayer.hpp>
 
+#include <argon/argon.hpp>
+
 using namespace geode::prelude;
 
 namespace globed {
@@ -23,6 +25,8 @@ static void initiateAutoConnect() {
 
 bool HookedMenuLayer::init() {
     if (!MenuLayer::init()) return false;
+
+    argon::initConfigLock();
 
     this->recreateButton();
 

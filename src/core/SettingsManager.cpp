@@ -61,6 +61,11 @@ SettingsManager::SettingsManager() {
     // Mod settings
     this->registerSetting("core.mod.remember-password", false);
 
+    // User settings (custom UI)
+    this->registerSetting("core.user.hide-in-levels", false);
+    this->registerSetting("core.user.hide-in-menus", false);
+    this->registerSetting("core.user.hide-roles", false);
+
     // Developer settings
     this->registerSetting("core.dev.packet-loss-sim", 0.0f);
     this->registerSetting("core.dev.net-debug-logs", false);
