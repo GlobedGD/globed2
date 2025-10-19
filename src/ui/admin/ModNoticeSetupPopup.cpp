@@ -25,8 +25,8 @@ bool ModNoticeSetupPopup::setup() {
 
     m_messageInput = Build<TextInput>::create(270.f, "Message", "chatFont.fnt")
         .pos(this->fromCenter(0.f, 44.f))
-        .parent(m_mainLayer)
-        ;
+        .parent(m_mainLayer);
+    m_messageInput->setCommonFilter(CommonFilter::Any);
 
     auto checkboxMenu = Build<CCMenu>::create()
         .layout(RowLayout::create()->setAutoScale(false))
