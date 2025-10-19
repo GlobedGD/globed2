@@ -939,6 +939,11 @@ void NetworkManagerImpl::sendUpdateUserSettings() {
         auto update = msg.initUpdateUserSettings();
         gatherUserSettings(update.initSettings());
     });
+
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto update = msg.initUpdateUserSettings();
+        gatherUserSettings(update.initSettings());
+    });
 }
 
 void NetworkManagerImpl::sendRoomStateCheck() {
