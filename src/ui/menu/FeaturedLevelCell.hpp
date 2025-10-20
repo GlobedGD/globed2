@@ -34,6 +34,8 @@ protected:
     void loadLevelsFailed(char const* key, int p1) override;
     void levelLoaded(Result<GJGameLevel*, int> result);
 
+    void requestPlayerCount(float);
+
     Ref<CCMenu> m_menu;
     Ref<CCScale9Sprite> m_bg;
     Ref<CCScale9Sprite> m_loadedBg;

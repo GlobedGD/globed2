@@ -17,6 +17,7 @@ project(globed2 VERSION 1.0.0)
 # Options
 option(GLOBED_VOICE_SUPPORT "Enable voice chat support" ON)
 option(GLOBED_DEBUG "Enable debug mode" OFF)
+option(GLOBED_RELEASE "Enable release mode optimizations" OFF)
 option(GLOBED_OSS_BUILD "Open source build that does not require closed-source dependencies" OFF)
 option(GLOBED_MODULE_GLOBAL_TRIGGERS "Global triggers module" OFF)
 option(GLOBED_MODULE_SCRIPTING "Scripting module" OFF)
@@ -99,6 +100,12 @@ endif()
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 setup_geode_mod(${PROJECT_NAME})
+
+# Setup release stuff
+
+if (GLOBED_RELEASE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
 
 # Setup compile definitions
 

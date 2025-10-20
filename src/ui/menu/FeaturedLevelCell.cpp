@@ -67,6 +67,8 @@ bool FeaturedLevelCell::init() {
         if (!packet.counts.empty()) {
             auto count = packet.counts[0].second;
             this->updatePlayerCount(count);
+        } else {
+            this->updatePlayerCount(0);
         }
 
         return ListenerResult::Continue;
@@ -76,6 +78,9 @@ bool FeaturedLevelCell::init() {
         this->reload(true);
         return ListenerResult::Continue;
     });
+
+    this->schedule(schedule_selector(FeaturedLevelCell::requestPlayerCount), 5.f);
+    this->requestPlayerCount(0.f);
 
     return true;
 }
@@ -88,8 +93,6 @@ void FeaturedLevelCell::createCell() {
     m_loadedContainer->setVisible(true);
     m_loadedBg->setVisible(true);
     m_bg->setVisible(false);
-
-    NetworkManagerImpl::get().sendRequestPlayerCounts(RoomManager::get().makeSessionId(m_level->m_levelID));
 
     Build<CCMenu>::create()
         .zOrder(6)
@@ -207,6 +210,12 @@ void FeaturedLevelCell::createCell() {
     this->updatePlayerCount(0);
 }
 
+void FeaturedLevelCell::requestPlayerCount(float) {
+    if (!m_level || m_level->m_levelID <= 0) return;
+
+    NetworkManagerImpl::get().sendRequestPlayerCounts(RoomManager::get().makeSessionId(m_level->m_levelID));
+}
+
 void FeaturedLevelCell::updatePlayerCount(uint16_t count) {
     m_playerCountLabel->setString(fmt::format("{}", count));
 
@@ -218,11 +227,9 @@ void FeaturedLevelCell::updatePlayerCount(uint16_t count) {
         m_playerCountIcon->getScaledContentWidth()
     );
     m_playerCountContainer->updateLayout();
-    log::debug("Container: {}", m_playerCountContainer);
     m_playersBg = cue::attachBackground(m_playerCountContainer, cue::BackgroundOptions{
         .sidePadding = 6.f,
     });
-    log::debug("Bg: {}", m_playersBg);
 }
 
 static Ref<GJGameLevel> g_cachedLevel;

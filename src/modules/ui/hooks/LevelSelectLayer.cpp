@@ -3,6 +3,7 @@
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/actions.hpp>
 #include <globed/util/FunctionQueue.hpp>
+#include <modules/ui/UIModule.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
 #include <Geode/Geode.hpp>
@@ -86,6 +87,13 @@ struct GLOBED_MODIFY_ATTR HookedLevelSelectLayer : geode::Modify<HookedLevelSele
         std::unordered_map<int, uint16_t> m_levels;
         std::optional<MessageListener<msg::PlayerCountsMessage>> m_listener;
     };
+
+    static void onModify(auto& self) {
+        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
+            "LevelSelectLayer::init",
+            "LevelSelectLayer::updatePageWithObject",
+        );
+    }
 
     $override
     bool init(int p0) {
