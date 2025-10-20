@@ -16,6 +16,10 @@ struct GLOBED_MODIFY_ATTR HookedLoadingLayer : Modify<HookedLoadingLayer, Loadin
         SystemTime m_startedAt;
     };
 
+    static void onModify(auto& self) {
+        (void) self.setHookPriority("LoadingLayer::loadAssets", -100).unwrap();
+    }
+
     // Hook loadAssets to intercept the final load step (14), to allow us to preload icons and load modules
     $override
     void loadAssets() {

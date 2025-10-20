@@ -461,6 +461,7 @@ void PreloadManager::enterContext(PreloadContext context) {
 
     // if we are reloading textures, everything must be reset
     if (context == PreloadContext::Reloading) {
+        log::info("PreloadManager: resetting state due to texture reload");
         m_iconsLoaded = false;
         m_deathEffectsLoaded = false;
         m_loadedFrames.clear();
