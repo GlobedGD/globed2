@@ -56,6 +56,7 @@ struct RoomStateMessage {
     int32_t roomOwner;
     std::string roomName;
     std::vector<RoomPlayer> players;
+    uint32_t playerCount;
     RoomSettings settings;
     std::vector<RoomTeam> teams;
     uint32_t passcode;

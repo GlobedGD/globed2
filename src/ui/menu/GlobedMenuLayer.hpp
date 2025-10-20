@@ -60,8 +60,8 @@ private:
     void onEnter() override;
     bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
 
-    void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
-    void updateRoom(const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings);
+    void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings);
+    void updateRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings);
     void updatePlayerList(const std::vector<RoomPlayer>& players);
     bool trySoftRefresh(const std::vector<RoomPlayer>& players);
     void initRoomButtons();

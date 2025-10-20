@@ -377,9 +377,9 @@ bool GlobedMenuLayer::init() {
 
     m_roomStateListener = nm.listen<msg::RoomStateMessage>([this](const auto& msg) {
         if (msg.roomId != m_roomId) {
-            this->initNewRoom(msg.roomId, msg.roomName, msg.players, msg.settings);
+            this->initNewRoom(msg.roomId, msg.roomName, msg.players, msg.playerCount, msg.settings);
         } else {
-            this->updateRoom(msg.roomName, msg.players, msg.settings);
+            this->updateRoom(msg.roomId, msg.roomName, msg.players, msg.playerCount, msg.settings);
         }
 
         return ListenerResult::Continue;
@@ -399,16 +399,23 @@ bool GlobedMenuLayer::init() {
     return true;
 }
 
-void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings) {
+void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings) {
     m_roomId = id;
-    m_roomNameLabel->setString(fmt::format("{} ({})", name, id).c_str());
 
-    this->updateRoom(name, players, settings);
+    if (id != 0) {
+        m_roomNameLabel->setString(fmt::format("{} ({})", name, id).c_str());
+    }
+
+    this->updateRoom(id, name, players, playerCount, settings);
     this->initRoomButtons();
     this->initSideButtons();
 }
 
-void GlobedMenuLayer::updateRoom(const std::string& name, const std::vector<RoomPlayer>& players, const RoomSettings& settings) {
+void GlobedMenuLayer::updateRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings) {
+    if (id == 0) {
+        m_roomNameLabel->setString(fmt::format("{} ({} {})", name, playerCount, playerCount == 1 ? "player" : "players").c_str());
+    }
+
     this->updatePlayerList(players);
 }
 

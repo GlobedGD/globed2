@@ -427,6 +427,7 @@ $implDecode(msg::RoomStateMessage, main::RoomStateMessage::Reader& reader) {
     out.roomOwner = reader.getRoomOwner();
     out.roomName = reader.getRoomName();
     out.passcode = reader.getPasscode();
+    out.playerCount = reader.getPlayerCount();
 
     auto players = reader.getPlayers();
     out.players.reserve(players.size());
