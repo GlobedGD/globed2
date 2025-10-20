@@ -31,7 +31,8 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.player.dual-name", true);
     this->registerSetting("core.player.name-opacity", 1.0f);
     this->registerSetting("core.player.force-visibility", false);
-    this->registerSetting("core.player.hide-nearby", false);
+    this->registerSetting("core.player.hide-nearby-classic", false);
+    this->registerSetting("core.player.hide-nearby-plat", false);
     this->registerSetting("core.player.hide-practicing", false);
     this->registerSetting("core.player.status-icons", true);
     this->registerSetting("core.player.rotate-names", true);

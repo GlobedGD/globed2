@@ -54,7 +54,8 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.player.dual-name", "Player Dual Names", "");
     this->addSetting<FloatSettingCell>("core.player.name-opacity", "Name Opacity", "");
     this->addSetting<BoolSettingCell>("core.player.force-visibility", "Force Visibility", "");
-    this->addSetting<BoolSettingCell>("core.player.hide-nearby", "Hide Nearby Players", "");
+    this->addSetting<BoolSettingCell>("core.player.hide-nearby-classic", "Hide Nearby (Classic)", "");
+    this->addSetting<BoolSettingCell>("core.player.hide-nearby-plat", "Hide Nearby (Plat)", "");
     this->addSetting<BoolSettingCell>("core.player.hide-practicing", "Hide Practicing Players", "");
     this->addSetting<BoolSettingCell>("core.player.status-icons", "Show Status Icons", "");
     this->addSetting<BoolSettingCell>("core.player.rotate-names", "Rotate Names", "");

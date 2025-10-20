@@ -26,6 +26,10 @@ static inline bool lerpDebug() {
 }
 #endif
 
+static inline bool hideNearby(GJBaseGameLayer* gjbgl) {
+    return setting<bool>(gjbgl->m_level->isPlatformer() ? "core.player.hide-nearby-plat" : "core.player.hide-nearby-classic");
+}
+
 bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {
     if (!PlayerObject::init(1, 1, gameLayer, gameLayer->m_objectLayer, gameLayer->m_isEditor)) {
         return false;
@@ -208,7 +212,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         m_prevMode = data.iconType;
     }
 
-    if ((switchedMode || (isNearby && setting<bool>("core.player.hide-nearby"))) && !updatedOpacity) {
+    if ((switchedMode || (isNearby && hideNearby(*gjbgl))) && !updatedOpacity) {
         this->updateOpacity();
         updatedOpacity = true;
     }
@@ -335,9 +339,9 @@ PlayerDisplayData& VisualPlayer::displayData() {
 void VisualPlayer::updateOpacity() {
     float mult = 1.f;
 
-    bool hideNearby = setting<bool>("core.player.hide-nearby");
+    bool hideNearby_ = hideNearby(GlobedGJBGL::get());
 
-    if (hideNearby) {
+    if (hideNearby_) {
         // calculate distance
         auto p1pos = m_gameLayer->m_player1->getPosition();
         auto p2pos = m_gameLayer->m_player2->getPosition();
@@ -366,7 +370,7 @@ void VisualPlayer::updateOpacity() {
     }
 
     // set name opacity as well if hide nearby is enabled
-    if (hideNearby) {
+    if (hideNearby_) {
         m_nameLabel->updateOpacity(opacity);
     }
 }
