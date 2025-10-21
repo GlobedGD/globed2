@@ -148,6 +148,7 @@ private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);
     void onVoiceDataReceived(const msg::VoiceBroadcastMessage& message);
     float calculateVolumeFor(int playerId);
+    void updateProximityVolume(int playerId);
 };
 
 }

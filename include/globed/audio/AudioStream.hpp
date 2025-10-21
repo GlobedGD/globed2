@@ -5,6 +5,7 @@
 #include "AudioSampleQueue.hpp"
 #include "EncodedAudioFrame.hpp"
 #include "VolumeEstimator.hpp"
+#include "VolumeLayer.hpp"
 
 #include <asp/sync.hpp>
 #include <asp/time/Instant.hpp>
@@ -31,8 +32,8 @@ public:
     void writeData(const float* pcm, size_t samples);
 
     // set the volume of the stream (0.0f - 1.0f, beyond 1.0f amplifies)
-    void setVolume(float volume, float globalMult);
-    float getVolume();
+    void setUserVolume(float volume, VolumeLayer globalLayer = {});
+    float getUserVolume();
 
     void updateEstimator(float dt);
     // get how loud the sound is being played
@@ -50,8 +51,8 @@ private:
     AudioDecoder m_decoder;
     asp::Mutex<VolumeEstimator> m_estimator;
     asp::time::Instant m_lastPlaybackTime;
-    float m_volume = 0.f;
-    float m_actualVolume = 0.f;
+    VolumeLayer m_volume;
+    VolumeLayer m_actualVolume;
 };
 
 }

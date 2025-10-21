@@ -67,6 +67,11 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.audio.playback-volume", 1.f);
     this->registerLimits("core.audio.playback-volume", 0.f, 2.f);
 
+    this->registerSetting("core.audio.voice-proximity", true);
+    this->registerSetting("core.audio.classic-proximity", false);
+    this->registerSetting("core.audio.deafen-notification", false); // TODO: unimpl
+    this->registerSetting("core.audio.only-friends", false); // TODO: unimpl
+
     // Mod settings
     this->registerSetting("core.mod.remember-password", false);
 

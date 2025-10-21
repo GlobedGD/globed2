@@ -166,6 +166,11 @@ void GlobedGJBGL::setupAudio() {
         .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
         .anchorPoint(1.f, 0.f)
         .collect();
+
+    // enable voice proximity?
+    m_fields->m_isVoiceProximity = m_level->isPlatformer()
+        ? globed::setting<bool>("core.audio.voice-proximity")
+        : globed::setting<bool>("core.audio.classic-proximity");
 }
 
 void GlobedGJBGL::setupUpdateLoop() {
@@ -349,6 +354,11 @@ void GlobedGJBGL::selUpdate(float tsdt) {
             } else {
                 log::debug("player {} has unknown team", playerId);
             }
+        }
+
+        // update voice proximity
+        if (fields.m_isVoiceProximity) {
+            this->updateProximityVolume(playerId);
         }
     }
 
@@ -876,7 +886,7 @@ float GlobedGJBGL::calculateVolumeFor(int playerId) {
     auto& am = AudioManager::get();
 
     if (am.getDeafen() || !fields.m_isVoiceProximity) {
-        return globed::setting<float>("core.audio.playback-volume");
+        return 1.f;
     }
 
     if (!fields.m_interpolator.hasPlayer(playerId)) {
@@ -885,15 +895,17 @@ float GlobedGJBGL::calculateVolumeFor(int playerId) {
 
     OutFlags flags;
     auto& vstate = fields.m_interpolator.getPlayerState(playerId, flags);
-
-    float distance = ccpDistance(m_player1->getPosition(), vstate.player1->position);
-    float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
     if (vstate.isInEditor) {
-        volume = 1.f;
+        return 1.f;
     }
 
-    volume *= globed::setting<float>("core.audio.playback-volume");
-    return volume;
+    float distance = ccpDistance(m_player1->getPosition(), vstate.player1->position);
+    return 1.25f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
+}
+
+void GlobedGJBGL::updateProximityVolume(int playerId) {
+    float vol = this->calculateVolumeFor(playerId);
+    AudioManager::get().setStreamVolume(playerId, vol);
 }
 
 }

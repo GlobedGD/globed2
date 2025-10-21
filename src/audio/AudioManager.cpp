@@ -423,7 +423,7 @@ float AudioManager::getStreamVolume(int streamId) {
         return 0.0f;
     }
 
-    return it->second->getVolume();
+    return it->second->getUserVolume();
 }
 
 float AudioManager::getStreamLoudness(int streamId) {
@@ -436,17 +436,15 @@ float AudioManager::getStreamLoudness(int streamId) {
 
 void AudioManager::setStreamVolume(int streamId, float volume) {
     auto it = m_playbackStreams.find(streamId);
+
     if (it != m_playbackStreams.end()) {
-        it->second->setVolume(volume, m_deafen ? 0.f : m_playbackVolume);
+        it->second->setUserVolume(volume, m_globalPlaybackLayer);
     }
 }
 
 void AudioManager::setGlobalPlaybackVolume(float volume) {
-    m_playbackVolume = volume;
-
-    for (auto& [id, stream] : m_playbackStreams) {
-        stream->setVolume(stream->getVolume(), m_deafen ? 0.f : volume);
-    }
+    m_playbackLayer = volume;
+    this->updatePlaybackVolume();
 }
 
 bool AudioManager::isStreamActive(int streamId) {
@@ -456,15 +454,19 @@ bool AudioManager::isStreamActive(int streamId) {
 
 void AudioManager::setDeafen(bool deafen) {
     m_deafen = deafen;
-    float pb = deafen ? 0.0f : m_playbackVolume;
-
-    for (auto& [id, stream] : m_playbackStreams) {
-        stream->setVolume(stream->getVolume(), pb);
-    }
+    this->updatePlaybackVolume();
 }
 
 bool AudioManager::getDeafen() {
     return m_deafen;
+}
+
+void AudioManager::updatePlaybackVolume() {
+    m_globalPlaybackLayer = m_playbackLayer * (m_deafen ? 0.f : 1.f);
+
+    for (auto& [id, stream] : m_playbackStreams) {
+        stream->setUserVolume(stream->getUserVolume(), m_globalPlaybackLayer);
+    }
 }
 
 // Thread stuff

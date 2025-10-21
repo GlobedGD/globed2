@@ -144,17 +144,17 @@ void AudioStream::writeData(const float* pcm, size_t samples) {
     m_queue.lock()->writeData(pcm, samples);
 }
 
-void AudioStream::setVolume(float volume, float globalMult) {
+void AudioStream::setUserVolume(float volume, VolumeLayer globalLayer) {
     m_volume = volume;
-    m_actualVolume = volume * globalMult;
+    m_actualVolume = m_volume * globalLayer;
 
     if (m_channel) {
-        m_channel->setVolume(m_actualVolume);
+        m_channel->setVolume(m_actualVolume.volume);
     }
 }
 
-float AudioStream::getVolume() {
-    return m_volume;
+float AudioStream::getUserVolume() {
+    return m_volume.volume;
 }
 
 void AudioStream::updateEstimator(float dt) {
@@ -162,7 +162,7 @@ void AudioStream::updateEstimator(float dt) {
 }
 
 float AudioStream::getLoudness() {
-    return m_estimator.lock()->getVolume() * m_volume;
+    return m_actualVolume.apply(m_estimator.lock()->getVolume());
 }
 
 Duration AudioStream::sinceLastPlayback() {

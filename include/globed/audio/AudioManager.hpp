@@ -148,10 +148,12 @@ private:
 
     /* playback */
     std::unordered_map<int, std::unique_ptr<AudioStream>> m_playbackStreams;
-    float m_playbackVolume = 1.0f;
+    VolumeLayer m_playbackLayer;
     bool m_deafen = false;
+    VolumeLayer m_globalPlaybackLayer;
 
     AudioStream* preparePlaybackStream(int id);
+    void updatePlaybackVolume();
 };
 
 }
