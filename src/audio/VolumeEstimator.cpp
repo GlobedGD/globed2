@@ -23,6 +23,8 @@ void VolumeEstimator::feedData(const float* pcm, size_t samples) {
 }
 
 static float calculatePcmVolume(const float* pcm, size_t samples) {
+    if (samples == 0) return 0.f;
+
     double sum = asp::iter::from(pcm, samples).map([](float v) { return v * v; }).sum();
 
     return static_cast<float>(sqrt(sum / (double)samples));
@@ -52,11 +54,12 @@ void VolumeEstimator::update(float dt) {
     }
 
     float newVolume = calculatePcmVolume(buf, needed);
-    m_volume = qn::exponentialMovingAverage(m_volume, newVolume, 0.2);
+    m_emaVolume = qn::exponentialMovingAverage(m_emaVolume, newVolume, 0.2);
+    m_normalizedVolume = std::powf(std::clamp(m_emaVolume / 0.25f, 0.f, 1.f), 0.5f);
 }
 
 float VolumeEstimator::getVolume() {
-    return m_volume;
+    return m_normalizedVolume;
 }
 
 }

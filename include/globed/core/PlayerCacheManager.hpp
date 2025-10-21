@@ -14,6 +14,7 @@ public:
     void remove(int accountId);
 
     std::optional<PlayerDisplayData> get(int accountId);
+    PlayerDisplayData getOrDefault(int accountId);
     bool has(int accountId);
     bool hasInLayer1(int accountId);
 

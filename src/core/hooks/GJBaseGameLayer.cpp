@@ -21,6 +21,9 @@ using namespace asp::time;
 
 // TODO: check m_active in these hooks, same for playlayer and lel?
 
+constexpr float VOICE_OVERLAY_PAD_X = 5.f;
+constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
+
 namespace {
 
 class CustomSchedule : public CCObject {
@@ -138,7 +141,14 @@ void GlobedGJBGL::setupAudio() {
     }
 #endif
 
-    // TODO: setup voice overlay here..
+    auto winSize = CCDirector::get()->getWinSize();
+
+    m_fields->m_voiceOverlay = Build<VoiceOverlay>::create()
+        .parent(m_uiLayer)
+        .visible(globed::setting<bool>("core.level.voice-overlay"))
+        .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
+        .anchorPoint(1.f, 0.f)
+        .collect();
 }
 
 void GlobedGJBGL::setupUpdateLoop() {

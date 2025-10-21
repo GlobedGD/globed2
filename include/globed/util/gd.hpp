@@ -1,5 +1,7 @@
 #pragma once
 
+#include <globed/core/data/PlayerIconData.hpp>
+
 #include <Geode/Geode.hpp>
 #include <cue/PlayerIcon.hpp>
 
@@ -63,5 +65,6 @@ std::optional<Difficulty> difficultyFromString(std::string_view diff);
 Difficulty calcLevelDifficulty(GJGameLevel* level);
 
 cue::Icons getPlayerIcons();
+cue::Icons convertPlayerIcons(const PlayerIconData& data);
 
 }

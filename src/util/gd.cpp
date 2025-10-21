@@ -179,4 +179,14 @@ cue::Icons getPlayerIcons() {
     };
 }
 
+cue::Icons convertPlayerIcons(const PlayerIconData& data) {
+    return cue::Icons {
+        .type = IconType::Cube,
+        .id = data.cube,
+        .color1 = data.color1.asIdx(),
+        .color2 = data.color2.asIdx(),
+        .glowColor = data.glowColor.asIdx(),
+    };
+}
+
 }

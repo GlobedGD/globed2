@@ -1,5 +1,6 @@
 #include "LinkRequestPopup.hpp"
 #include <globed/core/PopupManager.hpp>
+#include <globed/util/gd.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <modules/two-player/TwoPlayerModule.hpp>
 
@@ -33,12 +34,7 @@ bool LinkRequestPopup::setup(int accountId, UserListPopup* popup) {
     // draw an icon
     cue::Icons icons{};
     if (rp) {
-        auto& data = rp->displayData().icons;
-        icons.type = IconType::Cube;
-        icons.id = data.cube;
-        icons.color1 = data.color1.asIdx();
-        icons.color2 = data.color2.asIdx();
-        icons.glowColor = data.glowColor.asIdx();
+        icons = convertPlayerIcons(rp->displayData().icons);
     }
 
     Build<cue::PlayerIcon>::create(icons)

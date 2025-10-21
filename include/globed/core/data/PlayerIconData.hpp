@@ -8,7 +8,6 @@ constexpr uint16_t NO_GLOW = 65535;
 constexpr uint8_t NO_TRAIL = 255;
 constexpr uint8_t DEFAULT_DEATH = 1;
 
-
 struct PlayerIconData {
     int16_t cube;
     int16_t ship;

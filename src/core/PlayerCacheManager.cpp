@@ -32,6 +32,15 @@ std::optional<PlayerDisplayData> PlayerCacheManager::get(int accountId) {
     return std::nullopt;
 }
 
+PlayerDisplayData PlayerCacheManager::getOrDefault(int accountId) {
+    auto dataOpt = this->get(accountId);
+    if (dataOpt.has_value()) {
+        return dataOpt.value();
+    }
+
+    return DEFAULT_PLAYER_DATA;
+}
+
 bool PlayerCacheManager::has(int accountId) {
     return m_layer1.contains(accountId) || m_layer2.contains(accountId);
 }

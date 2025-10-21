@@ -25,7 +25,8 @@ public:
 private:
     static constexpr float BUFFER_SIZE = 1.0f;
 
-    float m_volume;
+    float m_emaVolume = 0.f;
+    float m_normalizedVolume = 0.f;
     size_t m_sampleRate;
     AudioSampleQueue m_sampleQueue;
 };

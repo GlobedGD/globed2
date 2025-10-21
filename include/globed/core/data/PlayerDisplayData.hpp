@@ -13,4 +13,12 @@ struct PlayerDisplayData {
     std::optional<SpecialUserData> specialUserData;
 };
 
+static inline const PlayerDisplayData DEFAULT_PLAYER_DATA = {
+    .accountId = 0,
+    .userId = 0,
+    .username = "Player",
+    .icons = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 3, NO_GLOW, 1, NO_TRAIL, NO_TRAIL }
+};
+
+
 }

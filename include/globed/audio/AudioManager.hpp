@@ -6,6 +6,7 @@
 #include <globed/prelude.hpp>
 
 #include <std23/move_only_function.h>
+#include <std23/function_ref.h>
 #include <asp/sync.hpp>
 #include <asp/thread.hpp>
 #include <fmod.hpp>
@@ -80,14 +81,18 @@ public:
 
     /* Playback API */
 
+    void forEachStream(std23::function_ref<void(int, AudioStream&)> func);
+
     Result<> playFrameStreamed(int streamId, const EncodedAudioFrame& frame);
     void stopAllOutputStreams();
     void stopOutputStream(int streamId);
+
+    bool isStreamActive(int streamId);
     float getStreamVolume(int streamId);
     float getStreamLoudness(int streamId);
     void setStreamVolume(int streamId, float volume);
+
     void setGlobalPlaybackVolume(float volume);
-    bool isStreamActive(int streamId);
     void setDeafen(bool deafen);
     bool getDeafen();
 

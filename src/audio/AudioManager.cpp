@@ -55,6 +55,11 @@ AudioManager::AudioManager()
 
 AudioManager::~AudioManager() {
     m_thread.stopAndWait();
+
+    for (auto& [_, stream] : m_playbackStreams) {
+        // crash fix :p
+        std::ignore = stream.release();
+    }
 }
 
 void AudioManager::preInitialize() {
@@ -370,6 +375,12 @@ FMOD::System* AudioManager::getSystem() {
     }
 
     return m_system;
+}
+
+void AudioManager::forEachStream(std23::function_ref<void(int, AudioStream&)> func) {
+    for (auto& [id, stream] : m_playbackStreams) {
+        func(id, *stream);
+    }
 }
 
 Result<> AudioManager::playFrameStreamed(int streamId, const EncodedAudioFrame& frame) {

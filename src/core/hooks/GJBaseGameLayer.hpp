@@ -5,6 +5,7 @@
 #include <globed/core/game/RemotePlayer.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
+#include <ui/game/VoiceOverlay.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/game/SpeedTracker.hpp>
 
@@ -64,9 +65,10 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
 
         CCNode* m_playerNode = nullptr;
         Ref<CCNode> m_progressBarContainer;
-        ProgressIcon* m_selfProgressIcon = nullptr;
+        Ref<ProgressIcon> m_selfProgressIcon;
         Ref<PlayerStatusIcons> m_selfStatusIcons;
         Ref<NameLabel> m_selfNameLabel;
+        Ref<VoiceOverlay> m_voiceOverlay;
     };
 
     // Setup functions
