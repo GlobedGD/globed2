@@ -36,7 +36,6 @@ void VoiceOverlay::update(float dt) {
 }
 
 void VoiceOverlay::updateSoft() {
-
 }
 
 void VoiceOverlay::updateStream(int id, bool starving, float volume, float loudness) {

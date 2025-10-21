@@ -1,8 +1,10 @@
 #pragma once
 
 #include <globed/util/singleton.hpp>
+#include <globed/util/assert.hpp>
 #include "ValueManager.hpp"
 
+#include <Geode/utils/terminate.hpp>
 #include <std23/move_only_function.h>
 
 namespace globed {
@@ -29,6 +31,12 @@ public:
     size_t operator()(uint64_t key) const {
         return key;
     }
+};
+
+struct SaveSlotMeta {
+    size_t id;
+    std::string name;
+    bool active;
 };
 
 class SettingsManager : public SingletonBase<SettingsManager> {
@@ -60,7 +68,7 @@ public:
             return *res;
         } else {
             // no default either, this is a serious error
-            throw std::runtime_error(fmt::format("setting with hash {} has no default value or the default value is of an invalid type", hash));
+            geode::utils::terminate(fmt::format("setting with hash {} has no default value or the default value is of an invalid type", hash));
         }
     }
 
@@ -68,7 +76,7 @@ public:
     void setSettingRaw(uint64_t hash, T value) {
         if (!this->hasSetting(hash)) {
             // internal error, means we used a wrong id somewhere
-            throw std::runtime_error(fmt::format("setting not found with hash {}", hash));
+            geode::utils::terminate(fmt::format("setting not found with hash {}", hash));
         }
 
         matjson::Value val = value;
@@ -81,7 +89,15 @@ public:
         }
 
         m_settings[hash] = val;
-        ValueManager::get().set(m_fullKeys[hash], std::move(val));
+        // ValueManager::get().set(m_fullKeys[hash], std::move(val));
+
+        if (m_activeSaveSlot >= m_saveSlots.size()) {
+            GLOBED_ASSERT(m_activeSaveSlot == 0);
+            m_saveSlots.emplace_back(matjson::Value::object());
+        }
+
+        auto& slot = m_saveSlots[m_activeSaveSlot];
+        slot.set(m_fullKeys[hash], std::move(val));
     }
 
     std::optional<std::pair<matjson::Value, matjson::Value>> getLimits(std::string_view key);
@@ -106,6 +122,17 @@ public:
         matjson::Value max
     );
 
+    void commitSlotsToDisk();
+
+    void reloadSetting(std::string_view fullKey);
+
+    std::vector<SaveSlotMeta> getSaveSlots();
+    void renameSaveSlot(size_t id, std::string_view newName);
+    void deleteSaveSlot(size_t id);
+    void createSaveSlot();
+    void switchToSaveSlot(size_t id);
+    inline size_t getActiveSaveSlot() const { return m_activeSaveSlot; }
+
 private:
     friend class SingletonBase;
     friend class CoreImpl;
@@ -119,9 +146,19 @@ private:
     std::unordered_map<uint64_t, Validator, NoHashHasher<uint64_t>> m_validators;
     std::unordered_map<uint64_t, std::pair<matjson::Value, matjson::Value>, NoHashHasher<uint64_t>> m_limits;
 
+    std::filesystem::path m_slotDir;
+    std::vector<matjson::Value> m_saveSlots;
+    size_t m_activeSaveSlot = 0;
+
     SettingsManager();
 
     void freeze();
+
+    void loadSaveSlots();
+    void reloadFromSlot();
+    void migrateOldSettings();
+
+    std::optional<matjson::Value> findSettingInSaveSlot(std::string_view key);
 
     // fnv-1a hash with no extra operations
     static uint64_t finalKeyHash(std::string_view key);

@@ -1,12 +1,17 @@
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/ValueManager.hpp>
+
 #include <fmt/format.h>
+#include <asp/fs.hpp>
+#include <asp/iter.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
 SettingsManager::SettingsManager() {
+    this->loadSaveSlots();
+
     // Preload
     this->registerSetting("core.preload.enabled", true);
     this->registerSetting("core.preload.defer", false);
@@ -86,8 +91,124 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.dev.fake-data", false);
 }
 
+void SettingsManager::loadSaveSlots() {
+    (void) Mod::get()->loadData();
+
+    m_slotDir = Mod::get()->getSaveDir() / "save-slots";
+
+    if (!asp::fs::exists(m_slotDir)) {
+        auto res = asp::fs::createDirAll(m_slotDir);
+        if (!res) {
+            log::error("Failed to create save slots directory at {}: {}", m_slotDir, res.unwrapErr().message());
+            log::warn("Will be using root of the save directory for storage");
+            m_slotDir = Mod::get()->getSaveDir();
+        }
+    }
+
+    for (size_t i = 0;; i++) {
+        auto slotp = m_slotDir / fmt::format("{}.json", i);
+        if (!asp::fs::exists(slotp)) {
+            break;
+        }
+
+        auto res = geode::utils::file::readJson(slotp);
+        if (!res) {
+            log::error("Failed to read save slot {}: {}", i, res.unwrapErr());
+            continue;
+        }
+
+        m_saveSlots.push_back(std::move(*res));
+    }
+
+    log::debug("Loaded {} save slots", m_saveSlots.size());
+
+    auto& container = Mod::get()->getSaveContainer();
+    m_activeSaveSlot = container.get("core.settingsv3.save-slot").andThen([](auto& v) {
+        return v.template as<size_t>();
+    }).unwrapOr(-1);
+
+    if (m_activeSaveSlot == (size_t)-1) {
+        this->migrateOldSettings();
+    }
+
+    if (m_activeSaveSlot >= m_saveSlots.size()) {
+        m_activeSaveSlot = 0;
+    }
+
+    globed::setValue("core.settingsv3.save-slot", m_activeSaveSlot);
+}
+
+void SettingsManager::migrateOldSettings() {
+    // TODO
+}
+
 void SettingsManager::freeze() {
     m_frozen = true;
+}
+
+void SettingsManager::commitSlotsToDisk() {
+    for (size_t i = 0; i < m_saveSlots.size(); i++) {
+        auto slotp = m_slotDir / fmt::format("{}.json", i);
+        auto res = geode::utils::file::writeStringSafe(slotp, m_saveSlots[i].dump());
+
+        if (!res) {
+            log::error("Failed to write save slot {}: {}", i, res.unwrapErr());
+        }
+    }
+}
+
+std::vector<SaveSlotMeta> SettingsManager::getSaveSlots() {
+    return asp::iter::from(m_saveSlots).enumerate().map([&](const auto& slot) {
+        SaveSlotMeta meta;
+        meta.id = slot.first;
+        meta.name = slot.second.get("_saveslot-name").andThen([](auto& v) {
+            return v.template as<std::string>();
+        }).unwrapOr(fmt::format("Slot {}", slot.first + 1));
+        meta.active = (slot.first == m_activeSaveSlot);
+        return meta;
+    }).collect();
+}
+
+void SettingsManager::renameSaveSlot(size_t id, std::string_view newName) {
+    if (id < m_saveSlots.size()) {
+        m_saveSlots[id].set("_saveslot-name", std::string(newName));
+    }
+}
+
+void SettingsManager::deleteSaveSlot(size_t id) {
+    if (id >= m_saveSlots.size() || id == m_activeSaveSlot) {
+        return;
+    }
+
+    m_saveSlots.erase(m_saveSlots.begin() + id);
+
+    // adjust active slot if needed
+    if (m_activeSaveSlot > id) {
+        m_activeSaveSlot--;
+
+        globed::setValue("core.settingsv3.save-slot", m_activeSaveSlot);
+    }
+}
+
+void SettingsManager::createSaveSlot() {
+    m_saveSlots.emplace_back(matjson::Value::object());
+}
+
+void SettingsManager::switchToSaveSlot(size_t id) {
+    if (id >= m_saveSlots.size() || id == m_activeSaveSlot) {
+        return;
+    }
+
+    m_activeSaveSlot = id;
+    globed::setValue("core.settingsv3.save-slot", m_activeSaveSlot);
+
+    this->reloadFromSlot();
+}
+
+void SettingsManager::reloadFromSlot() {
+    for (const auto& [hash, fullKey] : m_fullKeys) {
+        this->reloadSetting(fullKey);
+    }
 }
 
 static std::optional<matjson::Value> findOverride(std::string_view key) {
@@ -157,11 +278,21 @@ void SettingsManager::registerSetting(
     auto hash = this->finalKeyHash(fullKey);
 
     if (m_defaults.contains(hash)) {
-        throw std::runtime_error(fmt::format("attempted to add the same setting twice: {}", key));
+        geode::utils::terminate(fmt::format("attempted to add the same setting twice: {}", key));
     }
 
     m_defaults[hash] = defaultVal;
     m_fullKeys[hash] = fullKey;
+
+    this->reloadSetting(fullKey);
+}
+
+void SettingsManager::reloadSetting(std::string_view fullKey) {
+    auto hash = this->finalKeyHash(fullKey);
+    auto& defaultVal = m_defaults.at(hash);
+
+    auto strippedKey = fullKey;
+    strippedKey.remove_prefix(8); // remove "setting."
 
     auto tryApply = [&](const std::optional<matjson::Value>& val, std::string_view fromWhere) {
         if (!val) return false;
@@ -169,7 +300,7 @@ void SettingsManager::registerSetting(
         if (val->type() != defaultVal.type()) {
             log::error(
                 "Type mismatch for setting {} loaded from {}, expected type '{}' but got '{}'",
-                key, fromWhere,
+                strippedKey, fromWhere,
                 matjsonTypeToStr(defaultVal.type()), matjsonTypeToStr(val->type())
             );
 
@@ -185,14 +316,27 @@ void SettingsManager::registerSetting(
         return;
     }
 
-    if (tryApply(ValueManager::get().getValueRaw(fullKey), "savefile")) {
+    // then try save slot
+    // if (tryApply(ValueManager::get().getValueRaw(fullKey), "savefile")) {
+    //     return;
+    // }
+    if (tryApply(this->findSettingInSaveSlot(fullKey), "save slot")) {
         return;
     }
 
     if (!tryApply(defaultVal, "default")) {
         // this should never happen!
-        throw std::runtime_error(fmt::format("failed to apply default value for setting {}", key));
+        geode::utils::terminate(fmt::format("failed to apply default for setting {}", strippedKey));
     }
+}
+
+std::optional<matjson::Value> SettingsManager::findSettingInSaveSlot(std::string_view key) {
+    if (m_activeSaveSlot >= m_saveSlots.size()) {
+        return std::nullopt;
+    }
+
+    auto& slot = m_saveSlots[m_activeSaveSlot];
+    return slot.get(key).copied().ok();
 }
 
 void SettingsManager::registerValidator(
@@ -257,6 +401,10 @@ uint64_t SettingsManager::finalKeyHash(std::string_view key) {
         hash *= 0x100000001b3;
     }
     return hash;
+}
+
+$on_mod(DataSaved) {
+    SettingsManager::get().commitSlotsToDisk();
 }
 
 }
