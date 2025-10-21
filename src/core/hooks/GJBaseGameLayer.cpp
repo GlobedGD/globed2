@@ -92,7 +92,24 @@ void GlobedGJBGL::setupPostInit() {
 }
 
 void GlobedGJBGL::setupNecessary() {
-    // TODO (medium): ping overlay
+    auto& fields = *m_fields.self();
+
+    fields.m_pingOverlay = Build<PingOverlay>::create()
+        .scale(0.4f)
+        .zOrder(11)
+        .id("game-overlay"_spr);
+    fields.m_pingOverlay->addToLayer(this);
+
+    auto& nm = NetworkManagerImpl::get();
+    int levelId = m_level->m_levelID;
+
+    if (!nm.isConnected()) {
+        fields.m_pingOverlay->updateWithDisconnected();
+    } else if (!fields.m_active) {
+        fields.m_pingOverlay->updateWithEditor();
+    } else {
+        fields.m_pingOverlay->updatePing(nm.getGamePing().millis());
+    }
 }
 
 void GlobedGJBGL::setupAssetLoading() {
@@ -395,6 +412,25 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     } else {
         fields.m_selfNameLabel->setVisible(false);
     }
+
+    fields.m_periodicalDelta += dt;
+    if (fields.m_periodicalDelta >= 0.25f) {
+        this->selPeriodicalUpdate(fields.m_periodicalDelta);
+        fields.m_periodicalDelta = 0.f;
+    }
+}
+
+void GlobedGJBGL::selPeriodicalUpdate(float dt) {
+    auto& fields = *m_fields.self();
+
+    if (!fields.m_active) {
+        fields.m_pingOverlay->updateWithDisconnected();
+        return;
+    }
+
+    fields.m_pingOverlay->updatePing(NetworkManagerImpl::get().getGamePing().millis());
+
+    // idk
 }
 
 void GlobedGJBGL::selPostInitActions(float dt) {

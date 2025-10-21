@@ -60,7 +60,7 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
         nm.queueLevelScript(scripts);
 
         auto gjbgl = GlobedGJBGL::get(this);
-        gjbgl->customSchedule("2p-send-log-request", [this](GlobedGJBGL*, float dt) {
+        gjbgl->customSchedule("2p-send-log-request"_spr, [this](GlobedGJBGL*, float dt) {
             this->sendLogRequest(dt);
         }, 1.0f);
     }

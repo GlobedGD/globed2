@@ -72,6 +72,13 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.level.self-status-icons", "Show Own Status Icons", "");
     this->addSetting<BoolSettingCell>("core.level.self-name", "Show Own Name", "");
 
+    // Overlay
+    this->addHeader("core.overlay", "Ping overlay");
+    this->addSetting<BoolSettingCell>("core.overlay.enabled", "Enable Overlay", "");
+    this->addSetting<FloatSettingCell>("core.overlay.opacity", "Overlay Opacity", "");
+    // this->addSetting<IntSettingCell>("core.overlay.position", "Overlay Position", ""); // TODO (release)
+    this->addSetting<BoolSettingCell>("core.overlay.always-show", "Always Show Overlay", "");
+
     // Audio
     this->addHeader("core.audio", "Audio");
     this->addSetting<BoolSettingCell>("core.audio.voice-chat-enabled", "Voice Chat", "");

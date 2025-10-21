@@ -6,6 +6,7 @@
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <ui/game/VoiceOverlay.hpp>
+#include <ui/game/PingOverlay.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/game/SpeedTracker.hpp>
 
@@ -34,6 +35,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_didSchedule = false;
         bool m_quitting = false;
         float m_sendDataInterval = 0.0f;
+        float m_periodicalDelta = 0.f;
         std::vector<std::string> m_customSchedules;
 
         float m_timeCounter = 0.0f;
@@ -69,6 +71,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         Ref<PlayerStatusIcons> m_selfStatusIcons;
         Ref<NameLabel> m_selfNameLabel;
         Ref<VoiceOverlay> m_voiceOverlay;
+        Ref<PingOverlay> m_pingOverlay;
     };
 
     // Setup functions
@@ -95,6 +98,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     // Schedules
     void selUpdateProxy(float dt);
     void selUpdate(float dt);
+    void selPeriodicalUpdate(float dt);
+
     void selPostInitActions(float dt);
     void selSendPlayerData(float dt);
 

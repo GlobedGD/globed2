@@ -48,6 +48,14 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.level.self-status-icons", true);
     this->registerSetting("core.level.self-name", false);
 
+    // Overlay
+    this->registerSetting("core.overlay.enabled", true);
+    this->registerSetting("core.overlay.opacity", 0.3f);
+    this->registerLimits("core.overlay.opacity", 0.f, 1.f);
+    this->registerSetting("core.overlay.always-show", false);
+    this->registerSetting("core.overlay.position", 3);
+    this->registerLimits("core.overlay.position", 0, 3); // 0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right
+
     // Audio
     this->registerSetting("core.audio.voice-chat-enabled", true);
     this->registerSetting("core.audio.input-device", -1);
