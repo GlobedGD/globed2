@@ -49,7 +49,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.level.progress-indicators-plat", true);
     this->registerSetting("core.level.progress-opacity", 1.0f);
     this->registerSetting("core.level.voice-overlay", true);
-    this->registerSetting("core.level.force-progressbar", false);
+    this->registerSetting("core.level.force-progressbar", false); // TODO: impl?
     this->registerSetting("core.level.self-status-icons", true);
     this->registerSetting("core.level.self-name", false);
 
@@ -95,6 +95,11 @@ void SettingsManager::loadSaveSlots() {
     (void) Mod::get()->loadData();
 
     m_slotDir = Mod::get()->getSaveDir() / "save-slots";
+    auto oldDir = Mod::get()->getSaveDir() / "saveslots";
+
+    if (asp::fs::exists(oldDir)) {
+        this->migrateOldSettings();
+    }
 
     if (!asp::fs::exists(m_slotDir)) {
         auto res = asp::fs::createDirAll(m_slotDir);
@@ -127,10 +132,6 @@ void SettingsManager::loadSaveSlots() {
         return v.template as<size_t>();
     }).unwrapOr(-1);
 
-    if (m_activeSaveSlot == (size_t)-1) {
-        this->migrateOldSettings();
-    }
-
     if (m_activeSaveSlot >= m_saveSlots.size()) {
         m_activeSaveSlot = 0;
     }
@@ -138,8 +139,140 @@ void SettingsManager::loadSaveSlots() {
     globed::setValue("core.settingsv3.save-slot", m_activeSaveSlot);
 }
 
+static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
+    matjson::Value out;
+
+    auto migMapper = [&](std::string_view bCat, std::string_view bKey, std::string_view after, auto mapper) -> bool {
+        auto fullKey = fmt::format("{}{}", bCat, bKey);
+        if (auto val = slot.get(fullKey).copied().ok()) {
+            log::info("Migrating setting from old format: {} -> {}", fullKey, after);
+            out.set(fmt::format("setting.{}", after), mapper(std::move(*val)));
+            return true;
+        }
+
+        return false;
+    };
+
+    auto migDirect = [&](std::string_view bCat, std::string_view bKey, std::string_view after) -> bool {
+        return migMapper(bCat, bKey, after, [](auto&& v) { return v; });
+    };
+
+    auto migInvertBool = [&](std::string_view bCat, std::string_view bKey, std::string_view after) {
+        return migMapper(bCat, bKey, after, [](auto&& v) {
+            if (!v.isBool()) {
+                return v;
+            }
+
+            return matjson::Value(!v.asBool().unwrap());
+        });
+    };
+
+    // Globed
+    migDirect("globed", "autoconnect", "core.autoconnect");
+    migDirect("globed", "preloadAssets", "core.preload.enabled");
+    migDirect("globed", "deferPreloadAssets", "core.preload.defer");
+    // migDirect("globed", "invitesFrom", "");
+    // migDirect("globed", "editorSupport", "");
+    migDirect("globed", "increaseLevelList", "core.ui.increase-level-list");
+    // migDirect("globed", "forceTcp", "");
+    // migDirect("globed", "dnsOverHttps", "");
+    // migDirect("globed", "showRelays", "");
+    migDirect("globed", "compressedPlayerCount", "core.ui.compressed-player-count");
+    // migDirect("globed", "useDiscordRPC", "");
+    // migDirect("globed", "changelogPopups", "");
+    // migDirect("globed", "editorChanges", "");
+    migDirect("globed", "isInvisible", "core.user.hide-in-menus");
+    migDirect("globed", "hideInGame", "core.user.hide-in-levels");
+    migDirect("globed", "hideRoles", "core.use.hide-roles");
+
+    // Overlay
+    migDirect("overlay", "enabled", "core.overlay.enabled");
+    migDirect("overlay", "opacity", "core.overlay.opacity");
+    migInvertBool("overlay", "hideConditionally", "core.overlay.always-show");
+    migDirect("overlay", "position", "core.overlay.position");
+
+    // Communication
+    migDirect("communication", "voiceEnabled", "core.audio.voice-chat-enabled");
+    migDirect("communication", "voiceProximity", "core.audio.voice-proximity");
+    migDirect("communication", "classicProximity", "core.audio-classic-proximity");
+    migDirect("communication", "voiceVolume", "core.audio.playback-volume");
+    migDirect("communication", "onlyFriends", "core.audio.only-friends");
+    migMapper("communication", "lowerAudioLatency", "core.audio.buffer-size", [](auto&& v) {
+        if (!v.isBool()) {
+            return matjson::Value(4);
+        }
+
+        return matjson::Value(v.asBool().unwrap() ? 4 : 8);
+    });
+    // migDirect("communication", "tcpAudio", "");
+    migDirect("communication", "audioDevice", "core.audio.input-device");
+    migDirect("communication", "deafenNotification", "core.audio.deafen-notification");
+    migDirect("communication", "voiceLoopback", "core.audio.voice-loopback");
+
+    // LevelUI
+    migDirect("levelui", "progressIndicators", "core.level.progress-indicators");
+    migDirect("levelui", "progressPointers", "core.level.progress-indicators-plat");
+    migDirect("levelui", "progressOpacity", "core.level.progress-opacity");
+    migDirect("levelui", "voiceOverlay", "core.level.voice-overlay");
+    migDirect("levelui", "forceProgressBar", "core.level.force-progress-bar");
+
+    // Players
+    migDirect("players", "playerOpacity", "core.player.opacity");
+    migDirect("players", "showNames", "core.player.show-names");
+    migDirect("players", "dualName", "core.player.dual-name");
+    migDirect("players", "nameOpacity", "core.player.name-opacity");
+    migDirect("players", "statusIcons", "core.player.status-icons");
+    migDirect("players", "deathEffects", "core.player.death-effects");
+    migDirect("players", "defaultDeathEffect", "core.player.default-death-effects");
+    // migDirect("players", "hideNearby", "core.player.hide-nearby-classic"); // not migrated? because its split
+    migDirect("players", "forceVisibility", "core.player.force-visibility");
+    migDirect("players", "ownName", "core.level.self-name");
+    migDirect("players", "rotateNames", "core.player.rotate-names");
+    migDirect("players", "hidePracticePlayers", "core.player.hide-practicing");
+
+    // Keys
+    migDirect("keys", "voiceChatKey", "core.keybinds.voice-chat");
+    migDirect("keys", "voiceDeafenKey", "core.keybinds.deafen");
+    migDirect("keys", "hidePlayersKey", "core.keybinds.hide-players");
+
+    return out;
+}
+
 void SettingsManager::migrateOldSettings() {
-    // TODO
+    auto oldDir = Mod::get()->getSaveDir() / "saveslots";
+
+    for (size_t i = 0;; i++) {
+        auto slotp = oldDir / fmt::format("slot_{}.json", i);
+        auto newp = m_slotDir / fmt::format("{}.json", i);
+
+        if (!asp::fs::exists(slotp)) {
+            break;
+        }
+
+        auto res = geode::utils::file::readJson(slotp);
+        if (!res) {
+            log::error("Failed to read old save slot {}: {}", i, res.unwrapErr());
+            continue;
+        }
+
+        auto migrated = migrateSlot(*res);
+        if (!migrated) {
+            log::warn("Failed to migrate old save slot {}", i);
+            continue;
+        }
+
+        if (auto err = asp::fs::remove(slotp).err()) {
+            log::error("Failed to delete old save slot {}: {}", i, err->message());
+            continue;
+        }
+
+        if (auto err = geode::utils::file::writeStringSafe(newp, migrated->dump()).err()) {
+            log::error("Failed to write migrated save slot {}: {}", i, *err);
+            continue;
+        }
+    }
+
+    (void) asp::fs::removeDir(oldDir);
 }
 
 void SettingsManager::freeze() {
