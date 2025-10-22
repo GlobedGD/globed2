@@ -33,6 +33,7 @@ protected:
     CCMenuItemSpriteExtra* m_submitBtn;
     std23::move_only_function<void(InputPopupOutcome)> m_callback;
     cocos2d::CCSize m_mySize{};
+    std::string m_defaultText;
     size_t m_maxCharCount = 0;
 
     bool setup(const char* font) override;

@@ -2,7 +2,7 @@
 
 #include <ui/BaseLayer.hpp>
 #include <cue/ListNode.hpp>
-#include "BaseSettingCell.hpp"
+#include <globed/util/CStr.hpp>
 
 namespace globed {
 
@@ -24,6 +24,8 @@ private:
 
     void addHeader(CStr key, CStr text);
     void addSetting(CCNode* cell);
+
+    void refreshAll();
 };
 
 }

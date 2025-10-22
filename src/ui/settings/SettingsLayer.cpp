@@ -5,6 +5,7 @@
 #include "ButtonSettingCell.hpp"
 #include "DiscordLinkPopup.hpp"
 #include "KeybindsPopup.hpp"
+#include "SaveSlotSwitcherPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
@@ -25,6 +26,45 @@ bool SettingsLayer::init() {
     m_list->setAutoUpdate(false);
 
     this->addSettings();
+
+    auto rightMenu = Build<CCMenu>::create()
+        .layout(ColumnLayout::create()->setAxisAlignment(AxisAlignment::Start))
+        .anchorPoint(1.f, 0.f)
+        .pos(winSize.width - 8.f, 8.f)
+        .contentSize(48.f, winSize.height)
+        .id("right-side-menu")
+        .parent(this)
+        .collect();
+
+    // Reset settings button
+    auto resetBtn = Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
+        .intoMenuItem([this](auto) {
+            geode::createQuickPopup("Reset all settings", "Are you sure you want to reset all settings? This action is <cr>irreversible.</c>", "Cancel", "Ok", [this](auto, bool accepted) {
+                if (accepted) {
+                    // TODO:
+                    // SettingsManager::get().rese
+                    this->refreshAll();
+                }
+            });
+        })
+        .id("btn-reset")
+        .parent(rightMenu)
+        .collect();
+
+    // Save slot button
+    Build<CircleButtonSprite>::create(CCSprite::create("icon-folder-settings.png"_spr), CircleBaseColor::Pink)
+        .with([&](auto* item) { cue::rescaleToMatch(item, resetBtn); })
+        .intoMenuItem([this](auto) {
+            auto popup = SaveSlotSwitcherPopup::create();
+            popup->setSwitchCallback([this] {
+                this->refreshAll();
+            });
+            popup->show();
+        })
+        .id("btn-save-slots")
+        .parent(rightMenu);
+
+    rightMenu->updateLayout();
 
     return true;
 }
@@ -119,6 +159,10 @@ void SettingsLayer::addHeader(CStr key, CStr text) {
 
 void SettingsLayer::addSetting(CCNode* cell) {
     m_list->addCell(cell);
+}
+
+void SettingsLayer::refreshAll() {
+    // TODO
 }
 
 SettingsLayer* SettingsLayer::create() {

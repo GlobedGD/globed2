@@ -455,8 +455,8 @@ bool LevelListLayer::loadNextBatch() {
 
 std::optional<size_t> LevelListLayer::findPlayerCountForLevel(int levelId) {
     return asp::iter::from(m_playerCounts)
-        .find([&](const auto& pair) { return pair.first.levelId() == levelId; })
-        .transform([](const auto& pair) { return pair.second; });
+        .find([&](const auto& pair) { return pair.get().first.levelId() == levelId; })
+        .transform([](const auto& pair) { return pair.get().second; });
 }
 
 bool LevelListLayer::isMatchingFilters(GJGameLevel* level) {

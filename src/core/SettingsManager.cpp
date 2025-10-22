@@ -122,7 +122,13 @@ void SettingsManager::loadSaveSlots() {
             continue;
         }
 
-        m_saveSlots.push_back(std::move(*res));
+        auto obj = std::move(res).unwrap();
+        if (!obj.isObject()) {
+            log::error("Save slot {} is not a JSON object, skipping", i);
+            continue;
+        }
+
+        m_saveSlots.push_back(std::move(obj));
     }
 
     log::debug("Loaded {} save slots", m_saveSlots.size());
@@ -134,6 +140,10 @@ void SettingsManager::loadSaveSlots() {
 
     if (m_activeSaveSlot >= m_saveSlots.size()) {
         m_activeSaveSlot = 0;
+    }
+
+    if (m_saveSlots.empty()) {
+        this->createSaveSlot();
     }
 
     globed::setValue("core.settingsv3.save-slot", m_activeSaveSlot);
@@ -263,7 +273,13 @@ void SettingsManager::migrateOldSettings() {
             continue;
         }
 
-        auto migrated = migrateSlot(*res);
+        auto obj = std::move(res).unwrap();
+        if (!obj.isObject()) {
+            log::error("Old save slot {} is not a JSON object, skipping", i);
+            continue;
+        }
+
+        auto migrated = migrateSlot(obj);
         if (!migrated) {
             log::warn("Failed to migrate old save slot {}", i);
             continue;
