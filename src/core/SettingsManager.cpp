@@ -142,6 +142,10 @@ void SettingsManager::loadSaveSlots() {
 static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
     matjson::Value out;
 
+    if (auto name = slot.get("_saveslot-name").copied().ok()) {
+        out.set("_saveslot-name", std::move(*name));
+    }
+
     auto migMapper = [&](std::string_view bCat, std::string_view bKey, std::string_view after, auto mapper) -> bool {
         auto fullKey = fmt::format("{}{}", bCat, bKey);
         if (auto val = slot.get(fullKey).copied().ok()) {
@@ -239,15 +243,19 @@ static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
 }
 
 void SettingsManager::migrateOldSettings() {
+    log::info("Migrating legacy save slots");
+
     auto oldDir = Mod::get()->getSaveDir() / "saveslots";
 
     for (size_t i = 0;; i++) {
-        auto slotp = oldDir / fmt::format("slot_{}.json", i);
+        auto slotp = oldDir / fmt::format("saveslot-{}.json", i);
         auto newp = m_slotDir / fmt::format("{}.json", i);
 
         if (!asp::fs::exists(slotp)) {
             break;
         }
+
+        log::info("Migrating: {} -> {}", slotp, newp);
 
         auto res = geode::utils::file::readJson(slotp);
         if (!res) {
