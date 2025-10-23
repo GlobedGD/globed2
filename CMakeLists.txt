@@ -16,6 +16,8 @@ project(globed2 VERSION 1.0.0)
 
 # Options
 option(GLOBED_VOICE_SUPPORT "Enable voice chat support" ON)
+option(GLOBED_QUIC_SUPPORT "Enable QUIC support" ON)
+option(GLOBED_ADVANCED_DNS_SUPPORT "Enable advanced DNS support" ON)
 option(GLOBED_DEBUG "Enable debug mode" OFF)
 option(GLOBED_RELEASE "Enable release mode optimizations" OFF)
 option(GLOBED_OSS_BUILD "Open source build that does not require closed-source dependencies" OFF)
@@ -144,7 +146,14 @@ CPMAddPackage(
 )
 
 CPMAddPackage("gh:GlobedGD/server-shared#ba389bd4")
-CPMAddPackage("gh:dankmeme01/qunet-cpp#dcdfb1fb")
+CPMAddPackage(
+    NAME qunet-cpp
+    GIT_REPOSITORY "https://github.com/dankmeme01/qunet-cpp"
+    GIT_TAG "b3386ff"
+    OPTIONS "QUNET_QUIC_SUPPORT ${GLOBED_QUIC_SUPPORT}"
+            "QUNET_ADVANCED_DNS ${GLOBED_ADVANCED_DNS_SUPPORT}"
+            "QUNET_DEBUG ${GLOBED_DEBUG}"
+)
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b") # TODO: before bumping this, fix NameLabel (and potentially more) where Build(x) is done where x may have a parent sill
 CPMAddPackage("gh:dankmeme01/cue#5ac9f76d")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
