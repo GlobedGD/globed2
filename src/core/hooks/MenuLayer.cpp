@@ -101,10 +101,11 @@ void HookedMenuLayer::recreateButton() {
 
 void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
     if (!globed::value<bool>("core.flags.seen-consent-notice").value_or(false)) {
-        // TODO
-        createQuickPopup(
+        globed::quickPopup(
             "Note",
-            "This is where I show the consent popup and yap about account verification but I don't have the time to write this rn",
+            "For <cy>verification</c> purposes, Globed may send a <cy>message</c> to a <cj>bot account</c>, using Argon.\n\n"
+            "Additionally, Globed collects <cj>some account data</c> to make certain features work: <cy>your friend list, blocked list, username.</c>\n\n"
+            "If you <cr>do not consent</c> to these actions, press <cr>Cancel</c>.",
             "Cancel",
             "Ok",
             [this](auto, bool yup) {
@@ -112,7 +113,8 @@ void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
                     globed::setValue("core.flags.seen-consent-notice", true);
                     this->onGlobedButton(nullptr);
                 }
-            }
+            },
+            400.f
         );
 
         return;
