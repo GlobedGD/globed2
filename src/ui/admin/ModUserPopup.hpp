@@ -13,6 +13,8 @@ class ModUserPopup : public BasePopup<ModUserPopup, int>, public UserInfoDelegat
 public:
     static const cocos2d::CCSize POPUP_SIZE;
 
+    ~ModUserPopup();
+
     void startLoadingProfile(const std::string& query, bool isId);
     void startLoadingProfile(int id);
 

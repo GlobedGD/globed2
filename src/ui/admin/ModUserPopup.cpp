@@ -58,6 +58,12 @@ bool ModUserPopup::setup(int accountId) {
     return true;
 }
 
+ModUserPopup::~ModUserPopup() {
+    auto glm = GameLevelManager::get();
+    glm->m_userInfoDelegate = nullptr;
+    glm->m_levelManagerDelegate = nullptr;
+}
+
 void ModUserPopup::initUi() {
     cue::resetNode(m_loadCircle);
     cue::resetNode(m_nameLayout);
