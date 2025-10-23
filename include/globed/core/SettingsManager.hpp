@@ -2,6 +2,7 @@
 
 #include <globed/util/singleton.hpp>
 #include <globed/util/assert.hpp>
+#include "ValueManager.hpp"
 
 #include <Geode/utils/terminate.hpp>
 #include <std23/move_only_function.h>
