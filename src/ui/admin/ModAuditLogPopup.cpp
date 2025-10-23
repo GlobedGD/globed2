@@ -4,6 +4,7 @@
 #include <UIBuilder.hpp>
 #include <cue/PlayerIcon.hpp>
 #include <asp/time/SystemTime.hpp>
+#include <asp/iter.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -229,8 +230,21 @@ private:
         if (isPunishment) {
             msgStr = fmt::format("Reason: {}", log.message);
         } else if (log.type == "editroles") {
-            // TODO: format more neatly
-            msgStr = log.message;
+            auto added = asp::iter::split(log.message, ',')
+                .filter([](const auto& sv) { return sv.starts_with('+'); })
+                .collect();
+            auto removed = asp::iter::split(log.message, ',')
+                .filter([](const auto& sv) { return sv.starts_with('-'); })
+                .collect();
+
+            if (added.size()) {
+                msgStr += fmt::format("Added: {}", fmt::join(added, ", "));
+            }
+
+            if (removed.size()) {
+                if (added.empty()) msgStr += "; ";
+                msgStr += fmt::format("Removed: {}", fmt::join(added, ", "));
+            }
         }
 
         if (!msgStr.empty()) {
