@@ -2,7 +2,6 @@
 
 #include <globed/util/singleton.hpp>
 #include <globed/util/assert.hpp>
-#include "ValueManager.hpp"
 
 #include <Geode/utils/terminate.hpp>
 #include <std23/move_only_function.h>
@@ -125,6 +124,9 @@ public:
     void commitSlotsToDisk();
 
     void reloadSetting(std::string_view fullKey);
+
+    /// Resets the data in the current save slot
+    void reset();
 
     std::vector<SaveSlotMeta> getSaveSlots();
     void renameSaveSlot(size_t id, std::string_view newName);

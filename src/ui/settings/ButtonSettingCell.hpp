@@ -22,7 +22,8 @@ protected:
     Callback m_callback;
     CStr m_btnText;
 
-    void setup();
+    void setup() override;
+    void reload() override {}
 };
 
 }

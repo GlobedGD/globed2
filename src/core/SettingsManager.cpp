@@ -488,6 +488,22 @@ void SettingsManager::reloadSetting(std::string_view fullKey) {
     }
 }
 
+void SettingsManager::reset() {
+    GLOBED_ASSERT(m_activeSaveSlot < m_saveSlots.size());
+    auto& slot = m_saveSlots[m_activeSaveSlot];
+
+    // preserve just the name
+    auto name = slot.get("_saveslot-name").copied().ok();
+
+    slot.clear();
+
+    if (name) {
+        slot.set("_saveslot-name", std::move(*name));
+    }
+
+    this->reloadFromSlot();
+}
+
 std::optional<matjson::Value> SettingsManager::findSettingInSaveSlot(std::string_view key) {
     if (m_activeSaveSlot >= m_saveSlots.size()) {
         return std::nullopt;

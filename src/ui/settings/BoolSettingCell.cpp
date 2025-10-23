@@ -7,7 +7,7 @@ using namespace geode::prelude;
 namespace globed {
 
 void BoolSettingCell::setup() {
-    auto toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.75f, [this](auto toggler) {
+    m_toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.75f, [this](auto toggler) {
         bool on = !toggler->isOn();
         this->set(on);
     }))
@@ -15,7 +15,11 @@ void BoolSettingCell::setup() {
         .parent(this)
         .collect();
 
-    toggler->toggle(this->get<bool>());
+    this->reload();
+}
+
+void BoolSettingCell::reload() {
+    m_toggler->toggle(this->get<bool>());
 }
 
 }

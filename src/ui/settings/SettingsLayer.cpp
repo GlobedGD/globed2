@@ -41,8 +41,7 @@ bool SettingsLayer::init() {
         .intoMenuItem([this](auto) {
             geode::createQuickPopup("Reset all settings", "Are you sure you want to reset all settings? This action is <cr>irreversible.</c>", "Cancel", "Ok", [this](auto, bool accepted) {
                 if (accepted) {
-                    // TODO:
-                    // SettingsManager::get().rese
+                    SettingsManager::get().reset();
                     this->refreshAll();
                 }
             });
@@ -157,12 +156,14 @@ void SettingsLayer::addHeader(CStr key, CStr text) {
     this->addSetting<TitleSettingCell>(key, text, "");
 }
 
-void SettingsLayer::addSetting(CCNode* cell) {
+void SettingsLayer::addSetting(BaseSettingCellBase* cell) {
     m_list->addCell(cell);
 }
 
 void SettingsLayer::refreshAll() {
-    // TODO
+    for (auto cell : m_list->iter<BaseSettingCellBase>()) {
+        cell->reload();
+    }
 }
 
 SettingsLayer* SettingsLayer::create() {

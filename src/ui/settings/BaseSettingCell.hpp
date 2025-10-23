@@ -8,6 +8,7 @@ namespace globed {
 
 class BaseSettingCellBase : public cocos2d::CCMenu {
 public:
+    virtual void reload() {}
 
 protected:
     CStr m_key;
