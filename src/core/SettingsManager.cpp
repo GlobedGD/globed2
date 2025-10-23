@@ -349,6 +349,7 @@ void SettingsManager::deleteSaveSlot(size_t id) {
 
 void SettingsManager::createSaveSlot() {
     m_saveSlots.emplace_back(matjson::Value::object());
+    m_saveSlots.back().set("_saveslot-name", fmt::format("Slot {}", m_saveSlots.size()));
 }
 
 void SettingsManager::switchToSaveSlot(size_t id) {
