@@ -1,6 +1,7 @@
 #include <globed/config.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <ui/menu/GlobedMenuLayer.hpp>
+#include <ui/settings/SettingsLayer.hpp>
 #include <modules/ui/UIModule.hpp>
 
 #include <Geode/Geode.hpp>
@@ -35,8 +36,7 @@ static bool block(CCScene* scene = nullptr) {
 
     auto layer = children[0];
 
-    // TODO: add settings layer and such
-    return !typeinfo_cast<PlayLayer*>(layer) && !typeinfo_cast<GlobedMenuLayer*>(layer);
+    return !typeinfo_cast<PlayLayer*>(layer) && !typeinfo_cast<GlobedMenuLayer*>(layer) && !typeinfo_cast<SettingsLayer*>(layer);
 }
 
 struct GLOBED_MODIFY_ATTR HookedCCDirector : Modify<HookedCCDirector, CCDirector> {
@@ -50,21 +50,33 @@ struct GLOBED_MODIFY_ATTR HookedCCDirector : Modify<HookedCCDirector, CCDirector
 
     $override
     bool pushScene(CCScene* scene) {
-        return block(scene) ? false : CCDirector::pushScene(scene);
+        if (block(scene)) {
+            log::info("Blocking scene switch - disallowed right now!");
+            return false;
+        }
+
+        return CCDirector::pushScene(scene);
     }
 
     $override
     bool replaceScene(CCScene* scene) {
-        return block(scene) ? false : CCDirector::replaceScene(scene);
+        if (block(scene)) {
+            log::info("Blocking scene switch - disallowed right now!");
+            return false;
+        }
+
+        return CCDirector::replaceScene(scene);
     }
 
     $override
     void popScene() {
-        if (block()) return;
+        if (block()) {
+            log::info("Blocking scene switch - disallowed right now!");
+            return;
+        }
+
         CCDirector::popScene();
     }
-
-    // TODO: popscenewithtransition?
 };
 
 }

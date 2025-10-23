@@ -12,6 +12,7 @@ bool InputPopup::setup(const char* font) {
     }
 
     m_input = TextInput::create(0.f, "", font);
+    m_input->setCommonFilter(CommonFilter::Any);
     m_mainLayer->addChild(m_input);
 
     m_submitBtn = Build(ButtonSprite::create("Submit", "bigFont.fnt", "GJ_button_01.png", 0.7f))

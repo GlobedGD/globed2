@@ -11,9 +11,11 @@
 
 namespace globed {
 
-class ModAuditLogPopup : public BasePopup<ModAuditLogPopup> {
+class ModAuditLogPopup : public BasePopup<ModAuditLogPopup, FetchLogsFilters> {
 public:
     static const cocos2d::CCSize POPUP_SIZE;
+
+    static ModAuditLogPopup* create(FetchLogsFilters filters = {});
 
 protected:
     cue::DropdownNode* m_typeDropdown;
@@ -26,7 +28,7 @@ protected:
     std::optional<MessageListener<msg::AdminFetchModsResponseMessage>> m_modsListener;
     std::optional<MessageListener<msg::AdminLogsResponseMessage>> m_logsListener;
 
-    bool setup();
+    bool setup(FetchLogsFilters filters) override;
     void refetch();
 
     void populateMods(const std::vector<FetchedMod>& mods);

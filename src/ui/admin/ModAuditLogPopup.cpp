@@ -296,8 +296,9 @@ private:
     }
 };
 
-bool ModAuditLogPopup::setup() {
+bool ModAuditLogPopup::setup(FetchLogsFilters filters) {
     ccColor4B bg{ 105, 61, 31, 255 };
+    m_filters = std::move(filters);
 
     m_loadingCircle = cue::LoadingCircle::create();
     m_loadingCircle->addToLayer(m_mainLayer);
@@ -406,6 +407,10 @@ void ModAuditLogPopup::refetch() {
 
     auto& nm = NetworkManagerImpl::get();
     nm.sendAdminFetchLogs(m_filters);
+}
+
+ModAuditLogPopup* ModAuditLogPopup::create(FetchLogsFilters filters) {
+    return BasePopup::create(std::move(filters));
 }
 
 }

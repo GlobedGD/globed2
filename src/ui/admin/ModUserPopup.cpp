@@ -2,12 +2,14 @@
 #include "ModPunishPopup.hpp"
 #include "ModRoleModifyPopup.hpp"
 #include "ModNoticeSetupPopup.hpp"
+#include "ModAuditLogPopup.hpp"
 
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/actions.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/UnreadBadge.hpp>
 #include <ui/misc/Badges.hpp>
+#include <ui/misc/InputPopup.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -162,7 +164,9 @@ void ModUserPopup::initUi() {
             }
         })
         .intoMenuItem([this] {
-            // TODO: open logs filtering on this person
+            ModAuditLogPopup::create(FetchLogsFilters {
+                .target = m_data->accountId,
+            })->show();
         })
         .zOrder(btnorder::History)
         .parent(m_rootMenu);
@@ -175,7 +179,18 @@ void ModUserPopup::initUi() {
         Build<CCSprite>::create("button-admin-password.png"_spr)
             .scale(btnScale)
             .intoMenuItem([this] {
-                // TODO: prompt for password
+                auto popup = InputPopup::create("chatFont.fnt");
+                popup->setMaxCharCount(32);
+                popup->setWidth(240.f);
+                popup->setPasswordMode(true);
+                popup->setPlaceholder("Password");
+                popup->setTitle("Set Password");
+                popup->setCallback([this](auto outcome) {
+                    if (outcome.cancelled) return;
+                    NetworkManagerImpl::get().sendAdminSetPassword(m_data->accountId, outcome.text);
+                });
+
+                popup->show();
             })
             .zOrder(btnorder::AdminPassword)
             .parent(m_rootMenu);
@@ -185,8 +200,6 @@ void ModUserPopup::initUi() {
     Build<CCSprite>::create("button-admin-kick.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this] {
-            // TODO: input popup and ask for reason
-
             globed::quickPopup(
                 "Confirm",
                 "Are you sure you want to <cr>kick</c> this person from the server?",
@@ -195,7 +208,17 @@ void ModUserPopup::initUi() {
                 [this](auto, bool yeah) {
                     if (!yeah) return;
 
-                    NetworkManagerImpl::get().sendAdminKick(m_data->accountId, "Kicked by moderator");
+                    auto popup = InputPopup::create("chatFont.fnt");
+                    popup->setMaxCharCount(128);
+                    popup->setWidth(360.f);
+                    popup->setPlaceholder("Reason");
+                    popup->setTitle(fmt::format("Kick {}", m_score->m_userName));
+                    popup->setCallback([this](auto outcome) {
+                        if (outcome.cancelled) return;
+                        NetworkManagerImpl::get().sendAdminKick(m_data->accountId, outcome.text);
+                    });
+
+                    popup->show();
                 }
             );
         })
