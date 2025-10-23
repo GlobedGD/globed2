@@ -231,10 +231,10 @@ private:
             msgStr = fmt::format("Reason: {}", log.message);
         } else if (log.type == "editroles") {
             auto added = asp::iter::split(log.message, ',')
-                .filter([](const auto& sv) { return sv.starts_with('+'); })
+                .filterMap([](const auto& sv) { return sv.starts_with('+') ? std::optional{sv.substr(1)} : std::nullopt; })
                 .collect();
             auto removed = asp::iter::split(log.message, ',')
-                .filter([](const auto& sv) { return sv.starts_with('-'); })
+                .filterMap([](const auto& sv) { return sv.starts_with('-') ? std::optional{sv.substr(1)} : std::nullopt; })
                 .collect();
 
             if (added.size()) {
@@ -242,8 +242,8 @@ private:
             }
 
             if (removed.size()) {
-                if (added.empty()) msgStr += "; ";
-                msgStr += fmt::format("Removed: {}", fmt::join(added, ", "));
+                if (!added.empty()) msgStr += "; ";
+                msgStr += fmt::format("Removed: {}", fmt::join(removed, ", "));
             }
         }
 

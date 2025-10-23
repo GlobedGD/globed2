@@ -53,7 +53,7 @@ bool ModLoginPopup::setup(std23::move_only_function<void()> callback) {
                         NetworkManagerImpl::get().markAuthorizedModerator();
                     }
 
-                    this->stopWaiting();
+                    this->stopWaiting(result.success);
                     return ListenerResult::Continue;
                 });
                 m_listener.value()->setPriority(-10000);
@@ -90,10 +90,12 @@ void ModLoginPopup::wait() {
     m_loadPopup->show();
 }
 
-void ModLoginPopup::stopWaiting() {
+void ModLoginPopup::stopWaiting(bool success) {
     m_loadPopup->forceClose();
 
-    FunctionQueue::get().queue(std::move(m_callback));
+    if (success) {
+        FunctionQueue::get().queue(std::move(m_callback));
+    }
 
     this->onClose(nullptr);
 }

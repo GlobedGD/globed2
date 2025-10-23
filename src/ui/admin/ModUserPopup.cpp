@@ -179,9 +179,9 @@ void ModUserPopup::initUi() {
         Build<CCSprite>::create("button-admin-password.png"_spr)
             .scale(btnScale)
             .intoMenuItem([this] {
-                auto popup = InputPopup::create("chatFont.fnt");
+                auto popup = InputPopup::create("bigFont.fnt");
                 popup->setMaxCharCount(32);
-                popup->setWidth(240.f);
+                popup->setWidth(280.f);
                 popup->setPasswordMode(true);
                 popup->setPlaceholder("Password");
                 popup->setTitle("Set Password");

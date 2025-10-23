@@ -21,7 +21,7 @@ protected:
 
     bool setup(std23::move_only_function<void()> callback);
     void wait();
-    void stopWaiting();
+    void stopWaiting(bool success);
 };
 
 }
