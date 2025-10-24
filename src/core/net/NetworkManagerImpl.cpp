@@ -1173,7 +1173,7 @@ void NetworkManagerImpl::sendNoticeReply(int32_t recipientId, const std::string&
     });
 }
 
-void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply) {
+void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply, bool showSender) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto adminNotice = msg.initAdminNotice();
         adminNotice.setMessage(message);
@@ -1181,7 +1181,7 @@ void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::
         adminNotice.setRoomId(roomId);
         adminNotice.setLevelId(levelId);
         adminNotice.setCanReply(canReply);
-        adminNotice.setShowSender(false); // TODO: showSender
+        adminNotice.setShowSender(showSender);
     });
 }
 

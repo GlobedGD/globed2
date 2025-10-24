@@ -408,7 +408,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         fields.m_selfStatusIcons->setVisible(true);
         fields.m_selfStatusIcons->updateStatus(flags);
         fields.m_selfStatusIcons->setPosition({
-            m_player1->getPosition() + CCPoint{0.f, showSelfName ? 43.f : 28.f} // TODO
+            m_player1->getPosition() + CCPoint{0.f, showSelfName ? 43.f : 28.f}
         });
     } else {
         fields.m_selfStatusIcons->setVisible(false);

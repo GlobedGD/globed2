@@ -94,7 +94,7 @@ bool ModNoticeSetupPopup::setup() {
         .parent(m_inputsContainer)
         .store(m_levelInput);
 
-    Build(CCMenuItemExt::createTogglerWithStandardSprites(0.5f, [this](auto toggler) {}))
+    Build(CCMenuItemExt::createTogglerWithStandardSprites(0.5f, +[](CCMenuItemToggler* toggler) {}))
         .parent(m_inputsContainer)
         .store(m_canReplyCheckbox);
 
@@ -111,6 +111,18 @@ bool ModNoticeSetupPopup::setup() {
         .scaleMult(1.1f)
         .pos(this->fromBottom(27.f))
         .parent(m_buttonMenu);
+
+    // show sender
+
+    Build(CCMenuItemExt::createTogglerWithStandardSprites(0.7f, +[](CCMenuItemToggler* toggler) {}))
+        .parent(m_buttonMenu)
+        .pos(this->fromBottom({60.f, 27.f}))
+        .store(m_showSenderCheckbox);
+
+    Build<CCLabelBMFont>::create("Show\nsender", "bigFont.fnt")
+        .scale(0.35f)
+        .parent(m_buttonMenu)
+        .pos(this->fromBottom({96.f, 27.f}));
 
     this->setupUser(0);
     m_userCheckbox->toggle(true);
@@ -172,7 +184,7 @@ void ModNoticeSetupPopup::submit() {
     if (everyone) {
         NetworkManagerImpl::get().sendAdminNoticeEveryone(text);
     } else {
-        NetworkManagerImpl::get().sendAdminNotice(text, userQuery, roomId, levelId, m_canReplyCheckbox->isOn());
+        NetworkManagerImpl::get().sendAdminNotice(text, userQuery, roomId, levelId, m_canReplyCheckbox->isOn(), m_showSenderCheckbox->isOn());
     }
 }
 

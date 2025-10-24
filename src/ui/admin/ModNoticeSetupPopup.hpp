@@ -21,6 +21,7 @@ protected:
     geode::TextInput* m_levelInput;
     CCNode* m_inputsContainer;
     CCMenuItemToggler* m_canReplyCheckbox;
+    CCMenuItemToggler* m_showSenderCheckbox;
     cocos2d::CCLabelBMFont* m_canReplyLabel;
 
     bool setup();

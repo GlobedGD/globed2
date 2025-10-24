@@ -183,7 +183,7 @@ public:
 
     void sendAdminLogin(const std::string& password);
     void sendAdminKick(int32_t accountId, const std::string& message);
-    void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply);
+    void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply, bool showSender);
     void sendAdminNoticeEveryone(const std::string& message);
     void sendAdminFetchUser(const std::string& query);
     void sendAdminFetchLogs(const FetchLogsFilters& filters);
