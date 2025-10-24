@@ -139,6 +139,7 @@ struct NoticeMessage {
     std::string senderName;
     std::string message;
     bool canReply;
+    bool isReply;
 };
 
 struct PlayerCountsMessage {

@@ -921,7 +921,7 @@ void NetworkManagerImpl::queueLevelScript(const std::vector<EmbeddedScript>& scr
 void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scripts) {
     this->sendToGame([&](GameMessage::Builder& msg) {
         data::encode(scripts, msg.initSendLevelScript());
-    });
+    }, true, true);
 }
 
 void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
@@ -942,7 +942,7 @@ void NetworkManagerImpl::sendVoiceData(const EncodedAudioFrame& frame) {
             auto& fr = frame.getFrames()[i];
             frames.set(i, kj::arrayPtr(fr.data.get(), fr.size));
         }
-    }, false);
+    }, false, true);
 }
 
 void NetworkManagerImpl::sendUpdateUserSettings() {
@@ -1165,6 +1165,14 @@ void NetworkManagerImpl::sendSendFeaturedLevel(
     });
 }
 
+void NetworkManagerImpl::sendNoticeReply(int32_t recipientId, const std::string& message) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto m = msg.initNoticeReply();
+        m.setReceiverId(recipientId);
+        m.setMessage(message);
+    });
+}
+
 void NetworkManagerImpl::sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto adminNotice = msg.initAdminNotice();
@@ -1209,6 +1217,14 @@ void NetworkManagerImpl::sendAdminFetchUser(const std::string& query) {
 void NetworkManagerImpl::sendAdminFetchMods() {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto fetchUser = msg.initAdminFetchMods();
+    });
+}
+
+void NetworkManagerImpl::sendAdminSetWhitelisted(int32_t accountId, bool whitelisted) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto m = msg.initAdminSetWhitelisted();
+        m.setAccountId(accountId);
+        m.setWhitelisted(whitelisted);
     });
 }
 
@@ -1569,6 +1585,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
                 .senderName = notice.getSenderName(),
                 .message = notice.getMessage(),
                 .canReply = notice.getCanReply(),
+                .isReply = notice.getIsReply(),
             });
         } break;
 

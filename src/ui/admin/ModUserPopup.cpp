@@ -139,16 +139,13 @@ void ModUserPopup::initUi() {
                 [this, btn](auto, bool confirm) {
                     if (!confirm) return;
 
-                    // TODO: send whitelist message
-
-                    m_data->whitelisted = !m_data->whitelisted;
+                    bool newv = !m_data->whitelisted;
+                    NetworkManagerImpl::get().sendAdminSetWhitelisted(m_data->accountId, newv);
+                    m_data->whitelisted = newv;
 
                     btn->setSprite(
-                        Build<CCSprite>::create(
-                            m_data->whitelisted ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr
-                            )
+                        Build<CCSprite>::create(newv ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr)
                             .scale(btnScale)
-                            .collect()
                     );
                 }
             );

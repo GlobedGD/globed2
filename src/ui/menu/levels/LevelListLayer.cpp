@@ -383,36 +383,27 @@ void LevelListLayer::finishLoading() {
 
     m_list->clear();
 
+    auto flevel = NetworkManagerImpl::get().getFeaturedLevel();
+
     for (auto level : page) {
-        auto cell = new LevelCell("", 356.f, 90.f);
+        auto cell = static_cast<HookedLevelCell*>(new LevelCell("", 356.f, 90.f));
         cell->autorelease();
         cell->loadFromLevel(level);
         cell->setContentSize({356.f, 90.f});
 
-        auto count = this->findPlayerCountForLevel(level->m_levelID);
-        if (count) {
-            auto gcell = static_cast<HookedLevelCell*>(cell);
-            gcell->updatePlayerCount(*count);
+        if (auto count = this->findPlayerCountForLevel(level->m_levelID)) {
+            cell->updatePlayerCount(*count);
+        }
+
+        if (flevel && flevel->levelId == level->m_levelID) {
+            globed::setFeatureTierForLevel(cell->m_level, flevel->rateTier);
+            cell->setGlobedFeature(flevel->rateTier);
         }
 
         m_list->addCell(cell);
     }
 
     m_list->updateLayout();
-
-    for (auto cell : m_list->iter<HookedLevelCell>()) {
-        // TODO: editorcollab?
-        // int levelId = HookedGJGameLevel::getLevelIDFrom(cell->m_level);
-
-        // TODO: player counts?
-        int id = cell->m_level->m_levelID;
-        auto flevel = NetworkManagerImpl::get().getFeaturedLevel();
-
-        if (flevel && flevel->levelId == id) {
-            globed::setFeatureTierForLevel(cell->m_level, flevel->rateTier);
-            cell->setGlobedFeature(flevel->rateTier);
-        }
-    }
 
     // show the buttons
     this->toggleLoadingUi(false);

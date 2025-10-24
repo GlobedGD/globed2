@@ -10,10 +10,11 @@
 #include <core/hooks/GameManager.hpp>
 #include <ui/menu/WarpLoadPopup.hpp>
 #include <ui/menu/GlobedMenuLayer.hpp>
+#include <ui/menu/UserPunishmentPopup.hpp>
 #include <ui/admin/ModPanelPopup.hpp>
 #include <ui/admin/ModUserPopup.hpp>
 #include <ui/admin/ModLoginPopup.hpp>
-#include <ui/menu/UserPunishmentPopup.hpp>
+#include <ui/misc/InputPopup.hpp>
 
 using namespace geode::prelude;
 
@@ -81,10 +82,7 @@ void warpToSession(SessionId session, bool openLevel, bool force) {
         }
     } else if (classify.kind == GameLevelKind::Tower) {
         // tower levels, always go straight to playlayer
-        auto level = GameLevelManager::get()->getMainLevel(levelId, false);
-        // TODO: idk if they are the same
-        log::debug("level 1: {}, 2: {}", level, classify.level);
-        globed::replaceScene(PlayLayer::scene(level, false, false));
+        globed::replaceScene(PlayLayer::scene(classify.level, false, false));
     } else {
         // custom levels, show a loading popup
         // replace scene if openLevel is true, push scene otherwise
@@ -149,6 +147,18 @@ void openUserProfile(const PlayerAccountData& player) {
     openUserProfile(player.accountId, player.userId, player.username);
 }
 
+static void promptForNoticeReply(int senderId) {
+    auto popup = InputPopup::create("chatFont.fnt");
+    popup->setMaxCharCount(280);
+    popup->setTitle("Enter Reply Text");
+    popup->setPlaceholder("Message");
+    popup->setCallback([senderId](auto outcome) {
+        if (outcome.cancelled) return;
+        NetworkManagerImpl::get().sendNoticeReply(senderId, outcome.text);
+    });
+    popup->show();
+}
+
 $on_mod(Loaded) {
     auto& nm = NetworkManagerImpl::get();
 
@@ -170,20 +180,32 @@ $on_mod(Loaded) {
     nm.listenGlobal<msg::NoticeMessage>([](const msg::NoticeMessage& msg) {
         std::string title;
 
-        if (msg.senderId != 0 && !msg.senderName.empty()) {
+        if (msg.isReply) {
+            title = fmt::format("Reply from {}", msg.senderName);
+        } else if (msg.senderId != 0 && !msg.senderName.empty()) {
             title = fmt::format("Globed Notice from {}", msg.senderName);
         } else {
             title = fmt::format("Globed Notice");
         }
 
-        auto popup = PopupManager::get().alert(title, msg.message);
+        PopupRef popup;
+
+        if (msg.canReply) {
+            // if we can reply, show an alert with 2 buttons
+            popup = PopupManager::get().quickPopup(title, msg.message, "Ok", "Reply", [sender = msg.senderId](auto, bool reply) {
+                if (!reply) return;
+                promptForNoticeReply(sender);
+            }, 400.f);
+        } else {
+            // otherwise regular alert
+            popup = PopupManager::get().alert(title, msg.message, "Ok", nullptr, 400.f);
+        }
+
         popup.showQueue();
 
         if (auto title = popup.getInner()->m_mainLayer->getChildByType<CCLabelBMFont>(0)) {
             title->limitLabelWidth(360.f, 0.9f, 0.5f);
         }
-
-        // TODO: canReply
 
         return ListenerResult::Continue;
     });

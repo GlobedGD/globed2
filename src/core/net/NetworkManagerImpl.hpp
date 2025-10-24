@@ -179,6 +179,7 @@ public:
         const std::string& note,
         bool queue
     );
+    void sendNoticeReply(int32_t recipientId, const std::string& message);
 
     void sendAdminLogin(const std::string& password);
     void sendAdminKick(int32_t accountId, const std::string& message);
@@ -196,6 +197,7 @@ public:
     void sendAdminSetPassword(int32_t accountId, const std::string& password);
     void sendAdminUpdateUser(int32_t accountId, const std::string& username, int16_t cube, uint16_t color1, uint16_t color2, uint16_t glowColor);
     void sendAdminFetchMods();
+    void sendAdminSetWhitelisted(int32_t accountId, bool whitelisted);
 
     // Both servers
     void sendJoinSession(SessionId id, bool platformer);
@@ -264,7 +266,7 @@ private:
     geode::Result<> onCentralDataReceived(CentralMessage::Reader& msg);
     geode::Result<> onGameDataReceived(GameMessage::Reader& msg);
 
-    static Result<> sendMessageToConnection(qn::Connection& conn, capnp::MallocMessageBuilder& msg, bool reliable) {
+    static Result<> sendMessageToConnection(qn::Connection& conn, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed) {
         if (!conn.connected()) {
             return Err("not connected");
         }
@@ -280,7 +282,7 @@ private:
 
         auto data = std::vector<uint8_t>(vos.getArray().begin(), vos.getArray().end());
 
-        conn.sendData(std::move(data), reliable);
+        conn.sendData(std::move(data), reliable, uncompressed);
 
         return Ok();
     }
@@ -291,7 +293,7 @@ private:
         auto root = msg.initRoot<CentralMessage>();
         func(root);
 
-        auto res = sendMessageToConnection(m_centralConn, msg, true);
+        auto res = sendMessageToConnection(m_centralConn, msg, true, false);
 
         if (!res) {
             log::warn("Failed to send message to central server: {}", res.unwrapErr());
@@ -299,12 +301,12 @@ private:
     }
 
     template <typename F>
-    void sendToGame(F&& func, bool reliable = true) {
+    void sendToGame(F&& func, bool reliable = true, bool uncompressed = false) {
         capnp::MallocMessageBuilder msg;
         auto root = msg.initRoot<GameMessage>();
         func(root);
 
-        auto res = sendMessageToConnection(m_gameConn, msg, reliable);
+        auto res = sendMessageToConnection(m_gameConn, msg, reliable, uncompressed);
 
         if (!res) {
             log::warn("Failed to send message to game server: {}", res.unwrapErr());

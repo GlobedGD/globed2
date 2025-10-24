@@ -77,8 +77,6 @@ void SendFeaturePopup::sendLevel(bool queue) {
         queue
     );
 
-    // TODO: send difficulty?
-
     globed::toastSuccess("Successfully {} level!", queue ? "queued" : "sent");
     this->onClose(this);
 }
