@@ -55,7 +55,9 @@ void VolumeEstimator::update(float dt) {
 
     float newVolume = calculatePcmVolume(buf, needed);
     m_emaVolume = qn::exponentialMovingAverage(m_emaVolume, newVolume, 0.2);
-    m_normalizedVolume = std::powf(std::clamp(m_emaVolume / 0.25f, 0.f, 1.f), 0.5f);
+
+    // this / 0.2f might need some tweaking
+    m_normalizedVolume = std::powf(std::clamp(m_emaVolume / 0.2f, 0.f, 1.f), 0.5f);
 }
 
 float VolumeEstimator::getVolume() {

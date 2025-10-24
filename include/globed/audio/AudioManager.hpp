@@ -82,8 +82,10 @@ public:
     /* Playback API */
 
     void forEachStream(std23::function_ref<void(int, AudioStream&)> func);
+    AudioStream* getStream(int streamId);
 
     Result<> playFrameStreamed(int streamId, const EncodedAudioFrame& frame);
+    void playFrameStreamedRaw(int streamId, const float* pcm, size_t samples);
     void stopAllOutputStreams();
     void stopOutputStream(int streamId);
 
@@ -144,7 +146,7 @@ private:
     Result<> startRecordingInternal();
     void internalStopRecording(bool ignoreErrors = false);
     void recordInvokeCallback();
-    void recordInvokeRawCallback(float* pcm, size_t samples);
+    void recordInvokeRawCallback(const float* pcm, size_t samples);
 
     /* playback */
     std::unordered_map<int, std::unique_ptr<AudioStream>> m_playbackStreams;

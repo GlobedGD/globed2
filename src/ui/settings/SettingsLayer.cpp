@@ -1,8 +1,10 @@
 #include "SettingsLayer.hpp"
+#include "AudioDeviceSetupPopup.hpp"
 #include "BoolSettingCell.hpp"
 #include "FloatSettingCell.hpp"
 #include "TitleSettingCell.hpp"
 #include "ButtonSettingCell.hpp"
+#include "IntSliderSettingCell.hpp"
 #include "DiscordLinkPopup.hpp"
 #include "KeybindsPopup.hpp"
 #include "SaveSlotSwitcherPopup.hpp"
@@ -124,14 +126,14 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.audio.voice-chat-enabled", "Voice Chat", "");
     this->addSetting<FloatSettingCell>("core.audio.playback-volume", "Voice Volume", "");
     this->addSetting(ButtonSettingCell::create("Audio Device", "", "Set", [this] {
-        // TODO: popup with choosing audio device
+        AudioDeviceSetupPopup::create()->show();
     }, CELL_SIZE));
     this->addSetting<BoolSettingCell>("core.audio.voice-proximity", "Voice Proximity (Plat)", "");
     this->addSetting<BoolSettingCell>("core.audio.classic-proximity", "Voice Proximity (Classic)", "");
     this->addSetting<BoolSettingCell>("core.audio.deafen-notification", "Deafen Notification", "");
     this->addSetting<BoolSettingCell>("core.audio.only-friends", "Friends Only Voice", "");
     this->addSetting<BoolSettingCell>("core.audio.voice-loopback", "Voice Loopback", "");
-    // TODO: buffer size setting? might need a new IntSettingCell
+    auto bufferSize = this->addSetting<IntSliderSettingCell>("core.audio.buffer-size", "Audio Buffer Size", "");
 
     // Preload
     this->addHeader("core.player", "Preloading");

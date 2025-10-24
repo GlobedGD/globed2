@@ -383,10 +383,25 @@ void AudioManager::forEachStream(std23::function_ref<void(int, AudioStream&)> fu
     }
 }
 
+AudioStream* AudioManager::getStream(int streamId) {
+    auto it = m_playbackStreams.find(streamId);
+    if (it == m_playbackStreams.end()) {
+        return nullptr;
+    }
+
+    return it->second.get();
+}
+
 Result<> AudioManager::playFrameStreamed(int streamId, const EncodedAudioFrame& frame) {
     auto stream = this->preparePlaybackStream(streamId);
 
     return stream->writeData(frame);
+}
+
+void AudioManager::playFrameStreamedRaw(int streamId, const float* pcm, size_t samples) {
+    auto stream = this->preparePlaybackStream(streamId);
+
+    stream->writeData(pcm, samples);
 }
 
 AudioStream* AudioManager::preparePlaybackStream(int id) {
@@ -575,10 +590,17 @@ Result<> AudioManager::audioThreadWork() {
     );
 
     if (m_recordingRaw) {
-        // raw recording, call the raw callback with the pcm data directly.
-        float* pcm = m_recordQueue.data();
         size_t samples = m_recordQueue.size();
-        this->recordInvokeRawCallback(pcm, samples);
+
+        // raw recording, call the raw callback with the pcm data directly.
+        if (auto pcm = m_recordQueue.contiguousData()) {
+            this->recordInvokeRawCallback(*pcm, samples);
+        } else {
+            auto pcmdata = std::make_unique<float[]>(samples);
+            m_recordQueue.readData(pcmdata.get(), samples);
+            this->recordInvokeRawCallback(pcmdata.get(), samples);
+        }
+
         m_recordQueue.clear();
     } else {
         bool stoppedPassive = m_recordingPassive && !m_recordingPassiveActive;
@@ -612,7 +634,7 @@ void AudioManager::recordInvokeCallback() {
     m_recordFrame.clear();
 }
 
-void AudioManager::recordInvokeRawCallback(float* pcm, size_t samples) {
+void AudioManager::recordInvokeRawCallback(const float* pcm, size_t samples) {
     if (samples == 0) return;
 
     if (m_rawCallback) m_rawCallback(pcm, samples);

@@ -15,9 +15,11 @@ public:
 
     void writeData(const float* data, size_t count);
     size_t readData(float* out, size_t max);
+    size_t peekData(float* out, size_t max) const;
     size_t size() const;
     void clear();
-    float* data();
+
+    std::optional<const float*> contiguousData() const;
 
     void setLimit(size_t limit);
 

@@ -27,7 +27,7 @@ bool AudioVisualizer::init() {
 }
 
 void AudioVisualizer::setVolume(float vol) {
-    this->setVolumeRaw(vol * 1.5f);
+    this->setVolumeRaw(vol * 1.f);
 }
 
 void AudioVisualizer::setVolumeRaw(float vol) {

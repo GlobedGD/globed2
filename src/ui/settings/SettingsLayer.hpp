@@ -19,8 +19,10 @@ private:
     void addSettings();
 
     template <typename T>
-    void addSetting(CStr key, CStr name, CStr desc) {
-        this->addSetting(T::create(key, name, desc, CELL_SIZE));
+    T* addSetting(CStr key, CStr name, CStr desc) {
+        auto cell = T::create(key, name, desc, CELL_SIZE);
+        this->addSetting(cell);
+        return cell;
     }
 
     void addHeader(CStr key, CStr text);

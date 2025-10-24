@@ -155,7 +155,7 @@ CPMAddPackage(
             "QUNET_DEBUG ${GLOBED_DEBUG}"
 )
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b") # TODO: before bumping this, fix NameLabel (and potentially more) where Build(x) is done where x may have a parent sill
-CPMAddPackage("gh:dankmeme01/cue#5ac9f76d")
+CPMAddPackage("gh:dankmeme01/cue#c73aaa0b")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 CPMAddPackage("gh:Prevter/sinaps#2541d6d")
 CPMAddPackage("gh:Prevter/AdvancedLabel#d78d7f82")
