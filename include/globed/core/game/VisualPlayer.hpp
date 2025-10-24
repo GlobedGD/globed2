@@ -22,7 +22,7 @@ struct GameCameraState;
 class VisualPlayer : public PlayerObject {
 public:
     static VisualPlayer* create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond);
-    void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState);
+    void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState, bool forceHide);
     void cleanupObjectLayer();
 
     void updateDisplayData();

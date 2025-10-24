@@ -70,16 +70,16 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
     m_state = state;
 
     if (m_state.player1) {
-        m_player1->updateFromData(*m_state.player1, m_state, camState);
+        m_player1->updateFromData(*m_state.player1, m_state, camState, forceHide);
+    } else {
+        m_player1->setVisible(false);
     }
-
-    m_player1->setVisible(m_state.player1 && !forceHide);
 
     if (m_state.player2) {
-        m_player2->updateFromData(*m_state.player2, m_state, camState);
+        m_player2->updateFromData(*m_state.player2, m_state, camState, forceHide);
+    } else {
+        m_player2->setVisible(false);
     }
-
-    m_player2->setVisible(m_state.player2 && !forceHide);
 
     // update progress icons
 

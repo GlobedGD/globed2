@@ -80,7 +80,7 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     return true;
 }
 
-void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState) {
+void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState, bool forceHide) {
     if (lerpDebug()) {
         this->updateLerpTrajectory(data);
     }
@@ -129,7 +129,9 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     // determine if the player should be visible
     bool shouldBeVisible = true;
 
-    if (state.isPracticing && setting<bool>("core.player.hide-practicing")) {
+    if (forceHide) {
+        shouldBeVisible = false;
+    } else if (state.isPracticing && setting<bool>("core.player.hide-practicing")) {
         shouldBeVisible = false;
     } else {
         shouldBeVisible = (data.isVisible || setting<bool>("core.player.force-visibility")) && isNearby;
