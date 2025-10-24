@@ -18,6 +18,7 @@ SettingsManager::SettingsManager() {
 
     // Various
     this->registerSetting("core.autoconnect", true);
+    this->registerSetting("core.streamer-mode", false);
 
     // Keybinds
     this->registerSetting("core.keybinds.voice-chat", (int)KEY_V);
@@ -75,7 +76,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.audio.voice-proximity", true);
     this->registerSetting("core.audio.classic-proximity", false);
     this->registerSetting("core.audio.deafen-notification", false); // TODO: unimpl
-    this->registerSetting("core.audio.only-friends", false); // TODO: unimpl
+    this->registerSetting("core.audio.only-friends", false); // TODO: unimpl  also pass this in user settings?
 
     // Mod settings
     this->registerSetting("core.mod.remember-password", false);

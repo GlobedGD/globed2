@@ -72,6 +72,7 @@ void SettingsLayer::addSettings() {
     // TODO: descriptions
     // Globed
     this->addSetting<BoolSettingCell>("core.autoconnect", "Autoconnect", "");
+    this->addSetting<BoolSettingCell>("core.streamer-mode", "Streamer Mode", "");
     this->addSetting<BoolSettingCell>("core.ui.increase-level-list", "Increase Level List", "");
     this->addSetting<BoolSettingCell>("core.ui.compressed-player-count", "Simple Player Count", "");
     this->addSetting(ButtonSettingCell::create("Discord Linking", "", "Link", [this] {
@@ -125,6 +126,10 @@ void SettingsLayer::addSettings() {
     this->addSetting(ButtonSettingCell::create("Audio Device", "", "Set", [this] {
         // TODO: popup with choosing audio device
     }, CELL_SIZE));
+    this->addSetting<BoolSettingCell>("core.audio.voice-proximity", "Voice Proximity (Plat)", "");
+    this->addSetting<BoolSettingCell>("core.audio.classic-proximity", "Voice Proximity (Classic)", "");
+    this->addSetting<BoolSettingCell>("core.audio.deafen-notifications", "Deafen Notification", "");
+    this->addSetting<BoolSettingCell>("core.audio.only-friends", "Friends Only Voice", "");
     this->addSetting<BoolSettingCell>("core.audio.voice-loopback", "Voice Loopback", "");
     // TODO: buffer size setting? might need a new IntSettingCell
 

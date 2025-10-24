@@ -82,6 +82,8 @@ bool CreateRoomPopup::setup() {
         .updateLayout()
         .collect();
 
+    bool hidePass = globed::setting<bool>("core.streamer-mode");
+
     // password
     Build<CCNode>::create()
         .id("pw-wrapper")
@@ -91,10 +93,11 @@ bool CreateRoomPopup::setup() {
         .scale(0.35f)
         .intoParent()
         .parent(smallInputsWrapper)
-        .intoNewChild(TextInput::create(POPUP_SIZE.width * 0.25f, "", "chatFont.fnt"))
+        .intoNewChild(TextInput::create(POPUP_SIZE.width * 0.25f, "", hidePass ? "bigFont.fnt" : "chatFont.fnt"))
         .with([&](TextInput* input) {
             input->setCommonFilter(CommonFilter::Uint);
-            input->setMaxCharCount(16);
+            input->setMaxCharCount(11);
+            input->setPasswordMode(hidePass);
         })
         .store(m_passcodeInput)
         .intoParent()

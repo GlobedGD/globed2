@@ -422,8 +422,14 @@ bool GlobedMenuLayer::init() {
 void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings) {
     m_roomId = id;
 
+    bool hideId = globed::setting<bool>("core.streamer-mode");
+
     if (id != 0) {
-        m_roomNameLabel->setString(fmt::format("{} ({})", name, id).c_str());
+        if (hideId) {
+            m_roomNameLabel->setString(name.c_str());
+        } else {
+            m_roomNameLabel->setString(fmt::format("{} ({})", name, id).c_str());
+        }
     }
 
     this->updateRoom(id, name, players, playerCount, settings);
