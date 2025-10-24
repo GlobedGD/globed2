@@ -154,7 +154,7 @@ CPMAddPackage(
             "QUNET_ADVANCED_DNS ${GLOBED_ADVANCED_DNS_SUPPORT}"
             "QUNET_DEBUG ${GLOBED_DEBUG}"
 )
-CPMAddPackage("gh:dankmeme01/uibuilder#456706b") # note: before bumping this, fix NameLabel (and potentially more) where Build(x) is done where x may have a parent sill
+CPMAddPackage("gh:dankmeme01/uibuilder#fa8cd841") # note: before bumping this, fix NameLabel (and potentially more) where Build(x) is done where x may have a parent sill
 CPMAddPackage("gh:dankmeme01/cue#c73aaa0b")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 CPMAddPackage("gh:Prevter/sinaps#2541d6d")
