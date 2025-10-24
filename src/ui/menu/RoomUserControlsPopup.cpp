@@ -12,7 +12,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize RoomUserControlsPopup::POPUP_SIZE{ 200.f, 140.f };
+const CCSize RoomUserControlsPopup::POPUP_SIZE{ 170.f, 90.f };
 
 bool RoomUserControlsPopup::setup(int id, std::string_view username) {
     m_username = username;
@@ -36,7 +36,7 @@ bool RoomUserControlsPopup::setup(int id, std::string_view username) {
 void RoomUserControlsPopup::remakeButtons() {
     m_menu->removeAllChildren();
 
-    CCSize btnSize { 28.f, 28.f };
+    CCSize btnSize { 32.f, 32.f };
 
     auto& rm = RoomManager::get();
 
