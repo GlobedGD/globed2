@@ -36,7 +36,7 @@ bool RoomUserControlsPopup::setup(int id, std::string_view username) {
 void RoomUserControlsPopup::remakeButtons() {
     m_menu->removeAllChildren();
 
-    CCSize btnSize { 32.f, 32.f };
+    CCSize btnSize { 36.f, 36.f };
 
     auto& rm = RoomManager::get();
 
