@@ -3,8 +3,6 @@
 
 using namespace geode::prelude;
 
-// TODO (medium): bring back save slot support
-
 namespace globed {
 
 std::optional<matjson::Value> ValueManager::getValueRaw(std::string_view key) {
