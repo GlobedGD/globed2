@@ -23,7 +23,7 @@ bool RoomUserControlsPopup::setup(int id, std::string_view username) {
         .contentSize(160.f, 60.f)
         .anchorPoint(0.5f, 0.5f)
         .ignoreAnchorPointForPos(false)
-        .pos(this->fromCenter(0.f, -10.f))
+        .pos(this->fromCenter(0.f, -14.f))
         .layout(RowLayout::create()->setAutoScale(false))
         .parent(m_mainLayer)
         .collect();
