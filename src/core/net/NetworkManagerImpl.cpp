@@ -1228,6 +1228,13 @@ void NetworkManagerImpl::sendAdminSetWhitelisted(int32_t accountId, bool whiteli
     });
 }
 
+void NetworkManagerImpl::sendAdminCloseRoom(uint32_t roomId) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto m = msg.initAdminCloseRoom();
+        m.setRoomId(roomId);
+    });
+}
+
 void NetworkManagerImpl::sendAdminFetchLogs(const FetchLogsFilters& filters) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto flogs = msg.initAdminFetchLogs();

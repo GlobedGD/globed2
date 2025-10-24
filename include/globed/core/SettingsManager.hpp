@@ -193,7 +193,16 @@ SettingAccessor<T>::operator T() const {
 
 template <typename T>
 SettingAccessor<T>& SettingAccessor<T>::operator=(T value) {
+#ifdef GLOBED_DEBUG
+    try {
+        SettingsManager::get().setSettingRaw<T>(hash, std::move(value));
+    } catch (const std::exception& e) {
+        geode::log::error("Invalid setting '{}': {}", key, e.what());
+        throw;
+    }
+#else
     SettingsManager::get().setSettingRaw<T>(hash, std::move(value));
+#endif
     return *this;
 }
 

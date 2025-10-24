@@ -251,7 +251,15 @@ void RoomListingCell::recreateButton() {
     cue::resetNode(m_rightButton);
 
     if (m_modActions) {
-        // TODO mod actions
+        m_rightButton = Build<ButtonSprite>::create("Close", "bigFont.fnt", "GJ_button_06.png", 0.8f)
+            .scale(0.7f)
+            .intoMenuItem([this] {
+                NetworkManagerImpl::get().sendAdminCloseRoom(m_info.roomId);
+                this->removeMeFromList();
+            })
+            .scaleMult(1.15f)
+            .zOrder(btnorder::Join)
+            .parent(m_rightMenu);
     } else {
         m_rightButton = Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .scale(0.7f)
@@ -276,7 +284,12 @@ void RoomListingCell::toggleModActions(bool enabled) {
     }
 
     m_modActions = enabled;
+
     this->recreateButton();
+}
+
+void RoomListingCell::removeMeFromList() {
+    m_popup->doRemoveCell(this);
 }
 
 RoomListingCell* RoomListingCell::create(const RoomListingInfo& info, RoomListingPopup* popup) {

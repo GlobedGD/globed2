@@ -86,7 +86,30 @@ bool RoomListingPopup::setup() {
         .id("add-room-btn")
         .parent(m_buttonMenu);
 
-    // TODO: if mod, show a button to toggle mod actions
+    // mod actions button
+    if (NetworkManagerImpl::get().isAuthorizedModerator()) {
+        auto menu = Build<CCMenu>::create()
+            .id("mod-actions-menu")
+            .pos(this->fromBottom(20.f))
+            .layout(
+                RowLayout::create()
+                    ->setGap(8.f)
+                    ->setAutoScale(false)
+            )
+            .contentSize(60.f, 0.f)
+            .parent(m_mainLayer)
+            .child(Build<CCLabelBMFont>::create("Mod", "bigFont.fnt").scale(0.4f))
+            .child(
+                Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f, [this](auto btn) {
+                    bool enabled = !btn->isToggled();
+                    this->toggleModActions(enabled);
+                }))
+            )
+            .updateLayout()
+            .collect();
+
+        cue::attachBackground(menu);
+    }
 
     NetworkManagerImpl::get().sendRequestRoomList();
 
@@ -220,6 +243,12 @@ void RoomListingPopup::stopWaiting(std::optional<std::string> failReason) {
     } else {
         this->onClose(nullptr);
     }
+}
+
+void RoomListingPopup::doRemoveCell(RoomListingCell* cell) {
+    auto idx = m_list->indexForCell(static_cast<cue::ListCell*>(cell->getParent()));
+    m_list->removeCell(idx);
+    this->updateTitle(m_roomCount - 1);
 }
 
 static std::vector<RoomListingInfo> makeFakeData() {

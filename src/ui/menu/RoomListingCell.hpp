@@ -24,6 +24,7 @@ private:
 
     bool init(const RoomListingInfo& info, RoomListingPopup* popup);
     void recreateButton();
+    void removeMeFromList();
 };
 
 }

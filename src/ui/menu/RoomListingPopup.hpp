@@ -37,6 +37,8 @@ protected:
     void actuallyJoin(uint32_t roomId, uint64_t passcode);
     void waitForResponse();
     void stopWaiting(std::optional<std::string> failReason);
+
+    void doRemoveCell(RoomListingCell* cell);
 };
 
 }
