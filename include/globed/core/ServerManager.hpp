@@ -26,6 +26,8 @@ public:
     void addServer(CentralServerData&& data);
     void commit();
 
+    bool isOfficialServerActive();
+
 private:
     struct Storage {
         std::vector<CentralServerData> servers;

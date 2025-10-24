@@ -115,4 +115,8 @@ void ServerManager::reload() {
     }
 }
 
+bool ServerManager::isOfficialServerActive() {
+    return this->getActiveServer().url == GLOBED_DEFAULT_MAIN_SERVER_URL;
+}
+
 }

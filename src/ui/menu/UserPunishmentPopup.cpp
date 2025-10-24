@@ -1,4 +1,5 @@
 #include "UserPunishmentPopup.hpp"
+#include <globed/core/ServerManager.hpp>
 
 #include <UIBuilder.hpp>
 #include <asp/time.hpp>
@@ -57,8 +58,7 @@ bool UserPunishmentPopup::setup() {
         .pos(this->fromBottom(24.f))
         .parent(m_buttonMenu);
 
-    // TODO: dont show this on a custom server
-    if (true) {
+    if (ServerManager::get().isOfficialServerActive()) {
         Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
             .scale(0.85f)
             .intoMenuItem(+[] {
