@@ -101,6 +101,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
     struct Fields {
         bool m_setupWasCompleted = false;
         bool m_showedNewBest = false;
+        std::optional<bool> m_oldShowProgressBar;
     };
 
     GlobedGJBGL* asBase() {
@@ -116,6 +117,12 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         auto gjbgl = this->asBase();
         gjbgl->setupPreInit(level, false);
 
+        if (globed::setting<bool>("core.level.force-progressbar") && gjbgl->active()) {
+            auto gm = GameManager::get();
+            m_fields->m_oldShowProgressBar = gm->m_showProgressBar;
+            gm->m_showProgressBar = true;
+        }
+
         if (!PlayLayer::init(level, a, b)) return false;
 
         gjbgl->setupPostInit();
@@ -125,6 +132,11 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
 
     $override
     void onQuit() {
+        auto& fields = *m_fields.self();
+        if (fields.m_oldShowProgressBar) {
+            GameManager::get()->m_showProgressBar = *fields.m_oldShowProgressBar;
+        }
+
         this->asBase()->onQuit();
         PlayLayer::onQuit();
     }
