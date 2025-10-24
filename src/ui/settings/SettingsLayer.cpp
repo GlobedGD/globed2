@@ -1,10 +1,11 @@
 #include "SettingsLayer.hpp"
 #include "AudioDeviceSetupPopup.hpp"
-#include "BoolSettingCell.hpp"
-#include "FloatSettingCell.hpp"
-#include "TitleSettingCell.hpp"
-#include "ButtonSettingCell.hpp"
-#include "IntSliderSettingCell.hpp"
+#include "cells/BoolSettingCell.hpp"
+#include "cells/FloatSettingCell.hpp"
+#include "cells/TitleSettingCell.hpp"
+#include "cells/ButtonSettingCell.hpp"
+#include "cells/IntSliderSettingCell.hpp"
+#include "cells/IntCornerSettingCell.hpp"
 #include "DiscordLinkPopup.hpp"
 #include "KeybindsPopup.hpp"
 #include "SaveSlotSwitcherPopup.hpp"
@@ -118,7 +119,7 @@ void SettingsLayer::addSettings() {
     this->addHeader("core.overlay", "Ping overlay");
     this->addSetting<BoolSettingCell>("core.overlay.enabled", "Enable Overlay", "");
     this->addSetting<FloatSettingCell>("core.overlay.opacity", "Overlay Opacity", "");
-    // this->addSetting<IntSettingCell>("core.overlay.position", "Overlay Position", ""); // TODO (release)
+    this->addSetting<IntCornerSettingCell>("core.overlay.position", "Overlay Position", "");
     this->addSetting<BoolSettingCell>("core.overlay.always-show", "Always Show Overlay", "");
 
     // Audio

@@ -3,7 +3,7 @@
 #include <ui/BaseLayer.hpp>
 #include <cue/ListNode.hpp>
 #include <globed/util/CStr.hpp>
-#include "BaseSettingCell.hpp"
+#include "cells/BaseSettingCell.hpp"
 
 namespace globed {
 
