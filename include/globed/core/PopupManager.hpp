@@ -158,6 +158,9 @@ void alertFormat(
 /// Shows a geode::Notification with a message.
 void toast(geode::NotificationIcon icon, float duration, const std::string& message);
 
+/// Shows a geode::Notification with a message.
+void toast(cocos2d::CCSprite* icon, float duration, const std::string& message);
+
 /// Shows a geode::Notification with a formatted message and a specified duration.
 template <class... Args>
 void toast(geode::NotificationIcon icon, float duration, fmt::format_string<Args...> fmt, Args&&... args) {

@@ -83,7 +83,7 @@ void GameServer::updateLatency(uint32_t latency) {
     if (avgLatency == -1) {
         avgLatency = latency;
     } else {
-        avgLatency = qn::exponentialMovingAverage(avgLatency, latency, 0.2);
+        avgLatency = qn::exponentialMovingAverage(avgLatency, latency, 0.4);
     }
 
     lastLatency = latency;
@@ -398,6 +398,7 @@ Result<> NetworkManagerImpl::disconnectCentral() {
 
 Result<> NetworkManagerImpl::cancelConnection() {
     m_centralConn.cancelConnection();
+    this->disconnectInner();
     return Ok();
 }
 

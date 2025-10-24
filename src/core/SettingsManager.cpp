@@ -75,7 +75,7 @@ SettingsManager::SettingsManager() {
 
     this->registerSetting("core.audio.voice-proximity", true);
     this->registerSetting("core.audio.classic-proximity", false);
-    this->registerSetting("core.audio.deafen-notification", false); // TODO: unimpl
+    this->registerSetting("core.audio.deafen-notification", false);
     this->registerSetting("core.audio.only-friends", false); // TODO: unimpl  also pass this in user settings?
 
     // Mod settings

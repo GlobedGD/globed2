@@ -798,6 +798,14 @@ void GlobedGJBGL::toggleDeafen() {
     bool& deafen = m_fields->m_deafened;
     deafen = !deafen;
 
+    if (globed::setting<bool>("core.audio.deafen-notification")) {
+        globed::toast(
+            CCSprite::create(deafen ? "deafen-icon-on.png"_spr : "deafen-icon-off.png"_spr),
+            0.2f,
+            deafen ? "Deafened Voice Chat" : "Undeafened Voice Chat"
+        );
+    }
+
     AudioManager::get().setDeafen(deafen);
 }
 

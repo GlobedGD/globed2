@@ -2,6 +2,7 @@
 
 #include <globed/prelude.hpp>
 #include <globed/core/net/MessageListener.hpp>
+#include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <ui/BaseLayer.hpp>
 
@@ -34,6 +35,7 @@ private:
     CCNode* m_connStateContainer;
     CCMenuItemSpriteExtra* m_cancelConnButton;
     MenuState m_state = MenuState::None;
+    ConnectionState m_lastConnState;
 
     CCNode* m_playerListMenu;
     cue::ListNode* m_playerList;

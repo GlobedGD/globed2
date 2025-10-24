@@ -1108,6 +1108,11 @@ void GlobedMenuLayer::update(float dt) {
 
     m_connStateLabel->limitLabelWidth(210.f, 0.7f, 0.2f);
 
+    if (m_lastConnState != connState) {
+        m_lastConnState = connState;
+        m_connStateContainer->updateLayout();
+    }
+
     this->setMenuState(newState);
 
     if (newState == MenuState::Connected) {

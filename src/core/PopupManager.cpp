@@ -348,4 +348,8 @@ void toast(geode::NotificationIcon icon, float duration, const std::string& mess
     Notification::create(message, icon, duration)->show();
 }
 
+void toast(cocos2d::CCSprite* icon, float duration, const std::string& message) {
+    Notification::create(message, icon, duration)->show();
+}
+
 }
