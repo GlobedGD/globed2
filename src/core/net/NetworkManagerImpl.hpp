@@ -91,6 +91,7 @@ public:
 
     geode::Result<> connectCentral(std::string_view url);
     geode::Result<> disconnectCentral();
+    geode::Result<> cancelConnection();
 
     qn::ConnectionState getConnState(bool game);
 

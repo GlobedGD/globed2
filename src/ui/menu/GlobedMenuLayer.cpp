@@ -256,11 +256,31 @@ bool GlobedMenuLayer::init() {
         .scaleMult(1.1f)
         .parent(m_connectMenu);
 
+    auto cscLayout = RowLayout::create()->setAutoScale(false);
+    cscLayout->ignoreInvisibleChildren(true);
+    m_connStateContainer = Build<CCMenu>::create()
+        .layout(cscLayout)
+        .contentSize(240.f, 28.f)
+        .parent(m_connectMenu)
+        .id("conn-state-container")
+        .collect();
+
     // connection state label
     m_connStateLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
         .scale(0.6f)
         .id("conn-state-lbl")
-        .parent(m_connectMenu);
+        .parent(m_connStateContainer);
+
+    // cancel connection button
+    m_cancelConnButton = Build<CCSprite>::create("exit01.png"_spr)
+        .with([&](auto spr) { cue::rescaleToMatch(spr, 27.5f); })
+        .intoMenuItem([this] {
+            (void) NetworkManagerImpl::get().cancelConnection();
+        })
+        .id("cancel-conn-btn")
+        .parent(m_connStateContainer);
+
+    m_connStateContainer->updateLayout();
 
     // button menu
     auto buttonMenu = Build<CCMenu>::create()
@@ -1080,7 +1100,7 @@ void GlobedMenuLayer::update(float dt) {
         } break;
     }
 
-    m_connStateLabel->limitLabelWidth(CONNECT_MENU_WIDTH, 0.7f, 0.2f);
+    m_connStateLabel->limitLabelWidth(210.f, 0.7f, 0.2f);
 
     this->setMenuState(newState);
 
@@ -1112,7 +1132,7 @@ void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
             m_connectMenu->setVisible(true);
             m_editServerButton->setEnabled(true);
             m_connectButton->setVisible(true);
-            m_connStateLabel->setVisible(false);
+            m_connStateContainer->setVisible(false);
             m_playerListMenu->setVisible(false);
         } break;
 
@@ -1120,7 +1140,7 @@ void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
             m_connectMenu->setVisible(true);
             m_editServerButton->setEnabled(false);
             m_connectButton->setVisible(false);
-            m_connStateLabel->setVisible(true);
+            m_connStateContainer->setVisible(true);
             m_playerListMenu->setVisible(false);
         } break;
 
@@ -1132,6 +1152,9 @@ void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
             this->requestRoomState();
         } break;
     }
+
+    m_cancelConnButton->setVisible(state == MenuState::Connecting);
+    m_connStateContainer->updateLayout();
 
     this->initFarSideButtons();
 

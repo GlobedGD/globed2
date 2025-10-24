@@ -33,7 +33,6 @@ AudioManager::AudioManager()
 
     // initializing COM is not necessary as FMOD will do it on its own, but FMOD docs recommend doing it anyway.
     m_thread.setStartFunction([] {
-        geode::utils::thread::setName("Audio Thread");
 #ifdef GEODE_IS_WINDOWS
         auto result = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
         if (result != S_OK) {
@@ -48,6 +47,7 @@ AudioManager::AudioManager()
     });
 #endif
 
+    m_thread.setName("Audio Thread");
     m_thread.start(this);
 
     m_recordDevice = AudioRecordingDevice{.id = -1};

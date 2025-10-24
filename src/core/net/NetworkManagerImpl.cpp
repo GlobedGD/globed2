@@ -396,6 +396,11 @@ Result<> NetworkManagerImpl::disconnectCentral() {
     return Ok();
 }
 
+Result<> NetworkManagerImpl::cancelConnection() {
+    m_centralConn.cancelConnection();
+    return Ok();
+}
+
 qn::ConnectionState NetworkManagerImpl::getConnState(bool game) {
     auto connInfo = m_connInfo.lock();
 
@@ -724,7 +729,12 @@ void NetworkManagerImpl::onCentralDisconnected() {
         if (!abortCause->first.empty()) {
             message = std::move(abortCause->first);
         } else {
-            message = m_centralConn.lastError().message();
+            auto err = m_centralConn.lastError();
+            if (err == qn::ConnectionError::Success) {
+                message = "Connection cancelled";
+            } else {
+                message = err.message();
+            }
         }
 
         // if this was a silent abort, don't show a popup
