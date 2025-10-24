@@ -128,7 +128,7 @@ void SettingsLayer::addSettings() {
     }, CELL_SIZE));
     this->addSetting<BoolSettingCell>("core.audio.voice-proximity", "Voice Proximity (Plat)", "");
     this->addSetting<BoolSettingCell>("core.audio.classic-proximity", "Voice Proximity (Classic)", "");
-    this->addSetting<BoolSettingCell>("core.audio.deafen-notifications", "Deafen Notification", "");
+    this->addSetting<BoolSettingCell>("core.audio.deafen-notification", "Deafen Notification", "");
     this->addSetting<BoolSettingCell>("core.audio.only-friends", "Friends Only Voice", "");
     this->addSetting<BoolSettingCell>("core.audio.voice-loopback", "Voice Loopback", "");
     // TODO: buffer size setting? might need a new IntSettingCell
