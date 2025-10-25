@@ -1,6 +1,6 @@
 # Globed API
 
-If you want to make a mod that extends Globed's functionality or otherwise interacts with some parts of the mod, the link API is the simplest way to do so, and it lets you access majority of Globed's classes (nearly everything besides UI). This API requires adding the mod as a required dependency and linking to the mod. If you do not wish to do so, the [Event API](./event-api.md) can be used instead, however it has less features.
+If you want to make a mod that extends Globed's functionality or otherwise interacts with some parts of the mod, the link API is the simplest way to do so, and it lets you access majority of Globed's classes (nearly everything besides UI). This API requires adding the mod as a required dependency and linking to the mod. If you do not wish to do so, the [Soft Link API](./soft-link-api.md) can be used instead, however it has less features.
 
 ## Setup
 
