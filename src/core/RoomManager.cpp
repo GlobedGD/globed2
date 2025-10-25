@@ -34,6 +34,10 @@ bool RoomManager::isInGlobal() {
     return m_roomId == 0;
 }
 
+bool RoomManager::isInRoom() {
+    return m_roomId != 0;
+}
+
 bool RoomManager::isInFollowerRoom() {
     return m_roomId != 0 && m_settings.isFollower;
 }

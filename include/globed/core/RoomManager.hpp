@@ -9,13 +9,14 @@ namespace globed {
 
 /// Class that manages client's current room state.
 /// It also manages joining and leaving levels.
-class RoomManager : public SingletonLeakBase<RoomManager> {
+class GLOBED_DLL RoomManager : public SingletonLeakBase<RoomManager> {
 public:
     void joinLevel(int levelId, bool platformer);
     void leaveLevel();
     SessionId makeSessionId(int levelId);
 
     bool isInGlobal();
+    bool isInRoom();
     bool isInFollowerRoom();
     bool isOwner();
     uint32_t getRoomId();

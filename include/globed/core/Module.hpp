@@ -4,6 +4,7 @@
 #include <Geode/utils/terminate.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/core/data/PlayerState.hpp>
+#include <globed/config.hpp>
 
 #define GLOBED_CLAIM_HOOKS(module, modify, ...) \
     do { \
@@ -38,7 +39,7 @@ enum class AutoEnableMode {
     Default = Server
 };
 
-class Module {
+class GLOBED_DLL Module {
 public:
     inline Module() : m_core(nullptr), m_autoEnableMode(AutoEnableMode::Default), m_enabled(false) {
         std::fill(std::begin(_reserved), std::end(_reserved), 0);

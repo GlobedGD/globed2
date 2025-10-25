@@ -1,5 +1,6 @@
 #pragma once
 
+#include <globed/config.hpp>
 #include <string_view>
 
 #define GLOBED_ASSERT(condition) \
@@ -16,5 +17,5 @@
 #endif
 
 namespace globed {
-    [[noreturn]] void _assertionFail(std::string_view what, std::string_view file, int line);
+    [[noreturn]] GLOBED_DLL void _assertionFail(std::string_view what, std::string_view file, int line);
 }

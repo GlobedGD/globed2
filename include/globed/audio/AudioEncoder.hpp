@@ -12,7 +12,7 @@ struct EncodedOpusData {
     size_t size;
 };
 
-class AudioEncoder {
+class GLOBED_DLL AudioEncoder {
 public:
     AudioEncoder(int sampleRate = 0, int frameSize = 0, int channels = 1);
     ~AudioEncoder();

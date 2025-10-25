@@ -8,7 +8,7 @@
 
 namespace globed {
 
-class ValueManager : public SingletonBase<ValueManager> {
+class GLOBED_DLL ValueManager : public SingletonBase<ValueManager> {
 public:
     template <typename T>
     std::optional<T> getValue(std::string_view key) {

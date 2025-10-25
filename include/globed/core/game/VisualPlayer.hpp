@@ -4,6 +4,7 @@
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/core/game/PlayerStatusIcons.hpp>
+#include <globed/config.hpp>
 
 namespace globed {
 
@@ -18,7 +19,7 @@ class RemotePlayer;
 class NameLabel;
 struct GameCameraState;
 
-class VisualPlayer : public PlayerObject {
+class GLOBED_DLL VisualPlayer : public PlayerObject {
 public:
     static VisualPlayer* create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond);
     void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState, bool forceHide);

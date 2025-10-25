@@ -3,6 +3,7 @@
 #include <globed/util/singleton.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/UserRole.hpp>
+#include <globed/core/data/Event.hpp>
 #include <globed/core/data/ModPermissions.hpp>
 #include <globed/core/data/SpecialUserData.hpp>
 #include <globed/core/data/FeaturedLevel.hpp>
@@ -66,24 +67,30 @@ public:
     bool hasViewedFeaturedLevel();
     void setViewedFeaturedLevel();
 
+    void queueGameEvent(OutEvent&& event);
+
     // Listeners
 
     template <typename T>
     [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]
     MessageListener<T> listen(ListenerFn<T> callback) {
         auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener);
+        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
+            delete static_cast<MessageListenerImpl<T>*>(ptr);
+        });
         return MessageListener<T>(listener);
     }
 
     template <typename T>
     MessageListenerImpl<T>* listenGlobal(ListenerFn<T> callback) {
         auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener);
+        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
+            delete static_cast<MessageListenerImpl<T>*>(ptr);
+        });
         return listener;
     }
 
-    void addListener(const std::type_info& ty, void* listener);
+    void addListener(const std::type_info& ty, void* listener, void* dtor);
     void removeListener(const std::type_info& ty, void* listener);
 
 private:

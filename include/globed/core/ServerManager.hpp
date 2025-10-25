@@ -12,7 +12,7 @@ struct CentralServerData {
     std::string url;
 };
 
-class ServerManager : public SingletonBase<ServerManager> {
+class GLOBED_DLL ServerManager : public SingletonBase<ServerManager> {
     friend class SingletonBase;
     ServerManager();
 

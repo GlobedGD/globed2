@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <globed/config.hpp>
 
 #ifdef GLOBED_BUILD
 # include <cue/PlayerIcon.hpp>
@@ -16,7 +17,7 @@ namespace globed {
 
 struct GameCameraState;
 
-class ProgressArrow : public cocos2d::CCNode {
+class GLOBED_DLL ProgressArrow : public cocos2d::CCNode {
 public:
     static ProgressArrow* create();
 

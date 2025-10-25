@@ -1328,12 +1328,12 @@ void NetworkManagerImpl::sendAdminUpdateUser(int32_t accountId, const std::strin
     });
 }
 
-void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener) {
+void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener, void* dtor) {
     std::type_index index{ty};
     auto listeners = m_listeners.lock();
     auto& ls = (*listeners)[index];
 
-    ls.push_back(listener);
+    ls.push_back({listener, dtor});
 
     log::debug(
         "Added listener {} for message type '{}', priority: {}",
@@ -1343,9 +1343,9 @@ void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener) {
     );
 
     // sort them by priority
-    std::sort(ls.begin(), ls.end(), [](void* a, void* b) {
-        auto* implA = static_cast<MessageListenerImplBase*>(a);
-        auto* implB = static_cast<MessageListenerImplBase*>(b);
+    std::sort(ls.begin(), ls.end(), [](const auto& a, const auto& b) {
+        auto* implA = static_cast<MessageListenerImplBase*>(a.first);
+        auto* implB = static_cast<MessageListenerImplBase*>(b.first);
         return implA->m_priority < implB->m_priority;
     });
 }
@@ -1363,12 +1363,17 @@ void NetworkManagerImpl::removeListener(const std::type_info& ty, void* listener
     auto it = listeners->find(index);
     if (it != listeners->end()) {
         auto& vec = it->second;
-        auto pos = std::find(vec.begin(), vec.end(), listener);
-        if (pos != vec.end()) {
+        for (auto pos = vec.begin(); pos != vec.end(); ++pos) {
+            if (pos->first != listener) continue;
+            auto dtor = reinterpret_cast<void(*)(void*)>(pos->second);
+
             vec.erase(pos);
             if (vec.empty()) {
                 listeners->erase(it);
             }
+
+            dtor(listener);
+            break;
         }
     }
 }

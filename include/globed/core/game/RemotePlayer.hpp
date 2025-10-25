@@ -9,7 +9,7 @@ namespace globed {
 
 struct GameCameraState;
 
-class RemotePlayer {
+class GLOBED_DLL RemotePlayer {
 public:
     RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, cocos2d::CCNode* parentNode);
     ~RemotePlayer();

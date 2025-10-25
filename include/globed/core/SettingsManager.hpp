@@ -1,5 +1,6 @@
 #pragma once
 
+#include <globed/config.hpp>
 #include <globed/util/singleton.hpp>
 #include <globed/util/assert.hpp>
 #include "ValueManager.hpp"
@@ -15,6 +16,8 @@ public:
     SettingAccessor(std::string_view key);
 
     operator T() const;
+    T value() const;
+
     SettingAccessor& operator=(T value);
 
 private:
@@ -39,7 +42,7 @@ struct SaveSlotMeta {
     bool active;
 };
 
-class SettingsManager : public SingletonBase<SettingsManager> {
+class GLOBED_DLL SettingsManager : public SingletonBase<SettingsManager> {
 public:
     using Validator = std23::move_only_function<bool(const matjson::Value&)>;
 
@@ -179,6 +182,11 @@ SettingAccessor<T>::SettingAccessor(std::string_view key) : key(key), hash(Setti
 
 template <typename T>
 SettingAccessor<T>::operator T() const {
+    return this->value();
+}
+
+template <typename T>
+T SettingAccessor<T>::value() const {
 #ifdef GLOBED_DEBUG
     try {
         return SettingsManager::get().getSettingRaw<T>(hash);

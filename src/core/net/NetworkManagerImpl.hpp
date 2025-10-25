@@ -225,18 +225,22 @@ public:
     [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]
     MessageListener<T> listen(ListenerFn<T> callback) {
         auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener);
+        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
+            delete static_cast<MessageListenerImpl<T>*>(ptr);
+        });
         return MessageListener<T>(listener);
     }
 
     template <typename T>
     MessageListenerImpl<T>* listenGlobal(ListenerFn<T> callback) {
         auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener);
+        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
+            delete static_cast<MessageListenerImpl<T>*>(ptr);
+        });
         return listener;
     }
 
-    void addListener(const std::type_info& ty, void* listener);
+    void addListener(const std::type_info& ty, void* listener, void* dtor);
     void removeListener(const std::type_info& ty, void* listener);
 
 private:
@@ -262,7 +266,7 @@ private:
     bool m_hasSecure = false;
 
     // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
-    asp::Mutex<std::unordered_map<std::type_index, std::vector<void*>>, true> m_listeners;
+    asp::Mutex<std::unordered_map<std::type_index, std::vector<std::pair<void*, void*>>>, true> m_listeners;
     asp::Thread<> m_workerThread;
 
     void onCentralConnected();
@@ -355,7 +359,7 @@ private:
         bool hasThreadUnsafe = false;
 
         if (listeners != listenersLock->end()) {
-            for (auto* listener : listeners->second) {
+            for (auto& [listener, _] : listeners->second) {
                 auto impl = static_cast<MessageListenerImpl<T>*>(listener);
 
                 if (!impl->isThreadSafe()) {
@@ -386,7 +390,7 @@ private:
             return;
         }
 
-        for (auto* listener : listeners->second) {
+        for (auto& [listener, _] : listeners->second) {
             auto impl = static_cast<MessageListenerImpl<T>*>(listener);
 
             if (impl->invoke(message) == ListenerResult::Stop) {

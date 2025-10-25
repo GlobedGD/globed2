@@ -17,6 +17,14 @@ std::string hexEncode(const void* data, size_t size) {
     return result;
 }
 
+std::string hexEncode(std::span<const uint8_t> data) {
+    return hexEncode(data.data(), data.size());
+}
+
+std::string hexEncode(const std::vector<uint8_t>& data) {
+    return hexEncode(data.data(), data.size());
+}
+
 Result<std::vector<uint8_t>> hexDecode(std::string_view data) {
     if (data.size() % 2 != 0) return Err("hex string length not even");
 

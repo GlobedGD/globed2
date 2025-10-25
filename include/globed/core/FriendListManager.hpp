@@ -7,7 +7,7 @@
 
 namespace globed {
 
-class FriendListManager : public SingletonNodeBase<FriendListManager>, public UserListDelegate {
+class GLOBED_DLL FriendListManager : public SingletonNodeBase<FriendListManager>, public UserListDelegate {
 public:
     // Refresh cache if it was not yet fetched. Pass true to force a refresh
     void refresh(bool force = false);

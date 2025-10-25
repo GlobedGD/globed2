@@ -26,7 +26,7 @@ struct AudioRecordingDevice {
     FMOD_DRIVER_STATE driverState;
 };
 
-class AudioManager : public SingletonBase<AudioManager> {
+class GLOBED_DLL AudioManager : public SingletonBase<AudioManager> {
 protected:
     friend class SingletonBase;
     AudioManager();

@@ -12,7 +12,7 @@
 
 namespace globed {
 
-class AudioStream {
+class GLOBED_DLL AudioStream {
 public:
     AudioStream(AudioDecoder&& decoder);
     ~AudioStream();

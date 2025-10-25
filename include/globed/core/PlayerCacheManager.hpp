@@ -6,7 +6,7 @@
 
 namespace globed {
 
-class PlayerCacheManager : public SingletonBase<PlayerCacheManager> {
+class GLOBED_DLL PlayerCacheManager : public SingletonBase<PlayerCacheManager> {
 public:
     using SingletonBase::get;
 

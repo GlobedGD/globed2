@@ -1,5 +1,7 @@
 #pragma once
 
+#include <globed/config.hpp>
+
 #include <string_view>
 #include <cocos2d.h>
 #include <fmt/format.h>
@@ -7,7 +9,7 @@
 namespace globed {
 
 [[noreturn]] void destructedSingleton(std::string_view name);
-void scheduleUpdateFor(cocos2d::CCObject* obj);
+GLOBED_DLL void scheduleUpdateFor(cocos2d::CCObject* obj);
 
 // had to be copied from util::debug because it includes this file
 template <typename T>
@@ -33,7 +35,8 @@ public:
     SingletonBase(SingletonBase&&) = delete;
     SingletonBase& operator=(SingletonBase&&) = delete;
 
-    static Derived& get() {
+#ifdef GLOBED_BUILD
+    GLOBED_DLL static Derived& get() {
         static Derived instance;
 
         if (destructed) {
@@ -42,6 +45,9 @@ public:
 
         return instance;
     }
+#else
+    GLOBED_DLL static Derived& get();
+#endif
 
 protected:
     static inline bool destructed = false;
@@ -63,10 +69,14 @@ public:
     SingletonLeakBase(SingletonLeakBase&&) = delete;
     SingletonLeakBase& operator=(SingletonLeakBase&&) = delete;
 
-    static Derived& get() {
+#ifdef GLOBED_BUILD
+    GLOBED_DLL static Derived& get() {
         static Derived* instance = new Derived();
         return *instance;
     }
+#else
+    GLOBED_DLL static Derived& get();
+#endif
 
 protected:
     SingletonLeakBase() {}
@@ -82,7 +92,8 @@ public:
     SingletonNodeBase(SingletonNodeBase&&) = delete;
     SingletonNodeBase& operator=(SingletonNodeBase&&) = delete;
 
-    static Derived& get() {
+#ifdef GLOBED_BUILD
+    GLOBED_DLL static Derived& get() {
         static Derived* obj = []{
             auto obj = new Derived();
 
@@ -103,6 +114,9 @@ public:
 
         return *obj;
     }
+#else
+    GLOBED_DLL static Derived& get();
+#endif
 
 protected:
     SingletonNodeBase() {}

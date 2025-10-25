@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <random>
+#include <globed/config.hpp>
 
 namespace globed {
 
@@ -82,6 +83,6 @@ protected:
     std::shared_ptr<Rng> m_rng;
 };
 
-ThreadRngHandle rng();
+GLOBED_DLL ThreadRngHandle rng();
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+#include <globed/config.hpp>
 
 namespace globed {
 
@@ -15,7 +16,7 @@ struct PlayerStatusFlags {
     bool operator==(const PlayerStatusFlags& other) const = default;
 };
 
-class PlayerStatusIcons : public cocos2d::CCNode {
+class GLOBED_DLL PlayerStatusIcons : public cocos2d::CCNode {
 public:
     void updateStatus(const PlayerStatusFlags& flags, bool force = false);
 

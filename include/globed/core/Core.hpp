@@ -8,7 +8,7 @@ namespace globed {
 
 class CoreImpl;
 
-class Core : public SingletonBase<Core> {
+class GLOBED_DLL Core : public SingletonBase<Core> {
 public:
     /// Installs a module into the core. This does not immediately enable the module,
     /// that will only happen at the end of game loading (unless the module is explicitly disabled, then it won't happen at all).

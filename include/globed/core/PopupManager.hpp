@@ -12,7 +12,7 @@ namespace asp::time {
 
 namespace globed {
 
-class [[nodiscard]] PopupRef {
+class [[nodiscard]] GLOBED_DLL PopupRef {
     friend class PopupManager;
     struct Data;
 
@@ -60,7 +60,7 @@ private:
     void doShow(bool reshowing = false);
 };
 
-class PopupManager : public SingletonNodeBase<PopupManager, true> {
+class GLOBED_DLL PopupManager : public SingletonNodeBase<PopupManager, true> {
     friend class SingletonNodeBase;
     friend class PopupRef;
     PopupManager();
@@ -156,10 +156,10 @@ void alertFormat(
 }
 
 /// Shows a geode::Notification with a message.
-void toast(geode::NotificationIcon icon, float duration, const std::string& message);
+GLOBED_DLL void toast(geode::NotificationIcon icon, float duration, const std::string& message);
 
 /// Shows a geode::Notification with a message.
-void toast(cocos2d::CCSprite* icon, float duration, const std::string& message);
+GLOBED_DLL void toast(cocos2d::CCSprite* icon, float duration, const std::string& message);
 
 /// Shows a geode::Notification with a formatted message and a specified duration.
 template <class... Args>

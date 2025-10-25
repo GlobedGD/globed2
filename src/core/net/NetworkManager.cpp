@@ -99,7 +99,6 @@ std::optional<SpecialUserData> NetworkManager::getOwnSpecialData() {
     return m_impl->getOwnSpecialData();
 }
 
-
 void NetworkManager::invalidateIcons() {
     m_impl->invalidateIcons();
 }
@@ -120,8 +119,12 @@ void NetworkManager::setViewedFeaturedLevel() {
     m_impl->setViewedFeaturedLevel();
 }
 
-void NetworkManager::addListener(const std::type_info& ty, void* listener) {
-    m_impl->addListener(ty, listener);
+void NetworkManager::queueGameEvent(OutEvent&& event) {
+    m_impl->queueGameEvent(std::move(event));
+}
+
+void NetworkManager::addListener(const std::type_info& ty, void* listener, void* dtor) {
+    m_impl->addListener(ty, listener, dtor);
 }
 
 void NetworkManager::removeListener(const std::type_info& ty, void* listener) {

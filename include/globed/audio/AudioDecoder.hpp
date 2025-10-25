@@ -14,7 +14,7 @@ struct DecodedOpusData {
     size_t size;
 };
 
-class AudioDecoder {
+class GLOBED_DLL AudioDecoder {
 public:
     AudioDecoder(int sampleRate = 0, int frameSize = 0, int channels = 1);
     ~AudioDecoder();

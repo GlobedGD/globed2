@@ -6,7 +6,7 @@
 
 namespace globed {
 
-class FunctionQueue : public SingletonNodeBase<FunctionQueue, true> {
+class GLOBED_DLL FunctionQueue : public SingletonNodeBase<FunctionQueue, true> {
     friend class SingletonNodeBase;
     FunctionQueue() = default;
 

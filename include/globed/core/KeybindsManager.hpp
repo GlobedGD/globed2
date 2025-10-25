@@ -1,6 +1,5 @@
 #pragma once
 #include <globed/util/singleton.hpp>
-#include <map>
 
 namespace globed {
 
@@ -41,7 +40,7 @@ const char* formatKey(Key key);
 const char* formatKey(cocos2d::enumKeyCodes key);
 Key convertCocosKey(cocos2d::enumKeyCodes key);
 
-class KeybindsManager : public SingletonBase<KeybindsManager> {
+class GLOBED_DLL KeybindsManager : public SingletonBase<KeybindsManager> {
 public:
     void handleKeyDown(cocos2d::enumKeyCodes key);
     void handleKeyUp(cocos2d::enumKeyCodes key);
