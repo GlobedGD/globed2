@@ -421,7 +421,7 @@ const Label::EmojiMap* getEmojiMap() {
     return &map;
 }
 
-const std::unordered_map<std::string_view, std::u8string_view> getEmojiTranslationMap() {
+const std::unordered_map<std::string_view, std::u8string_view>& getEmojiTranslationMap() {
     static const std::unordered_map<std::string_view, std::u8string_view> map = {
 // ## BEGIN CODEGEN 2
         { "flag_ca", u8"\xf0\x9f\x87\xa8\xf0\x9f\x87\xa6", },
