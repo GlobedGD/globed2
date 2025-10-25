@@ -7,6 +7,7 @@
 #include <globed/core/data/UserRole.hpp>
 #include <globed/core/data/AdminLogs.hpp>
 #include <globed/core/data/Event.hpp>
+#include <globed/core/data/PunishReasons.hpp>
 #include <globed/core/data/FeaturedLevel.hpp>
 #include <globed/core/data/ModPermissions.hpp>
 #include <globed/core/net/MessageListener.hpp>
@@ -71,6 +72,7 @@ struct ConnectionInfo {
     std::vector<uint8_t> m_userRoleIds;
     std::optional<MultiColor> m_nameColor;
     ModPermissions m_perms{};
+    PunishReasons m_punishReasons{};
     bool m_authorizedModerator;
 
     bool m_sentIcons = true; // icons are sent at login
@@ -126,6 +128,7 @@ public:
     bool isModerator();
     bool isAuthorizedModerator();
     ModPermissions getModPermissions();
+    PunishReasons getModPunishReasons();
     std::optional<SpecialUserData> getOwnSpecialData();
 
     /// Force the client to resend user icons to the connected server. Does nothing if not connected.

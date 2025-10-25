@@ -13,6 +13,7 @@
 #include "FetchedMod.hpp"
 #include "Credits.hpp"
 #include "ModPermissions.hpp"
+#include "PunishReasons.hpp"
 #include <globed/audio/EncodedAudioFrame.hpp>
 
 namespace globed::msg {
@@ -250,6 +251,10 @@ struct AdminFetchModsResponseMessage {
 struct AdminLogsResponseMessage {
     std::vector<AdminAuditLog> logs;
     std::vector<PlayerAccountData> users;
+};
+
+struct AdminPunishmentReasonsMessage {
+    PunishReasons reasons;
 };
 
 }

@@ -1036,6 +1036,23 @@ $implDecode(msg::AdminLogsResponseMessage, main::AdminLogsResponseMessage::Reade
     return out;
 }
 
+// Admin punishment reasons message
+
+$implDecode(msg::AdminPunishmentReasonsMessage, main::AdminPunishmentReasonsMessage::Reader& reader) {
+    PunishReasons out{};
+
+    auto banReasons = reader.getBan();
+    out.banReasons = {banReasons.begin(), banReasons.end()};
+
+    auto muteReasons = reader.getMute();
+    out.muteReasons = {muteReasons.begin(), muteReasons.end()};
+
+    auto roomBanReasons = reader.getRoomBan();
+    out.roomBanReasons = {roomBanReasons.begin(), roomBanReasons.end()};
+
+    return msg::AdminPunishmentReasonsMessage{ std::move(out) };
+}
+
 /// Send level script message
 
 $implEncode(const std::vector<EmbeddedScript>& scripts, game::SendLevelScriptMessage::Builder& out) {

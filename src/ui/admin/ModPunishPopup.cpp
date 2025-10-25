@@ -1,4 +1,5 @@
 #include "ModPunishPopup.hpp"
+#include "ModPunishReasonsPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
@@ -57,8 +58,11 @@ bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional
 
     Build<CCSprite>::createSpriteName("btn_chatHistory_001.png")
         .intoMenuItem([this, type] {
-            // CommonReasonPopup::create(this, type)->show();
-            // TODO: common reasons by server
+            auto popup = ModPunishReasonsPopup::create(type);
+            popup->setCallback([this](const std::string& reason) {
+                this->setReason(reason);
+            });
+            popup->show();
         })
         .parent(reasonLayout);
 

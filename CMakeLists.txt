@@ -145,7 +145,7 @@ CPMAddPackage(
             "WITH_FIBERS OFF"
 )
 
-CPMAddPackage("gh:GlobedGD/server-shared#76c8d278")
+CPMAddPackage("gh:GlobedGD/server-shared#d937c6b2")
 CPMAddPackage(
     NAME qunet-cpp
     GIT_REPOSITORY "https://github.com/dankmeme01/qunet-cpp"
@@ -155,7 +155,7 @@ CPMAddPackage(
             "QUNET_DEBUG ${GLOBED_DEBUG}"
 )
 CPMAddPackage("gh:dankmeme01/uibuilder#fa8cd841") # note: before bumping this, fix NameLabel (and potentially more) where Build(x) is done where x may have a parent sill
-CPMAddPackage("gh:dankmeme01/cue#c73aaa0b")
+CPMAddPackage("gh:dankmeme01/cue#2aaa7679")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 CPMAddPackage("gh:Prevter/sinaps#2541d6d")
 CPMAddPackage("gh:Prevter/AdvancedLabel#d78d7f82")

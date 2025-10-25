@@ -574,6 +574,11 @@ ModPermissions NetworkManagerImpl::getModPermissions() {
     return *lock ? (*lock)->m_perms : ModPermissions{};
 }
 
+PunishReasons NetworkManagerImpl::getModPunishReasons() {
+    auto lock = m_connInfo.lock();
+    return *lock ? (*lock)->m_punishReasons : PunishReasons{};
+}
+
 std::optional<SpecialUserData> NetworkManagerImpl::getOwnSpecialData() {
     auto lock = m_connInfo.lock();
     if (*lock && ((**lock).m_userRoleIds.size() || (**lock).m_nameColor)) {
@@ -1650,6 +1655,12 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::ADMIN_LOGS_RESPONSE: {
             this->invokeListeners(data::decodeUnchecked<msg::AdminLogsResponseMessage>(msg.getAdminLogsResponse()));
+        } break;
+
+        case CentralMessage::ADMIN_PUNISHMENT_REASONS: {
+            auto m = data::decodeUnchecked<msg::AdminPunishmentReasonsMessage>(msg.getAdminPunishmentReasons());
+            (**m_connInfo.lock()).m_punishReasons = m.reasons;
+            this->invokeListeners(std::move(m));
         } break;
 
         default: {
