@@ -446,8 +446,9 @@ bool LevelListLayer::loadNextBatch() {
 
 std::optional<size_t> LevelListLayer::findPlayerCountForLevel(int levelId) {
     return asp::iter::from(m_playerCounts)
-        .find([&](const auto& pair) { return pair.get().first.levelId() == levelId; })
-        .transform([](const auto& pair) { return pair.get().second; });
+        .copied()
+        .find([&](const auto& pair) { return pair.first.levelId() == levelId; })
+        .transform([](const auto& pair) { return pair.second; });
 }
 
 bool LevelListLayer::isMatchingFilters(GJGameLevel* level) {
@@ -653,7 +654,7 @@ static std::vector<std::pair<globed::SessionId, uint16_t>> getFakeLevels() {
         {123, 45},
     };
 
-    return asp::iter::from(levels).map([](auto pair) {
+    return asp::iter::from(levels).copied().map([](auto pair) {
         return std::make_pair(globed::SessionId{pair.first}, pair.second);
     }).collect<std::vector<std::pair<globed::SessionId, uint16_t>>>();
 }

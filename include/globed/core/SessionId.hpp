@@ -7,12 +7,9 @@ class SessionId {
 public:
     inline explicit SessionId() : value(0) {}
     inline explicit SessionId(uint64_t id) : value(id) {}
-    inline SessionId(const SessionId& other) : value(other.value) {}
 
-    inline SessionId& operator=(const SessionId& other) {
-        value = other.value;
-        return *this;
-    }
+    constexpr inline SessionId(const SessionId& other) = default;
+    constexpr inline SessionId& operator=(const SessionId& other) = default;
 
     static inline SessionId fromParts(uint8_t serverId, uint32_t roomId, int levelId) {
         uint64_t a = static_cast<uint64_t>(serverId) << 56;

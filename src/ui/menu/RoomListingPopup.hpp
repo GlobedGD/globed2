@@ -8,6 +8,7 @@
 namespace globed {
 
 class LoadingPopup;
+class RoomListingCell;
 
 class RoomListingPopup : public BasePopup<RoomListingPopup> {
 protected:
