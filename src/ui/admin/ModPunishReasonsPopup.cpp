@@ -37,7 +37,7 @@ private:
 
         Build<Label>::create(m_reason, "bigFont.fnt")
             .with([&](auto label) {
-                label->limitLabelWidth(width - 32.f, 0.45f, 0.1f);
+                label->limitLabelWidth(width - 32.f, 0.55f, 0.1f);
             })
             .anchorPoint(0.f, 0.5f)
             .pos(5.f, CELL_HEIGHT / 2.f)
