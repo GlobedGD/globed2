@@ -83,6 +83,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     src/audio/*.cpp
     src/util/*.cpp
     src/ui/*.cpp
+    src/soft-link/*.cpp
     ${PLATFORM_SOURCES}
     ${MODULE_SOURCES}
 )
