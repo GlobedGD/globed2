@@ -101,7 +101,7 @@ endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
-setup_geode_mod(${PROJECT_NAME})
+setup_geode_mod(${PROJECT_NAME} LINK_TYPE PRIVATE)
 
 # Setup release stuff
 
@@ -166,10 +166,11 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC UIBUILDER_NO_ARROW=1)
 if (GLOBED_VOICE_SUPPORT)
     CPMAddPackage("gh:xiph/opus#v1.5.2")
     target_compile_definitions(${PROJECT_NAME} PUBLIC GLOBED_VOICE_SUPPORT)
-    target_link_libraries(${PROJECT_NAME} opus)
+    target_link_libraries(${PROJECT_NAME} PRIVATE opus)
 endif()
 
-target_link_libraries(${PROJECT_NAME} CapnProto::capnp ServerShared qunet asp argon cue UIBuilder sinaps advanced_label)
+target_link_libraries(${PROJECT_NAME} PRIVATE CapnProto::capnp ServerShared qunet argon cue UIBuilder sinaps advanced_label)
+target_link_libraries(${PROJECT_NAME} PUBLIC asp)
 
 if (ANDROID)
     if (ANDROID_ABI STREQUAL "arm64-v8a")
@@ -191,9 +192,9 @@ if (GLOBED_OSS_BUILD)
     target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_OSS_BUILD=1)
 else()
     if (WIN32)
-        target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb.lib")
-        target_link_libraries(${PROJECT_NAME} ntdll.lib userenv.lib runtimeobject.lib Iphlpapi.lib bcrypt.lib)
+        target_link_libraries(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb.lib")
+        target_link_libraries(${PROJECT_NAME} PRIVATE ntdll.lib userenv.lib runtimeobject.lib Iphlpapi.lib bcrypt.lib)
     else ()
-        target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb-${LIB_PLATFORM}.a")
+        target_link_libraries(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb-${LIB_PLATFORM}.a")
     endif()
 endif()
