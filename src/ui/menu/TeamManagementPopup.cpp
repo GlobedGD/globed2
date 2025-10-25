@@ -198,11 +198,7 @@ bool TeamManagementPopup::setup(int assigningFor) {
     m_showPlus = RoomManager::get().isOwner() && !assigningFor;
     m_assigningFor = assigningFor;
 
-    m_list = Build(cue::ListNode::create(
-        {CELL_WIDTH, 170.f},
-        cue::Brown,
-        cue::ListBorderStyle::Comments
-    ))
+    m_list = Build(cue::ListNode::create({CELL_WIDTH, 170.f}))
         .pos(this->fromCenter(0.f, -2.f))
         .visible(false)
         .parent(m_mainLayer);

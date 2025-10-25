@@ -155,7 +155,7 @@ bool LevelListLayer::init() {
 
     geode::addSideArt(this, SideArt::Bottom);
 
-    m_list = Build(cue::ListNode::create({358.f, 220.f}, cue::Brown))
+    m_list = Build(cue::ListNode::createLevels({358.f, 220.f}))
         .zOrder(2)
         .anchorPoint(0.5f, 0.5f)
         .pos(winSize / 2.f)

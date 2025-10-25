@@ -140,7 +140,7 @@ private:
 bool RegionSelectPopup::setup() {
     this->setTitle("Select Preferred Server");
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE, cue::Brown, cue::ListBorderStyle::Comments))
+    m_list = Build(cue::ListNode::create(LIST_SIZE))
         .pos(this->fromCenter(0.f, -10.f))
         .parent(m_mainLayer);
     m_list->setCellHeight(CELL_HEIGHT);

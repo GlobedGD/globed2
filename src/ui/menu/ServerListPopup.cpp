@@ -106,7 +106,7 @@ bool ServerListPopup::setup(GlobedMenuLayer* layer) {
 
     m_menuLayer = layer;
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE, cue::Brown, cue::ListBorderStyle::Comments))
+    m_list = Build(cue::ListNode::create(LIST_SIZE))
         .pos(this->fromCenter(0.f, -10.f))
         .parent(m_mainLayer);
     m_list->setCellHeight(CELL_HEIGHT);

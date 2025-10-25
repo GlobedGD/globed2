@@ -14,6 +14,7 @@
 #include "core/Constants.hpp"
 #include "core/actions.hpp"
 #include <Geode/Result.hpp>
+#include <std23/move_only_function.h>
 
 namespace globed {
 

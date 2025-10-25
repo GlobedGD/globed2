@@ -336,7 +336,7 @@ bool ModAuditLogPopup::setup(FetchLogsFilters filters) {
 
     // log list
 
-    m_list = Build(cue::ListNode::create({LogCell::WIDTH, 200.f}, cue::Brown, cue::ListBorderStyle::Comments))
+    m_list = Build(cue::ListNode::create({LogCell::WIDTH, 200.f}))
         .pos(this->fromCenter(0.f, -15.f))
         .parent(m_mainLayer);
     m_list->setAutoUpdate(false);

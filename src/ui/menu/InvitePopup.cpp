@@ -59,7 +59,7 @@ protected:
 bool InvitePopup::setup() {
     this->setTitle("Invite Players");
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE, cue::Brown, cue::ListBorderStyle::Comments))
+    m_list = Build(cue::ListNode::create(LIST_SIZE))
         .pos(this->fromCenter(0.f, -10.f))
         .parent(m_mainLayer);
     m_list->setAutoUpdate(false);

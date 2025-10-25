@@ -91,7 +91,7 @@ static Cell* makeCell(CStr name, CStr desc, bool RoomSettings::* bptr) {
 bool RoomSettingsPopup::setup() {
     this->setTitle("Room Settings");
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE, cue::Brown, cue::ListBorderStyle::Comments))
+    m_list = Build(cue::ListNode::create(LIST_SIZE))
         .pos(this->fromCenter(0.f, -11.f))
         .parent(m_mainLayer);
 

@@ -23,7 +23,7 @@ bool SettingsLayer::init() {
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    m_list = Build(cue::ListNode::create({356.f, 220.f}, {191, 114, 62, 255}))
+    m_list = Build(cue::ListNode::createLevels({356.f, 220.f}))
         .pos(winSize / 2.f)
         .parent(this);
     m_list->setAutoUpdate(false);

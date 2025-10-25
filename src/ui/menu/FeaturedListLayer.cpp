@@ -20,7 +20,7 @@ bool FeaturedListLayer::init() {
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE, cue::Brown))
+    m_list = Build(cue::ListNode::createLevels(LIST_SIZE))
         .zOrder(2)
         .parent(this)
         .pos(winSize / 2.f)

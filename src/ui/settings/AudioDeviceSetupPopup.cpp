@@ -151,7 +151,7 @@ bool AudioDeviceSetupPopup::setup() {
 
     this->toggleButtons(false);
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE, cue::Brown, cue::ListBorderStyle::Comments))
+    m_list = Build(cue::ListNode::create(LIST_SIZE))
         .anchorPoint(0.5f, 1.f)
         .pos(this->fromTop(20.f))
         .parent(m_mainLayer);
