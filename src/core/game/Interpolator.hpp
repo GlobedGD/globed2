@@ -7,14 +7,6 @@
 
 namespace globed {
 
-struct PlayerDeath {
-    bool isReal;
-};
-
-struct SpiderTeleportData {
-    cocos2d::CCPoint from, to;
-};
-
 struct OutFlags {
     std::optional<PlayerDeath> death;
     std::optional<SpiderTeleportData> spiderP1, spiderP2;

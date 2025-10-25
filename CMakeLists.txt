@@ -111,6 +111,8 @@ endif()
 
 # Setup compile definitions
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_BUILD)
+
 if (GLOBED_DEBUG)
     target_compile_definitions(${PROJECT_NAME} PUBLIC GLOBED_DEBUG)
     set(QUNET_DEBUG ON)
@@ -170,7 +172,7 @@ if (GLOBED_VOICE_SUPPORT)
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE CapnProto::capnp ServerShared qunet argon cue UIBuilder sinaps advanced_label)
-target_link_libraries(${PROJECT_NAME} PUBLIC asp)
+target_link_libraries(${PROJECT_NAME} PUBLIC asp std23::nontype_functional)
 
 if (ANDROID)
     if (ANDROID_ABI STREQUAL "arm64-v8a")

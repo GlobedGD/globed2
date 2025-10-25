@@ -129,7 +129,7 @@ Result<InEvent> InEvent::decode(ByteReader& reader) {
     reader.readBytes(rawData.data(), remSize).unwrap();
 
     return Ok(InEvent {
-        UnknownEvent { std::move(rawData) }
+        UnknownEvent { type, std::move(rawData) }
     });
 }
 
@@ -180,6 +180,12 @@ Result<> ScriptedEvent::encode(HeapByteWriter& writer) {
 
 Result<> RequestScriptLogsEvent::encode(HeapByteWriter& writer) {
     writer.writeU16(EVENT_SCR_REQUEST_SCRIPT_LOGS);
+    return Ok();
+}
+
+Result<> UnknownEvent::encode(HeapByteWriter& writer) {
+    writer.writeU16(type);
+    writer.writeBytes(rawData.data(), rawData.size());
     return Ok();
 }
 

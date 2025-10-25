@@ -1,7 +1,9 @@
 #pragma once
 
-#include <qunet/buffers/ByteReader.hpp>
+#include <Geode/Result.hpp>
 #include <cocos2d.h>
+#include <span>
+#include <vector>
 
 namespace globed {
 
@@ -29,7 +31,6 @@ public:
     void animateNode(cocos2d::CCRGBAProtocol* label) const;
 
 private:
-
     Type m_type;
     std::vector<Color3> m_colors;
 };

@@ -35,4 +35,97 @@ ConnectionState NetworkManager::getConnectionState() {
     }
 }
 
+Result<> NetworkManager::disconnectCentral() {
+    return m_impl->disconnectCentral();
+}
+
+Result<> NetworkManager::cancelConnection() {
+    return m_impl->cancelConnection();
+}
+
+bool NetworkManager::isConnected() const {
+    return m_impl->isConnected();
+}
+
+asp::time::Duration NetworkManager::getGamePing() {
+    return m_impl->getGamePing();
+}
+
+asp::time::Duration NetworkManager::getCentralPing() {
+    return m_impl->getCentralPing();
+}
+
+uint32_t NetworkManager::getGameTickrate() {
+    return m_impl->getGameTickrate();
+}
+
+std::vector<UserRole> NetworkManager::getAllRoles() {
+    return m_impl->getAllRoles();
+}
+
+std::vector<UserRole> NetworkManager::getUserRoles() {
+    return m_impl->getUserRoles();
+}
+
+std::vector<uint8_t> NetworkManager::getUserRoleIds() {
+    return m_impl->getUserRoleIds();
+}
+
+std::optional<UserRole> NetworkManager::getUserHighestRole() {
+    return m_impl->getUserHighestRole();
+}
+
+std::optional<UserRole> NetworkManager::findRole(uint8_t roleId) {
+    return m_impl->findRole(roleId);
+}
+
+std::optional<UserRole> NetworkManager::findRole(std::string_view roleId) {
+    return m_impl->findRole(roleId);
+}
+
+bool NetworkManager::isModerator() {
+    return m_impl->isModerator();
+}
+
+bool NetworkManager::isAuthorizedModerator() {
+    return m_impl->isAuthorizedModerator();
+}
+
+ModPermissions NetworkManager::getModPermissions() {
+    return m_impl->getModPermissions();
+}
+
+std::optional<SpecialUserData> NetworkManager::getOwnSpecialData() {
+    return m_impl->getOwnSpecialData();
+}
+
+
+void NetworkManager::invalidateIcons() {
+    m_impl->invalidateIcons();
+}
+
+void NetworkManager::invalidateFriendList() {
+    m_impl->invalidateFriendList();
+}
+
+std::optional<FeaturedLevelMeta> NetworkManager::getFeaturedLevel() {
+    return m_impl->getFeaturedLevel();
+}
+
+bool NetworkManager::hasViewedFeaturedLevel() {
+    return m_impl->hasViewedFeaturedLevel();
+}
+
+void NetworkManager::setViewedFeaturedLevel() {
+    m_impl->setViewedFeaturedLevel();
+}
+
+void NetworkManager::addListener(const std::type_info& ty, void* listener) {
+    m_impl->addListener(ty, listener);
+}
+
+void NetworkManager::removeListener(const std::type_info& ty, void* listener) {
+    m_impl->removeListener(ty, listener);
+}
+
 }

@@ -4,6 +4,8 @@
 #include <globed/util/ConstexprString.hpp>
 #include "Constants.hpp"
 
+#include <matjson.hpp>
+
 namespace globed {
 
 class ValueManager : public SingletonBase<ValueManager> {

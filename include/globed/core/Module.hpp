@@ -3,8 +3,7 @@
 #include <Geode/Result.hpp>
 #include <Geode/utils/terminate.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
-
-#include <core/game/Interpolator.hpp>
+#include <globed/core/data/PlayerState.hpp>
 
 #define GLOBED_CLAIM_HOOKS(module, modify, ...) \
     do { \

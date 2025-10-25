@@ -1,13 +1,16 @@
 #pragma once
 
 #include <globed/prelude.hpp>
-#include <qunet/buffers/ByteReader.hpp>
-#include <qunet/buffers/HeapByteWriter.hpp>
 
-#include <modules/scripting/data/SpawnData.hpp>
-#include <modules/scripting/data/SetItemData.hpp>
-#include <modules/scripting/data/FollowPlayerData.hpp>
-#include <modules/scripting/data/MoveGroupData.hpp>
+#ifdef GLOBED_BUILD
+# include <qunet/buffers/ByteReader.hpp>
+# include <qunet/buffers/HeapByteWriter.hpp>
+
+# include <modules/scripting/data/SpawnData.hpp>
+# include <modules/scripting/data/SetItemData.hpp>
+# include <modules/scripting/data/FollowPlayerData.hpp>
+# include <modules/scripting/data/MoveGroupData.hpp>
+#endif
 
 namespace globed {
 
@@ -41,8 +44,18 @@ constexpr uint16_t EVENT_ACTIVE_PLAYER_SWITCH =  0xf140;
 
 constexpr uint16_t EVENT_CUSTOM_BASE = 0xf800;
 
+struct UnknownEvent {
+    uint16_t type;
+    std::vector<uint8_t> rawData;
+
+#ifdef GLOBED_BUILD
+    Result<> encode(qn::HeapByteWriter& writer);
+#endif
+};
 
 // In n out events
+
+#ifdef GLOBED_BUILD
 
 struct CounterChangeEvent {
     uint8_t rawType;
@@ -114,12 +127,11 @@ struct ActivePlayerSwitchEvent {
     Result<> encode(qn::HeapByteWriter& writer);
 };
 
-struct UnknownEvent {
-    std::vector<uint8_t> rawData;
-};
+#endif
 
 struct InEvent {
     using Kind = std::variant<
+#ifdef GLOBED_BUILD
         CounterChangeEvent,
         SpawnGroupEvent,
         SetItemEvent,
@@ -130,12 +142,15 @@ struct InEvent {
         TwoPlayerLinkRequestEvent,
         TwoPlayerUnlinkEvent,
         ActivePlayerSwitchEvent,
+#endif
         UnknownEvent
     >;
 
     Kind m_kind;
 
+#ifdef GLOBED_BUILD
     static Result<InEvent> decode(qn::ByteReader& reader);
+#endif
 
     template <typename T>
     bool is() const {
@@ -155,6 +170,8 @@ struct InEvent {
 
 // Outgoing events
 
+#ifdef GLOBED_BUILD
+
 struct ScriptedEvent {
     uint16_t type;
     std::vector<std::variant<int, float>> args;
@@ -166,17 +183,26 @@ struct RequestScriptLogsEvent {
     Result<> encode(qn::HeapByteWriter& writer);
 };
 
+#endif
+
 struct OutEvent {
     using Kind = std::variant<
+#ifdef GLOBED_BUILD
         CounterChangeEvent,
         TwoPlayerLinkRequestEvent,
         TwoPlayerUnlinkEvent,
         ScriptedEvent,
         RequestScriptLogsEvent,
-        ActivePlayerSwitchEvent
+        ActivePlayerSwitchEvent,
+#endif
+        UnknownEvent
     >;
 
     OutEvent(Kind&& k) : m_kind(std::move(k)) {}
+    OutEvent(UnknownEvent e) : m_kind(std::move(e)) {}
+    Kind m_kind;
+
+#ifdef GLOBED_BUILD
     OutEvent(CounterChangeEvent e) : m_kind(std::move(e)) {}
     OutEvent(TwoPlayerLinkRequestEvent e) : m_kind(std::move(e)) {}
     OutEvent(TwoPlayerUnlinkEvent e) : m_kind(std::move(e)) {}
@@ -184,9 +210,8 @@ struct OutEvent {
     OutEvent(RequestScriptLogsEvent e) : m_kind(std::move(e)) {}
     OutEvent(ActivePlayerSwitchEvent e) : m_kind(std::move(e)) {}
 
-    Kind m_kind;
-
     Result<> encode(qn::HeapByteWriter& writer);
+#endif
 };
 
 }

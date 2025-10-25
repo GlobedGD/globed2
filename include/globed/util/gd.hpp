@@ -3,7 +3,10 @@
 #include <globed/core/data/PlayerIconData.hpp>
 
 #include <Geode/Geode.hpp>
-#include <cue/PlayerIcon.hpp>
+
+#ifdef GLOBED_BUILD
+# include <cue/PlayerIcon.hpp>
+#endif
 
 // Various gd related utilities
 
@@ -64,7 +67,9 @@ std::optional<Difficulty> difficultyFromString(std::string_view diff);
 
 Difficulty calcLevelDifficulty(GJGameLevel* level);
 
+#ifdef GLOBED_BUILD
 cue::Icons getPlayerIcons();
 cue::Icons convertPlayerIcons(const PlayerIconData& data);
+#endif
 
 }

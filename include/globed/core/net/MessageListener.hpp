@@ -36,25 +36,26 @@ public:
     MessageListenerImpl& operator=(MessageListenerImpl&&) noexcept = default;
 
     /// Set the priority of this listener. Lower values are called first. The default is 0.
-    void setPriority(int priority) {
+    inline void setPriority(int priority) {
         m_priority = priority;
     }
 
-    int getPriority() const {
+    inline int getPriority() const {
         return m_priority;
     }
 
     /// Set whether the listener is thread-safe. If `false` (the default), the listener will always be called on the main thread.
-    void setThreadSafe(bool threadSafe) {
+    inline void setThreadSafe(bool threadSafe) {
         m_threadSafe = threadSafe;
     }
 
-    bool isThreadSafe() const {
+    inline bool isThreadSafe() const {
         return m_threadSafe;
     }
 
 private:
     friend class NetworkManagerImpl;
+    friend class NetworkManager;
 
     ListenerFn<T> m_callback;
 
@@ -62,7 +63,7 @@ private:
         std::memset(m_reserved, 0, sizeof(m_reserved));
     }
 
-    ListenerResult invoke(const T& message) {
+    inline ListenerResult invoke(const T& message) {
         if (m_callback) {
             return m_callback(message);
         }
@@ -77,12 +78,12 @@ public:
     MessageListener(const MessageListener&) = delete;
     MessageListener& operator=(const MessageListener&) = delete;
 
-    MessageListener(MessageListener&& other) noexcept
+    inline MessageListener(MessageListener&& other) noexcept
         : m_impl(other.m_impl) {
         other.m_impl = nullptr;
     }
 
-    MessageListener& operator=(MessageListener&& other) noexcept {
+    inline MessageListener& operator=(MessageListener&& other) noexcept {
         if (this != &other) {
             if (m_impl) {
                 _destroyListener(typeid(T), m_impl);
@@ -93,15 +94,15 @@ public:
         return *this;
     }
 
-    MessageListenerImpl<T>* operator*() {
+    inline MessageListenerImpl<T>* operator*() {
         return m_impl;
     }
 
-    MessageListenerImpl<T>* operator->() {
+    inline MessageListenerImpl<T>* operator->() {
         return m_impl;
     }
 
-    ~MessageListener() {
+    inline ~MessageListener() {
         if (m_impl) {
             _destroyListener(typeid(T), m_impl);
             m_impl = nullptr;
@@ -109,28 +110,29 @@ public:
     }
 
     /// Set the priority of this listener. Lower values are called first. The default is 0.
-    void setPriority(int priority) {
+    inline void setPriority(int priority) {
         m_impl->setPriority(priority);
     }
 
-    int getPriority() const {
+    inline int getPriority() const {
         return m_impl->getPriority();
     }
 
     /// Set whether the listener is thread-safe. If `false` (the default), the listener will always be called on the main thread.
-    void setThreadSafe(bool threadSafe) {
+    inline void setThreadSafe(bool threadSafe) {
         m_impl->setThreadSafe(threadSafe);
     }
 
-    bool isThreadSafe() const {
+    inline bool isThreadSafe() const {
         return m_impl->isThreadSafe();
     }
 
 private:
     friend class NetworkManagerImpl;
+    friend class NetworkManager;
     MessageListenerImpl<T>* m_impl;
 
-    MessageListener(MessageListenerImpl<T>* impl) : m_impl(impl) {}
+    inline MessageListener(MessageListenerImpl<T>* impl) : m_impl(impl) {}
 };
 
 }

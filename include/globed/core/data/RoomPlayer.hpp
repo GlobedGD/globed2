@@ -4,7 +4,9 @@
 #include <globed/core/data/ColorId.hpp>
 #include <globed/core/SessionId.hpp>
 
-#include <cue/PlayerIcon.hpp>
+#ifdef GLOBED_BUILD
+# include <cue/PlayerIcon.hpp>
+#endif
 
 namespace globed {
 
@@ -15,8 +17,11 @@ struct MinimalRoomPlayer {
     ColorId<uint16_t> color2;
     ColorId<uint16_t> glowColor;
 
+#ifdef GLOBED_BUILD
     cue::PlayerIcon* createIcon() const;
     cue::Icons toIcons() const;
+#endif
+
     static MinimalRoomPlayer createMyself();
 };
 

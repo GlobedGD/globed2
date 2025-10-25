@@ -46,5 +46,16 @@
                 "size": 64
             }
         }
+    },
+    "api": {
+        "include": [
+            "include/globed/*.hpp",
+            "include/globed/audio/*.hpp",
+            "include/globed/core/*.hpp",
+            "include/globed/core/data/*.hpp",
+            "include/globed/core/game/*.hpp",
+            "include/globed/core/net/*.hpp",
+            "include/globed/util/*.hpp"
+        ]
     }
 }

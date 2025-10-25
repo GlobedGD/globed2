@@ -1,4 +1,9 @@
 #pragma once
+
+#include <variant>
+#include <type_traits>
+#include <utility>
+
 #define GLOBED_LAZY(expr) ::globed::lazyExpr([&]() -> decltype(expr) { return expr; })
 
 namespace globed {

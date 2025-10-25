@@ -1,5 +1,7 @@
 #include <globed/audio/VolumeEstimator.hpp>
+
 #include <asp/iter.hpp>
+#include <qunet/util/algo.hpp>
 
 using namespace geode::prelude;
 

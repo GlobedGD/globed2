@@ -7,6 +7,7 @@
 #include <globed/core/data/Messages.hpp>
 #include <ui/game/VoiceOverlay.hpp>
 #include <ui/game/PingOverlay.hpp>
+#include <ui/misc/NameLabel.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/game/SpeedTracker.hpp>
 

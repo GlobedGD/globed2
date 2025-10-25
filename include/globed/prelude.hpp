@@ -15,6 +15,7 @@
 #include "core/actions.hpp"
 #include <Geode/Result.hpp>
 #include <std23/move_only_function.h>
+#include <std23/function_ref.h>
 
 namespace globed {
 

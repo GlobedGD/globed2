@@ -1,7 +1,16 @@
 #pragma once
 #include <Geode/Geode.hpp>
 
-#include <cue/PlayerIcon.hpp>
+#ifdef GLOBED_BUILD
+# include <cue/PlayerIcon.hpp>
+#else
+namespace cue {
+
+struct Icons;
+class PlayerIcon;
+
+}
+#endif
 
 namespace globed {
 

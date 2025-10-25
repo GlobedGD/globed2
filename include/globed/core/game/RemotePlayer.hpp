@@ -2,8 +2,6 @@
 #include "VisualPlayer.hpp"
 #include "ProgressArrow.hpp"
 #include "ProgressIcon.hpp"
-#include <globed/core/data/PlayerDisplayData.hpp>
-#include <core/game/Interpolator.hpp>
 
 #include <cocos2d.h>
 

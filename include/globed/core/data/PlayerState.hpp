@@ -84,4 +84,12 @@ struct PlayerState {
     }
 };
 
+struct PlayerDeath {
+    bool isReal;
+};
+
+struct SpiderTeleportData {
+    cocos2d::CCPoint from, to;
+};
+
 }

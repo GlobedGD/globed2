@@ -1,9 +1,10 @@
 #include <globed/core/game/VisualPlayer.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/RoomManager.hpp>
-#include <core/PreloadManager.hpp>
 #include <globed/util/lazy.hpp>
+#include <core/PreloadManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <ui/misc/NameLabel.hpp>
 
 #include <UIBuilder.hpp>
 

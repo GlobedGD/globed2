@@ -4,8 +4,6 @@
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/core/game/PlayerStatusIcons.hpp>
-#include <core/game/Interpolator.hpp>
-#include <ui/misc/NameLabel.hpp>
 
 namespace globed {
 
@@ -17,6 +15,7 @@ static constexpr int SPIDER_DASH_SPRITE_TAG = 234562347;
 static constexpr int DEATH_EFFECT_TAG = 234562349;
 
 class RemotePlayer;
+class NameLabel;
 struct GameCameraState;
 
 class VisualPlayer : public PlayerObject {
@@ -40,7 +39,7 @@ private:
     RemotePlayer* m_remotePlayer = nullptr;
     cocos2d::ccColor3B m_color1{}, m_color2{};
     bool m_teamInitialized = false;
-    geode::Ref<NameLabel> m_nameLabel;
+    NameLabel* m_nameLabel;
     geode::Ref<PlayerStatusIcons> m_statusIcons;
     geode::Ref<cocos2d::CCDrawNode> m_playerTrajectory = nullptr;
 

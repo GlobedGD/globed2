@@ -1,6 +1,8 @@
 #include <globed/core/data/MultiColor.hpp>
 #include <globed/util/assert.hpp>
 
+#include <qunet/buffers/ByteReader.hpp>
+
 using namespace geode::prelude;
 
 #define READER_UNWRAP(...) GEODE_UNWRAP((__VA_ARGS__).mapErr([&](auto&& err) { return err.message(); }));
