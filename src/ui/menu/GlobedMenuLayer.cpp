@@ -305,8 +305,9 @@ bool GlobedMenuLayer::init() {
 
     // player list menu
 
-    m_playerListMenu = Build<CCNode>::create()
+    m_playerListMenu = Build<CCMenu>::create()
         .id("player-list-menu")
+        .ignoreAnchorPointForPos(false)
         .contentSize(PLAYER_LIST_MENU_SIZE)
         .pos(winSize / 2.f)
         .anchorPoint(0.5f, 0.5f)
@@ -318,14 +319,15 @@ bool GlobedMenuLayer::init() {
         .pos(PLAYER_LIST_MENU_SIZE / 2.f)
         .parent(m_playerListMenu);
 
-    m_roomNameButton = Build<CCLabelBMFont>::create("", "goldFont.fnt")
+    m_roomNameButton = Build<Label>::create("", "goldFont.fnt")
         .scale(0.7f)
         .store(m_roomNameLabel)
         .intoMenuItem([this] {
             this->copyRoomIdToClipboard();
         })
+        .scaleMult(1.1f)
         .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, PLAYER_LIST_MENU_SIZE.height - 18.f)
-        .id("room-name-lbl")
+        .id("room-name-btn")
         .parent(m_playerListMenu);
 
     m_playerList = Build<cue::ListNode>::create(PLAYER_LIST_SIZE, ccColor4B{0x33, 0x44, 0x99, 255}, cue::ListBorderStyle::CommentsBlue)
@@ -422,24 +424,32 @@ bool GlobedMenuLayer::init() {
 void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings) {
     m_roomId = id;
 
-    bool hideId = globed::setting<bool>("core.streamer-mode");
-
-    if (id != 0) {
-        if (hideId) {
-            m_roomNameLabel->setString(name.c_str());
-        } else {
-            m_roomNameLabel->setString(fmt::format("{} ({})", name, id).c_str());
-        }
-    }
-
     this->updateRoom(id, name, players, playerCount, settings);
     this->initRoomButtons();
     this->initSideButtons();
 }
 
 void GlobedMenuLayer::updateRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings) {
+    bool hideId = globed::setting<bool>("core.streamer-mode");
+
+    std::string labelText;
+
     if (id == 0) {
-        m_roomNameLabel->setString(fmt::format("{} ({} {})", name, playerCount, playerCount == 1 ? "player" : "players").c_str());
+        labelText = fmt::format("{} ({} {})", name, playerCount, playerCount == 1 ? "player" : "players");
+    } else if (hideId) {
+        labelText = name;
+    } else {
+        labelText = fmt::format("{} ({})", name, id);
+    }
+
+    if (m_roomNameLabel->getString() != labelText) {
+        m_roomNameLabel->setString(labelText);
+        m_roomNameLabel->limitLabelWidth(320.f, 0.7f, 0.35f);
+        auto size = m_roomNameLabel->getContentSize();
+
+        m_roomNameLabel->setPosition(size / 2.f);
+        m_roomNameButton->setContentSize(size);
+        log::debug("setting");
     }
 
     this->updatePlayerList(players);
@@ -989,6 +999,7 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
 
 void GlobedMenuLayer::copyRoomIdToClipboard() {
     geode::utils::clipboard::write(fmt::to_string(m_roomId));
+    globed::toastSuccess("Copied room ID to clipboard!");
 }
 
 void GlobedMenuLayer::requestRoomState() {

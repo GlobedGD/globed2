@@ -85,7 +85,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
 
     /// Room name
 
-    auto roomNameLayout = Build<CCNode>::create()
+    auto roomNameLayout = Build<CCMenu>::create()
         .pos(4.f, CELL_HEIGHT - 10.f)
         .anchorPoint(0.f, 0.5f)
         .layout(RowLayout::create()
@@ -101,6 +101,16 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
         .id("room-name")
         .parent(roomNameLayout)
         .collect();
+
+    // button for extended data
+    m_extInfoButton = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+        .scale(0.6f)
+        .intoMenuItem([this] {
+            this->showExtendedData();
+        })
+        .id("ext-data-btn")
+        .visible(false)
+        .parent(roomNameLayout);
 
     m_rightMenu = Build<CCMenu>::create()
         .layout(RowLayout::create()
@@ -218,7 +228,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
     m_rightMenu->updateLayout();
 
     // update width of the room name accordingly, so it fits
-    roomNameLabel->limitLabelWidth(208.f - playerCountWrapper->getContentWidth(), 0.48f, 0.1f);
+    roomNameLabel->limitLabelWidth(200.f - playerCountWrapper->getContentWidth(), 0.48f, 0.1f);
     roomNameLayout->updateLayout();
 
     // add a background
@@ -284,12 +294,23 @@ void RoomListingCell::toggleModActions(bool enabled) {
     }
 
     m_modActions = enabled;
+    m_extInfoButton->setVisible(enabled);
 
     this->recreateButton();
 }
 
 void RoomListingCell::removeMeFromList() {
     m_popup->doRemoveCell(this);
+}
+
+void RoomListingCell::showExtendedData() {
+    globed::alertFormat(
+        "Room Info",
+        "Room ID: {}\nOwner ID: {}\nOriginal owner ID: {}",
+        m_info.roomId,
+        m_info.roomOwner.accountData.accountId,
+        m_info.originalOwnerId
+    );
 }
 
 RoomListingCell* RoomListingCell::create(const RoomListingInfo& info, RoomListingPopup* popup) {

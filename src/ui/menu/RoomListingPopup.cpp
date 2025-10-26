@@ -196,7 +196,6 @@ void RoomListingPopup::waitForResponse() {
     m_loadingPopup->show();
 
     m_successListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
-        log::debug("Got success {}, waiting for {}!", msg.roomId, m_joinedRoomId);
         // small sanity check to make sure it is actually the response we need
         if (msg.roomId == m_joinedRoomId) {
             this->stopWaiting(std::nullopt);

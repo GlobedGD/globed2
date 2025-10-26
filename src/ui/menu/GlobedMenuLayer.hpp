@@ -9,6 +9,7 @@
 #include <Geode/Geode.hpp>
 #include <cue/ListNode.hpp>
 #include <asp/time/Instant.hpp>
+#include <AdvancedLabel.hpp>
 
 namespace globed {
 
@@ -39,7 +40,7 @@ private:
 
     CCNode* m_playerListMenu;
     cue::ListNode* m_playerList;
-    CCLabelBMFont* m_roomNameLabel;
+    Label* m_roomNameLabel;
     CCMenuItemSpriteExtra* m_roomNameButton;
     CCMenu* m_roomButtonsMenu;
     CCMenu* m_rightSideMenu = nullptr;

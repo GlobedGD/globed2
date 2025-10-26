@@ -496,6 +496,7 @@ $implDecode(msg::RoomListMessage, main::RoomListMessage::Reader& reader) {
         info.roomId = room.getRoomId();
         info.roomName = room.getRoomName();
         info.roomOwner = data::decodeUnchecked<RoomPlayer>(room.getRoomOwner());
+        info.originalOwnerId = room.getOriginalOwnerId();
         info.playerCount = room.getPlayerCount();
         info.hasPassword = room.getHasPassword();
         info.settings = data::decodeUnchecked<RoomSettings>(room.getSettings());

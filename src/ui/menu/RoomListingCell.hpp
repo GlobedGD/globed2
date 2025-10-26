@@ -20,11 +20,14 @@ private:
     RoomListingInfo m_info;
     cocos2d::CCMenu* m_rightMenu;
     CCMenuItemSpriteExtra* m_rightButton = nullptr;
+    CCMenuItemSpriteExtra* m_extInfoButton = nullptr;
     bool m_modActions = false;
 
     bool init(const RoomListingInfo& info, RoomListingPopup* popup);
     void recreateButton();
     void removeMeFromList();
+
+    void showExtendedData();
 };
 
 }
