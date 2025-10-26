@@ -2,6 +2,8 @@
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <core/game/Interpolator.hpp>
+#include <core/CoreImpl.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -64,7 +66,7 @@ RemotePlayer::~RemotePlayer() {
     m_player2->removeFromParent();
 }
 
-void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState, bool forceHide) {
+void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState, const OutFlags& flags, bool forceHide) {
     forceHide = forceHide || m_forceHide;
 
     m_state = state;
@@ -89,6 +91,28 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
 
     if (m_progArrow) {
         m_progArrow->updatePosition(camState, m_player1->getLastPosition(), state.progress());
+    }
+
+    // if the player just died, handle death
+    if (flags.death) {
+        this->handleDeath(*flags.death);
+        CoreImpl::get().onPlayerDeath(GlobedGJBGL::get(), this, *flags.death);
+    }
+
+    // if the player teleported, play a spider dash animation
+    if (flags.spiderP1) {
+        m_player1->handleSpiderTp(*flags.spiderP1);
+    }
+    if (flags.spiderP2) {
+        m_player2->handleSpiderTp(*flags.spiderP2);
+    }
+
+    // if the player jumped, play a jump animation
+    if (flags.jumpP1) {
+        m_player1->playPlatformerJump();
+    }
+    if (flags.jumpP2) {
+        m_player2->playPlatformerJump();
     }
 }
 

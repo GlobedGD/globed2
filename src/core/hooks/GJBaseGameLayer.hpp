@@ -5,6 +5,7 @@
 #include <globed/core/game/RemotePlayer.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
+#include <globed/util/BoolExt.hpp>
 #include <ui/game/VoiceOverlay.hpp>
 #include <ui/game/PingOverlay.hpp>
 #include <ui/misc/NameLabel.hpp>
@@ -65,6 +66,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_sendExtData = false;
         bool m_knownServerMuted = false;
         bool m_deafened = false;
+        BoolExt m_didJustJump1, m_didJustJump2;
 
         CCNode* m_playerNode = nullptr;
         Ref<CCNode> m_progressBarContainer;
@@ -133,6 +135,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     CameraDirection getCameraDirection();
     GameCameraState getCameraState();
     RemotePlayer* getPlayer(int playerId);
+    void recordPlayerJump(bool p1);
 
     void toggleCullingEnabled(bool culling);
     void toggleExtendedData(bool extended);

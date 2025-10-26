@@ -82,15 +82,17 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
         }
 
         if (!culled) {
-            // detect spider tp
+            // detect spider tp and jump
             if (auto sptp1 = detectSpiderTp(*player.player1, *prevFrame.player1)) {
                 state.lastSpiderTp1 = sptp1;
             }
+            state.lastJumpp1 = player.player1->didJustJump;
 
             if (player.player2 && prevFrame.player2) {
                 if (auto sptp2 = detectSpiderTp(*player.player2, *prevFrame.player2)) {
                     state.lastSpiderTp2 = sptp2;
                 }
+                state.lastJumpp2 = player.player2->didJustJump;
             }
 
             LERP_LOG("[Interpolator] new frame for {}, X progression: {} ({}) ... {} ({}) -> {} ({})",
@@ -404,6 +406,8 @@ PlayerState& Interpolator::getPlayerState(int playerId, OutFlags& flags) {
     flags.death = player.takeDeath();
     flags.spiderP1 = player.takeSpiderTp(true);
     flags.spiderP2 = player.takeSpiderTp(false);
+    flags.jumpP1 = player.takeJump(true);
+    flags.jumpP2 = player.takeJump(false);
 
     return player.interpolatedState;
 }
@@ -464,6 +468,13 @@ std::optional<SpiderTeleportData> Interpolator::LerpState::takeSpiderTp(bool p1)
     auto& in = p1 ? lastSpiderTp1 : lastSpiderTp2;
     std::optional<SpiderTeleportData> out{};
     out.swap(in);
+    return out;
+}
+
+bool Interpolator::LerpState::takeJump(bool p1) {
+    auto& in = p1 ? lastJumpp1 : lastJumpp2;
+    bool out = in;
+    in = false;
     return out;
 }
 

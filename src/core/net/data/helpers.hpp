@@ -121,6 +121,7 @@ $implEncode(const PlayerState& state, game::PlayerData::Builder& data) {
         dst.setIsFalling(src.isFalling);
         dst.setIsRotating(src.isRotating);
         dst.setIsSideways(src.isSideways);
+        dst.setDidJustJump(src.didJustJump);
 
         if (src.extData) {
             auto ed = *src.extData;
@@ -182,6 +183,7 @@ $implDecode(PlayerState, game::PlayerData::Reader& reader) {
         dst.isFalling = src.getIsFalling();
         dst.isRotating = src.getIsRotating();
         dst.isSideways = src.getIsSideways();
+        dst.didJustJump = src.getDidJustJump();
 
         if (src.hasExtData()) {
             auto ed = src.getExtData();

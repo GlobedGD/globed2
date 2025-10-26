@@ -318,28 +318,15 @@ void GlobedGJBGL::selUpdate(float tsdt) {
             continue;
         }
 
-        OutFlags flags;
-        auto& vstate = fields.m_interpolator.getPlayerState(playerId, flags);
-        player->update(vstate, camState, fields.m_playersHidden);
-
-        // if the player just died, handle the death
-        if (flags.death.has_value()) {
-            player->handleDeath(*flags.death);
-            CoreImpl::get().onPlayerDeath(this, player.get(), *flags.death);
-        }
-
-        // if the player teleported, play a spider dash animation
-        if (flags.spiderP1) {
-            player->handleSpiderTp(*flags.spiderP1, true);
-        } else if (flags.spiderP2) {
-            player->handleSpiderTp(*flags.spiderP2, false);
-        }
-
         // if the player has left the level, remove them
         if (fields.m_interpolator.isPlayerStale(playerId, fields.m_lastServerUpdate)) {
             this->handlePlayerLeave(playerId);
             continue;
         }
+
+        OutFlags flags;
+        auto& vstate = fields.m_interpolator.getPlayerState(playerId, flags);
+        player->update(vstate, camState, flags, fields.m_playersHidden);
 
         // if we don't know player's data yet (username, icons, etc.), request it
         if (!player->isDataInitialized()) {
@@ -536,7 +523,7 @@ PlayerState GlobedGJBGL::getPlayerState() {
     out.isEditorBuilding = out.isInEditor && m_playbackMode == PlaybackMode::Not;
     out.isLastDeathReal = fields.m_lastLocalDeathReal;
 
-    auto getPlayerObjState = [this, &fields](PlayerObject* obj, PlayerObjectData& out){
+    auto getPlayerObjState = [this, &fields](PlayerObject* obj, PlayerObjectData& out, bool player1){
         using enum PlayerIconType;
 
         PlayerIconType iconType = Cube;
@@ -549,7 +536,7 @@ PlayerState GlobedGJBGL::getPlayerState() {
         else if (obj->m_isSwing) iconType = Swing;
         out.iconType = iconType;
 
-        auto pobjInner = static_cast<CCNode*>(obj->getChildren()->objectAtIndex(0));
+        auto pobjInner = obj->getChildrenExt()[0];
         out.position = obj->getPosition();
         out.rotation = globed::normalizeAngle(obj->getRotation());
 
@@ -563,9 +550,9 @@ PlayerState GlobedGJBGL::getPlayerState() {
         out.isGrounded = obj->m_isOnGround;
         out.isStationary = m_level->isPlatformer() ? std::abs(obj->m_platformerXVelocity) < 0.1 : false;
         out.isFalling = obj->m_yVelocity < 0.0f;
-        // TODO: set didJustJump
         out.isRotating = obj->m_isRotating;
         out.isSideways = obj->m_isSideways;
+        out.didJustJump = (player1 ? fields.m_didJustJump1 : fields.m_didJustJump2).take();
 
         if (fields.m_sendExtData) {
             // gather some extra data
@@ -585,11 +572,11 @@ PlayerState GlobedGJBGL::getPlayerState() {
     };
 
     out.player1 = PlayerObjectData{};
-    getPlayerObjState(m_player1, *out.player1);
+    getPlayerObjState(m_player1, *out.player1, true);
 
     if (m_gameState.m_isDualMode) {
         out.player2 = PlayerObjectData{};
-        getPlayerObjState(m_player2, *out.player2);
+        getPlayerObjState(m_player2, *out.player2, false);
     }
 
     return out;
@@ -773,6 +760,11 @@ RemotePlayer* GlobedGJBGL::getPlayer(int playerId) {
     auto it = players.find(playerId);
 
     return it == players.end() ? nullptr : it->second.get();
+}
+
+void GlobedGJBGL::recordPlayerJump(bool p1) {
+    auto& fields = *m_fields.self();
+    (p1 ? fields.m_didJustJump1 : fields.m_didJustJump2) = true;
 }
 
 void GlobedGJBGL::toggleCullingEnabled(bool culling) {

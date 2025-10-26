@@ -10,6 +10,7 @@ namespace globed {
 struct OutFlags {
     std::optional<PlayerDeath> death;
     std::optional<SpiderTeleportData> spiderP1, spiderP2;
+    bool jumpP1, jumpP2;
 };
 
 class Interpolator {
@@ -54,6 +55,7 @@ private:
         size_t totalFrames = 0;
         std::optional<PlayerDeath> lastDeath;
         std::optional<SpiderTeleportData> lastSpiderTp1, lastSpiderTp2;
+        bool lastJumpp1 = false, lastJumpp2 = false;
         float timeCounter = -100.0f;
         float lastDriftCorrection = -100.0f;
         float updatedAt = 0.0f;
@@ -61,6 +63,7 @@ private:
 
         std::optional<PlayerDeath> takeDeath();
         std::optional<SpiderTeleportData> takeSpiderTp(bool p1);
+        bool takeJump(bool p1);
         PlayerState& oldestFrame();
         PlayerState& newestFrame();
     };

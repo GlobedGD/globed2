@@ -177,7 +177,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     }
 
     if (data.isRotating || distanceTo90deg > 1.f) {
-        // TODO: cancel platformer jump
+        this->cancelPlatformerJumpAnim();
     }
 
     bool updatedOpacity = false;
@@ -266,16 +266,9 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     }
     // remove swing fire
     else if (turningOffSwing) {
-        // TODO: arent we immediately setting them to invisible??? the animateFireOut is useless??
         m_swingFireTop->setVisible(false);
         m_swingFireMiddle->setVisible(false);
         m_swingFireBottom->setVisible(false);
-
-        if (isNearby) {
-            m_swingFireTop->animateFireOut();
-            m_swingFireMiddle->animateFireOut();
-            m_swingFireBottom->animateFireOut();
-        }
     }
     // remove robot fire
     else if (turningOffRobot) {
@@ -669,6 +662,22 @@ void VisualPlayer::spiderTeleportUpdateColor() {
     seq->setTag(SPIDER_TELEPORT_COLOR_ACTION);
 
     this->runAction(seq);
+}
+
+void VisualPlayer::playPlatformerJump() {
+    if (!m_prevNearby) return;
+
+    if (m_isPlatformer && m_prevMode == PlayerIconType::Cube && !m_prevRotating) {
+        this->animatePlatformerJump(1.f);
+        m_didPlatformerJump = true;
+    }
+}
+
+void VisualPlayer::cancelPlatformerJumpAnim() {
+    if (m_didPlatformerJump) {
+        m_didPlatformerJump = false;
+        this->stopPlatformerJumpAnimation();
+    }
 }
 
 void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {

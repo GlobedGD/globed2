@@ -31,6 +31,7 @@ public:
     void handleSpiderTp(const SpiderTeleportData& tp);
     cocos2d::CCPoint getLastPosition();
     float getLastRotation();
+    void playPlatformerJump();
 
     void setVisible(bool vis) override;
 
@@ -62,6 +63,9 @@ private:
     // used in swing animations
     bool m_prevUpsideDown = false;
 
+    // used for platformer jump anim
+    bool m_didPlatformerJump = false;
+
     // used to call onEnter, onExit
     bool m_prevPaused = false;
 
@@ -88,6 +92,7 @@ private:
     void updatePlayerObjectIcons(bool skipFrames);
     bool isPlayerNearby(const PlayerObjectData& data, const GameCameraState& camState);
     void spiderTeleportUpdateColor();
+    void cancelPlatformerJumpAnim();
 
     void updateLerpTrajectory(const PlayerObjectData& data);
 };

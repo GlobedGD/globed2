@@ -8,13 +8,14 @@
 namespace globed {
 
 struct GameCameraState;
+struct OutFlags;
 
 class GLOBED_DLL RemotePlayer {
 public:
     RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, cocos2d::CCNode* parentNode);
     ~RemotePlayer();
 
-    void update(const PlayerState& state, const GameCameraState& camState, bool forceHide = false);
+    void update(const PlayerState& state, const GameCameraState& camState, const OutFlags& flags, bool forceHide = false);
     void handleDeath(const PlayerDeath& death);
     void handleSpiderTp(const SpiderTeleportData& tp, bool p1);
     bool isDataInitialized() const;
