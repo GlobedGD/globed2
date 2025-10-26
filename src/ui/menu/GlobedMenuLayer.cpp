@@ -449,7 +449,6 @@ void GlobedMenuLayer::updateRoom(uint32_t id, const std::string& name, const std
 
         m_roomNameLabel->setPosition(size / 2.f);
         m_roomNameButton->setContentSize(size);
-        log::debug("setting");
     }
 
     this->updatePlayerList(players);

@@ -4,8 +4,10 @@
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
 
-#include <std23/move_only_function.h>
 #include <cstring>
+#if __has_include(<std23/move_only_function.h>)
+# include <std23/move_only_function.h>
+#endif
 
 namespace globed {
 

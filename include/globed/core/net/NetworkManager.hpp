@@ -7,6 +7,8 @@
 #include <globed/core/data/ModPermissions.hpp>
 #include <globed/core/data/SpecialUserData.hpp>
 #include <globed/core/data/FeaturedLevel.hpp>
+#include "ConnectionState.hpp"
+
 #include <asp/time/Duration.hpp>
 #include <memory>
 
@@ -14,16 +16,6 @@ namespace globed {
 
 class NetworkManagerImpl;
 
-enum class ConnectionState {
-    Disconnected,
-    DnsResolving,
-    Pinging,
-    Connecting,
-    Authenticating,
-    Connected,
-    Closing,
-    Reconnecting,
-};
 
 class GLOBED_DLL NetworkManager : public SingletonBase<NetworkManager> {
 public:

@@ -1,6 +1,8 @@
 #pragma once
 
-#include <globed/prelude.hpp>
+#include <stdint.h>
+#include <vector>
+#include <variant>
 
 #ifdef GLOBED_BUILD
 # include <qunet/buffers/ByteReader.hpp>
@@ -131,8 +133,9 @@ struct ActivePlayerSwitchEvent {
 
 struct InEvent {
     using Kind = std::variant<
+        UnknownEvent
 #ifdef GLOBED_BUILD
-        CounterChangeEvent,
+        ,CounterChangeEvent,
         SpawnGroupEvent,
         SetItemEvent,
         MoveGroupEvent,
@@ -141,9 +144,8 @@ struct InEvent {
         FollowRotationEvent,
         TwoPlayerLinkRequestEvent,
         TwoPlayerUnlinkEvent,
-        ActivePlayerSwitchEvent,
+        ActivePlayerSwitchEvent
 #endif
-        UnknownEvent
     >;
 
     Kind m_kind;
@@ -187,15 +189,15 @@ struct RequestScriptLogsEvent {
 
 struct OutEvent {
     using Kind = std::variant<
+        UnknownEvent
 #ifdef GLOBED_BUILD
-        CounterChangeEvent,
+        ,CounterChangeEvent,
         TwoPlayerLinkRequestEvent,
         TwoPlayerUnlinkEvent,
         ScriptedEvent,
         RequestScriptLogsEvent,
-        ActivePlayerSwitchEvent,
+        ActivePlayerSwitchEvent
 #endif
-        UnknownEvent
     >;
 
     OutEvent(Kind&& k) : m_kind(std::move(k)) {}

@@ -1,9 +1,14 @@
 #pragma once
 
 #include "FunctionTable.hpp"
+#include "../core/net/ConnectionState.hpp"
+#include "../core/data/UserRole.hpp"
+#include "../core/data/Event.hpp"
+#include "../core/data/FeaturedLevel.hpp"
 
 #if __has_include(<std23/move_only_function.h>)
 # include <std23/move_only_function.h>
+# include "../core/net/MessageListener.hpp"
 #else
 # define GLOBED_NO_FUNCTION_ARG
 #endif
@@ -37,8 +42,59 @@
 
 namespace globed {
 
-struct GlobedApiTable : public FunctionTable {
+struct GlobedApiTable;
+
+struct NetSubtable : public FunctionTableSubcat<GlobedApiTable> {
+    API_TABLE_FN(void, disconnect);
     API_TABLE_FN(bool, isConnected);
+    API_TABLE_FN(ConnectionState, getConnectionState);
+
+    API_TABLE_FN(uint32_t, getCentralPingMs);
+    API_TABLE_FN(uint32_t, getGamePingMs);
+    API_TABLE_FN(uint32_t, getGameTickrate);
+
+    API_TABLE_FN(std::vector<UserRole>, getAllRoles);
+    API_TABLE_FN(std::vector<UserRole>, getUserRoles);
+    API_TABLE_FN(std::vector<uint8_t>, getUserRoleIds);
+    API_TABLE_FN(std::optional<UserRole>, getUserHighestRole);
+    API_TABLE_FN(std::optional<UserRole>, findRole, uint8_t);
+    API_TABLE_FN(std::optional<UserRole>, findRole, std::string_view);
+    API_TABLE_FN(bool, isModerator);
+    API_TABLE_FN(bool, isAuthorizedModerator);
+
+    API_TABLE_FN(void, invalidateIcons);
+    API_TABLE_FN(void, invalidateFriendList);
+
+    API_TABLE_FN(std::optional<FeaturedLevelMeta>, getFeaturedLevel);
+    API_TABLE_FN(void, queueGameEvent, OutEvent&&);
+
+#ifndef GLOBED_NO_FUNCTION_ARG
+    API_TABLE_FN(void, addListener, const std::type_info&, void*, void*);
+    API_TABLE_FN(void, removeListener, const std::type_info&, void*);
+
+    template <typename T>
+    [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]
+    MessageListener<T> listen(ListenerFn<T> callback) {
+        auto listener = new MessageListenerImpl<T>(std::move(callback));
+        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
+            delete static_cast<MessageListenerImpl<T>*>(ptr);
+        });
+        return MessageListener<T>(listener);
+    }
+
+    template <typename T>
+    MessageListenerImpl<T>* listenGlobal(ListenerFn<T> callback) {
+        auto listener = new MessageListenerImpl<T>(std::move(callback));
+        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
+            delete static_cast<MessageListenerImpl<T>*>(ptr);
+        });
+        return listener;
+    }
+#endif
+};
+
+struct GlobedApiTable : public FunctionTable {
+    NetSubtable net{this, "net"};
 };
 
 }

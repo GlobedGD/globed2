@@ -39,5 +39,5 @@ TODO, this is a lot of work oh god
 #include <dankmeme.globed2/include/globed/soft-link/API.hpp>
 #include <globed/soft-link/API.hpp>
 
-Result<bool> res = globed::api()->isConnected();
+Result<bool> res = globed::api()->net.isConnected();
 ```
