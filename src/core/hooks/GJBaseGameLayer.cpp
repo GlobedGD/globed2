@@ -542,7 +542,7 @@ PlayerState GlobedGJBGL::getPlayerState() {
 
         out.isVisible = obj->isVisible();
         out.isLookingLeft = obj->m_isGoingLeft;
-        // TODO: wtf was this for?
+        // wtf was this for?
         // out.isUpsideDown = (iconType == Swing || iconType == Cube) ? obj->m_isUpsideDown : pobjInner->getScaleY() == -1.0f;
         out.isUpsideDown = obj->m_isUpsideDown;
         out.isDashing = obj->m_isDashing;

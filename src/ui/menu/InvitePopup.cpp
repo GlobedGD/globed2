@@ -50,6 +50,8 @@ protected:
 
         m_rightMenu->updateLayout();
 
+        this->initGradients(Context::Invites);
+
         return true;
     }
 };

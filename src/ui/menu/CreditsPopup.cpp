@@ -20,7 +20,7 @@ static const std::vector<CreditsCategory> g_defaultData {
 namespace {
 class CreditsPlayerNode : public CCNode {
 public:
-    static CreditsPlayerNode* create(const globed::CreditsUser& user) {
+    static CreditsPlayerNode* create(const CreditsUser& user) {
         auto ret = new CreditsPlayerNode;
         if (ret->init(user)) {
             ret->autorelease();
@@ -32,7 +32,7 @@ public:
     }
 
 private:
-    bool init(const globed::CreditsUser& user) {
+    bool init(const CreditsUser& user) {
         CCNode::init();
 
         auto* sp = Build(cue::PlayerIcon::create(cue::Icons {

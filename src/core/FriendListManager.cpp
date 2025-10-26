@@ -65,14 +65,17 @@ void FriendListManager::getUserListFailed(UserListType p0, GJErrorCode p1) {
 }
 
 void FriendListManager::advance() {
+    auto glm = GameLevelManager::get();
     switch (m_loadStep) {
         case LoadStep::Friends: {
             m_loadStep = LoadStep::Blocked;
+            glm->getUserList(UserListType::Blocked);
         } break;
 
         case LoadStep::Blocked: {
             m_loadStep = LoadStep::None;
             m_fetched = true;
+            glm->m_userListDelegate = nullptr;
         } break;
 
         default: break;

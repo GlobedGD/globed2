@@ -1,6 +1,7 @@
 #include "LevelCell.hpp"
 #include <globed/core/SettingsManager.hpp>
 #include <ui/menu/FeatureCommon.hpp>
+#include <ui/misc/CellGradients.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -71,17 +72,7 @@ void HookedLevelCell::setGlobedFeature(FeatureTier tier) {
 
     if (auto diff = globed::findDifficultySprite(this)) {
         globed::attachRatingSprite(diff, tier);
-
-        auto gradient = Build<CCSprite>::create("friend-gradient.png"_spr)
-            .color(ccColor3B{255, 255, 255})
-            .anchorPoint({0.f, 0.f})
-            .opacity(90)
-            .zOrder(-1)
-            .parent(this)
-            .collect();
-
-        gradient->setScaleX(this->getScaledContentWidth() / gradient->getScaledContentWidth() / 2);
-        gradient->setScaleY(this->getScaledContentHeight() / gradient->getScaledContentHeight());
+        globed::addCellGradient(this, globed::CellGradientType::FriendIngame);
     }
 }
 

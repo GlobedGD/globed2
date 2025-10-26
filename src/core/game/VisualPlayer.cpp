@@ -553,9 +553,6 @@ void VisualPlayer::updateDisplayData() {
         m_nameLabel->updateWithRoles(*ddata.specialUserData);
     }
 
-    // TODO: i dont know why this was here
-    this->togglePlatformerMode(m_gameLayer->m_level->isPlatformer());
-
     if (globed::setting<bool>("core.player.default-death-effects")) {
         ddata.icons.deathEffect = DEFAULT_DEATH;
     }

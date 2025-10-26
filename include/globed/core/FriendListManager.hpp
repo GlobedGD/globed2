@@ -25,7 +25,7 @@ private:
         None,
         Friends,
         Blocked,
-    } m_loadStep;
+    } m_loadStep = None;
     std::unordered_set<int> m_friends;
     std::unordered_set<int> m_blocked;
     asp::Mutex<> m_mutex;

@@ -71,6 +71,8 @@ protected:
 
         m_rightMenu->updateLayout();
 
+        this->initGradients(Context::Ingame);
+
         return true;
     }
 };

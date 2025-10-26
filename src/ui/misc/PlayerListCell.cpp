@@ -1,6 +1,7 @@
 #include "PlayerListCell.hpp"
 #include <globed/core/actions.hpp>
 #include <globed/core/RoomManager.hpp>
+#include <globed/core/FriendListManager.hpp>
 #include <globed/util/singleton.hpp>
 #include <globed/util/gd.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -32,7 +33,7 @@ bool PlayerListCell::init(
         .layout(RowLayout::create()
             ->setAutoScale(false)
             ->setAxisAlignment(AxisAlignment::Start)
-            ->setGap(5.f)
+            ->setGap(3.f)
         )
         .contentSize(cellSize.width - 20.f, cellSize.height)
         .pos(10.f, cellSize.height / 2.f)
@@ -42,6 +43,7 @@ bool PlayerListCell::init(
     m_cubeIcon = Build(cue::PlayerIcon::create(icons))
         .id("icon")
         .parent(m_leftContainer);
+    m_cubeIcon->setLayoutOptions(AxisLayoutOptions::create()->setNextGap(5.f));
 
     cue::rescaleToMatch(m_cubeIcon, cellSize.height * 0.7f);
 
@@ -107,7 +109,40 @@ void PlayerListCell::updateStuff(float dt) {
             this->updateLayout();
         }
     }
+}
 
+void PlayerListCell::setGradient(CellGradientType type, bool blend) {
+    cue::resetNode(m_gradient);
+    m_gradient = globed::addCellGradient(this, type, blend);
+}
+
+void PlayerListCell::initGradients(Context ctx) {
+    cue::resetNode(m_gradient);
+    cue::resetNode(m_crownIcon);
+    cue::resetNode(m_friendIcon);
+
+    auto& rm = RoomManager::get();
+    float iconSize = 16.f;
+
+    if (m_accountId == globed::cachedSingleton<GJAccountManager>()->m_accountID) {
+        this->setGradient(ctx == Context::Ingame ? CellGradientType::SelfIngame : CellGradientType::Self);
+    }
+
+    if (rm.isInRoom() && rm.getRoomOwner() == m_accountId) {
+        if (!m_gradient) this->setGradient(CellGradientType::RoomOwner);
+        m_crownIcon = Build<CCSprite>::create("icon-crown-small.png"_spr)
+            .with([&](auto spr) { cue::rescaleToMatch(spr, iconSize); })
+            .parent(m_leftContainer);
+    }
+
+    if (FriendListManager::get().isFriend(m_accountId)) {
+        if (!m_gradient) this->setGradient(ctx == Context::Ingame ? CellGradientType::FriendIngame : CellGradientType::Friend, ctx == Context::Invites);
+        m_friendIcon = Build<CCSprite>::create("icon-friend.png"_spr)
+            .with([&](auto spr) { cue::rescaleToMatch(spr, iconSize); })
+            .parent(m_leftContainer);
+    }
+
+    m_leftContainer->updateLayout();
 }
 
 PlayerListCell* PlayerListCell::create(

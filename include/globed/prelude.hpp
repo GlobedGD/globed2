@@ -34,6 +34,9 @@ using cocos2d::CCSprite;
 using cocos2d::CCLabelBMFont;
 using cocos2d::CCLayer;
 using cocos2d::CCMenu;
+using cocos2d::ccColor3B;
+using cocos2d::ccColor4B;
+using cocos2d::ccColor4F;
 using cocos2d::extension::CCScale9Sprite;
 
 namespace log = geode::log;

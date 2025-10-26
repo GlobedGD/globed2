@@ -26,6 +26,7 @@
 #include <ui/menu/levels/LevelListLayer.hpp>
 #include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
+#include <ui/misc/CellGradients.hpp>
 
 #include <cue/RepeatingBackground.hpp>
 #include <UIBuilder.hpp>
@@ -94,6 +95,8 @@ public:
             m_sessionId = rp.session;
             this->recreateSessionButton();
         }
+
+        this->initGradients();
     }
 
 protected:
@@ -131,6 +134,8 @@ protected:
         }
 
         m_rightMenu->updateLayout();
+
+        this->initGradients();
 
         return true;
     }

@@ -25,10 +25,11 @@ bool NameLabel::init(const std::string& name, const char* font) {
 
     this->setAnchorPoint({0.5f, 0.5f});
     this->ignoreAnchorPointForPosition(false);
-    this->setLayout(RowLayout::create()
-                ->setGap(4.f)
-                ->setAutoScale(false)
-    );
+
+    auto myLayout = RowLayout::create()->setGap(4.f)->setAutoScale(false);
+    myLayout->ignoreInvisibleChildren(true);
+
+    this->setLayout(myLayout);
     this->updateName(name);
 
     if (std::string_view{font} == "chatFont.fnt") {
@@ -89,7 +90,15 @@ void NameLabel::updateName(const char* name) {
 }
 
 void NameLabel::updateSelfWidth() {
-    float width = m_labelButton->getScaledContentWidth() + static_cast<AxisLayout*>(this->getLayout())->getGap() + m_badgeContainer->getScaledContentWidth();
+    float gap = static_cast<AxisLayout*>(this->getLayout())->getGap();
+    bool hasBadges = m_badgeContainer->getChildrenCount() > 0;
+    m_badgeContainer->setVisible(hasBadges);
+
+    float width = m_labelButton->getScaledContentWidth();
+    if (hasBadges) {
+        width += gap + m_badgeContainer->getScaledContentWidth();
+    }
+
     this->setContentWidth(width);
 
     this->updateLayout();
