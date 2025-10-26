@@ -171,21 +171,28 @@ void ModNoticeSetupPopup::submit() {
         levelId = *res;
     }
 
-    if (everyone) {
-        // TODO: ask the server how many players are online before proceeding
-    }
-
     if (!user && !room && !level && !everyone) {
         globed::alert("Error", "Please select at least one mode");
         return;
     }
 
     auto text = m_messageInput->getString();
+
     if (everyone) {
-        NetworkManagerImpl::get().sendAdminNoticeEveryone(text);
-    } else {
-        NetworkManagerImpl::get().sendAdminNotice(text, userQuery, roomId, levelId, m_canReplyCheckbox->isOn(), m_showSenderCheckbox->isOn());
+        globed::quickPopup(
+            "Confirm",
+            "This action will send a <cy>notice</c> to ALL USERS on the server. Are you sure you want to proceed?",
+            "Cancel",
+            "Send",
+            [text = std::move(text)](FLAlertLayer*, bool) {
+                NetworkManagerImpl::get().sendAdminNoticeEveryone(text);
+            }
+        );
+
+        return;
     }
+
+    NetworkManagerImpl::get().sendAdminNotice(text, userQuery, roomId, levelId, m_canReplyCheckbox->isOn(), m_showSenderCheckbox->isOn());
 }
 
 void ModNoticeSetupPopup::onSelectMode(int mode, bool on) {
