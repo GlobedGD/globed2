@@ -7,6 +7,7 @@
 #include <ui/misc/NameLabel.hpp>
 
 #include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 static constexpr int ROBOT_FIRE_ACTION = 1325385193;
 static constexpr float NAME_OFFSET = 28.f;
@@ -170,6 +171,16 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         m_nameLabel->setPosition(data.position + dir.vector * NAME_OFFSET);
         m_nameLabel->setRotation(dir.angle);
 
+        if (m_emoteBubble && m_emoteBubble->isPlaying()) {
+            float yoff = (m_nameLabel->isVisible() ? STATUS_ICONS_OFFSET : NAME_OFFSET) - 3.f;
+            float xoff = 25.f;
+            CCPoint dirVecPerp{dir.vector.y, -dir.vector.x};
+            CCPoint fullOffset = dir.vector * yoff + dirVecPerp * xoff;
+
+            m_emoteBubble->setPosition(data.position + fullOffset);
+            m_emoteBubble->setRotation(dir.angle);
+        }
+
         if (m_statusIcons) {
             m_statusIcons->setPosition(data.position + dir.vector * (m_nameLabel->isVisible() ? STATUS_ICONS_OFFSET : NAME_OFFSET));
             m_statusIcons->setRotation(dir.angle);
@@ -190,7 +201,6 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     m_lastPosition = data.position;
     m_positionX = data.position.x;
     m_positionY = data.position.y;
-    // TODO: should we set rest of the flags?
 
     // setFlipX doesn't work here for jetpack and stuff
     float mult = data.isMini ? 0.6f : 1.0f;
@@ -368,6 +378,14 @@ void VisualPlayer::updateOpacity() {
     // set name opacity as well if hide nearby is enabled
     if (hideNearby_) {
         m_nameLabel->updateOpacity(opacity);
+
+        if (m_emoteBubble) {
+            m_emoteBubble->setOpacity(opacity);
+        }
+
+        if (m_statusIcons) {
+            m_statusIcons->setOpacity(opacity);
+        }
     }
 }
 
@@ -531,6 +549,8 @@ void VisualPlayer::cleanupObjectLayer() {
     // custom nodes
     $clear(m_nameLabel);
     $clear(m_statusIcons);
+    $clear(m_emoteBubble);
+    $clear(m_playerTrajectory);
 
 #undef $clear
 }
@@ -670,6 +690,15 @@ void VisualPlayer::playPlatformerJump() {
     }
 }
 
+void VisualPlayer::playEmote(uint32_t emoteId) {
+    if (!m_emoteBubble) {
+        m_emoteBubble = Build<EmoteBubble>::create()
+            .parent(m_remotePlayer->m_parentNode);
+    }
+
+    m_emoteBubble->playEmote(emoteId);
+}
+
 void VisualPlayer::cancelPlatformerJumpAnim() {
     if (m_didPlatformerJump) {
         m_didPlatformerJump = false;
@@ -751,6 +780,7 @@ void VisualPlayer::setVisible(bool vis) {
 
     m_nameLabel->setVisible(vis && !m_forceHideName);
     if (m_statusIcons) m_statusIcons->setVisible(vis);
+    if (m_emoteBubble) m_emoteBubble->setVisible(vis);
 }
 
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {

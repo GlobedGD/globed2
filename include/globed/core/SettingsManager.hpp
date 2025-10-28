@@ -76,13 +76,13 @@ public:
     }
 
     template <typename T>
-    void setSettingRaw(uint64_t hash, T value) {
+    void setSettingRaw(uint64_t hash, T&& value) {
         if (!this->hasSetting(hash)) {
             // internal error, means we used a wrong id somewhere
             geode::utils::terminate(fmt::format("setting not found with hash {}", hash));
         }
 
-        matjson::Value val = value;
+        matjson::Value val = std::forward<T>(value);
         auto it = m_validators.find(hash);
         if (it != m_validators.end()) {
             if (!it->second(val)) {
@@ -139,6 +139,15 @@ public:
     void switchToSaveSlot(size_t id);
     inline size_t getActiveSaveSlot() const { return m_activeSaveSlot; }
 
+    bool isPlayerBlacklisted(int id);
+    bool isPlayerWhitelisted(int id);
+    bool isPlayerHidden(int id);
+    void blacklistPlayer(int id);
+    void whitelistPlayer(int id);
+    void setPlayerHidden(int id, bool hidden);
+    void refreshPlayerLists();
+    void commitPlayerLists();
+
 private:
     friend class SingletonBase;
     friend class CoreImpl;
@@ -155,6 +164,8 @@ private:
     std::filesystem::path m_slotDir;
     std::vector<matjson::Value> m_saveSlots;
     size_t m_activeSaveSlot = 0;
+
+    std::unordered_set<int> m_whitelisted, m_blacklisted, m_hidden;
 
     SettingsManager();
 

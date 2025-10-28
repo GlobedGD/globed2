@@ -33,6 +33,7 @@ SettingsManager::SettingsManager() {
 
     // Player settings
     this->registerSetting("core.player.opacity", 1.0f);
+    this->registerSetting("core.player.quick-chat-enabled", true);
     this->registerSetting("core.player.show-names", true);
     this->registerSetting("core.player.dual-name", true);
     this->registerSetting("core.player.name-opacity", 1.0f);
@@ -44,6 +45,11 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.player.rotate-names", true);
     this->registerSetting("core.player.death-effects", true);
     this->registerSetting("core.player.default-death-effects", false);
+    // invisible settings
+    this->registerSetting("core.player.blacklisted-players", matjson::Value::array());
+    this->registerSetting("core.player.whitelisted-players", matjson::Value::array());
+    this->registerSetting("core.player.hidden-players", matjson::Value::array());
+    this->refreshPlayerLists();
 
     // Level UI
     this->registerSetting("core.level.progress-indicators", true);
@@ -76,7 +82,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.audio.voice-proximity", true);
     this->registerSetting("core.audio.classic-proximity", false);
     this->registerSetting("core.audio.deafen-notification", false);
-    this->registerSetting("core.audio.only-friends", false); // TODO: unimpl  also pass this in user settings?
+    this->registerSetting("core.audio.only-friends", false); // TODO make this work server side?
 
     // Mod settings
     this->registerSetting("core.mod.remember-password", false);
@@ -362,6 +368,52 @@ void SettingsManager::switchToSaveSlot(size_t id) {
     globed::setValue("core.settingsv3.save-slot", m_activeSaveSlot);
 
     this->reloadFromSlot();
+}
+
+bool SettingsManager::isPlayerBlacklisted(int id) {
+    return m_blacklisted.contains(id);
+}
+
+bool SettingsManager::isPlayerWhitelisted(int id) {
+    return m_whitelisted.contains(id);
+}
+
+bool SettingsManager::isPlayerHidden(int id) {
+    return m_hidden.contains(id);
+}
+
+void SettingsManager::refreshPlayerLists() {
+    auto bl = this->getSettingRaw<std::vector<int>>(this->keyHash("core.player.blacklisted-players"));
+    auto wl = this->getSettingRaw<std::vector<int>>(this->keyHash("core.player.whitelisted-players"));
+    auto hl = this->getSettingRaw<std::vector<int>>(this->keyHash("core.player.hidden-players"));
+
+    m_whitelisted = asp::iter::from(wl).collect<std::unordered_set<int>>();
+    m_blacklisted = asp::iter::from(bl).collect<std::unordered_set<int>>();
+    m_hidden = asp::iter::from(hl).collect<std::unordered_set<int>>();
+}
+
+void SettingsManager::commitPlayerLists() {
+    std::vector<int> bl{asp::iter::from(m_blacklisted).collect()};
+    std::vector<int> wl{asp::iter::from(m_whitelisted).collect()};
+    std::vector<int> hl{asp::iter::from(m_hidden).collect()};
+
+    this->setSettingRaw(this->keyHash("core.player.blacklisted-players"), std::move(bl));
+    this->setSettingRaw(this->keyHash("core.player.whitelisted-players"), std::move(wl));
+    this->setSettingRaw(this->keyHash("core.player.hidden-players"), std::move(hl));
+}
+
+void SettingsManager::blacklistPlayer(int id) {
+    m_blacklisted.insert(id);
+    m_whitelisted.erase(id);
+    this->refreshPlayerLists();
+}
+
+void SettingsManager::whitelistPlayer(int id) {
+
+}
+
+void SettingsManager::setPlayerHidden(int id, bool hidden) {
+
 }
 
 void SettingsManager::reloadFromSlot() {

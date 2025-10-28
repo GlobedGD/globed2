@@ -218,6 +218,7 @@ public:
     void sendLevelScript(const std::vector<EmbeddedScript>& scripts);
     void queueGameEvent(OutEvent&& event);
     void sendVoiceData(const EncodedAudioFrame& frame);
+    void sendQuickChat(uint32_t id);
 
     // Listeners
 

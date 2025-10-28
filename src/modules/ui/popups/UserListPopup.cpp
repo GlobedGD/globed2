@@ -2,9 +2,12 @@
 #include <globed/core/ValueManager.hpp>
 #include <globed/core/FriendListManager.hpp>
 #include <globed/core/PlayerCacheManager.hpp>
+#include <globed/audio/AudioManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 #include <core/CoreImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
+#include <ui/misc/AudioVisualizer.hpp>
 #include <ui/misc/Sliders.hpp>
 
 #include <UIBuilder.hpp>
@@ -17,6 +20,10 @@ const CCSize UserListPopup::POPUP_SIZE {400.f, 280.f};
 static constexpr CCSize LIST_SIZE = {340.f, 190.f};
 static constexpr float CELL_HEIGHT = 27.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
+
+constexpr static size_t countBools(auto&&... bools) {
+    return (static_cast<size_t>(bools) + ... + 0);
+}
 
 namespace {
 
@@ -60,12 +67,167 @@ public:
     }
 
 protected:
+    AudioVisualizer* m_visualizer = nullptr;
+
     bool customSetup() {
+        auto gjbgl = GlobedGJBGL::get();
+
         // add buttons
+        bool self = m_accountId == cachedSingleton<GJAccountManager>()->m_accountID;
+
+        bool createBtnHide = !self;
+        bool createBtnMute = !self;
+        bool createBtnAdmin = NetworkManagerImpl::get().isAuthorizedModerator();
+        bool createBtnTp = createBtnAdmin && !self;
+        bool createVisualizer = !self && globed::setting<bool>("core.audio.voice-chat-enabled");
+        size_t buttonCount = countBools(createBtnHide, createBtnMute, createBtnAdmin, createBtnTp, createVisualizer);
+
+        // if no visualizer, max button count is 4, otherwise 2
+        size_t maxButtonCount = createVisualizer ? 2 : 4;
+
+        // if the buttons don't fit, create a settings button which shows a popup with the rest of the buttons
+        bool createSettingsBtn = buttonCount > maxButtonCount;
+
+        auto mainButtons = CCArray::create();
+        auto popupButtons = CCArray::create();
+        CCSize btnSizeSmall = {20.f, 20.f};
+        CCSize btnSizeBig = {28.f, 28.f};
+        CCSize btnSize = createSettingsBtn ? btnSizeBig : btnSizeSmall;
+
+        // Create various buttons
+
+        // god i hate this
+        bool muteAndHideInCell = (!createVisualizer || buttonCount == 2);
+
+        bool isMuted = !gjbgl->shouldLetMessageThrough(m_accountId);
+        bool isHidden = self ? false : SettingsManager::get().isPlayerHidden(m_accountId);
+
+        // Mute button
+
+        auto muteOn = CCSprite::create("icon-mute.png"_spr);
+        auto muteOff = CCSprite::create("icon-unmute.png"_spr);
+        cue::rescaleToMatch(muteOn, muteAndHideInCell ? btnSizeSmall : btnSizeBig);
+        cue::rescaleToMatch(muteOff, muteAndHideInCell ? btnSizeSmall : btnSize);
+
+        auto muteButton = CCMenuItemExt::createToggler(
+            muteOn,
+            muteOff,
+            [accountId = m_accountId, gjbgl](CCMenuItemToggler* btn) {
+                bool muted = btn->isOn();
+                auto& sm = SettingsManager::get();
+
+                muted ? (sm.blacklistPlayer(accountId)) : (sm.whitelistPlayer(accountId));
+
+                auto& am = AudioManager::get();
+                if (muted) {
+                    am.setStreamVolume(accountId, 0.f);
+                } else {
+                    am.setStreamVolume(accountId, gjbgl->calculateVolumeFor(accountId));
+                }
+        });
+
+        muteButton->setID("mute-btn"_spr);
+        muteButton->m_onButton->m_scaleMultiplier = 1.2f;
+        muteButton->m_offButton->m_scaleMultiplier = 1.2f;
+        muteButton->toggle(!isMuted); // fucked up
+
+        // Hide button
+
+        auto hideOn = CCSprite::create("icon-hide-player.png"_spr);
+        auto hideOff = CCSprite::create("icon-show-player.png"_spr);
+        cue::rescaleToMatch(hideOn, muteAndHideInCell ? btnSizeSmall : btnSizeBig);
+        cue::rescaleToMatch(hideOff, muteAndHideInCell ? btnSizeSmall : btnSizeBig);
+
+        auto hideButton = CCMenuItemExt::createToggler(
+            hideOn,
+            hideOff,
+            [accountId = m_accountId, gjbgl](CCMenuItemToggler* btn) {
+                bool hidden = btn->isOn();
+                auto& sm = SettingsManager::get();
+                sm.setPlayerHidden(accountId, hidden);
+
+                auto player = gjbgl->getPlayer(accountId);
+                if (player) {
+                    player->setForceHide(hidden);
+                }
+        });
+
+        hideButton->setID("hide-btn"_spr);
+        hideButton->m_onButton->m_scaleMultiplier = 1.2f;
+        hideButton->m_offButton->m_scaleMultiplier = 1.2f;
+        hideButton->toggle(!isHidden); // fucked up
+
+        if (createSettingsBtn) {
+            popupButtons->addObject(muteButton);
+            popupButtons->addObject(hideButton);
+        } else {
+            mainButtons->addObject(muteButton);
+            mainButtons->addObject(hideButton);
+        }
+
+        // admin menu button
+        if (createBtnAdmin) {
+            auto btn = Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+                .with([&](CCSprite* spr) {
+                    cue::rescaleToMatch(spr, btnSizeSmall);
+                })
+                .intoMenuItem([accountId = m_accountId](auto) {
+                    globed::openModPanel(accountId);
+                })
+                .id("admin-button"_spr)
+                .collect();
+
+            mainButtons->addObject(btn);
+        }
+
+        if (createBtnTp) {
+            auto btn = Build<CCSprite>::create("icon-teleport.png"_spr)
+                .with([&](CCSprite* spr) {
+                    cue::rescaleToMatch(spr, btnSize);
+                })
+                .intoMenuItem([accountId = m_accountId, gjbgl](auto) {
+                    if (!globed::swapFlag("core.flags.seen-teleport-notice")) {
+                        globed::alert(
+                            "Note",
+                            "Teleporting to a player will <cr>disable level progress</c> until you <cy>fully reset</c> the level."
+                        );
+                        return;
+                    }
+
+                    gjbgl->toggleSafeMode();
+
+                    if (auto player = gjbgl->getPlayer(accountId)) {
+                        gjbgl->m_player1->m_position = player->player1()->getLastPosition();
+                    } else {
+                        globed::toastError("Player is not in the level");
+                    }
+                })
+                .id("teleport-button"_spr)
+                .collect();
+
+            if (createSettingsBtn) {
+                popupButtons->addObject(btn);
+            } else {
+                mainButtons->addObject(btn);
+            }
+        }
+
+        if (createVisualizer) {
+            // audio visualizer
+            Build<AudioVisualizer>::create()
+                .id("audio-visualizer"_spr)
+                .zOrder(999999) // force to be on the left
+                .store(m_visualizer);
+
+            m_visualizer->setScaleX(0.5f);
+            mainButtons->addObject(m_visualizer);
+        }
+
+        // add custom buttons
         CoreImpl::get().onUserlistSetup(
             m_rightMenu,
             m_accountId,
-            m_accountId == cachedSingleton<GJAccountManager>()->m_accountID,
+            self,
             m_popup
         );
 

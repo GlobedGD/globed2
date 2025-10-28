@@ -1,10 +1,11 @@
 #pragma once
 
-#include <Geode/Geode.hpp>
+#include <globed/prelude.hpp>
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/core/game/PlayerStatusIcons.hpp>
-#include <globed/config.hpp>
+#include <ui/game/EmoteBubble.hpp>
+#include <Geode/Geode.hpp>
 
 namespace globed {
 
@@ -29,9 +30,11 @@ public:
     void updateTeam(uint16_t teamId);
     void playDeathEffect();
     void handleSpiderTp(const SpiderTeleportData& tp);
-    cocos2d::CCPoint getLastPosition();
+    CCPoint getLastPosition();
     float getLastRotation();
     void playPlatformerJump();
+
+    void playEmote(uint32_t emoteId);
 
     void setVisible(bool vis) override;
 
@@ -39,11 +42,13 @@ private:
     friend class RemotePlayer;
 
     RemotePlayer* m_remotePlayer = nullptr;
-    cocos2d::ccColor3B m_color1{}, m_color2{};
+    ccColor3B m_color1{}, m_color2{};
     bool m_teamInitialized = false;
     NameLabel* m_nameLabel;
-    geode::Ref<PlayerStatusIcons> m_statusIcons;
-    geode::Ref<cocos2d::CCDrawNode> m_playerTrajectory = nullptr;
+    Ref<PlayerStatusIcons> m_statusIcons;
+    Ref<cocos2d::CCDrawNode> m_playerTrajectory;
+    Ref<EmoteBubble> m_emoteBubble;
+
 
     bool m_isSecond = false;
     bool m_isPlatformer = false;
@@ -71,7 +76,7 @@ private:
 
     bool m_prevRotating = false;
 
-    cocos2d::CCPoint m_prevPosition{};
+    CCPoint m_prevPosition{};
     float m_prevRotation = 0.f;
 
     //

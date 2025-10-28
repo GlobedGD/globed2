@@ -11,6 +11,7 @@
 #include <ui/misc/NameLabel.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/game/SpeedTracker.hpp>
+#include <ui/game/EmoteBubble.hpp>
 
 namespace globed {
 
@@ -52,6 +53,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         float m_lastDataRequest = 0.f;
         std::optional<MessageListener<msg::LevelDataMessage>> m_levelDataListener;
         std::optional<MessageListener<msg::VoiceBroadcastMessage>> m_voiceListener;
+        std::optional<MessageListener<msg::QuickChatBroadcastMessage>> m_quickChatListener;
         std::optional<MessageListener<msg::ChatNotPermittedMessage>> m_mutedListener;
 
         uint8_t m_deathCount = 0;
@@ -75,6 +77,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         Ref<NameLabel> m_selfNameLabel;
         Ref<VoiceOverlay> m_voiceOverlay;
         Ref<PingOverlay> m_pingOverlay;
+
+        Ref<EmoteBubble> m_selfEmoteBubble = nullptr;
     };
 
     // Setup functions
@@ -136,6 +140,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     GameCameraState getCameraState();
     RemotePlayer* getPlayer(int playerId);
     void recordPlayerJump(bool p1);
+    float calculateVolumeFor(int playerId);
+    bool shouldLetMessageThrough(int playerId);
 
     void toggleCullingEnabled(bool culling);
     void toggleExtendedData(bool extended);
@@ -148,10 +154,12 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void customUnschedule(const std::string& id);
     void customUnscheduleAll();
 
+    void playSelfEmote(uint32_t id);
+
 private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);
     void onVoiceDataReceived(const msg::VoiceBroadcastMessage& message);
-    float calculateVolumeFor(int playerId);
+    void onQuickChatReceived(int accountId, uint32_t quickChatId);
     void updateProximityVolume(int playerId);
 };
 

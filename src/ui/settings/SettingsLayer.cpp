@@ -93,6 +93,7 @@ void SettingsLayer::addSettings() {
     // Player settings
     this->addHeader("core.player", "Players");
     this->addSetting<FloatSettingCell>("core.player.opacity", "Player Opacity", "");
+    this->addSetting<BoolSettingCell>("core.player.quick-chat-enabled", "Quick Chat", "");
     this->addSetting<BoolSettingCell>("core.player.show-names", "Player Names", "");
     this->addSetting<BoolSettingCell>("core.player.dual-name", "Player Dual Names", "");
     this->addSetting<FloatSettingCell>("core.player.name-opacity", "Name Opacity", "");

@@ -32,19 +32,23 @@ public:
         return m_abi;
     }
 
-    template <typename T, typename... Args>
-    inline geode::Result<T> invoke(std::string_view name, Args&&... args) {
-        using FTy = geode::Result<T>(*)(Args...);
-
+    template <typename FTy>
+    inline geode::Result<FTy> getFunction(std::string_view name) {
         auto it = m_functions.find(fnv1aHash(name));
         if (it == m_functions.end()) {
             return geode::Err("Function not found in the table: '{}'", name);
         }
 
         auto func = reinterpret_cast<FTy>(it->second);
-        auto result = func(std::forward<Args>(args)...);
+        return geode::Ok(func);
+    }
 
-        return result;
+    template <typename T, typename... Args>
+    inline geode::Result<T> invoke(std::string_view name, Args&&... args) {
+        using FTy = geode::Result<T>(*)(Args...);
+        GEODE_UNWRAP_INTO(auto func, this->getFunction<FTy>(name));
+
+        return func(std::forward<Args>(args)...);
     }
 
 private:
@@ -65,6 +69,15 @@ struct FunctionTableSubcat {
 
         std::string_view sv{combined, res.out};
         return table->template invoke<T>(sv, std::forward<Args>(args)...);
+    }
+
+    template <typename FTy>
+    inline geode::Result<FTy> getFunction(std::string_view name) {
+        char combined[128];
+        auto res = fmt::format_to(combined, "{}.{}", this->name, name);
+
+        std::string_view sv{combined, res.out};
+        return table->template getFunction<FTy>(sv);
     }
 };
 

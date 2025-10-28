@@ -950,6 +950,13 @@ void NetworkManagerImpl::sendVoiceData(const EncodedAudioFrame& frame) {
     }, false, true);
 }
 
+void NetworkManagerImpl::sendQuickChat(uint32_t id) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto qc = msg.initQuickChat();
+        qc.setId(id);
+    }, false);
+}
+
 void NetworkManagerImpl::sendUpdateUserSettings() {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto update = msg.initUpdateUserSettings();
@@ -1741,6 +1748,10 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
 
         case GameMessage::VOICE_BROADCAST: {
             this->invokeListeners(data::decodeUnchecked<msg::VoiceBroadcastMessage>(msg.getVoiceBroadcast()));
+        } break;
+
+        case GameMessage::QUICK_CHAT_BROADCAST: {
+            this->invokeListeners(data::decodeUnchecked<msg::QuickChatBroadcastMessage>(msg.getQuickChatBroadcast()));
         } break;
 
         case GameMessage::CHAT_NOT_PERMITTED: {

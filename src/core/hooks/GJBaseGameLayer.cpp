@@ -5,6 +5,7 @@
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/KeybindsManager.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <globed/core/FriendListManager.hpp>
 #include <globed/util/algo.hpp>
 #include <globed/util/gd.hpp>
 #include <globed/util/FunctionQueue.hpp>
@@ -15,11 +16,10 @@
 #include <UIBuilder.hpp>
 #include <asp/time/Instant.hpp>
 #include <qunet/util/algo.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
-
-// TODO: check m_active in these hooks, same for playlayer and lel?
 
 constexpr float VOICE_OVERLAY_PAD_X = 5.f;
 constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
@@ -235,6 +235,10 @@ void GlobedGJBGL::setupUi() {
         .parent(fields.m_playerNode)
         .id("self-player-name"_spr);
     fields.m_selfNameLabel->setShadowEnabled(true);
+
+    fields.m_selfEmoteBubble = Build<EmoteBubble>::create()
+        .parent(fields.m_playerNode)
+        .id("emote-bubble-node"_spr);
 }
 
 void GlobedGJBGL::setupListeners() {
@@ -248,6 +252,11 @@ void GlobedGJBGL::setupListeners() {
 
     fields.m_voiceListener = nm.listen<msg::VoiceBroadcastMessage>([this](const msg::VoiceBroadcastMessage& message) {
         this->onVoiceDataReceived(message);
+        return ListenerResult::Continue;
+    });
+
+    fields.m_quickChatListener = nm.listen<msg::QuickChatBroadcastMessage>([this](const msg::QuickChatBroadcastMessage& message) {
+        this->onQuickChatReceived(message.accountId, message.quickChatId);
         return ListenerResult::Continue;
     });
 
@@ -282,6 +291,8 @@ void GlobedGJBGL::selUpdateProxy(float dt) {
 
 void GlobedGJBGL::selUpdate(float tsdt) {
     auto& fields = *m_fields.self();
+    if (!fields.m_active) return;
+
     auto& pcm = PlayerCacheManager::get();
     auto& rm = RoomManager::get();
 
@@ -415,6 +426,11 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         this->selPeriodicalUpdate(fields.m_periodicalDelta);
         fields.m_periodicalDelta = 0.f;
     }
+
+    // update position of self emote bubble
+    fields.m_selfEmoteBubble->setPosition({
+        m_player1->getPosition() + CCPoint{25.f, 20.f + showSelfName * 15.f}
+    });
 }
 
 void GlobedGJBGL::selPeriodicalUpdate(float dt) {
@@ -767,6 +783,18 @@ void GlobedGJBGL::recordPlayerJump(bool p1) {
     (p1 ? fields.m_didJustJump1 : fields.m_didJustJump2) = true;
 }
 
+bool GlobedGJBGL::shouldLetMessageThrough(int playerId) {
+    auto& sm = SettingsManager::get();
+    auto& flm = FriendListManager::get();
+
+    if (sm.isPlayerBlacklisted(playerId)) return false;
+    if (sm.isPlayerWhitelisted(playerId)) return true;
+
+    if (globed::setting<bool>("core.audio.only-friends") && !flm.isFriend(playerId)) return false;
+
+    return true;
+}
+
 void GlobedGJBGL::toggleCullingEnabled(bool culling) {
     m_fields->m_noGlobalCulling = !culling;
 }
@@ -866,7 +894,9 @@ void GlobedGJBGL::onVoiceDataReceived(const msg::VoiceBroadcastMessage& message)
         return;
     }
 
-    // TODO: allow muting a player, reject packet here
+    if (!this->shouldLetMessageThrough(message.accountId)) {
+        return;
+    }
 
     auto res = am.playFrameStreamed(message.accountId, message.frame);
     if (!res) {
@@ -876,6 +906,25 @@ void GlobedGJBGL::onVoiceDataReceived(const msg::VoiceBroadcastMessage& message)
 
     float vol = this->calculateVolumeFor(message.accountId);
     am.setStreamVolume(message.accountId, vol);
+}
+
+void GlobedGJBGL::onQuickChatReceived(int accountId, uint32_t quickChatId) {
+    if (!globed::setting<bool>("core.player.quick-chat-enabled")) {
+        return;
+    }
+
+    if (!this->shouldLetMessageThrough(accountId)) {
+        return;
+    }
+
+    auto& fields = *m_fields.self();
+
+    auto it = fields.m_players.find(accountId);
+    if (it == fields.m_players.end()) {
+        return;
+    }
+
+    it->second->player1()->playEmote(quickChatId);
 }
 
 float GlobedGJBGL::calculateVolumeFor(int playerId) {
@@ -906,6 +955,13 @@ float GlobedGJBGL::calculateVolumeFor(int playerId) {
 void GlobedGJBGL::updateProximityVolume(int playerId) {
     float vol = this->calculateVolumeFor(playerId);
     AudioManager::get().setStreamVolume(playerId, vol);
+}
+
+void GlobedGJBGL::playSelfEmote(uint32_t id) {
+    auto& fields = *m_fields.self();
+    fields.m_selfEmoteBubble->playEmote(id);
+
+    NetworkManagerImpl::get().sendQuickChat(id);
 }
 
 }

@@ -19,6 +19,7 @@ struct PlayerStatusFlags {
 class GLOBED_DLL PlayerStatusIcons : public cocos2d::CCNode {
 public:
     void updateStatus(const PlayerStatusFlags& flags, bool force = false);
+    void setOpacity(unsigned char opacity);
 
     static PlayerStatusIcons* create(unsigned char opacity);
 

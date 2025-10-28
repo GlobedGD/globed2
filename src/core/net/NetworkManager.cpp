@@ -123,6 +123,10 @@ void NetworkManager::queueGameEvent(OutEvent&& event) {
     m_impl->queueGameEvent(std::move(event));
 }
 
+void NetworkManager::sendQuickChat(uint32_t id) {
+    m_impl->sendQuickChat(id);
+}
+
 void NetworkManager::addListener(const std::type_info& ty, void* listener, void* dtor) {
     m_impl->addListener(ty, listener, dtor);
 }

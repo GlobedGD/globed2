@@ -3,7 +3,7 @@ name: Build Globed
 on:
   workflow_dispatch:
   # push:
-  pull_request:
+  # pull_request:
 
 jobs:
   build:
@@ -39,7 +39,7 @@ jobs:
       - name: Build the mod
         uses: geode-sdk/build-geode-mod@main
         with:
-          # sdk: 'nightly'
+          sdk: 'nightly'
           # cli: 'nightly'
           configure-args: '-DGLOBED_RELEASE=ON'
           combine: 'true'

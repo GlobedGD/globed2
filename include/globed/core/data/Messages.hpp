@@ -170,6 +170,13 @@ struct VoiceBroadcastMessage {
     EncodedAudioFrame frame;
 };
 
+// Quick chat broadcast
+
+struct QuickChatBroadcastMessage {
+    int accountId;
+    uint32_t quickChatId;
+};
+
 // Script logs
 
 struct ScriptLogsMessage {

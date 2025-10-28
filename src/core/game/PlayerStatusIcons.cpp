@@ -97,6 +97,10 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
     m_iconWrapper->updateLayout();
 }
 
+void PlayerStatusIcons::setOpacity(unsigned char opacity) {
+    m_opacity = opacity;
+}
+
 PlayerStatusIcons* PlayerStatusIcons::create(unsigned char opacity) {
     auto ret = new PlayerStatusIcons();
     if (ret->init(opacity)) {

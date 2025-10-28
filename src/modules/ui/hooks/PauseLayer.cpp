@@ -5,6 +5,7 @@
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <modules/ui/UIModule.hpp>
 #include <modules/ui/popups/UserListPopup.hpp>
+#include <modules/ui/popups/EmoteListPopup.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PauseLayer.hpp>
@@ -49,10 +50,10 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
         auto menu = Build<CCMenu>::create()
             .id("playerlist-menu"_spr)
             .parent(this)
-            .pos(winSize.width - 28.f, 24.f)
-            .anchorPoint(1.f, 0.f)
+            .pos(28.f, 24.f)
+            .anchorPoint(0.f, 0.f)
             .contentSize(48.f, winSize.height - 48.f)
-            .layout(ColumnLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start))
+            .layout(ColumnLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start)->setGap(0.f))
             .collect();
 
         Build<CCSprite>::create("icon-players.png"_spr)
@@ -61,6 +62,14 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
                 UserListPopup::create()->show();
             })
             .id("btn-open-playerlist"_spr)
+            .parent(menu);
+        
+        Build<CCSprite>::create("icon-emotes.png"_spr)
+            .scale(0.9f)
+            .intoMenuItem(+[] {
+                EmoteListPopup::create()->show();
+            })
+            .id("btn-open-emotelist"_spr)
             .parent(menu);
 
         menu->updateLayout();

@@ -60,6 +60,7 @@ public:
     void setViewedFeaturedLevel();
 
     void queueGameEvent(OutEvent&& event);
+    void sendQuickChat(uint32_t id);
 
     // Listeners
 

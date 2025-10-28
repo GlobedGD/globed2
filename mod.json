@@ -37,7 +37,8 @@
         ],
         "spritesheets": {
             "emojis": [
-                "resources/emoji/*.png"
+                "resources/emoji/*.png",
+                "resources/emotes_sprites/*.png"
             ]
         },
         "fonts": {
@@ -45,7 +46,10 @@
                 "path": "resources/fonts/Consolas-Regular.ttf",
                 "size": 64
             }
-        }
+        },
+        "files": [
+            "resources/emotes_sfx/*.ogg"
+        ]
     },
     "api": {
         "include": [

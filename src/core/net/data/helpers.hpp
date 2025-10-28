@@ -577,6 +577,15 @@ $implDecode(msg::VoiceBroadcastMessage, game::VoiceBroadcastMessage::Reader& rea
     return msg::VoiceBroadcastMessage { .accountId = user, .frame = std::move(out) };
 }
 
+/// Quick chat broadcast
+
+$implDecode(msg::QuickChatBroadcastMessage, game::QuickChatBroadcastMessage::Reader& reader) {
+    return msg::QuickChatBroadcastMessage {
+        .accountId = reader.getAccountId(),
+        .quickChatId = reader.getId(),
+    };
+}
+
 /// User role
 
 inline std::optional<UserRole> decodeUserRole(const schema::shared::UserRole::Reader& reader, size_t idx) {
