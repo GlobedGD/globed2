@@ -281,7 +281,7 @@ private:
         }
 
         size_t unpackedSize = capnp::computeSerializedSizeInWords(msg) * 8;
-        qn::HeapByteWriter writer;
+        qn::ArrayByteWriter<8> writer;
         writer.writeVarUint(unpackedSize).unwrap();
         auto unpSizeBuf = writer.written();
 

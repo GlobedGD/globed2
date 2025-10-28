@@ -3,6 +3,7 @@
 #include <globed/prelude.hpp>
 #include <globed/util/format.hpp>
 
+#include <qunet/buffers/ArrayByteWriter.hpp>
 #include <qunet/buffers/HeapByteWriter.hpp>
 #include <qunet/buffers/ByteReader.hpp>
 #include <Geode/Geode.hpp>
@@ -30,17 +31,17 @@ protected:
 
     template <typename T, typename F> requires (std::is_convertible_v<std::invoke_result_t<F, qn::ByteReader&>, Result<T>>)
     Result<T> decodePayload(F&& readfn) {
-        qn::HeapByteWriter writer; // TODO: use qn::ByteWriter when its implemented
+        qn::ArrayByteWriter<64> writer;
 
         // could add other props if not enough space :p
-        writer.writeU32(std::bit_cast<uint32_t>(m_item1Mode));
-        writer.writeU32(std::bit_cast<uint32_t>(m_item2Mode));
-        writer.writeU32(std::bit_cast<uint32_t>(m_resultType1));
-        writer.writeU32(std::bit_cast<uint32_t>(m_resultType2));
-        writer.writeU32(std::bit_cast<uint32_t>(m_roundType1));
-        writer.writeU32(std::bit_cast<uint32_t>(m_roundType2));
-        writer.writeU32(std::bit_cast<uint32_t>(m_signType1));
-        writer.writeU32(std::bit_cast<uint32_t>(m_signType2));
+        (void) writer.writeU32(std::bit_cast<uint32_t>(m_item1Mode));
+        (void) writer.writeU32(std::bit_cast<uint32_t>(m_item2Mode));
+        (void) writer.writeU32(std::bit_cast<uint32_t>(m_resultType1));
+        (void) writer.writeU32(std::bit_cast<uint32_t>(m_resultType2));
+        (void) writer.writeU32(std::bit_cast<uint32_t>(m_roundType1));
+        (void) writer.writeU32(std::bit_cast<uint32_t>(m_roundType2));
+        (void) writer.writeU32(std::bit_cast<uint32_t>(m_signType1));
+        (void) writer.writeU32(std::bit_cast<uint32_t>(m_signType2));
         auto written = writer.written();
 
         log::debug("Decoding payload: {}", hexEncode(written.data(), written.size()));
