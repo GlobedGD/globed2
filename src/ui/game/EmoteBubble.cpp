@@ -69,7 +69,7 @@ void EmoteBubble::playEmote(uint32_t emoteId) {
 
         auto fmod = FMODAudioEngine::sharedEngine();
         std::string path = fmt::format("emote_sfx_{}.ogg"_spr, emoteId).c_str();
-        fmod->playEffect(path, 1.f + rng()->random(-0.08f, 0.08f), 1.f, 0.5f);
+        fmod->playEffect(path, 1.f + rng()->random(-0.05f, 0.05f), 1.f, 0.75f);
 
         this->runAction(
             CCSequence::create(

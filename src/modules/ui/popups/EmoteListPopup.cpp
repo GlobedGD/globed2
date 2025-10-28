@@ -24,7 +24,7 @@ bool EmoteListPopup::setup() {
 
     m_noElasticity = true;
 
-    m_validEmoteIds = this->getValidEmoteIds(100);
+    m_validEmoteIds = this->getValidEmoteIds(1000);
     m_maxPages = (m_validEmoteIds.size() + EMOTES_PER_PAGE - 1) / EMOTES_PER_PAGE;
 
     for (int i = 0; i < 4; i++) {
@@ -249,12 +249,13 @@ void EmoteListPopup::loadEmoteListPage(int page) {
         CCSprite* emoteSpr = Build<CCSprite>::createSpriteName(fmt::format("emote_{}.png"_spr, emoteId).c_str())
                 .pos(emoteBtn->getContentSize() / 2.f);
         emoteBtn->addChild(emoteSpr, 5);
-        cue::rescaleToMatch(emoteSpr, {25.f, 25.f});
+        cue::rescaleToMatch(emoteSpr, 25.f);
 
         for (int i = 0; i < m_favoriteEmoteIds.size(); i++) {
             if (m_favoriteEmoteIds.at(i) == emoteId) {
                 CCSprite* star = Build<CCSprite>::createSpriteName("GJ_starsIcon_001.png")
                     .scale(0.35f)
+                    .zOrder(5)
                     .pos(emoteBtn->getContentWidth() - 6.f, 6.f);
                 emoteBtn->addChild(star);
                 break;
@@ -355,7 +356,7 @@ void EmoteListPopup::loadFavoriteEmotesList() {
         CCSprite* emoteSpr = Build<CCSprite>::createSpriteName(fmt::format("emote_{}.png"_spr, emoteId).c_str())
                 .pos(emoteBtn->getContentSize() / 2.f);
         emoteBtn->addChild(emoteSpr, 1);
-        cue::rescaleToMatch(emoteSpr, {25.f, 25.f});
+        cue::rescaleToMatch(emoteSpr, 25.f);
 
         CCLabelBMFont* slotLabel = Build<CCLabelBMFont>::create(fmt::format("{}", i + 1).c_str(), "goldFont.fnt")
             .scale(0.66f)
