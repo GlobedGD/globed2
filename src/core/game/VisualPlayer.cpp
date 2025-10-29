@@ -46,8 +46,6 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     this->updateIconType(PlayerIconType::Cube);
     m_prevMode = PlayerIconType::Cube;
 
-    this->updateOpacity();
-
     // create the name label
     bool showName = setting<bool>("core.player.show-names") && (!isSecond || setting<bool>("core.player.dual-name"));
     m_forceHideName = !showName;
@@ -78,6 +76,8 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
 
         m_playerTrajectory->m_bUseArea = false;
     }
+
+    this->updateOpacity();
 
     return true;
 }
@@ -345,7 +345,7 @@ PlayerDisplayData& VisualPlayer::displayData() {
 void VisualPlayer::updateOpacity() {
     float mult = 1.f;
 
-    bool hideNearby_ = hideNearby(GlobedGJBGL::get());
+    bool hideNearby_ = hideNearby(GlobedGJBGL::get(m_gameLayer));
 
     if (hideNearby_) {
         // calculate distance

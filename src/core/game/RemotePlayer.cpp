@@ -12,7 +12,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-    RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode) : m_state(), m_parentNode(parentNode) {
+RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode) : m_state(), m_parentNode(parentNode) {
     m_state.accountId = playerId;
 
     Build<VisualPlayer>::create(gameLayer, this, m_parentNode, false)
