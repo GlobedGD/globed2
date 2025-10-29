@@ -17,6 +17,7 @@ namespace globed {
 
 class GLOBED_DLL ProgressIcon : public CCNode {
 public:
+    ProgressIcon() = default;
     GLOBED_NOCOPY(ProgressIcon);
     GLOBED_NOMOVE(ProgressIcon);
 

@@ -19,6 +19,7 @@ struct GameCameraState;
 
 class GLOBED_DLL ProgressArrow : public CCNode {
 public:
+    ProgressArrow() = default;
     GLOBED_NOCOPY(ProgressArrow);
     GLOBED_NOMOVE(ProgressArrow);
 
