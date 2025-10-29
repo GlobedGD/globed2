@@ -345,6 +345,11 @@ void NetworkManagerImpl::thrMaybeResendOwnData(ConnectionInfo& connInfo) {
         return;
     }
 
+    // don't send if we haven't authorized yet
+    if (!connInfo.m_established) {
+        return;
+    }
+
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto update = msg.initUpdateOwnData();
 

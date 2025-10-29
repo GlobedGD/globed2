@@ -51,7 +51,7 @@ struct DeferredSessionJoin {
 struct ConnectionInfo {
     std::string m_knownArgonUrl;
     bool m_waitingForArgon = false;
-    bool m_established;
+    bool m_established = false;
     bool m_authenticating = false;
     asp::time::Instant m_triedAuthAt;
 
