@@ -111,10 +111,19 @@ bool PopupRef::hasFields() const {
 
 class CustomFLAlert : public BasePopup<CustomFLAlert, CStr, CStr, CStr, cocos2d::CCNode*> {
 public:
+    using Callback = std23::move_only_function<void (FLAlertLayer*, bool)>;
+
     static CustomFLAlert* create(CStr title, std::string_view content, CStr btn1, CStr btn2, float width);
 
+    void setCallback(Callback&& cb) {
+        m_callback = std::move(cb);
+    }
+
 private:
+    Callback m_callback;
+
     bool setup(CStr title, CStr btn1, CStr btn2, CCNode* content) override;
+    void onClick(bool btn2);
 };
 
 bool CustomFLAlert::setup(CStr title, CStr btn1, CStr btn2, CCNode* content) {
@@ -123,29 +132,27 @@ bool CustomFLAlert::setup(CStr title, CStr btn1, CStr btn2, CCNode* content) {
     content->setPosition(m_size.width / 2.f, m_size.height / 2.f + 5.f);
     m_mainLayer->addChild(content);
 
-    this->setTitle(title.get(), "goldFont.fnt", 0.9f, 25.f);
+    this->setTitle(title.get(), "goldFont.fnt", 0.9f, 27.f);
 
     // confirm / cancel buttons
     auto bottomMenu = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(3.f)->setAutoScale(false))
         .contentSize(m_size.width, 60.f)
-        .pos(this->fromBottom(27.f))
+        .pos(this->fromBottom(30.f))
         .parent(m_mainLayer)
         .collect();
 
     Build<ButtonSprite>::create(btn1, "goldFont.fnt", "GJ_button_01.png", 1.0f)
-        .scale(0.85f)
         .intoMenuItem([this] {
-            this->onClose(nullptr);
+            this->onClick(false);
         })
         .scaleMult(1.15f)
         .parent(bottomMenu);
 
     if (btn2) {
         Build<ButtonSprite>::create(btn2, "goldFont.fnt", "GJ_button_01.png", 1.0f)
-            .scale(0.85f)
             .intoMenuItem([this] {
-                this->onClose(nullptr);
+                this->onClick(true);
             })
             .scaleMult(1.15f)
             .parent(bottomMenu);
@@ -154,8 +161,18 @@ bool CustomFLAlert::setup(CStr title, CStr btn1, CStr btn2, CCNode* content) {
     bottomMenu->updateLayout();
 
     return true;
-
 }
+
+void CustomFLAlert::onClick(bool btn2) {
+    if (m_callback) {
+        m_callback(this, btn2);
+    }
+
+    this->onClose(nullptr);
+}
+
+static void colorizeLabel(Label* label, std::string_view text);
+
 CustomFLAlert* CustomFLAlert::create(
     CStr title,
     std::string_view content,
@@ -163,17 +180,24 @@ CustomFLAlert* CustomFLAlert::create(
     CStr btn2,
     float width
 ) {
-    std::string cont = std::string(content);
-    globed::translateEmojiString(cont);
+    auto label = Label::createWrapped("", "chatFont.fnt", BMFontAlignment::Center, width - 20.f);
+    label->setExtraLineSpacing(1.f);
 
-    auto label = Label::createWrapped("", "chatFont.fnt", BMFontAlignment::Center, width);
-    label->enableEmojis("emojis.png"_spr, getEmojiMap());
-    label->setString(cont);
+    if (globed::containsEmoji(content)) {
+        std::string cont = std::string(content);
+        globed::translateEmojiString(cont);
 
-    CCSize size = label->getScaledContentSize() + CCSize{20.f, 120.f};
+        label->enableEmojis("emojis.png"_spr, getEmojiMap());
+        label->setString(cont);
+    } else {
+        // no emojis!
+        globed::colorizeLabel(label, content);
+    }
+
+    CCSize size = label->getScaledContentSize() + CCSize{20.f, 100.f};
 
     auto ret = new CustomFLAlert();
-    if (ret->initAnchored(std::max<float>(size.width, 350.f), size.height, title, btn1, btn2, label, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    if (ret->initAnchored(std::max<float>(size.width, std::max<float>(350.f, width)), size.height, title, btn1, btn2, label, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
         ret->autorelease();
         return ret;
     }
@@ -202,21 +226,13 @@ PopupRef PopupManager::quickPopup(
     const std::string& content,
     CStr btn1,
     CStr btn2,
-    std::function<void (FLAlertLayer*, bool)> callback,
+    std23::move_only_function<void (FLAlertLayer*, bool)> callback,
     float width
 ) {
-    FLAlertLayer* alert;
+    auto alert = CustomFLAlert::create(title, content, btn1, btn2.getOrNull(), width);
 
-    if (!callback) {
-        if (globed::containsEmoji(content)) {
-            alert = CustomFLAlert::create(title, content, btn1, btn2.getOrNull(), width);
-        } else {
-            alert = FLAlertLayer::create(nullptr, title, content, btn1, btn2.getOrNull(), width);
-        }
-    } else {
-        alert = geode::createQuickPopup(title, content, btn1, btn2.getOrNull(), width, [callback = std::move(callback)](auto alert, bool btn2) {
-            callback(alert, btn2);
-        }, false);
+    if (callback) {
+        alert->setCallback(std::move(callback));
     }
 
     return this->manage(alert);
@@ -350,6 +366,90 @@ void toast(geode::NotificationIcon icon, float duration, const std::string& mess
 
 void toast(cocos2d::CCSprite* icon, float duration, const std::string& message) {
     Notification::create(message, icon, duration)->show();
+}
+
+static ccColor3B mapColor(char c) {
+    switch (c) {
+        case 'b': return color3FromHex("#4a52e1");
+        case 'g': return color3FromHex("#40e348");
+        case 'l': return color3FromHex("#60abef");
+        case 'j': return color3FromHex("#32c8ff");
+        case 'y': return color3FromHex("#ffff00");
+        case 'o': return color3FromHex("#ffa54b");
+        case 'r': return color3FromHex("#ff5a5a");
+        case 'p': return color3FromHex("#ff00ff");
+        case 'a': return color3FromHex("#9632ff");
+        case 'd': return color3FromHex("#ff96ff");
+        case 'c': return color3FromHex("#ffff96");
+        case 'f': return color3FromHex("#96ffff");
+        case 's': return color3FromHex("#ffdc41");
+        default: return color3FromHex("#ff0000");
+    }
+}
+
+static void colorizeLabel(Label* label, std::string_view text) {
+    struct Run {
+        size_t start, end;
+        ccColor3B color;
+    };
+
+    std::string outText;
+    std::vector<Run> runs;
+    size_t i = 0;
+    size_t childI = 0;
+
+    auto skip = [&](size_t n = 1) {
+        auto sv = text.substr(i, n);
+        outText += sv;
+        i += n;
+
+        for (char c : sv) {
+            if (c != ' ' && c != '\t' && c != '\n' && c != '\r') childI++;
+        }
+    };
+
+    std::optional<Run> current;
+
+    while ((int64_t)text.size() - (int64_t)i >= 4) {
+        std::string_view slice = text.substr(i, 4);
+
+        if (!current) {
+            // Scan for beginning of a new run
+            if (!slice.starts_with("<c") || slice[3] != '>') {
+                skip();
+                continue;
+            }
+
+            auto color = mapColor(slice[2]);
+            current = Run{childI, 0, color};
+            i += 4;
+            continue;
+        }
+
+        // Scan for end of current run
+        if (slice != "</c>") {
+            skip();
+            continue;
+        }
+
+        current->end = childI;
+        runs.push_back(*current);
+        current = std::nullopt;
+        i += 4;
+    }
+
+    // append remaining text
+    skip(text.size() - i);
+
+    label->setString(outText);
+    auto mainBatch = label->getChildByType<CCSpriteBatchNode>(0);
+    auto mchildren = mainBatch->getChildrenExt<CCSprite>();
+
+    for (auto& run : runs) {
+        for (size_t i = run.start; i < run.end; i++) {
+            mchildren[i]->setColor(run.color);
+        }
+    }
 }
 
 }

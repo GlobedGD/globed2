@@ -27,13 +27,11 @@ struct GLOBED_MODIFY_ATTR TPHookedPauseLayer : geode::Modify<TPHookedPauseLayer,
         log::debug("Intercept unpause, linked: {}", mod.isLinked());
 
         if (!mod.isLinked()) {
-            globed::quickPopup(
+            globed::confirmPopup(
                 "Globed Error",
                 "To play in a <cy>2-player mode room</c>, you must <cg>Link</c> to another player. Open the user list menu?",
                 "Dismiss", "Open",
-                [](auto, bool open) {
-                    if (!open) return;
-
+                [](auto) {
                     UserListPopup::create()->show();
                 }
             );

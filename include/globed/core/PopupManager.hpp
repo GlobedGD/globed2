@@ -1,5 +1,6 @@
 #pragma once
 
+#include <globed/prelude.hpp>
 #include <globed/util/singleton.hpp>
 #include <globed/util/CStr.hpp>
 #include <Geode/Geode.hpp>
@@ -84,7 +85,7 @@ public:
         const std::string& content,
         CStr btn1 = "Ok",
         CStr btn2 = nullptr,
-        std::function<void (FLAlertLayer*, bool)> callback = {},
+        std23::move_only_function<void (FLAlertLayer*, bool)> callback = {},
         float width = DEFAULT_WIDTH
     );
 
@@ -136,12 +137,29 @@ inline void quickPopup(
     const std::string& content,
     CStr btn1 = "Ok",
     CStr btn2 = nullptr,
-    std::function<void (FLAlertLayer*, bool)> callback = {},
+    std23::move_only_function<void (FLAlertLayer*, bool)> callback = {},
     float width = PopupManager::DEFAULT_WIDTH
 ) {
     PopupManager::get().quickPopup(
         title, content, btn1, btn2, std::move(callback), width
     ).showInstant();
+}
+
+/// Creates a confirmation popup and shows it to the user.
+/// Shorthand for quickPopup(...), but with the callback having 1 argument and only being invoked when the user presses the second button.
+inline void confirmPopup(
+    CStr title,
+    const std::string& content,
+    CStr btn1 = "Cancel",
+    CStr btn2 = "Ok",
+    std23::move_only_function<void (FLAlertLayer*)> callback = {},
+    float width = PopupManager::DEFAULT_WIDTH
+) {
+    auto cb = [cb = std::move(callback)](FLAlertLayer* alert, bool btn2) mutable {
+        if (btn2) cb(alert);
+    };
+
+    quickPopup(title, content, btn1, btn2, std::move(cb), width);
 }
 
 /// Creates a popup with the given title and content as a formatted string and shows it to the user.

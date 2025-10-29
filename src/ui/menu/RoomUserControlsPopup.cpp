@@ -43,14 +43,12 @@ void RoomUserControlsPopup::remakeButtons() {
     Build<CCSprite>::create("button-admin-ban.png"_spr)
         .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
         .intoMenuItem([this] {
-            globed::quickPopup(
+            globed::confirmPopup(
                 "Ban user",
                 fmt::format("Are you sure you want to <cr>ban</c> <cy>{}</c> from your room? They will be unable to join until you create a new room.", m_username),
                 "Cancel",
                 "Ban",
-                [this](auto, bool yup) {
-                    if (!yup) return;
-
+                [this](auto) {
                     this->onClose(nullptr);
 
                     NetworkManagerImpl::get().sendRoomOwnerAction(RoomOwnerActionType::BAN_USER, m_accountId);
@@ -63,14 +61,12 @@ void RoomUserControlsPopup::remakeButtons() {
     Build<CCSprite>::create("button-admin-kick.png"_spr)
         .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
         .intoMenuItem([this] {
-            globed::quickPopup(
+            globed::confirmPopup(
                 "Kick user",
                 fmt::format("Are you sure you want to <cr>kick</c> <cy>{}</c> from your room? They will be able to join again.", m_username),
                 "Cancel",
                 "Kick",
-                [this](auto, bool yup) {
-                    if (!yup) return;
-
+                [this](auto) {
                     this->onClose(nullptr);
 
                     NetworkManagerImpl::get().sendRoomOwnerAction(RoomOwnerActionType::KICK_USER, m_accountId);

@@ -42,12 +42,15 @@ bool SettingsLayer::init() {
     // Reset settings button
     auto resetBtn = Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
         .intoMenuItem([this](auto) {
-            geode::createQuickPopup("Reset all settings", "Are you sure you want to reset all settings? This action is <cr>irreversible.</c>", "Cancel", "Ok", [this](auto, bool accepted) {
-                if (accepted) {
+            globed::confirmPopup(
+                "Reset all settings",
+                "Are you sure you want to reset all settings? This action is <cr>irreversible.</c>",
+                "Cancel", "Ok",
+                [this](auto) {
                     SettingsManager::get().reset();
                     this->refreshAll();
                 }
-            });
+            );
         })
         .id("btn-reset")
         .parent(rightMenu)

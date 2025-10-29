@@ -685,13 +685,16 @@ void GlobedMenuLayer::initSideButtons() {
         LeftBtn::Disconnect,
         "btn-disconnect",
         [this] {
-            globed::quickPopup("Note", "Are you sure you want to <cr>disconnect</c> from the server?", "Cancel", "Yes", [](auto, bool yes) {
-                if (!yes) return;
-
-                if (auto err = NetworkManagerImpl::get().disconnectCentral().err()) {
-                    globed::toastError("{}", *err);
+            globed::confirmPopup(
+                "Note",
+                "Are you sure you want to <cr>disconnect</c> from the server?",
+                "Cancel", "Yes",
+                [](auto) {
+                    if (auto err = NetworkManagerImpl::get().disconnectCentral().err()) {
+                        globed::toastError("{}", *err);
+                    }
                 }
-            });
+            );
         }
     );
 
@@ -748,13 +751,11 @@ void GlobedMenuLayer::initSideButtons() {
             LeftBtn::CloseRoom,
             "btn-close-room",
             [this] {
-                globed::quickPopup(
+                globed::confirmPopup(
                     "Close Room",
                     "Are you sure you want to <cr>close</c> the room? All players will be <cy>kicked</c> from the room and it will be <cy>deleted</c>.",
                     "Cancel", "Ok",
-                    [this](auto, bool yup) {
-                        if (!yup) return;
-
+                    [this](auto) {
                         NetworkManagerImpl::get().sendRoomOwnerAction(RoomOwnerActionType::CLOSE_ROOM);
                     }
                 );
@@ -983,15 +984,14 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
     out.push_back(Build<CCSprite>::create("discord01.png"_spr)
         .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
         .intoMenuItem([this] {
-            globed::quickPopup(
+            globed::confirmPopup(
                 "Open Discord",
                 "Join our <cp>Discord</c> server?\n\n<cr>Important: By joining the Discord server, you agree to being at least 13 years of age.</c>",
                 "No", "Yes",
-                [](auto, bool btn2) {
-                    if (btn2) {
-                        geode::utils::web::openLinkInBrowser(globed::constant<"discord">());
-                    }
-            });
+                [](auto) {
+                    geode::utils::web::openLinkInBrowser(globed::constant<"discord">());
+                }
+            );
         })
         .scaleMult(1.1f)
         .zOrder(FarRightBtn::Discord)

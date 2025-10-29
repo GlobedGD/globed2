@@ -181,15 +181,13 @@ void SetupEmbeddedScriptPopup::invalidateSignature() {
 
 void SetupEmbeddedScriptPopup::onClose(CCObject* obj) {
     if (m_madeChanges && !m_doSave && !m_confirmedExit) {
-        globed::quickPopup(
+        globed::confirmPopup(
             "Note",
             "Are you sure you want to <cr>discard</c> all the changes you've made?",
             "Cancel", "Discard",
-            [this](auto, bool discard) {
-                if (discard) {
-                    m_confirmedExit = true;
-                    this->onClose(nullptr);
-                }
+            [this](auto) {
+                m_confirmedExit = true;
+                this->onClose(nullptr);
             }
         );
 

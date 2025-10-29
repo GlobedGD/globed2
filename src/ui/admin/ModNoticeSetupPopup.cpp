@@ -179,12 +179,12 @@ void ModNoticeSetupPopup::submit() {
     auto text = m_messageInput->getString();
 
     if (everyone) {
-        globed::quickPopup(
+        globed::confirmPopup(
             "Confirm",
             "This action will send a <cy>notice</c> to ALL USERS on the server. Are you sure you want to proceed?",
             "Cancel",
             "Send",
-            [text = std::move(text)](FLAlertLayer*, bool) {
+            [text = std::move(text)](FLAlertLayer*) {
                 NetworkManagerImpl::get().sendAdminNoticeEveryone(text);
             }
         );

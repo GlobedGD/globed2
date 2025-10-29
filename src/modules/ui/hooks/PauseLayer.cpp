@@ -63,7 +63,7 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
             })
             .id("btn-open-playerlist"_spr)
             .parent(menu);
-        
+
         Build<CCSprite>::create("icon-emotes.png"_spr)
             .scale(0.9f)
             .intoMenuItem(+[] {
@@ -95,17 +95,15 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
 
         auto& rm = RoomManager::get();
         if (rm.isInFollowerRoom() && !rm.isOwner()) {
-            globed::quickPopup(
+            globed::confirmPopup(
                 "Note",
                 "You are in a <cy>follower room</c>, you <cr>cannot</c> leave the level unless the room owner leaves as well. "
                 "Proceeding will cause you to <cj>leave the room</c>, do you want to continue?",
                 "Cancel", "Leave",
-                [this](auto, bool yes) {
-                    if (yes) {
-                        g_force = true;
-                        NetworkManagerImpl::get().sendLeaveRoom();
-                        PauseLayer::onQuit(nullptr);
-                    }
+                [this](auto) {
+                    g_force = true;
+                    NetworkManagerImpl::get().sendLeaveRoom();
+                    PauseLayer::onQuit(nullptr);
                 }
             );
         } else {

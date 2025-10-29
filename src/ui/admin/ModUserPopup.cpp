@@ -129,16 +129,14 @@ void ModUserPopup::initUi() {
     Build<CCSprite>::create(m_data->whitelisted ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this](CCMenuItemSpriteExtra* btn) {
-            geode::createQuickPopup(
+            globed::confirmPopup(
                 "Confirm",
                 m_data->whitelisted ?
                     "Are you sure you want to remove this person from the whitelist?"
                     : "Are you sure you want to whitelist this person?",
                 "Cancel",
                 "Yes",
-                [this, btn](auto, bool confirm) {
-                    if (!confirm) return;
-
+                [this, btn](auto) {
                     bool newv = !m_data->whitelisted;
                     NetworkManagerImpl::get().sendAdminSetWhitelisted(m_data->accountId, newv);
                     m_data->whitelisted = newv;
@@ -203,14 +201,12 @@ void ModUserPopup::initUi() {
     Build<CCSprite>::create("button-admin-kick.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this] {
-            globed::quickPopup(
+            globed::confirmPopup(
                 "Confirm",
                 "Are you sure you want to <cr>kick</c> this person from the server?",
                 "Cancel",
                 "Yes",
-                [this](auto, bool yeah) {
-                    if (!yeah) return;
-
+                [this](auto) {
                     auto popup = InputPopup::create("chatFont.fnt");
                     popup->setMaxCharCount(128);
                     popup->setWidth(360.f);

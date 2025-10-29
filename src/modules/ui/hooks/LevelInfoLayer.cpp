@@ -110,15 +110,14 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
 
         // if we are already in a playlayer, don't allow sillyness
         if (NetworkManagerImpl::get().isConnected() && GJBaseGameLayer::get() != nullptr) {
-            geode::createQuickPopup(
+            globed::confirmPopup(
                 "Warning",
                 "You are already inside of a level, opening another level may cause Globed to <cr>crash</c>. <cy>Do you still want to proceed?</c>",
                 "Cancel", "Play",
-                [this, s](auto, bool play) {
-                if (play) {
+                [this, s](auto) {
                     this->forcePlay(s);
                 }
-            });
+            );
             return;
         }
 

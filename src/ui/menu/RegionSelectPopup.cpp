@@ -212,6 +212,17 @@ void RegionSelectPopup::softRefresh(float) {
 }
 
 void RegionSelectPopup::showInfo() {
+    // FLAlertLayer::create(
+    //     nullptr,
+    //     "Note",
+    //     "Multiple <cj>game servers</c> can be located in different regions, to ensure everyone in the world can have a great experience. "
+    //     "By default, Globed will try to use the server with the <cg>lowest ping</c>, but you can manually choose your <cy>preferred server</c> if you prefer playing with different people.\n\n"
+    //     "Note: you will still be able to join people in <cy>other servers</c>. This setting impacts which <cp>Global Room</c> you play in, and which server <cj>rooms created by you</c> will be in.",
+    //     "Ok",
+    //     nullptr,
+    //     410.f
+    // )->show();
+
     globed::alert(
         "Note",
         "Multiple <cj>game servers</c> can be located in different regions, to ensure everyone in the world can have a great experience. "

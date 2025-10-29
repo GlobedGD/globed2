@@ -64,13 +64,13 @@ template <typename A>
 struct ExtractFnArg;
 
 template <typename Z>
-struct ExtractFnArg<std::function<void(Z)>> {
+struct ExtractFnArg<void(Z)> {
     using type = Z;
 };
 
 /// Extracts the type of a parameter expression declaration.
 /// For example: `const int& x` -> `const int&`
-#define EXTRACT_EXPR_TYPE(expr) ExtractFnArg<std::function<void(expr)>>::type
+#define EXTRACT_EXPR_TYPE(expr) ExtractFnArg<void(expr)>::type
 
 #define $implEncodeInner(cxxt, wrt) \
     template <typename Y> \
