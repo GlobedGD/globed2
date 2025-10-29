@@ -15,9 +15,9 @@ const CCSize ModPunishPopup::POPUP_SIZE { 350.f, 250.f };
 
 bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun) {
     switch (type) {
-        case UserPunishmentType::Ban: this->setTitle("Ban/Unban user");
-        case UserPunishmentType::RoomBan: this->setTitle("Room ban/unban user");
-        case UserPunishmentType::Mute: this->setTitle("Mute/Unmute user");
+        case UserPunishmentType::Ban: this->setTitle("Ban/Unban user"); break;
+        case UserPunishmentType::RoomBan: this->setTitle("Room ban/unban user"); break;
+        case UserPunishmentType::Mute: this->setTitle("Mute/Unmute user"); break;
     }
 
     m_punishment = std::move(pun);
