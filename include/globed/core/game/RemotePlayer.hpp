@@ -21,8 +21,9 @@ public:
     void handleDeath(const PlayerDeath& death);
     void handleSpiderTp(const SpiderTeleportData& tp, bool p1);
     bool isDataInitialized() const;
+    bool isDataOutdated() const;
     bool isTeamInitialized() const;
-    void initData(const PlayerDisplayData& data, uint16_t teamId = 0xffff);
+    void initData(const PlayerDisplayData& data, bool outdated, uint16_t teamId = 0xffff);
     void updateTeam(uint16_t teamId);
     bool isTeammate(bool whatWhenNoTeams = true);
 
@@ -39,6 +40,7 @@ private:
     PlayerState m_state;
     PlayerDisplayData m_data;
     bool m_dataInitialized = false;
+    bool m_dataOutdated = false;
     bool m_forceHide = false;
     cocos2d::CCNode* m_parentNode = nullptr;
     VisualPlayer* m_player1 = nullptr;

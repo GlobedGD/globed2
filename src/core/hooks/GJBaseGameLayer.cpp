@@ -340,11 +340,24 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         player->update(vstate, camState, flags, fields.m_playersHidden);
 
         // if we don't know player's data yet (username, icons, etc.), request it
-        if (!player->isDataInitialized()) {
-            if (pcm.has(playerId)) {
-                player->initData(*pcm.get(playerId));
-            } else {
+        bool dataInit = player->isDataInitialized();
+        bool dataOutdated = player->isDataOutdated();
+
+        if (!dataInit || dataOutdated) {
+            bool inLayer1 = pcm.hasInLayer1(playerId);
+            bool inAny = pcm.has(playerId);
+
+            // if not in layer 1, always request more up to date data
+            if (!inLayer1) {
                 fields.m_unknownPlayers.push_back(playerId);
+            }
+
+            // if not initialized, use whatever we have
+            if (!dataInit && inAny) {
+                player->initData(*pcm.get(playerId), !inLayer1);
+            } else if (dataOutdated && inLayer1) {
+                // if outdated and we received layer 1 data, update from there
+                player->initData(*pcm.get(playerId), false);
             }
         } else if (!player->isTeamInitialized() && rm.getSettings().teams) {
             if (auto teamId = rm.getTeamIdForPlayer(playerId)) {

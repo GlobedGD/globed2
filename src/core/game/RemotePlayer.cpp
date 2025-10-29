@@ -130,12 +130,17 @@ bool RemotePlayer::isDataInitialized() const {
     return m_dataInitialized;
 }
 
+bool RemotePlayer::isDataOutdated() const {
+    return m_dataOutdated;
+}
+
 bool RemotePlayer::isTeamInitialized() const {
     return m_teamId.has_value();
 }
 
-void RemotePlayer::initData(const PlayerDisplayData& data, uint16_t teamId) {
+void RemotePlayer::initData(const PlayerDisplayData& data, bool outdated, uint16_t teamId) {
     m_dataInitialized = true;
+    m_dataOutdated = outdated;
     m_data = data;
 
     m_player1->updateDisplayData();
