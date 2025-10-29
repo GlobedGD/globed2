@@ -136,7 +136,7 @@ bool CustomFLAlert::setup(CStr title, CStr btn1, CStr btn2, CCNode* content) {
 
     // confirm / cancel buttons
     auto bottomMenu = Build<CCMenu>::create()
-        .layout(RowLayout::create()->setGap(3.f)->setAutoScale(false))
+        .layout(RowLayout::create()->setGap(15.f)->setAutoScale(false))
         .contentSize(m_size.width, 60.f)
         .pos(this->fromBottom(30.f))
         .parent(m_mainLayer)
