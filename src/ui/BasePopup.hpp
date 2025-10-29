@@ -9,6 +9,12 @@ namespace globed {
 template <typename Derived, typename... Args>
 class BasePopup : public geode::Popup<Args...> {
 public:
+    BasePopup() = default;
+    BasePopup(const BasePopup&) = delete;
+    BasePopup& operator=(const BasePopup&) = delete;
+    BasePopup(BasePopup&&) = delete;
+    BasePopup& operator=(BasePopup&&) = delete;
+
     template <typename... Args2>
     static Derived* create(Args2&&... args) {
         auto ret = new Derived();

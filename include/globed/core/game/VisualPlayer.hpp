@@ -22,6 +22,10 @@ struct GameCameraState;
 
 class GLOBED_DLL VisualPlayer : public PlayerObject {
 public:
+    VisualPlayer() = default;
+    GLOBED_NOCOPY(VisualPlayer);
+    GLOBED_NOMOVE(VisualPlayer);
+
     static VisualPlayer* create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond);
     void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState, bool forceHide);
     void cleanupObjectLayer();

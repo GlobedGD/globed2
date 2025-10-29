@@ -1,7 +1,7 @@
 #pragma once
-#include <Geode/Geode.hpp>
-#include <globed/config.hpp>
+#include <globed/prelude.hpp>
 
+#include <Geode/Geode.hpp>
 #ifdef GLOBED_BUILD
 # include <cue/PlayerIcon.hpp>
 #else
@@ -17,12 +17,15 @@ namespace globed {
 
 struct GameCameraState;
 
-class GLOBED_DLL ProgressArrow : public cocos2d::CCNode {
+class GLOBED_DLL ProgressArrow : public CCNode {
 public:
+    GLOBED_NOCOPY(ProgressArrow);
+    GLOBED_NOMOVE(ProgressArrow);
+
     static ProgressArrow* create();
 
     void updateIcons(const cue::Icons& data);
-    void updatePosition(const GameCameraState& cam, cocos2d::CCPoint playerPos, double angle);
+    void updatePosition(const GameCameraState& cam, CCPoint playerPos, double angle);
 
 private:
     cue::PlayerIcon* m_icon = nullptr;

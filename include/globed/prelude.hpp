@@ -47,3 +47,11 @@ template <typename T>
 T* get() {
     return globed::cachedSingleton<T>();
 }
+
+#define GLOBED_NOCOPY(cls) \
+    cls(const cls&) = delete; \
+    cls& operator=(const cls&) = delete
+
+#define GLOBED_NOMOVE(cls) \
+    cls(cls&&) = delete; \
+    cls& operator=(cls&&) = delete

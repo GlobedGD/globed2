@@ -14,6 +14,8 @@ class GLOBED_DLL RemotePlayer {
 public:
     RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, cocos2d::CCNode* parentNode);
     ~RemotePlayer();
+    GLOBED_NOCOPY(RemotePlayer);
+    GLOBED_NOMOVE(RemotePlayer);
 
     void update(const PlayerState& state, const GameCameraState& camState, const OutFlags& flags, bool forceHide = false);
     void handleDeath(const PlayerDeath& death);

@@ -1,7 +1,7 @@
 #pragma once
-#include <Geode/Geode.hpp>
-#include <globed/config.hpp>
+#include <globed/prelude.hpp>
 
+#include <Geode/Geode.hpp>
 #ifdef GLOBED_BUILD
 # include <cue/PlayerIcon.hpp>
 #else
@@ -15,8 +15,11 @@ class PlayerIcon;
 
 namespace globed {
 
-class GLOBED_DLL ProgressIcon : public cocos2d::CCNode {
+class GLOBED_DLL ProgressIcon : public CCNode {
 public:
+    GLOBED_NOCOPY(ProgressIcon);
+    GLOBED_NOMOVE(ProgressIcon);
+
     static ProgressIcon* create();
 
     void updateIcons(const cue::Icons& data);

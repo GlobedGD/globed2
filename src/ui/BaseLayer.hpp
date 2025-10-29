@@ -6,6 +6,12 @@ namespace globed {
 
 class BaseLayer : public cocos2d::CCLayer {
 public:
+    BaseLayer() = default;
+    BaseLayer(const BaseLayer&) = delete;
+    BaseLayer& operator=(const BaseLayer&) = delete;
+    BaseLayer(BaseLayer&&) = delete;
+    BaseLayer& operator=(BaseLayer&&) = delete;
+
     virtual void keyBackClicked();
     virtual void switchTo();
 
