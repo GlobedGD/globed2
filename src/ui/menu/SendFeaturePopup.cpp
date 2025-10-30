@@ -97,6 +97,7 @@ void SendFeaturePopup::createDiffButton() {
 
             this->createDiffButton();
         })
+		.store(m_diffButton)
         .parent(m_menu);
 }
 
