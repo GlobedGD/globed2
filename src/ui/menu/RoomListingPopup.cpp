@@ -7,7 +7,9 @@
 #include <ui/misc/InputPopup.hpp>
 #include <ui/misc/LoadingPopup.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+
 #include <UIBuilder.hpp>
+#include <asp/iter.hpp>
 
 using namespace geode::prelude;
 
@@ -29,19 +31,21 @@ bool RoomListingPopup::setup() {
 
     m_list = Build(cue::ListNode::create(LIST_SIZE))
         .anchorPoint(0.5f, 1.f)
-        .pos(this->fromTop(40.f))
+        .pos(this->fromTop(35.f))
         .zOrder(2)
         .parent(m_mainLayer);
 
     m_list->setAutoUpdate(false);
 
     m_roomListListener = NetworkManagerImpl::get().listen<msg::RoomListMessage>([this](const auto& msg) {
+        m_loading = false;
+        m_totalRooms = msg.total;
+
         if (setting<bool>("core.dev.fake-data")) {
-            log::debug("Using fake data for room listing");
             auto rooms = makeFakeData();
-            this->populateList(rooms);
+            this->onPageLoaded(rooms, m_page);
         } else {
-            this->populateList(msg.rooms);
+            this->onPageLoaded(msg.rooms, msg.page);
         }
 
         return ListenerResult::Continue;
@@ -59,7 +63,7 @@ bool RoomListingPopup::setup() {
     Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
         .scale(0.9f)
         .intoMenuItem([this](auto) {
-            this->onReload(nullptr);
+            this->onReload();
         })
         .pos(this->fromBottomRight(3.f, 3.f))
         .id("reload-btn")
@@ -86,18 +90,29 @@ bool RoomListingPopup::setup() {
         .id("add-room-btn")
         .parent(m_buttonMenu);
 
+    auto bottomMenu = Build<CCMenu>::create()
+        .id("bottom-menu")
+        .pos(this->fromBottom(22.f))
+        .layout(
+            RowLayout::create()
+                ->setGap(8.f)
+                ->setAutoScale(false)
+        )
+        .contentSize(150.f, 0.f)
+        .parent(m_mainLayer)
+        .collect();
+
     // mod actions button
     if (NetworkManagerImpl::get().isAuthorizedModerator()) {
         auto menu = Build<CCMenu>::create()
             .id("mod-actions-menu")
-            .pos(this->fromBottom(20.f))
             .layout(
                 RowLayout::create()
                     ->setGap(8.f)
                     ->setAutoScale(false)
             )
             .contentSize(60.f, 0.f)
-            .parent(m_mainLayer)
+            .parent(bottomMenu)
             .child(Build<CCLabelBMFont>::create("Mod", "bigFont.fnt").scale(0.4f))
             .child(
                 Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f, [this](auto btn) {
@@ -105,34 +120,121 @@ bool RoomListingPopup::setup() {
                     this->toggleModActions(enabled);
                 }))
             )
+            .zOrder(20)
             .updateLayout()
             .collect();
 
         cue::attachBackground(menu);
     }
 
-    NetworkManagerImpl::get().sendRequestRoomList();
+    // page arrow buttons
+    Build<CCSprite>::createSpriteName("GJ_arrow_03_001.png")
+        .scale(0.7f)
+        .intoMenuItem([this](auto) {
+            this->switchPage(-1);
+        })
+        .zOrder(10)
+        .id("btn-prev-page")
+        .parent(bottomMenu);
+
+    Build<CCSprite>::createSpriteName("GJ_arrow_03_001.png")
+        .flipX(true)
+        .scale(0.7f)
+        .intoMenuItem([this](auto) {
+            this->switchPage(1);
+        })
+        .zOrder(30)
+        .id("btn-prev-page")
+        .parent(bottomMenu);
+
+    bottomMenu->updateLayout();
+
+    float btnSize = 32.f;
+
+    // search and clear search buttons
+    m_searchBtn = Build<CCSprite>::create("search01.png"_spr)
+        .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
+        .intoMenuItem([this] {
+            this->promptFilter();
+        })
+        .zOrder(8)
+        .scaleMult(1.1f)
+        .id("search-btn")
+        .pos(this->fromBottomLeft(40.f, 23.f))
+        .parent(m_buttonMenu);
+
+    m_clearSearchBtn = Build<CCSprite>::create("search02.png"_spr)
+        .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
+        .intoMenuItem([this] {
+            this->setFilter("");
+        })
+        .zOrder(8)
+        .scaleMult(1.1f)
+        .id("clear-search-btn")
+        .pos(this->fromBottomLeft(40.f, 23.f))
+        .parent(m_buttonMenu);
+
+    this->onReload();
+
+    // fuck if i know
+    cocos::handleTouchPriority(this, true);
 
     return true;
 }
 
-void RoomListingPopup::onReload(CCObject*) {
-    NetworkManagerImpl::get().sendRequestRoomList();
+void RoomListingPopup::promptFilter() {
+    auto popup = InputPopup::create("bigFont.fnt");
+    popup->setTitle("Filter Rooms");
+    popup->setPlaceholder("Name");
+    popup->setMaxCharCount(24);
+    popup->setCommonFilter(CommonFilter::Any);
+    popup->setWidth(240.f);
+    popup->setCallback([this](auto outcome) {
+        if (outcome.cancelled) return;
+
+        this->setFilter(outcome.text);
+    });
+    popup->show();
+}
+
+void RoomListingPopup::setFilter(std::string_view filter) {
+    m_filter = filter;
+    this->onReload();
+}
+
+void RoomListingPopup::onReload() {
+    m_loadedPages = 0;
+    m_page = 0;
+    m_allRooms.clear();
+    m_list->clear();
+    this->requestRooms();
+}
+
+void RoomListingPopup::requestRooms() {
+    if (m_loading) return;
+
+    log::debug("Requesting page {}", m_loadedPages);
+
+    m_loading = true;
+    NetworkManagerImpl::get().sendRequestRoomList(m_filter, m_loadedPages);
+
+    m_clearSearchBtn->setVisible(!m_filter.empty());
+    m_searchBtn->setVisible(m_filter.empty());
 }
 
 void RoomListingPopup::updateTitle(size_t roomCount) {
     m_roomCount = roomCount;
-    this->setTitle(fmt::format("Public Rooms ({} Rooms)", roomCount));
+    this->setTitle(fmt::format("Public Rooms ({} Rooms)", roomCount), "goldFont.fnt", 0.7f, 17.f);
 }
 
-void RoomListingPopup::populateList(const std::vector<RoomListingInfo>& rooms) {
-    this->updateTitle(rooms.size());
-
+void RoomListingPopup::populateList() {
     m_list->clear();
 
-    for (auto& room : rooms) {
-        m_list->addCell(RoomListingCell::create(room, this));
+    for (auto room : asp::iter::from(m_allRooms).skip(m_page * 100).take(100)) {
+        m_list->addCell(RoomListingCell::create(room.get(), this));
     }
+
+    this->updateTitle(m_totalRooms ?: m_list->size());
 
     m_list->sortAs<RoomListingCell>([](RoomListingCell* a, RoomListingCell* b) {
         return a->getPlayerCount() > b->getPlayerCount();
@@ -143,6 +245,29 @@ void RoomListingPopup::populateList(const std::vector<RoomListingInfo>& rooms) {
     cocos::handleTouchPriority(this, true);
 
     this->toggleModActions(m_modActionsOn);
+}
+
+void RoomListingPopup::onPageLoaded(const std::vector<RoomListingInfo>& rooms, uint32_t page) {
+    m_loadedPages = std::max(page + 1, m_loadedPages);
+    m_allRooms.insert(m_allRooms.end(), rooms.begin(), rooms.end());
+    m_page = std::clamp<uint32_t>(m_page, 0, m_loadedPages - 1);
+
+    log::debug("Total rooms {}", m_allRooms.size());
+
+    this->populateList();
+}
+
+void RoomListingPopup::switchPage(int delta) {
+    if (m_loadedPages == 0 || m_loading || (m_page == 0 && delta < 0)) return;
+
+    m_page += delta;
+    bool isPageLoaded = m_page < m_loadedPages;
+
+    if (isPageLoaded) {
+        this->populateList();
+    } else {
+        this->requestRooms();
+    }
 }
 
 void RoomListingPopup::toggleModActions(bool enabled) {
@@ -253,7 +378,7 @@ void RoomListingPopup::doRemoveCell(RoomListingCell* cell) {
 static std::vector<RoomListingInfo> makeFakeData() {
     std::vector<RoomListingInfo> rooms;
 
-    size_t count = rng()->random<size_t>(50, 100);
+    size_t count = rng()->random<size_t>(500, 1000);
     for (size_t i = 0; i < count; i++) {
         rooms.push_back(RoomListingInfo {
             .roomId = rng()->random<uint32_t>(100000, 999999),
@@ -263,7 +388,7 @@ static std::vector<RoomListingInfo> makeFakeData() {
                     .accountData = PlayerAccountData {
                         .accountId = rng()->random<int>(),
                         .userId = rng()->random<int>(),
-                        .username = fmt::format("Player {}", rng()->random<int>())
+                        .username = fmt::format("Player {}", rng()->random<int>(1, 1000000))
                     },
                     .cube = rng()->random<int16_t>(1, 484),
                     .color1 = rng()->random<uint16_t>(1, 106),

@@ -97,6 +97,8 @@ struct RoomCreateFailedMessage {
 
 struct RoomListMessage {
     std::vector<RoomListingInfo> rooms;
+    uint32_t page;
+    uint32_t total;
 };
 
 struct TeamCreationResultMessage {

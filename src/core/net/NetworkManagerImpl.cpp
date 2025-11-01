@@ -1057,9 +1057,11 @@ void NetworkManagerImpl::sendLeaveRoom() {
     });
 }
 
-void NetworkManagerImpl::sendRequestRoomList() {
+void NetworkManagerImpl::sendRequestRoomList(CStr nameFilter, uint32_t page) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto requestRoomList = msg.initRequestRoomList();
+        requestRoomList.setNameFilter(nameFilter.get());
+        requestRoomList.setPage(page);
     });
 }
 

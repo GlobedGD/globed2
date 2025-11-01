@@ -489,6 +489,8 @@ $implDecode(msg::RoomCreateFailedMessage, main::RoomCreateFailedMessage::Reader&
 
 $implDecode(msg::RoomListMessage, main::RoomListMessage::Reader& reader) {
     msg::RoomListMessage out{};
+    out.page = reader.getPage();
+    out.total = reader.getTotal();
     auto rooms = reader.getRooms();
     out.rooms.reserve(rooms.size());
 

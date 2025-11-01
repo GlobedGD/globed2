@@ -17,10 +17,18 @@ protected:
     static const cocos2d::CCSize POPUP_SIZE;
     static const cocos2d::CCSize LIST_SIZE;
 
+    std::string m_filter;
     size_t m_roomCount = 0;
+    uint32_t m_loadedPages = 0;
+    uint32_t m_page = 0;
+    uint32_t m_totalRooms = 0;
     bool m_modActionsOn = false;
+    bool m_loading = false;
     cocos2d::extension::CCScale9Sprite* m_background;
     cue::ListNode* m_list;
+    CCMenuItemSpriteExtra* m_searchBtn = nullptr;
+    CCMenuItemSpriteExtra* m_clearSearchBtn = nullptr;
+    std::vector<RoomListingInfo> m_allRooms;
     std::optional<MessageListener<msg::RoomListMessage>> m_roomListListener;
 
     std::optional<MessageListener<msg::RoomStateMessage>> m_successListener;
@@ -30,9 +38,15 @@ protected:
 
     bool setup() override;
     void updateTitle(size_t roomCount);
-    void onReload(CCObject*);
+    void onReload();
+    void requestRooms();
     void toggleModActions(bool enabled);
-    void populateList(const std::vector<RoomListingInfo>& rooms);
+    void populateList();
+    void onPageLoaded(const std::vector<RoomListingInfo>& rooms, uint32_t page);
+    void switchPage(int delta);
+
+    void setFilter(std::string_view filter);
+    void promptFilter();
 
     void doJoinRoom(uint32_t roomId, bool hasPassword);
     void actuallyJoin(uint32_t roomId, uint64_t passcode);

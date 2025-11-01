@@ -148,7 +148,7 @@ CPMAddPackage(
             "WITH_FIBERS OFF"
 )
 
-CPMAddPackage("gh:GlobedGD/server-shared#acda12c")
+CPMAddPackage("gh:GlobedGD/server-shared#db8017b")  # HERE!!!
 CPMAddPackage(
     NAME qunet-cpp
     GIT_REPOSITORY "https://github.com/dankmeme01/qunet-cpp"
