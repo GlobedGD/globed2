@@ -31,27 +31,44 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
         );
     }
 
+    static std::optional<GJGameLevel*> levelMapper(GJGameLevel* level) {
+        return level && isValidLevelType(level->m_levelType) ? std::optional{level} : std::nullopt;
+    }
+
+    static std::optional<LevelCell*> cellMapper(CCNode* cell) {
+        auto lc = typeinfo_cast<LevelCell*>(cell);
+        return lc && isValidLevelType(lc->m_level->m_levelType) ? std::optional{lc} : std::nullopt;
+    }
+
     $override
     void setupLevelBrowser(CCArray* p0) {
         LevelBrowserLayer::setupLevelBrowser(p0);
 
         auto& nm = NetworkManagerImpl::get();
 
-        if (typeinfo_cast<LevelListLayer*>(this) || !p0 || !nm.isConnected()) {
+        if (!p0 || !nm.isConnected()) {
             return;
         }
 
-        std::vector<uint64_t> ids;
-        for (auto obj : CCArrayExt<CCObject*>(p0)) {
-            auto level = typeinfo_cast<GJGameLevel*>(obj);
-            if (!level || !isValidLevelType(level->m_levelType)) continue;
+        auto listLayer = typeinfo_cast<LevelListLayer*>(this);
 
-            ids.push_back(level->m_levelID);
+        std::vector<uint64_t> ids;
+
+        if (listLayer) {
+            ids = asp::iter::from(listLayer->m_levelList->m_levels)
+                .mapCast<uint64_t>()
+                .collect();
+        } else {
+            ids = asp::iter::from(CCArrayExt<CCObject*>(p0))
+                .mapCast<GJGameLevel*>()
+                .filterMap(levelMapper)
+                .map([](GJGameLevel* level) { return (uint64_t) level->m_levelID; })
+                .collect();
         }
 
         m_fields->m_listener = nm.listen<msg::PlayerCountsMessage>([this](auto packet) {
             m_fields->m_levels.clear();
-            
+
             for (const auto& [id, count] : packet.counts) {
                 m_fields->m_levels[id.levelId()] = count;
             }
@@ -64,11 +81,6 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
         this->schedule(schedule_selector(HookedLevelBrowserLayer::updatePlayerCounts), 5.f);
     }
 
-    static std::optional<LevelCell*> cellMapper(CCNode* cell) {
-        auto lc = typeinfo_cast<LevelCell*>(cell);
-        return lc && isValidLevelType(lc->m_level->m_levelType) ? std::optional{lc} : std::nullopt;
-    }
-
     void refreshPagePlayerCounts() {
         if (!m_list->m_listView) return;
 
@@ -77,7 +89,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
         auto cells = m_list->m_listView->m_tableView->m_contentLayer->getChildrenExt();
         asp::iter::from(cells)
             .filterMap(cellMapper)
-            .map([](LevelCell* cell) { return static_cast<HookedLevelCell*>(cell); })
+            .mapCast<HookedLevelCell*>()
             .forEach([&](HookedLevelCell* cell) {
                 int id = cell->m_level->m_levelID;
                 auto it = m_fields->m_levels.find(id);

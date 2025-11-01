@@ -22,7 +22,7 @@ void HookedLevelCell::updatePlayerCount(int count, bool inLists) {
             yPos = 67.f;
             iconScale = 0.4f;
         } else {
-            // compact lists by cvolton
+            // compact lists by cvolton / lists layer
             xPos = m_width - 9.f;
             yPos = 6.5f;
             iconScale = .3f;
