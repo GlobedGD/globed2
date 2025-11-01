@@ -220,7 +220,14 @@ NetworkManagerImpl::NetworkManagerImpl() {
 
                 auto res = m_centralConn.connect(url);
                 if (!res) {
-                    log::error("Failed to connect to central server at '{}': {}", url, res.unwrapErr().message());
+                    FunctionQueue::get().queue([url, err = std::move(res).unwrapErr()] mutable {
+                        log::error("Failed to connect to central server at '{}': {}", url, err.message());
+                        globed::alertFormat(
+                            "Globed Error",
+                            "Failed to connect to central server at <cp>'{}'</c>: <cy>{}</c>",
+                            url, err.message()
+                        );
+                    });
                 }
             } break;
 
