@@ -69,6 +69,8 @@ bool SettingsLayer::init() {
         .id("btn-save-slots")
         .parent(rightMenu);
 
+    // TODO: add search bar
+
     rightMenu->updateLayout();
 
     return true;

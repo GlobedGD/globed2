@@ -185,11 +185,13 @@ void DiscordLinkPopup::addLinkingText() {
     m_waitingLabel1 = Build<CCLabelBMFont>::create("Waiting to link...", "bigFont.fnt")
         .scale(0.5f)
         .pos(this->fromCenter(0.f, -40.f))
+        .id("waiting-label1")
         .parent(m_mainLayer);
 
-    m_waitingLabel1 = Build<CCLabelBMFont>::create("Use /link command on Discord!", "bigFont.fnt")
+    m_waitingLabel2 = Build<CCLabelBMFont>::create("Use /link command on Discord!", "bigFont.fnt")
         .scale(0.4f)
         .pos(this->fromBottom(24.f))
+        .id("waiting-label2")
         .parent(m_mainLayer);
 }
 

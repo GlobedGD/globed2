@@ -2,10 +2,37 @@
 #include <Geode/Geode.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <qunet/Log.hpp>
+#include <asp/Log.hpp>
 
 using namespace geode::prelude;
 
 $execute {
+    asp::setLogFunction([](asp::LogLevel level, std::string_view msg) {
+        switch (level) {
+            case asp::LogLevel::Trace: {
+#ifdef GLOBED_DEBUG
+                log::debug("[asp] {}", msg);
+#endif
+            } break;
+
+            case asp::LogLevel::Debug: {
+                log::debug("[asp] {}", msg);
+            } break;
+
+            case asp::LogLevel::Info: {
+                log::info("[asp] {}", msg);
+            } break;
+
+            case asp::LogLevel::Warn: {
+                log::warn("[asp] {}", msg);
+            } break;
+
+            case asp::LogLevel::Error: {
+                log::error("[asp] {}", msg);
+            } break;
+        }
+    });
+
     qn::log::setLogFunction([](qn::log::Level level, const std::string& message) {
         switch (level) {
             case qn::log::Level::Debug: {

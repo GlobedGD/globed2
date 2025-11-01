@@ -256,6 +256,8 @@ static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
     migDirect("keys", "voiceDeafenKey", "core.keybinds.deafen");
     migDirect("keys", "hidePlayersKey", "core.keybinds.hide-players");
 
+    // TODO: migrate some flags
+
     return out;
 }
 
