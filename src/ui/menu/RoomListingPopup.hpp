@@ -21,6 +21,7 @@ protected:
     size_t m_roomCount = 0;
     uint32_t m_loadedPages = 0;
     uint32_t m_page = 0;
+    uint32_t m_maxPages = 0;
     uint32_t m_totalRooms = 0;
     bool m_modActionsOn = false;
     bool m_loading = false;
@@ -28,7 +29,7 @@ protected:
     cue::ListNode* m_list;
     CCMenuItemSpriteExtra* m_searchBtn = nullptr;
     CCMenuItemSpriteExtra* m_clearSearchBtn = nullptr;
-    std::vector<RoomListingInfo> m_allRooms;
+    std::vector<std::vector<RoomListingInfo>> m_allRooms;
     std::optional<MessageListener<msg::RoomListMessage>> m_roomListListener;
 
     std::optional<MessageListener<msg::RoomStateMessage>> m_successListener;

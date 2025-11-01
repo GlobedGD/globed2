@@ -205,6 +205,9 @@ void RoomListingPopup::setFilter(std::string_view filter) {
 void RoomListingPopup::onReload() {
     m_loadedPages = 0;
     m_page = 0;
+    m_maxPages = 0;
+    m_totalRooms = 0;
+    m_roomCount = 0;
     m_allRooms.clear();
     m_list->clear();
     this->requestRooms();
@@ -228,9 +231,12 @@ void RoomListingPopup::updateTitle(size_t roomCount) {
 }
 
 void RoomListingPopup::populateList() {
+    log::debug("Rendering page {}", m_page);
+    GLOBED_ASSERT(m_page < m_allRooms.size());
+
     m_list->clear();
 
-    for (auto room : asp::iter::from(m_allRooms).skip(m_page * 100).take(100)) {
+    for (auto room : asp::iter::from(m_allRooms[m_page])) {
         m_list->addCell(RoomListingCell::create(room.get(), this));
     }
 
@@ -248,11 +254,23 @@ void RoomListingPopup::populateList() {
 }
 
 void RoomListingPopup::onPageLoaded(const std::vector<RoomListingInfo>& rooms, uint32_t page) {
+    if (rooms.empty()) {
+        // no rooms on this page, means the previous page was the last one
+        m_maxPages = m_loadedPages;
+        m_page = std::clamp<uint32_t>(m_page, 0, m_maxPages - 1);
+        return;
+    }
+
     m_loadedPages = std::max(page + 1, m_loadedPages);
-    m_allRooms.insert(m_allRooms.end(), rooms.begin(), rooms.end());
     m_page = std::clamp<uint32_t>(m_page, 0, m_loadedPages - 1);
 
-    log::debug("Total rooms {}", m_allRooms.size());
+    if (page >= m_allRooms.size()) {
+        m_allRooms.resize(page + 1);
+    }
+
+    m_allRooms[page] = rooms;
+
+    log::debug("Rooms on page {}: {}; total: {}", page, rooms.size(), m_totalRooms);
 
     this->populateList();
 }
@@ -260,8 +278,12 @@ void RoomListingPopup::onPageLoaded(const std::vector<RoomListingInfo>& rooms, u
 void RoomListingPopup::switchPage(int delta) {
     if (m_loadedPages == 0 || m_loading || (m_page == 0 && delta < 0)) return;
 
+    if (m_maxPages != 0 && (m_page + delta) >= m_maxPages) {
+        return;
+    }
+
     m_page += delta;
-    bool isPageLoaded = m_page < m_loadedPages;
+    bool isPageLoaded = m_page < m_loadedPages && m_page < m_allRooms.size() && !m_allRooms[m_page].empty();
 
     if (isPageLoaded) {
         this->populateList();
