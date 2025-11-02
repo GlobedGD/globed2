@@ -49,13 +49,18 @@ void TwoPlayerModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool e
         gjbgl->setPermanentSafeMode();
 
         // enable low latency interpolator
-        gjbgl->m_fields->m_interpolator.setLowLatencyMode(true);
+        auto& lerper = gjbgl->m_fields->m_interpolator;
+        gjbgl->toggleCullingEnabled(false);
+        gjbgl->toggleExtendedData(true);
+        lerper.setLowLatencyMode(true);
     }
 }
 
 void TwoPlayerModule::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) {
+    auto& mod = TwoPlayerModule::get();
+
     if (death.isReal && player && player->displayData().accountId == m_linkedPlayer) {
-        gjbgl->killLocalPlayer();
+        this->causeLocalDeath(gjbgl);
     }
 }
 
@@ -135,6 +140,12 @@ VisualPlayer* TwoPlayerModule::getLinkedPlayerObject(bool player2) {
 
 bool& TwoPlayerModule::ignoreNoclip() {
     return m_ignoreNoclip;
+}
+
+void TwoPlayerModule::causeLocalDeath(GJBaseGameLayer* gjbgl) {
+    m_ignoreNoclip = true;
+    GlobedGJBGL::get(gjbgl)->killLocalPlayer();
+    m_ignoreNoclip = false;
 }
 
 void TwoPlayerModule::unlink(bool silent) {

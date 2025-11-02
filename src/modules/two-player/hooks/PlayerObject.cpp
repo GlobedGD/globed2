@@ -51,7 +51,31 @@ struct GLOBED_MODIFY_ATTR TPPlayerObject : geode::Modify<TPPlayerObject, PlayerO
             return;
         }
 
-        this->setPosition(linked->getLastPosition());
+        bool shouldUpdateArt =
+            (m_gravity != linked->m_gravity)
+            || (m_isUpsideDown != linked->m_isUpsideDown)
+            || m_isGoingLeft != linked->m_isGoingLeft;
+
+        auto pos = linked->getLastPosition();
+        this->m_position = pos;
+        this->m_yVelocity = linked->m_yVelocity;
+        this->m_platformerXVelocity = linked->m_platformerXVelocity;
+        this->m_isOnGround = linked->m_isOnGround;
+        this->m_isGoingLeft = linked->m_isGoingLeft;
+        this->m_isAccelerating = linked->m_isAccelerating;
+        this->m_accelerationOrSpeed = linked->m_accelerationOrSpeed;
+        this->m_fallStartY = linked->m_fallStartY;
+        this->m_gravity = linked->m_gravity;
+        this->m_gravityMod = linked->m_gravityMod;
+        this->m_isOnGround2 = linked->m_isOnGround2;
+        this->m_touchedPad = linked->m_touchedPad;
+        this->m_isUpsideDown = linked->m_isUpsideDown;
+        this->setPosition(pos);
+
+        // TODO: doesnt work
+        // if (shouldUpdateArt) {
+        //     this->updatePlayerArt();
+        // }
     }
 };
 

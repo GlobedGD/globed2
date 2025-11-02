@@ -42,6 +42,8 @@ public:
 
     bool& ignoreNoclip();
 
+    void causeLocalDeath(GJBaseGameLayer* gjbgl);
+
 private:
     std::optional<int> m_linkedPlayer;
     bool m_isPlayer2 = false;

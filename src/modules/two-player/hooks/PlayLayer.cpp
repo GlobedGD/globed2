@@ -43,9 +43,7 @@ struct GLOBED_MODIFY_ATTR TPPlayLayer : geode::Modify<TPPlayLayer, PlayLayer> {
 
         if (mod.isLinked() && gameLayer && gameLayer->active() && gameLayer->isManuallyResetting()) {
             // if the user hit R or otherwise manually reset the level, just play it as a normal death instead
-            mod.ignoreNoclip() = true;
-            gameLayer->killLocalPlayer();
-            mod.ignoreNoclip() = false;
+            mod.causeLocalDeath(gameLayer);
             return;
         }
 

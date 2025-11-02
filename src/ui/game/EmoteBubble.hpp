@@ -17,6 +17,7 @@ public:
 private:
     CCSprite* m_emoteSpr = nullptr;
     CCSprite* m_bubbleSpr = nullptr;
+    float m_initialScale;
 
     bool init();
 
