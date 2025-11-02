@@ -33,7 +33,7 @@ static inline bool hideNearby(GJBaseGameLayer* gjbgl) {
 }
 
 bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {
-    if (!PlayerObject::init(1, 1, gameLayer, gameLayer->m_objectLayer, gameLayer->m_isEditor)) {
+    if (!PlayerObject::init(1, 1, gameLayer, gameLayer->m_objectLayer, !gameLayer->m_isEditor)) {
         return false;
     }
 
