@@ -29,43 +29,20 @@ protected:
         return ~sum & 0xff;
     }
 
+    qn::ByteReader _decodePayloadPre(qn::ArrayByteWriter<64>& writer);
+    Result<> _decodePayloadPost(qn::ArrayByteWriter<64>& writer, qn::ByteReader& reader);
+
     template <typename T, typename F> requires (std::is_convertible_v<std::invoke_result_t<F, qn::ByteReader&>, Result<T>>)
     Result<T> decodePayload(F&& readfn) {
         qn::ArrayByteWriter<64> writer;
-
-        // could add other props if not enough space :p
-        (void) writer.writeU32(std::bit_cast<uint32_t>(m_item1Mode));
-        (void) writer.writeU32(std::bit_cast<uint32_t>(m_item2Mode));
-        (void) writer.writeU32(std::bit_cast<uint32_t>(m_resultType1));
-        (void) writer.writeU32(std::bit_cast<uint32_t>(m_resultType2));
-        (void) writer.writeU32(std::bit_cast<uint32_t>(m_roundType1));
-        (void) writer.writeU32(std::bit_cast<uint32_t>(m_roundType2));
-        (void) writer.writeU32(std::bit_cast<uint32_t>(m_signType1));
-        (void) writer.writeU32(std::bit_cast<uint32_t>(m_signType2));
-        auto written = writer.written();
-
-        log::debug("Decoding payload: {}", hexEncode(written.data(), written.size()));
-
-        qn::ByteReader reader{written};
+        qn::ByteReader reader = this->_decodePayloadPre(writer);
 
         auto res = readfn(reader);
         if (!res) {
             return Err("Failed to decode script object data (for {}): {}", typeid(*this).name(), res.unwrapErr());
         }
 
-        // check the checksum (last byte)
-        auto csumres = reader.readU8();
-        if (!csumres) {
-            return Err("Failed to read checksum from script object data (for {}): {}", typeid(*this).name(), csumres.unwrapErr().message());
-        }
-
-        auto csum = csumres.unwrap();
-        auto data = written.subspan(0, reader.position() - 1);
-
-        auto expected = this->computeChecksum(data);
-        if (csum != expected) {
-            return Err("Failed to validate checksum in script object data (for {}), expected {}, got {}", typeid(*this).name(), expected, csum);
-        }
+        GEODE_UNWRAP(this->_decodePayloadPost(writer, reader));
 
         return Ok(std::move(res).unwrap());
     }

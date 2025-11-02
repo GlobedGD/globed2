@@ -7,17 +7,17 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void RoomManager::joinLevel(int levelId, bool platformer) {
+void RoomManager::joinLevel(int levelId, int author, bool platformer) {
     auto& nm = NetworkManagerImpl::get();
 
     // check for warp context, join a specific server if warping
     auto wctx = globed::_getWarpContext();
     if (wctx.levelId() == levelId) {
-        nm.sendJoinSession(wctx, platformer);
+        nm.sendJoinSession(wctx, author, platformer);
     } else if (auto srv = this->pickServerId()) {
         // construct a session ID
         auto id = SessionId::fromParts(*srv, m_roomId, levelId);
-        nm.sendJoinSession(id, platformer);
+        nm.sendJoinSession(id, author, platformer);
     }
 }
 

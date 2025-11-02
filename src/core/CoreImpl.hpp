@@ -7,6 +7,8 @@
 #include <core/game/Interpolator.hpp>
 #include <memory>
 
+#include <std23/function_ref.h>
+
 namespace globed {
 
 class RemotePlayer;
@@ -54,36 +56,9 @@ private:
     std::vector<std::shared_ptr<Module>> m_modules;
     std::optional<MessageListenerImpl<msg::CentralLoginOkMessage>*> m_loginOkListener;
 
-    template <typename F>
-    void enableIf(F&& func) {
-        for (auto& mod : m_modules) {
-            if (func(*mod)) {
-                if (auto err = mod->enable().err()) {
-                    geode::log::warn("Module '{}' failed to enable: {}", mod->id(), err);
-                }
-            }
-        }
-    }
-
-    template <typename F>
-    void disableIf(F&& func) {
-        for (auto& mod : m_modules) {
-            if (func(*mod)) {
-                if (auto err = mod->disable().err()) {
-                    geode::log::warn("Module '{}' failed to disable: {}", mod->id(), err);
-                }
-            }
-        }
-    }
-
-    template <typename F>
-    void forEachEnabled(F&& func) {
-        for (auto& mod : m_modules) {
-            if (mod->m_enabled) {
-                func(*mod);
-            }
-        }
-    }
+    void enableIf(std23::function_ref<bool(Module&)>&& func);
+    void disableIf(std23::function_ref<bool(Module&)>&& func);
+    void forEachEnabled(std23::function_ref<void(Module&)>&& func);
 };
 
 }

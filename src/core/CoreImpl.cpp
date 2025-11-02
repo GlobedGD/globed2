@@ -124,4 +124,32 @@ bool CoreImpl::shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) {
     return should;
 }
 
+void CoreImpl::enableIf(std23::function_ref<bool(Module&)>&& func) {
+    for (auto& mod : m_modules) {
+        if (func(*mod)) {
+            if (auto err = mod->enable().err()) {
+                log::warn("Module '{}' failed to enable: {}", mod->id(), err);
+            }
+        }
+    }
+}
+
+void CoreImpl::disableIf(std23::function_ref<bool(Module&)>&& func) {
+    for (auto& mod : m_modules) {
+        if (func(*mod)) {
+            if (auto err = mod->disable().err()) {
+                log::warn("Module '{}' failed to disable: {}", mod->id(), err);
+            }
+        }
+    }
+}
+
+void CoreImpl::forEachEnabled(std23::function_ref<void(Module&)>&& func) {
+    for (auto& mod : m_modules) {
+        if (mod->m_enabled) {
+            func(*mod);
+        }
+    }
+}
+
 }

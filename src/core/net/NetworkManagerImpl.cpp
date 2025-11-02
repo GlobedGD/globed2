@@ -779,7 +779,7 @@ void NetworkManagerImpl::onCentralDisconnected() {
     m_disconnectNotify.notifyAll();
 }
 
-void NetworkManagerImpl::sendJoinSession(SessionId id, bool platformer) {
+void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platformer) {
     auto lock = m_connInfo.lock();
     if (!*lock) {
         log::error("Cannot join session, not connected to central server");
@@ -793,6 +793,7 @@ void NetworkManagerImpl::sendJoinSession(SessionId id, bool platformer) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto joinSession = msg.initJoinSession();
         joinSession.setSessionId(id);
+        joinSession.setAuthorId(author);
     });
 
     // find the game server
@@ -1782,6 +1783,51 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
     }
 
     return Ok();
+}
+
+Result<> NetworkManagerImpl::sendMessageToConnection(qn::Connection& conn, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed) {
+    if (!conn.connected()) {
+        return Err("not connected");
+    }
+
+    size_t unpackedSize = capnp::computeSerializedSizeInWords(msg) * 8;
+    qn::ArrayByteWriter<8> writer;
+    writer.writeVarUint(unpackedSize).unwrap();
+    auto unpSizeBuf = writer.written();
+
+    kj::VectorOutputStream vos;
+    vos.write(unpSizeBuf.data(), unpSizeBuf.size());
+    capnp::writePackedMessage(vos, msg);
+
+    auto data = std::vector<uint8_t>(vos.getArray().begin(), vos.getArray().end());
+
+    conn.sendData(std::move(data), reliable, uncompressed);
+
+    return Ok();
+}
+
+void NetworkManagerImpl::sendToCentral(std23::function_ref<void(CentralMessage::Builder&)>&& func) {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<CentralMessage>();
+    func(root);
+
+    auto res = sendMessageToConnection(m_centralConn, msg, true, false);
+
+    if (!res) {
+        log::warn("Failed to send message to central server: {}", res.unwrapErr());
+    }
+}
+
+void NetworkManagerImpl::sendToGame(std23::function_ref<void(GameMessage::Builder&)>&& func, bool reliable, bool uncompressed) {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<GameMessage>();
+    func(root);
+
+    auto res = sendMessageToConnection(m_gameConn, msg, reliable, uncompressed);
+
+    if (!res) {
+        log::warn("Failed to send message to game server: {}", res.unwrapErr());
+    }
 }
 
 void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reason) {

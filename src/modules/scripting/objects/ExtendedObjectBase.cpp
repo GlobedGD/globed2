@@ -54,4 +54,39 @@ void ExtendedObjectBase::encodePayload(std23::function_ref<bool(qn::HeapByteWrit
     }
 }
 
+qn::ByteReader ExtendedObjectBase::_decodePayloadPre(qn::ArrayByteWriter<64>& writer) {
+    // could add other props if not enough space :p
+    (void) writer.writeU32(std::bit_cast<uint32_t>(m_item1Mode));
+    (void) writer.writeU32(std::bit_cast<uint32_t>(m_item2Mode));
+    (void) writer.writeU32(std::bit_cast<uint32_t>(m_resultType1));
+    (void) writer.writeU32(std::bit_cast<uint32_t>(m_resultType2));
+    (void) writer.writeU32(std::bit_cast<uint32_t>(m_roundType1));
+    (void) writer.writeU32(std::bit_cast<uint32_t>(m_roundType2));
+    (void) writer.writeU32(std::bit_cast<uint32_t>(m_signType1));
+    (void) writer.writeU32(std::bit_cast<uint32_t>(m_signType2));
+    auto written = writer.written();
+
+    log::debug("Decoding payload: {}", hexEncode(written.data(), written.size()));
+
+    return qn::ByteReader{written};
+}
+
+Result<> ExtendedObjectBase::_decodePayloadPost(qn::ArrayByteWriter<64>& writer, qn::ByteReader& reader) {
+    // check the checksum (last byte)
+    auto csumres = reader.readU8();
+    if (!csumres) {
+        return Err("Failed to read checksum from script object data (for {}): {}", typeid(*this).name(), csumres.unwrapErr().message());
+    }
+
+    auto csum = csumres.unwrap();
+    auto data = writer.written().subspan(0, reader.position() - 1);
+
+    auto expected = this->computeChecksum(data);
+    if (csum != expected) {
+        return Err("Failed to validate checksum in script object data (for {}), expected {}, got {}", typeid(*this).name(), expected, csum);
+    }
+
+    return Ok();
+}
+
 }

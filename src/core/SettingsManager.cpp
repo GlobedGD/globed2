@@ -1,6 +1,7 @@
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/ValueManager.hpp>
 
+#include <std23/function_ref.h>
 #include <fmt/format.h>
 #include <asp/fs.hpp>
 #include <asp/iter.hpp>
@@ -157,13 +158,15 @@ void SettingsManager::loadSaveSlots() {
 }
 
 static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
+    using MapperFn = std23::function_ref<matjson::Value(const matjson::Value&)>;
+
     matjson::Value out;
 
     if (auto name = slot.get("_saveslot-name").copied().ok()) {
         out.set("_saveslot-name", std::move(*name));
     }
 
-    auto migMapper = [&](std::string_view bCat, std::string_view bKey, std::string_view after, auto mapper) -> bool {
+    auto migMapper = [&](std::string_view bCat, std::string_view bKey, std::string_view after, MapperFn mapper) -> bool {
         auto fullKey = fmt::format("{}{}", bCat, bKey);
         if (auto val = slot.get(fullKey).copied().ok()) {
             log::info("Migrating setting from old format: {} -> {}", fullKey, after);
