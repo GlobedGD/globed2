@@ -101,7 +101,7 @@ bool InvitePopup::setup() {
         .intoMenuItem([this] {
             this->promptFilter();
         })
-        .zOrder(8)
+        .zOrder(10)
         .scaleMult(1.1f)
         .id("search-btn")
         .parent(m_rightSideMenu);
@@ -111,7 +111,7 @@ bool InvitePopup::setup() {
         .intoMenuItem([this] {
             this->setFilter("");
         })
-        .zOrder(8)
+        .zOrder(11)
         .scaleMult(1.1f)
         .id("clear-search-btn")
         .parent(m_rightSideMenu);
@@ -150,6 +150,7 @@ void InvitePopup::refresh() {
 
     m_clearSearchBtn->setVisible(!m_filter.empty());
     m_searchBtn->setVisible(m_filter.empty());
+    m_rightSideMenu->updateLayout();
 }
 
 void InvitePopup::setFilter(std::string_view filter) {
