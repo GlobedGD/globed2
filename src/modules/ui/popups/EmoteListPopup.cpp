@@ -1,5 +1,6 @@
 #include "EmoteListPopup.hpp"
 #include <globed/core/PopupManager.hpp>
+#include <globed/core/EmoteManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 
 #include <UIBuilder.hpp>
@@ -24,8 +25,8 @@ bool EmoteListPopup::setup() {
 
     m_noElasticity = true;
 
-    m_validEmoteIds = this->getValidEmoteIds(1000);
-    m_maxPages = (m_validEmoteIds.size() + EMOTES_PER_PAGE - 1) / EMOTES_PER_PAGE;
+    auto& allEmotes = EmoteManager::get().getEmotes();
+    m_maxPages = (allEmotes.size() + EMOTES_PER_PAGE - 1) / EMOTES_PER_PAGE;
 
     for (int i = 0; i < 4; i++) {
         auto emote = Mod::get()->getSavedValue<uint32_t>(fmt::format("emote-slot-{}", i), 0);
@@ -226,14 +227,21 @@ void EmoteListPopup::onSubmitBtn() {
 
 void EmoteListPopup::loadEmoteListPage(int page) {
     m_emoteMenu->removeAllChildrenWithCleanup(true);
+    auto& em = EmoteManager::get();
+    auto& emoteIds = em.getSortedEmoteIds();
 
-    int startIdx = page * EMOTES_PER_PAGE;
-    int endIdx = std::min(startIdx + EMOTES_PER_PAGE, static_cast<int>(m_validEmoteIds.size()));
+    size_t start = page * EMOTES_PER_PAGE;
+    size_t end = std::min(start + EMOTES_PER_PAGE, emoteIds.size());
 
-    for (int i = startIdx; i < endIdx; i++) {
-        uint32_t emoteId = m_validEmoteIds.at(i);
-
+    for (size_t i = start; i < end; i++) {
+        uint32_t emoteId = emoteIds[i];
         bool selected = (emoteId == m_selectedEmoteId);
+        auto sprite = em.createEmote(emoteId);
+
+        if (!sprite) {
+            log::warn("Emote ID {} is missing its sprite!", emoteId);
+            continue;
+        }
 
         CCMenuItemSpriteExtra* emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
             .contentSize(35.f, 35.f)
@@ -246,10 +254,9 @@ void EmoteListPopup::loadEmoteListPage(int page) {
             .scaleMult(1.1f)
             .parent(m_emoteMenu);
 
-        CCSprite* emoteSpr = Build<CCSprite>::createSpriteName(fmt::format("emote_{}.png"_spr, emoteId).c_str())
-                .pos(emoteBtn->getContentSize() / 2.f);
-        emoteBtn->addChild(emoteSpr, 5);
-        cue::rescaleToMatch(emoteSpr, 25.f);
+        sprite->setPosition(emoteBtn->getContentSize() / 2.f);
+        emoteBtn->addChild(sprite, 5);
+        cue::rescaleToMatch(sprite, 25.f);
 
         for (int i = 0; i < m_favoriteEmoteIds.size(); i++) {
             if (m_favoriteEmoteIds.at(i) == emoteId) {
@@ -264,17 +271,6 @@ void EmoteListPopup::loadEmoteListPage(int page) {
     }
 
     m_emoteMenu->updateLayout();
-}
-
-std::vector<uint32_t> EmoteListPopup::getValidEmoteIds(uint32_t maxTries) {
-    std::vector<uint32_t> validEmoteIds;
-
-    for (uint32_t i = 1; i <= maxTries; i++) {
-        auto testEmote = CCSprite::createWithSpriteFrameName(fmt::format("emote_{}.png"_spr, i).c_str());
-        if (testEmote) validEmoteIds.push_back(i);
-    }
-
-    return validEmoteIds;
 }
 
 void EmoteListPopup::onEmoteBtn(uint32_t id) {
@@ -336,11 +332,17 @@ void EmoteListPopup::enterFavoriteSelectMode(int emoteSlot) {
 }
 
 void EmoteListPopup::loadFavoriteEmotesList() {
-    m_favoriteEmotesMenu->removeAllChildrenWithCleanup(true);
+    m_favoriteEmotesMenu->removeAllChildren();
 
     for (int i = 0; i < m_favoriteEmoteIds.size(); i++) {
         uint32_t emoteId = m_favoriteEmoteIds.at(i);
         bool selected = (i == m_selectingFavoriteSlot);
+
+        auto sprite = EmoteManager::get().createEmote(emoteId);
+        if (!sprite) {
+            log::warn("Emote ID {} is missing its sprite!", emoteId);
+            continue;
+        }
 
         CCMenuItemSpriteExtra* emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
             .contentSize(35.f, 35.f)
@@ -353,10 +355,10 @@ void EmoteListPopup::loadFavoriteEmotesList() {
             .scaleMult(1.1f)
             .parent(m_favoriteEmotesMenu);
 
-        CCSprite* emoteSpr = Build<CCSprite>::createSpriteName(fmt::format("emote_{}.png"_spr, emoteId).c_str())
-                .pos(emoteBtn->getContentSize() / 2.f);
-        emoteBtn->addChild(emoteSpr, 1);
-        cue::rescaleToMatch(emoteSpr, 25.f);
+
+        sprite->setPosition(emoteBtn->getContentSize() / 2.f);
+        emoteBtn->addChild(sprite, 1);
+        cue::rescaleToMatch(sprite, 25.f);
 
         CCLabelBMFont* slotLabel = Build<CCLabelBMFont>::create(fmt::format("{}", i + 1).c_str(), "goldFont.fnt")
             .scale(0.66f)

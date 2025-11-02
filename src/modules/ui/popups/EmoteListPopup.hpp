@@ -18,7 +18,6 @@ private:
     int m_maxPages;
     int m_selectingFavoriteSlot = -1;
 
-    std::vector<uint32_t> m_validEmoteIds;
     std::vector<uint32_t> m_favoriteEmoteIds;
 
     cocos2d::CCMenu* m_emoteMenu;
@@ -48,7 +47,6 @@ private:
     void updatePage(bool increment);
     void enterFavoriteSelectMode(int emoteSlot);
     void setFavorite(int emoteSlot, uint32_t id);
-    std::vector<uint32_t> getValidEmoteIds(uint32_t maxTries); // scuffed but should work
 };
 
 }

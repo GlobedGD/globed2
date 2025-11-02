@@ -36,8 +36,10 @@
             "resources/game/*.png"
         ],
         "spritesheets": {
-            "emojis": [
-                "resources/emoji/*.png",
+            "twemojis": [
+                "resources/emoji/*.png"
+            ],
+            "emotes": [
                 "resources/emotes_sprites/*.png"
             ]
         },
