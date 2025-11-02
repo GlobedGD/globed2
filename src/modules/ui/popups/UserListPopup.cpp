@@ -1,4 +1,5 @@
 #include "UserListPopup.hpp"
+#include "UserActionsPopup.hpp"
 #include <globed/core/ValueManager.hpp>
 #include <globed/core/FriendListManager.hpp>
 #include <globed/core/PlayerCacheManager.hpp>
@@ -16,9 +17,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize UserListPopup::POPUP_SIZE {400.f, 280.f};
-static constexpr CCSize LIST_SIZE = {340.f, 190.f};
-static constexpr float CELL_HEIGHT = 27.f;
+const CCSize UserListPopup::POPUP_SIZE {420.f, 280.f};
+static constexpr CCSize LIST_SIZE = {370.f, 200.f};
+static constexpr float CELL_HEIGHT = 26.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
 
 constexpr static size_t countBools(auto&&... bools) {
@@ -68,8 +69,9 @@ public:
 
 protected:
     AudioVisualizer* m_visualizer = nullptr;
+    Ref<CCArray> m_popupButtons = nullptr;
 
-    bool customSetup() {
+    bool customSetup() override {
         auto gjbgl = GlobedGJBGL::get();
 
         // add buttons
@@ -103,66 +105,72 @@ protected:
         bool isHidden = self ? false : SettingsManager::get().isPlayerHidden(m_accountId);
 
         // Mute button
+        if (createBtnMute) {
+            auto muteOn = CCSprite::create("icon-mute.png"_spr);
+            auto muteOff = CCSprite::create("icon-unmute.png"_spr);
+            cue::rescaleToMatch(muteOn, muteAndHideInCell ? btnSizeSmall : btnSizeBig);
+            cue::rescaleToMatch(muteOff, muteAndHideInCell ? btnSizeSmall : btnSize);
 
-        auto muteOn = CCSprite::create("icon-mute.png"_spr);
-        auto muteOff = CCSprite::create("icon-unmute.png"_spr);
-        cue::rescaleToMatch(muteOn, muteAndHideInCell ? btnSizeSmall : btnSizeBig);
-        cue::rescaleToMatch(muteOff, muteAndHideInCell ? btnSizeSmall : btnSize);
+            auto muteButton = CCMenuItemExt::createToggler(
+                muteOn,
+                muteOff,
+                [accountId = m_accountId, gjbgl](CCMenuItemToggler* btn) {
+                    bool muted = btn->isOn();
+                    auto& sm = SettingsManager::get();
 
-        auto muteButton = CCMenuItemExt::createToggler(
-            muteOn,
-            muteOff,
-            [accountId = m_accountId, gjbgl](CCMenuItemToggler* btn) {
-                bool muted = btn->isOn();
-                auto& sm = SettingsManager::get();
+                    muted ? (sm.blacklistPlayer(accountId)) : (sm.whitelistPlayer(accountId));
 
-                muted ? (sm.blacklistPlayer(accountId)) : (sm.whitelistPlayer(accountId));
+                    auto& am = AudioManager::get();
+                    if (muted) {
+                        am.setStreamVolume(accountId, 0.f);
+                    } else {
+                        am.setStreamVolume(accountId, gjbgl->calculateVolumeFor(accountId));
+                    }
+            });
 
-                auto& am = AudioManager::get();
-                if (muted) {
-                    am.setStreamVolume(accountId, 0.f);
-                } else {
-                    am.setStreamVolume(accountId, gjbgl->calculateVolumeFor(accountId));
-                }
-        });
+            muteButton->setID("mute-btn"_spr);
+            muteButton->m_onButton->m_scaleMultiplier = 1.2f;
+            muteButton->m_offButton->m_scaleMultiplier = 1.2f;
+            muteButton->toggle(!isMuted); // fucked up
 
-        muteButton->setID("mute-btn"_spr);
-        muteButton->m_onButton->m_scaleMultiplier = 1.2f;
-        muteButton->m_offButton->m_scaleMultiplier = 1.2f;
-        muteButton->toggle(!isMuted); // fucked up
+            if (createSettingsBtn) {
+                popupButtons->addObject(muteButton);
+            } else {
+                mainButtons->addObject(muteButton);
+            }
+        }
 
         // Hide button
+        if (createBtnHide) {
+            auto hideOn = CCSprite::create("icon-hide-player.png"_spr);
+            auto hideOff = CCSprite::create("icon-show-player.png"_spr);
+            cue::rescaleToMatch(hideOn, muteAndHideInCell ? btnSizeSmall : btnSizeBig);
+            cue::rescaleToMatch(hideOff, muteAndHideInCell ? btnSizeSmall : btnSizeBig);
 
-        auto hideOn = CCSprite::create("icon-hide-player.png"_spr);
-        auto hideOff = CCSprite::create("icon-show-player.png"_spr);
-        cue::rescaleToMatch(hideOn, muteAndHideInCell ? btnSizeSmall : btnSizeBig);
-        cue::rescaleToMatch(hideOff, muteAndHideInCell ? btnSizeSmall : btnSizeBig);
+            auto hideButton = CCMenuItemExt::createToggler(
+                hideOn,
+                hideOff,
+                [accountId = m_accountId, gjbgl](CCMenuItemToggler* btn) {
+                    bool hidden = btn->isOn();
+                    auto& sm = SettingsManager::get();
+                    sm.setPlayerHidden(accountId, hidden);
 
-        auto hideButton = CCMenuItemExt::createToggler(
-            hideOn,
-            hideOff,
-            [accountId = m_accountId, gjbgl](CCMenuItemToggler* btn) {
-                bool hidden = btn->isOn();
-                auto& sm = SettingsManager::get();
-                sm.setPlayerHidden(accountId, hidden);
+                    auto player = gjbgl->getPlayer(accountId);
+                    if (player) {
+                        player->setForceHide(hidden);
+                    }
+            });
 
-                auto player = gjbgl->getPlayer(accountId);
-                if (player) {
-                    player->setForceHide(hidden);
-                }
-        });
+            hideButton->setID("hide-btn"_spr);
+            hideButton->m_onButton->m_scaleMultiplier = 1.2f;
+            hideButton->m_offButton->m_scaleMultiplier = 1.2f;
+            hideButton->toggle(!isHidden); // fucked up
 
-        hideButton->setID("hide-btn"_spr);
-        hideButton->m_onButton->m_scaleMultiplier = 1.2f;
-        hideButton->m_offButton->m_scaleMultiplier = 1.2f;
-        hideButton->toggle(!isHidden); // fucked up
-
-        if (createSettingsBtn) {
-            popupButtons->addObject(muteButton);
-            popupButtons->addObject(hideButton);
-        } else {
-            mainButtons->addObject(muteButton);
-            mainButtons->addObject(hideButton);
+            if (createSettingsBtn) {
+                popupButtons->addObject(hideButton);
+            } else {
+                mainButtons->addObject(hideButton);
+            }
         }
 
         // admin menu button
@@ -215,12 +223,40 @@ protected:
         if (createVisualizer) {
             // audio visualizer
             Build<AudioVisualizer>::create()
+                .scaleX(0.55f)
+                .scaleY(0.8f)
                 .id("audio-visualizer"_spr)
                 .zOrder(999999) // force to be on the left
                 .store(m_visualizer);
 
-            m_visualizer->setScaleX(0.5f);
+            m_visualizer->setLayoutOptions(AxisLayoutOptions::create()->setAutoScale(false));
             mainButtons->addObject(m_visualizer);
+        }
+
+        for (auto btn : CCArrayExt<CCNode>(mainButtons)) {
+            m_rightMenu->addChild(btn);
+        }
+
+        if (createSettingsBtn && popupButtons->count() > 0) {
+            m_popupButtons = popupButtons;
+
+            // settings button
+            auto settingsBtn = Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
+                .with([&](CCSprite* spr) {
+                    cue::rescaleToMatch(spr, btnSizeSmall);
+                })
+                .intoMenuItem([this] {
+                    auto pl = GlobedGJBGL::get();
+                    if (!pl || !pl->getPlayer(m_accountId)) return;
+
+                    // open popup yay
+                    UserActionsPopup::create(m_accountId, m_popupButtons)->show();
+                })
+                .zOrder(-999999) // force to be on the right
+                .scaleMult(1.2f)
+                .parent(m_rightMenu)
+                .id("player-actions-button"_spr)
+                .collect();
         }
 
         // add custom buttons
@@ -234,13 +270,20 @@ protected:
         m_rightMenu->updateLayout();
 
         this->initGradients(Context::Ingame);
+        this->schedule(schedule_selector(PlayerCell::updateVisualizer), 1.f / 60.f);
 
         return true;
+    }
+
+    void updateVisualizer(float dt) {
+        if (!m_visualizer) return;
+        auto& am = AudioManager::get();
+        float ld = am.getStreamLoudness(m_accountId);
+        m_visualizer->setVolume(ld);
     }
 };
 
 }
-
 
 bool UserListPopup::setup() {
     this->setTitle("Players");

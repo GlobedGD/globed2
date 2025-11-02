@@ -171,6 +171,13 @@ void GlobedGJBGL::setupAudio() {
     m_fields->m_isVoiceProximity = m_level->isPlatformer()
         ? globed::setting<bool>("core.audio.voice-proximity")
         : globed::setting<bool>("core.audio.classic-proximity");
+
+    this->customSchedule("update-audio-estimators", 1.f / 30.f, [](GlobedGJBGL* gjbgl, float dt) {
+        auto& am = AudioManager::get();
+        am.forEachStream([dt](int, AudioStream& stream) {
+            stream.updateEstimator(dt);
+        });
+    });
 }
 
 void GlobedGJBGL::setupUpdateLoop() {
@@ -652,6 +659,7 @@ bool GlobedGJBGL::isQuitting() {
 }
 
 void GlobedGJBGL::handlePlayerJoin(int playerId) {
+    auto& sm = SettingsManager::get();
     auto& fields = *m_fields.self();
 
 #ifdef GLOBED_DEBUG
@@ -663,6 +671,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     }
 
     auto rp = std::make_unique<RemotePlayer>(playerId, this, fields.m_playerNode);
+    rp->setForceHide(sm.isPlayerHidden(playerId));
     fields.m_players.emplace(playerId, std::move(rp));
     fields.m_interpolator.addPlayer(playerId);
 
@@ -852,6 +861,10 @@ void GlobedGJBGL::pauseVoiceRecording() {
 }
 
 void GlobedGJBGL::customSchedule(const std::string& id, std23::move_only_function<void(GlobedGJBGL*, float)>&& f, float interval) {
+    this->customSchedule(id, interval, std::move(f));
+}
+
+void GlobedGJBGL::customSchedule(const std::string& id, float interval, std23::move_only_function<void(GlobedGJBGL*, float)>&& f) {
     auto sched = CustomSchedule::create(std::move(f), interval, this);
     this->setUserObject(id, sched);
 }

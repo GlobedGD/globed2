@@ -10,7 +10,6 @@ public:
     static AudioVisualizer* create();
 
     void setVolume(float vol);
-    void setVolumeRaw(float vol);
     void resetMaxVolume();
 
     void setScaleX(float scale) override;

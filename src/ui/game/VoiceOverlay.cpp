@@ -27,8 +27,6 @@ void VoiceOverlay::update(float dt) {
     auto& am = AudioManager::get();
     am.forEachStream([&](int id, AudioStream& stream) {
         if (id <= 0) return;
-
-        stream.updateEstimator(dt);
         this->updateStream(id, stream.isStarving(), stream.getUserVolume(), stream.getLoudness());
     });
 

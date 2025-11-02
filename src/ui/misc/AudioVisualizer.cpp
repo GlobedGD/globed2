@@ -27,10 +27,6 @@ bool AudioVisualizer::init() {
 }
 
 void AudioVisualizer::setVolume(float vol) {
-    this->setVolumeRaw(vol * 1.f);
-}
-
-void AudioVisualizer::setVolumeRaw(float vol) {
     m_maxVolume = std::max(m_maxVolume, vol);
     m_vis->updateVisualizer(vol, m_maxVolume, 0.f);
 }

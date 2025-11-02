@@ -249,6 +249,8 @@ void LevelListLayer::onLoaded(const std::vector<std::pair<SessionId, uint16_t>>&
     m_currentQuery.clear();
 
     for (const auto& level : levels) {
+        if (level.first == 0) continue;
+
         m_playerCounts.emplace(level.first, level.second);
         m_allLevelIds.push_back(level.first);
     }
@@ -362,7 +364,6 @@ void LevelListLayer::finishLoading() {
 
     log::debug("Finished loading, page size = {}, counter = {}, unloaded = {}, reqm = {}, failed = {}", page.size(), counter, unloadedLevels, reqMin, m_failedQueries.size());
 
-    // TODO: idk if unloaded levels thing is rightt
     bool showNextPage = counter > (reqMin + m_pageSize) || unloadedLevels;
 
     // sort by player count descending

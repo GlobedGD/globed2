@@ -85,34 +85,48 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
 
     // update progress icons
 
-    if (m_progIcon) {
-        m_progIcon->updatePosition(state.progress(), state.isPracticing);
-    }
+    auto shownOrHide = [&](auto* node, auto&& onShown) {
+        if (!node) return;
+        if (forceHide) {
+            node->setVisible(false);
+        } else {
+            node->setVisible(true);
+            onShown();
+        }
+    };
 
-    if (m_progArrow) {
+    shownOrHide(m_progIcon, [&] {
+        m_progIcon->updatePosition(state.progress(), state.isPracticing);
+    });
+
+    shownOrHide(m_progArrow, [&] {
         m_progArrow->updatePosition(camState, m_player1->getLastPosition(), state.progress());
-    }
+    });
 
     // if the player just died, handle death
     if (flags.death) {
-        this->handleDeath(*flags.death);
+        if (!forceHide) {
+            this->handleDeath(*flags.death);
+        }
         CoreImpl::get().onPlayerDeath(GlobedGJBGL::get(), this, *flags.death);
     }
 
     // if the player teleported, play a spider dash animation
-    if (flags.spiderP1) {
-        m_player1->handleSpiderTp(*flags.spiderP1);
-    }
-    if (flags.spiderP2) {
-        m_player2->handleSpiderTp(*flags.spiderP2);
-    }
+    if (!forceHide) {
+        if (flags.spiderP1) {
+            m_player1->handleSpiderTp(*flags.spiderP1);
+        }
+        if (flags.spiderP2) {
+            m_player2->handleSpiderTp(*flags.spiderP2);
+        }
 
-    // if the player jumped, play a jump animation
-    if (flags.jumpP1) {
-        m_player1->playPlatformerJump();
-    }
-    if (flags.jumpP2) {
-        m_player2->playPlatformerJump();
+        // if the player jumped, play a jump animation
+        if (flags.jumpP1) {
+            m_player1->playPlatformerJump();
+        }
+        if (flags.jumpP2) {
+            m_player2->playPlatformerJump();
+        }
     }
 }
 

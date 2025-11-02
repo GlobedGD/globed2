@@ -410,15 +410,19 @@ void SettingsManager::commitPlayerLists() {
 void SettingsManager::blacklistPlayer(int id) {
     m_blacklisted.insert(id);
     m_whitelisted.erase(id);
-    this->refreshPlayerLists();
 }
 
 void SettingsManager::whitelistPlayer(int id) {
-
+    m_whitelisted.insert(id);
+    m_blacklisted.erase(id);
 }
 
 void SettingsManager::setPlayerHidden(int id, bool hidden) {
-
+    if (hidden) {
+        m_hidden.insert(id);
+    } else {
+        m_hidden.erase(id);
+    }
 }
 
 void SettingsManager::reloadFromSlot() {
@@ -636,7 +640,9 @@ uint64_t SettingsManager::finalKeyHash(std::string_view key) {
 }
 
 $on_mod(DataSaved) {
-    SettingsManager::get().commitSlotsToDisk();
+    auto& sm = SettingsManager::get();
+    sm.commitPlayerLists();
+    sm.commitSlotsToDisk();
 }
 
 }
