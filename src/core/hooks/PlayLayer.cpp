@@ -176,7 +176,6 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
             m_fields->m_showedNewBest = true;
         }
     }
-
 };
 
 }

@@ -29,4 +29,6 @@ namespace globed {
             megaQueue(func, frames - 1);
         });
     }
+
+    void setObjectTypeName(cocos2d::CCNode* obj, std::string_view name);
 }
