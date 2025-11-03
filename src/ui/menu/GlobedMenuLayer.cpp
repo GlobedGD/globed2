@@ -7,6 +7,7 @@
 #include <globed/core/FriendListManager.hpp>
 #include <globed/core/actions.hpp>
 #include <globed/util/Random.hpp>
+#include <globed/util/GameState.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/admin/ModUserPopup.hpp>
@@ -1011,11 +1012,20 @@ void GlobedMenuLayer::requestRoomState() {
     NetworkManagerImpl::get().sendRoomStateCheck();
 }
 
-bool GlobedMenuLayer::shouldAutoRefresh() {
+bool GlobedMenuLayer::shouldAutoRefresh(float dt) {
     if (!m_curFilter.empty()) {
         return false;
     }
 
+    m_autoRefreshCounter += dt;
+
+    // Current game state check is somewhat expensive, prevent it being called too often
+    if (m_autoRefreshCounter < 0.5f) {
+        return false;
+    }
+    m_autoRefreshCounter = 0.f;
+
+    auto state = globed::getCurrentGameState();
     auto playerCount = m_playerList->size();
 
     Duration intv;
@@ -1025,7 +1035,15 @@ bool GlobedMenuLayer::shouldAutoRefresh() {
     } else if (m_roomId != 0) {
         intv = Duration::fromSecs(10);
     } else {
-        intv = Duration::fromSecs(60);
+        // intv = Duration::fromSecs(60);
+        intv = Duration::fromSecs(3600); // dont really refresh in global room
+    }
+
+    // depending on the state, increase the interval
+    if (state == GameState::Afk) {
+        intv *= 6;
+    } else if (state == GameState::Closed) {
+        return false;
     }
 
     auto bytime = !m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > intv;
@@ -1141,7 +1159,7 @@ void GlobedMenuLayer::update(float dt) {
 
         if (m_roomId == -1 && (!m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > Duration::fromSecs(1))) {
             this->requestRoomState();
-        } else if (this->shouldAutoRefresh()) {
+        } else if (this->shouldAutoRefresh(dt)) {
             this->requestRoomState();
         }
     }

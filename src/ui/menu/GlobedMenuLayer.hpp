@@ -56,6 +56,7 @@ private:
     std::optional<asp::time::Instant> m_lastInteraction;
     std::optional<cue::ScrollPos> m_lastScrollPos;
     std::string m_curFilter;
+    float m_autoRefreshCounter = 0.f;
     bool m_hardRefresh = false;
 
     bool init() override;
@@ -75,7 +76,7 @@ private:
     void initFarSideButtons();
     void copyRoomIdToClipboard();
     void requestRoomState();
-    bool shouldAutoRefresh();
+    bool shouldAutoRefresh(float dt);
     std::vector<geode::Ref<CCMenuItemSpriteExtra>> createCommonButtons();
 
     void reloadWithFilter(const std::string& filter);
