@@ -267,6 +267,14 @@ protected:
             m_popup
         );
 
+        for (auto btn : m_rightMenu->getChildrenExt<CCNode>()) {
+            cue::rescaleToMatch(btn, btnSizeSmall);
+
+            if (auto mi = typeinfo_cast<CCMenuItemSpriteExtra*>(btn)) {
+                mi->m_baseScale = mi->getScale();
+            }
+        }
+
         m_rightMenu->updateLayout();
 
         this->initGradients(Context::Ingame);

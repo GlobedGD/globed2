@@ -72,7 +72,7 @@ bool PlayerListCell::init(
         .anchorPoint(1.f, 0.5f)
         .pos(cellSize.width - 5.f, cellSize.height / 2.f)
         .contentSize(cellSize.width - 10.f - 10.f, cellSize.height - 4.f)
-        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true)->setAutoScale(false))
         .parent(this);
 
     this->schedule(schedule_selector(PlayerListCell::updateStuff), 1.0f);
