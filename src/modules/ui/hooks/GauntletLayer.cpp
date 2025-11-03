@@ -92,6 +92,8 @@ struct GLOBED_MODIFY_ATTR HookedGauntletLayer : geode::Modify<HookedGauntletLaye
             return ListenerResult::Continue;
         });
 
+        // TODO (applies to all, not just this):
+        // maybe refresh less often if user is tabbed out
         this->schedule(schedule_selector(HookedGauntletLayer::updatePlayerCounts), 5.f);
         this->updatePlayerCounts(0.f);
     }
