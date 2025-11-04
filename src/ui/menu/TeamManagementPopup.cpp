@@ -102,7 +102,7 @@ private:
 
         auto text = fmt::format("Team {}", idx + 1);
 
-#ifdef GLOBED_MODULE_TCD_HNS
+#ifdef GLOBED_MODULE_TCD_HIDENSEEK
         if (idx == 0) {
             text = "Hiders";
         } else {
