@@ -268,6 +268,8 @@ protected:
         );
 
         for (auto btn : m_rightMenu->getChildrenExt<CCNode>()) {
+            if (btn == m_visualizer) continue;
+
             cue::rescaleToMatch(btn, btnSizeSmall);
 
             if (auto mi = typeinfo_cast<CCMenuItemSpriteExtra*>(btn)) {

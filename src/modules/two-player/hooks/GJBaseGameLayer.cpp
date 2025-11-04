@@ -22,14 +22,13 @@ struct GLOBED_MODIFY_ATTR TPMBaseGameLayer : geode::Modify<TPMBaseGameLayer, GJB
         auto& mod = TwoPlayerModule::get();
         auto& lerper = GlobedGJBGL::get(this)->m_fields->m_interpolator;
 
+        lerper.setCameraCorrections(!mod.isPlayer2());
+
         bool fixCamera = m_gameState.m_isDualMode && mod.isLinked() && mod.isPlayer2();
         if (!fixCamera) {
             GJBaseGameLayer::updateCamera(dt);
-            lerper.setCameraCorrections(true);
             return;
         }
-
-        lerper.setCameraCorrections(false);
 
         auto origPos = m_player1->getPosition();
         m_player1->setPosition({m_player2->getPositionX(), origPos.y});
