@@ -42,24 +42,26 @@ set(REQUIRED_GEODE_VERSION "4bb9f16")
 find_package(Python3 REQUIRED)
 execute_process(
     COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/pre-build.py"
+        # General options
         --build-dir "${CMAKE_CURRENT_BINARY_DIR}"
         --output-file "${CMAKE_CURRENT_BINARY_DIR}/prebuild-gen.cmake"
+        --platform "${GEODE_TARGET_PLATFORM}"
+        --geode-sdk-path "$ENV{GEODE_SDK}"
+        --require-geode "${REQUIRED_GEODE_VERSION}"
+        --compiler-id "${CMAKE_CXX_COMPILER_ID}"
+        --compiler-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}"
+        --compiler-version "${CMAKE_CXX_COMPILER_VERSION}"
+        # Globed-specific options
         --modules "${GLOBED_MODULES}"
         --default-server-url "${GLOBED_DEFAULT_MAIN_SERVER_URL}"
-        --platform "${GEODE_TARGET_PLATFORM}"
         --debug "${GLOBED_DEBUG}"
         --release "${GLOBED_RELEASE}"
         --oss-build "${GLOBED_OSS_BUILD}"
-        --geode-sdk-path "$ENV{GEODE_SDK}"
         --voice-support "${GLOBED_VOICE_SUPPORT}"
         --quic "${GLOBED_QUIC_SUPPORT}"
         --advanced-dns "${GLOBED_ADVANCED_DNS_SUPPORT}"
         --server-shared-ver "${SERVER_SHARED_VERSION}"
         --qunet-ver "${QUNET_VERSION}"
-        --compiler-id "${CMAKE_CXX_COMPILER_ID}"
-        --compiler-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}"
-        --compiler-version "${CMAKE_CXX_COMPILER_VERSION}"
-        --require-geode "${REQUIRED_GEODE_VERSION}"
         --allow-update-checks "${GLOBED_ALLOW_UPDATE_CHECKS}"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     RESULT_VARIABLE PREBUILD_RESULT
