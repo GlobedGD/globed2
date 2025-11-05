@@ -29,6 +29,7 @@ option(GLOBED_ADVANCED_DNS_SUPPORT "Enable advanced DNS support" ON)
 option(GLOBED_DEBUG "Enable debug mode" OFF)
 option(GLOBED_RELEASE "Enable release mode optimizations" OFF)
 option(GLOBED_OSS_BUILD "Open source build that does not require closed-source dependencies" OFF)
+option(GLOBED_ALLOW_UPDATE_CHECKS "Allow checking for updates of Geode and CPM deps during builds every once in a while" OFF)
 set(GLOBED_MODULES "" CACHE STRING "Enabled modules (comma-separated)")
 set(GLOBED_DEFAULT_MAIN_SERVER_URL "qunet://globed.dev" CACHE STRING "Default main server URL")
 
@@ -59,6 +60,7 @@ execute_process(
         --compiler-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}"
         --compiler-version "${CMAKE_CXX_COMPILER_VERSION}"
         --require-geode "${REQUIRED_GEODE_VERSION}"
+        --allow-update-checks "${GLOBED_ALLOW_UPDATE_CHECKS}"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     RESULT_VARIABLE PREBUILD_RESULT
 )

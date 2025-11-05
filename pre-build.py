@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum, auto
 from subprocess import Popen, PIPE, STDOUT
+from threading import Thread
+import requests
 import argparse
 import platform
 import hashlib
@@ -384,6 +386,76 @@ class State:
     def generate_cmake(self):
         self.cmake.save()
 
+    def get_last_gh_release(self, repo: str) -> str | None:
+        url = f"https://api.github.com/repos/{repo}/tags"
+        r = requests.get(url)
+        if not r.ok:
+            print(f"Request for {url} failed: {r.status_code} {r.reason}")
+            return None
+
+        tags = r.json()
+        if not isinstance(tags, list) or len(tags) == 0:
+            print(f"No tags found for {repo}")
+            return None
+
+        return tags[0]["name"]
+
+    def get_last_gh_commit(self, repo: str) -> str | None:
+        url = f"https://api.github.com/repos/{repo}/commits"
+        r = requests.get(url)
+        if not r.ok:
+            print(f"Request for {url} failed: {r.status_code} {r.reason}")
+            return None
+
+        commits = r.json()
+        if not isinstance(commits, list) or len(commits) == 0:
+            print(f"No commits found for {repo}")
+            return None
+
+        return commits[0]["sha"]
+
+    def check_for_updates(self):
+        start_time = time.time()
+        print(f"Checking for updates (this can be disabled)...")
+
+        threads = []
+
+        def do_fetch(dep: CPMDep, use_tag: bool):
+            if use_tag:
+                tag = self.get_last_gh_release(dep.repo)
+                if not tag:
+                    print(f"Failed to fetch latest release for {dep.repo}")
+                    return
+
+                current, latest = dep.tag, tag
+            else:
+                commit = self.get_last_gh_commit(dep.repo)
+                if not commit:
+                    print(f"Failed to fetch latest commit for {dep.repo}")
+                    return
+
+                shortest_len = min(len(dep.tag), len(commit))
+
+                current, latest = dep.tag[:shortest_len], commit[:shortest_len]
+
+            if current != latest:
+                print(f"Update available for {dep.name}: {current} -> {latest}")
+            else:
+                print(f"{dep.name} is up to date ({latest})")
+
+        for dep in self.cmake.deps:
+            if dep.repo.count("://") > 0:
+                continue
+
+            use_tag = '.' in dep.tag or 'v' in dep.tag
+
+            threads.append(Thread(target=do_fetch, args=(dep, use_tag)))
+
+        [t.start() for t in threads]
+        [t.join() for t in threads]
+
+        print(f"Update check complete in {time.time() - start_time:.3f}s")
+
 if __name__ == '__main__':
     start_time = time.time()
 
@@ -406,6 +478,7 @@ if __name__ == '__main__':
     parser.add_argument('--compiler-frontend', required=True, type=str)
     parser.add_argument('--compiler-version', required=True, type=str)
     parser.add_argument('--require-geode', type=str)
+    parser.add_argument('--allow-update-checks', type=str)
     args = parser.parse_args()
 
     state = State(
@@ -470,7 +543,8 @@ if __name__ == '__main__':
         if state.platform.is_windows():
             state.cmake.add_definition("GLOBED_VOICE_CAN_TALK", "1")
 
-    # Add geode dependencies based on modules
+    # Add geode dependencies
+    state.add_extra_dep("geode.node-ids", ">=v1.10.0")
     if state.has_module('scripting-ui'):
         state.add_extra_dep("alphalaneous.editortab_api", ">=1.0.17")
 
@@ -533,4 +607,11 @@ if __name__ == '__main__':
     state.generate_mod_json()
     state.generate_cmake()
 
-    print(f"Pre build script completed in {time.time() - start_time:.2f}s!")
+    print(f"Pre build script completed in {time.time() - start_time:.3f}s!")
+
+    if truthy(args.allow_update_checks):
+        # determine if we should check for updates using the last update file
+        p = Path(state.build_dir / "last-update.txt")
+        if not p.exists() or (time.time() - p.stat().st_mtime) > 60 * 60 * 3:
+            p.touch(exist_ok=True)
+            state.check_for_updates()
