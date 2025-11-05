@@ -35,7 +35,7 @@ set(GLOBED_DEFAULT_MAIN_SERVER_URL "qunet://globed.dev" CACHE STRING "Default ma
 
 set(QUNET_VERSION "68dd378")
 set(SERVER_SHARED_VERSION "f9670e3")
-set(REQUIRED_GEODE_VERSION "4bb9f16")
+set(REQUIRED_GEODE_VERSION "4bb9f16") # minimum required geode, can be a commit or a tag
 
 # Run the pre-build python script
 
