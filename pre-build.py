@@ -1,10 +1,23 @@
+"""
+Globed pre-build script.
+This script is invoked by cmake when configuring the project, you'll find that
+most of the build configuration is done here, rather than CMakeLists.txt.
+
+This file ends up generating the mod.json and a .cmake file that gets included by the main CMakeLists.txt.
+Scroll to the bottom to see the actual configuration.
+"""
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum, auto
+from subprocess import Popen, PIPE, STDOUT
 import argparse
+import platform
 import hashlib
+import time
 import json
+import sys
 
 state: State
 
@@ -77,6 +90,14 @@ class Platform(Enum):
 def truthy(val: str) -> bool:
     return val.lower() in ("1", "true", "yes", "on", "y")
 
+def fatal_error(message: str):
+    print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    print(f"!! Build halted due to error:")
+    for line in message.splitlines():
+        print(f"!! {line}")
+    print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    exit(1)
+
 @dataclass
 class CPMDep:
     name: str
@@ -93,6 +114,7 @@ class CMakeFile:
     messages: list[str]
     source_dirs: list[tuple[Path, bool]]
     deps: list[CPMDep]
+    options: list[tuple[str | None, str, str]]
 
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -103,6 +125,7 @@ class CMakeFile:
         self.messages = []
         self.source_dirs = []
         self.deps = []
+        self.options = []
 
     def add_var(self, key: str, value: str):
         self.vars[key] = value
@@ -132,6 +155,9 @@ class CMakeFile:
 
     def add_include_dir(self, path: Path, privacy: str = "PRIVATE"):
         self.dirs.append((path, privacy))
+
+    def add_compile_option(self, lib: str | None, opt: str, privacy: str = "PRIVATE"):
+        self.options.append((lib, opt, privacy))
 
     def add_cpm_dep(self, name: str, repo: str, tag: str, options: dict | None = None, link_name: str | None = None, link_type: str = "PRIVATE"):
         if options is None:
@@ -222,13 +248,17 @@ class CMakeFile:
 
             out += f")\n"
 
+        # Options
+        out += "\n# Compile options\n"
+        for lib, opt, privacy in self.options:
+            lib = lib or "${PROJECT_NAME}"
+            out += f"target_compile_options({lib} {privacy} {opt})\n"
+
         # Links
         out += "\n# Linked libraries\n"
         for name, privacy in self.libs:
-            print(name)
             if '/' in name:
                 name = self.convert_path(Path(name))
-            print(name)
 
             out += f"target_link_libraries(${{PROJECT_NAME}} {privacy} {name})\n"
 
@@ -250,6 +280,10 @@ class State:
     geode_sdk_path: Path
     server_url: str
     modules: list[str]
+    compiler_id: str
+    compiler_frontend: str
+    compiler_version: str
+    require_geode: str
 
     extra_deps: dict[str, str] = field(default_factory=dict[str, str])
 
@@ -259,8 +293,79 @@ class State:
     def has_module(self, module: str) -> bool:
         return module in self.modules
 
+    def is_clang(self) -> bool:
+        return "clang" in self.compiler_id.lower()
+
+    def is_clang_cl(self) -> bool:
+        return "clang" in self.compiler_id.lower() and self.compiler_frontend == "MSVC"
+
     def add_extra_dep(self, key: str, version: str):
         self.extra_deps[key] = version
+
+    def silence_warnings_for(self, lib: str):
+        opt = "/w" if self.is_clang_cl() else "-w"
+        self.cmake.add_compile_option(lib, opt, "PRIVATE")
+
+    def host_desc(self) -> str:
+        if sys.platform == "linux":
+            data = platform.freedesktop_os_release()
+            name = data.get("PRETTY_NAME", None) or data.get("NAME", "Unknown Linux")
+            return f"{name} ({platform.uname().machine})"
+        elif sys.platform == "darwin":
+            ver, _, machine = platform.mac_ver()
+            return f"macOS {ver} ({machine})"
+        elif sys.platform == "win32":
+            ver = platform.version()
+            arch = platform.machine()
+            return f"Windows {ver} ({arch})"
+        else:
+            return f"Unknown"
+
+    def print_info(self):
+        print(f"========== Globed build configuration ==========")
+        print(f"Platform: {self.platform.name}, host: {self.host_desc()}, debug: {self.debug}, release: {self.release}, OSS build: {self.oss_build}")
+        print(f"Voice: {self.voice_support}, modules: {self.modules}, server URL: '{self.server_url}'")
+        print(f"Compiler: {self.compiler_id} {self.compiler_version}, frontend: '{self.compiler_frontend}'")
+        print("=================================================")
+
+    def invoke_git(self, where: Path, *args) -> tuple[int, str]:
+        proc = Popen(["git", *args], cwd=where, stdout=PIPE, stderr=STDOUT)
+        assert proc.stdout
+
+        output = proc.stdout.read().decode().strip()
+        code = proc.wait()
+
+        return (code, output)
+
+    def is_sdk_at_least(self, ver: str) -> bool:
+        code, output = self.invoke_git(self.geode_sdk_path, "merge-base", "--is-ancestor", ver, "HEAD")
+
+        if code == 0:
+            return True
+        else:
+            print(output)
+            return False
+
+    def get_sdk_commit(self) -> str | None:
+        code, output = self.invoke_git(self.geode_sdk_path, "rev-parse", "HEAD")
+
+        if code != 0:
+            # fatal_error(f"Failed to get Geode SDK commit:\n{output}")
+            return None
+
+        return output
+
+    def verify_geode_version(self):
+        if not self.is_sdk_at_least(self.require_geode):
+            msg = "Geode version mismatch! Please update Geode SDK to build Globed.\n"
+            if 'v' in self.require_geode or '.' in self.require_geode:
+                msg += f"Required Geode version: {self.require_geode}\n"
+            else:
+                msg += f"Geode nightly is required (at least commit {self.require_geode}), run `geode sdk update nightly`\n"
+
+            msg += f"Current Geode commit: {self.get_sdk_commit() or 'unknown'}\n"
+
+            fatal_error(msg)
 
     def generate_mod_json(self):
         in_path = self.source_dir / "mod.json.template"
@@ -280,6 +385,8 @@ class State:
         self.cmake.save()
 
 if __name__ == '__main__':
+    start_time = time.time()
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--build-dir', required=True, type=Path)
     parser.add_argument('--output-file', required=True, type=Path)
@@ -295,6 +402,10 @@ if __name__ == '__main__':
     parser.add_argument('--qunet-ver', type=str)
     parser.add_argument('--quic', type=str)
     parser.add_argument('--advanced-dns', type=str)
+    parser.add_argument('--compiler-id', required=True, type=str)
+    parser.add_argument('--compiler-frontend', required=True, type=str)
+    parser.add_argument('--compiler-version', required=True, type=str)
+    parser.add_argument('--require-geode', type=str)
     args = parser.parse_args()
 
     state = State(
@@ -309,7 +420,19 @@ if __name__ == '__main__':
         geode_sdk_path=args.geode_sdk_path,
         server_url=args.default_server_url or "",
         modules=args.modules.split(",") if args.modules else [],
+        compiler_id=args.compiler_id,
+        compiler_frontend=args.compiler_frontend,
+        compiler_version=args.compiler_version,
+        require_geode=args.require_geode,
     )
+
+    state.print_info()
+
+    # check some preconditions, such as needing geode nightly or regular clang
+    if state.is_clang_cl() or not state.is_clang():
+        fatal_error("Clang-cl and MSVC are not supported, Globed can only be built with Clang")
+
+    state.verify_geode_version()
 
     # Add necessary modules
     state.add_module("deathlink")
@@ -341,7 +464,6 @@ if __name__ == '__main__':
     if state.debug:
         state.cmake.add_definition("GLOBED_DEBUG", "1")
         state.cmake.add_var("QUNET_DEBUG", "ON")
-        state.cmake.add_message("Building Globed in debug mode (+ Qunet debug)")
 
     if state.voice_support:
         state.cmake.add_definition("GLOBED_VOICE_SUPPORT", "1")
@@ -370,7 +492,6 @@ if __name__ == '__main__':
     # Link to bb if not oss build
     if state.oss_build:
         state.cmake.add_definition("GLOBED_OSS_BUILD", "1")
-        state.cmake.add_message("Building open-source version, not linking to bb")
     else:
         if state.platform.is_windows():
             state.cmake.add_libraries("libs/bb/bb.lib", "ntdll.lib", "userenv.lib", "runtimeobject.lib", "Iphlpapi.lib", "bcrypt.lib")
@@ -385,12 +506,12 @@ if __name__ == '__main__':
         "BUILD_TESTING": "OFF",
         "WITH_FIBERS": "OFF",
     }, link_name="CapnProto::capnp")
-    state.cmake.add_cpm_dep("ServerShared", "GlobedGD/server-shared", args.server_shared_ver)
-    state.cmake.add_cpm_dep("qunet", "dankmeme01/qunet-cpp", args.qunet_ver, {
+    state.cmake.add_cpm_dep("server-shared", "GlobedGD/server-shared", args.server_shared_ver, link_name="ServerShared")
+    state.cmake.add_cpm_dep("qunet-cpp", "dankmeme01/qunet-cpp", args.qunet_ver, {
         "QUNET_QUIC_SUPPORT": "ON" if truthy(args.quic) else "OFF",
         "QUNET_ADVANCED_DNS": "ON" if truthy(args.advanced_dns) else "OFF",
         "QUNET_DEBUG": "ON" if state.debug else "OFF",
-    })
+    }, link_name="qunet")
     state.cmake.add_cpm_dep("UIBuilder", "dankmeme01/uibuilder", "618ec98")
     state.cmake.add_cpm_dep("cue", "dankmeme01/cue", "2aaa7679")
     state.cmake.add_cpm_dep("argon", "GlobedGD/argon", "v1.2.0")
@@ -404,7 +525,12 @@ if __name__ == '__main__':
     # reexport some
     state.cmake.add_libraries("asp", "std23::nontype_functional", privacy="PUBLIC")
 
+    state.silence_warnings_for("kj")
+    state.silence_warnings_for("capnp")
+    state.silence_warnings_for("libzstd_static")
+    state.silence_warnings_for("opus")
+
     state.generate_mod_json()
     state.generate_cmake()
 
-    print(f"Pre build script completed!")
+    print(f"Pre build script completed in {time.time() - start_time:.2f}s!")

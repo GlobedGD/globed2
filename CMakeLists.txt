@@ -34,6 +34,7 @@ set(GLOBED_DEFAULT_MAIN_SERVER_URL "qunet://globed.dev" CACHE STRING "Default ma
 
 set(QUNET_VERSION "68dd378")
 set(SERVER_SHARED_VERSION "f9670e3")
+set(REQUIRED_GEODE_VERSION "4bb9f16")
 
 # Run the pre-build python script
 
@@ -54,12 +55,16 @@ execute_process(
         --advanced-dns "${GLOBED_ADVANCED_DNS_SUPPORT}"
         --server-shared-ver "${SERVER_SHARED_VERSION}"
         --qunet-ver "${QUNET_VERSION}"
+        --compiler-id "${CMAKE_CXX_COMPILER_ID}"
+        --compiler-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}"
+        --compiler-version "${CMAKE_CXX_COMPILER_VERSION}"
+        --require-geode "${REQUIRED_GEODE_VERSION}"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     RESULT_VARIABLE PREBUILD_RESULT
 )
 
 if (NOT PREBUILD_RESULT EQUAL 0)
-    message(FATAL_ERROR "Pre-build script failed with exit code ${PREBUILD_RESULT}")
+    message(FATAL_ERROR "Pre-build script failed with exit code ${PREBUILD_RESULT}, see above for details")
 endif()
 
 include(${CMAKE_CURRENT_BINARY_DIR}/prebuild-gen.cmake)
