@@ -1629,7 +1629,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::WARN: {
-            // TODO
+            this->invokeListeners(msg::WarnMessage{msg.getWarn().getMessage()});
         } break;
 
         case CentralMessage::CREDITS: {

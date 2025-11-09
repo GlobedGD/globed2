@@ -219,6 +219,11 @@ $on_mod(Loaded) {
         UserPunishmentPopup::create(msg.reason, msg.expiresAt, false)->show();
         return ListenerResult::Continue;
     });
+
+    nm.listenGlobal<msg::WarnMessage>([](const msg::WarnMessage& msg) {
+        PopupManager::get().alert("Server Warning", msg.message, "Ok").showQueue();
+        return ListenerResult::Continue;
+    });
 }
 
 }

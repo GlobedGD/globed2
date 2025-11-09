@@ -186,6 +186,12 @@ struct ScriptLogsMessage {
     float memUsage;
 };
 
+// Warn
+
+struct WarnMessage {
+    std::string message;
+};
+
 // Credits
 
 struct CreditsMessage {
