@@ -153,7 +153,7 @@ def main(build: Build):
         "QUNET_DEBUG": "ON" if state.debug else "OFF",
     }, link_name="qunet")
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
-    build.add_cpm_dep("dankmeme01/cue", "2aaa7679")
+    build.add_cpm_dep("dankmeme01/cue", "778140ea")
     build.add_cpm_dep("GlobedGD/argon", "v1.2.0")
     build.add_cpm_dep("Prevter/sinaps", "2541d6d")
     build.add_cpm_dep("Prevter/AdvancedLabel", "d78d7f82", link_name="advanced_label")
@@ -169,3 +169,7 @@ def main(build: Build):
     build.silence_warnings_for("capnp")
     build.silence_warnings_for("libzstd_static")
     build.silence_warnings_for("opus")
+
+    # check dep updates in debug
+    if state.debug:
+        build.check_for_updates()
