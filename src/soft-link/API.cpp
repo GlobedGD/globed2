@@ -3,6 +3,7 @@
 #include <globed/soft-link/API.hpp>
 #include <globed/core/net/NetworkManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <asp/format.hpp>
 
 using namespace geode::prelude;
 
@@ -20,8 +21,7 @@ struct Assigner {
     template <typename T>
     Assigner& operator=(T&& func) {
         char buf[128];
-        auto res = fmt::format_to(buf, "{}.{}", cat, name);
-        std::string_view fullName{buf, res.out};
+        auto fullName = asp::local_format(buf, "{}.{}", cat, name);
 
 #ifdef GLOBED_DEBUG
         log::debug("Adding soft api function: '{}'", fullName);

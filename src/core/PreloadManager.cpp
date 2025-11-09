@@ -3,6 +3,7 @@
 #include <globed/util/SpinLock.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <asp/fs.hpp>
+#include <asp/format.hpp>
 
 #ifndef GEODE_IS_WINDOWS
 # include <sys/stat.h>
@@ -61,15 +62,10 @@ struct HookedFileUtils : public CCFileUtils {
         }
 
         std::array<char, 1024> buf;
-        auto result = fmt::format_to_n(buf.data(), buf.size(), "{}{}{}{}", searchPath, filePath, resolutionDirectory, file);
-        if (result.size < buf.size()) {
-            buf[result.size] = '\0';
-        } else {
-            buf[buf.size() - 1] = '\0';
-        }
+        auto path = asp::local_format(buf, "{}{}{}{}", searchPath, filePath, resolutionDirectory, file);
 
-        if (this->fileExists(buf.data())) {
-            return gd::string(buf.data(), result.size);
+        if (this->fileExists(path.data())) {
+            return gd::string(path);
         } else {
             return gd::string{};
         }
