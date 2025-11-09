@@ -8,6 +8,7 @@
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/PopupManager.hpp>
 #include <globed/util/gd.hpp>
+#include <globed/util/scary.hpp>
 #include <core/CoreImpl.hpp>
 #include "data/helpers.hpp"
 #include <bb_public.hpp>
@@ -638,6 +639,8 @@ void NetworkManagerImpl::setViewedFeaturedLevel() {
 }
 
 void NetworkManagerImpl::onCentralConnected() {
+    m_tryingReconnect = false;
+
     globed::setValue<bool>("core.was-connected", true);
 
     log::debug("connection to central server established, trying to log in");
@@ -734,14 +737,17 @@ void NetworkManagerImpl::abortConnection(std::string reason, bool silent) {
 }
 
 void NetworkManagerImpl::onCentralDisconnected() {
-    if (!m_destructing) {
-        globed::setValue<bool>("core.was-connected", false);
-    }
+    m_tryingReconnect = true;
 
     bool showPopup = !m_manualDisconnect;
     std::string message = "client initiated disconnect";
 
-    if (!m_manualDisconnect) {
+    if (m_manualDisconnect) {
+        // only save the was-connected value if the user manually disconnected
+        if (!m_destructing) {
+            globed::setValue<bool>("core.was-connected", false);
+        }
+    } else {
         auto abortCause = m_abortCause.lock();
 
         if (!abortCause->first.empty()) {
@@ -766,9 +772,17 @@ void NetworkManagerImpl::onCentralDisconnected() {
     FunctionQueue::get().queue([this, showPopup, message = std::move(message)] {
         CoreImpl::get().onServerDisconnected();
 
-        if (showPopup) {
-            auto alert = PopupManager::get().alertFormat("Globed Error", "Connection lost: <cy>{}</c>", message);
-            alert.showQueue();
+        // Reconnect, if applicable
+
+        if (message == "Server is shutting down") {
+            FunctionQueue::get().queueDelay([this] {
+                this->maybeTryReconnect();
+            }, Duration::fromMillis(500));
+        } else {
+            if (showPopup) {
+                auto alert = PopupManager::get().alertFormat("Globed Error", "Connection lost: <cy>{}</c>", message);
+                alert.showQueue();
+            }
         }
     });
 
@@ -777,6 +791,17 @@ void NetworkManagerImpl::onCentralDisconnected() {
     // in case this is an abnormal closure, also notify the disconnect notify
     m_disconnectRequested.store(true);
     m_disconnectNotify.notifyAll();
+}
+
+void NetworkManagerImpl::maybeTryReconnect() {
+    if (!m_tryingReconnect) return;
+    if (m_centralConnState.load() != qn::ConnectionState::Disconnected) return;
+
+    log::info("Attempting to reconnect to central server..");
+
+    if (auto err = this->connectCentral(m_centralUrl).err()) {
+        log::error("Failed to reconnect to central server: {}", *err);
+    }
 }
 
 void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platformer) {

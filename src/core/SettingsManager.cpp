@@ -15,7 +15,7 @@ SettingsManager::SettingsManager() {
 
     // Preload
     this->registerSetting("core.preload.enabled", true);
-    this->registerSetting("core.preload.defer", false);
+    this->registerSetting("core.preload.defer", true);
 
     // Various
     this->registerSetting("core.autoconnect", true);

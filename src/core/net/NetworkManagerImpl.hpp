@@ -262,6 +262,7 @@ private:
     asp::Notify m_disconnectNotify;
     asp::AtomicBool m_disconnectRequested;
     asp::AtomicBool m_manualDisconnect = false;
+    asp::AtomicBool m_tryingReconnect = false;
     asp::Mutex<std::pair<std::string, bool>> m_abortCause;
     asp::Notify m_finishedClosingNotify;
     bool m_destructing = false;
@@ -280,6 +281,7 @@ private:
     void sendToCentral(std23::function_ref<void(CentralMessage::Builder&)>&& func);
     void sendToGame(std23::function_ref<void(GameMessage::Builder&)>&& func, bool reliable = true, bool uncompressed = false);
 
+    void maybeTryReconnect();
     void disconnectInner();
     void resetGameVars();
 
