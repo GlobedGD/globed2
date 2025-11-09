@@ -159,7 +159,9 @@ def main(build: Build):
     build.add_cpm_dep("Prevter/AdvancedLabel", "d78d7f82", link_name="advanced_label")
 
     if state.voice:
-        build.add_cpm_dep("xiph/opus", "v1.5.2")
+        build.add_cpm_dep("xiph/opus", "v1.5.2", {
+            "OPUS_INSTALL_PKG_CONFIG_MODULE": "OFF",
+        })
         build.add_definition("GLOBED_VOICE_SUPPORT", "1", Privacy.PUBLIC)
 
     # reexport some
