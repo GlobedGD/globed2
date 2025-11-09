@@ -11,7 +11,9 @@ namespace globed {
 /// It also manages joining and leaving levels.
 class GLOBED_DLL RoomManager : public SingletonLeakBase<RoomManager> {
 public:
-    void joinLevel(int levelId, int author, bool platformer);
+    void joinLevel(int levelId, int author, bool platformer, bool editorCollab);
+    void joinLevel(GJGameLevel* level);
+
     void leaveLevel();
     SessionId makeSessionId(int levelId);
 

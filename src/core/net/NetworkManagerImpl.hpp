@@ -45,6 +45,7 @@ struct GameServer {
 struct DeferredSessionJoin {
     SessionId id;
     bool platformer;
+    bool editorCollab;
 };
 
 
@@ -205,7 +206,7 @@ public:
     void sendAdminCloseRoom(uint32_t roomId);
 
     // Both servers
-    void sendJoinSession(SessionId id, int author, bool platformer);
+    void sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab = false);
     void sendLeaveSession();
 
     // Game server
@@ -300,9 +301,9 @@ private:
     void sendCentralAuth(AuthKind kind, const std::string& token = "");
     void abortConnection(std::string reason, bool silent = false);
 
-    void joinSessionWith(std::string_view serverUrl, SessionId id, bool platformer);
-    void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false);
-    void sendGameJoinRequest(SessionId id, bool platformer);
+    void joinSessionWith(std::string_view serverUrl, SessionId id, bool platformer, bool editorCollab = false);
+    void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false, bool editorCollab = false);
+    void sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab);
 
     // Handlers for messages
     void handleLoginFailed(schema::main::LoginFailedReason reason);

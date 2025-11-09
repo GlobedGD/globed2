@@ -3,21 +3,50 @@
 #include <globed/core/actions.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
+#include <Geode/loader/Dispatch.hpp>
+
 using namespace geode::prelude;
 
 namespace globed {
 
-void RoomManager::joinLevel(int levelId, int author, bool platformer) {
+void RoomManager::joinLevel(int levelId, int author, bool platformer, bool editorCollab) {
     auto& nm = NetworkManagerImpl::get();
 
     // check for warp context, join a specific server if warping
     auto wctx = globed::_getWarpContext();
+
     if (wctx.levelId() == levelId) {
-        nm.sendJoinSession(wctx, author, platformer);
+        nm.sendJoinSession(wctx, author, platformer, editorCollab);
     } else if (auto srv = this->pickServerId()) {
         // construct a session ID
         auto id = SessionId::fromParts(*srv, m_roomId, levelId);
-        nm.sendJoinSession(id, author, platformer);
+        nm.sendJoinSession(id, author, platformer, editorCollab);
+    }
+}
+
+static std::optional<SessionId> getEditorCollabId(GJGameLevel* level) {
+    using LevelIdEvent = DispatchEvent<GJGameLevel*, int64_t*>;
+    using LevelIdFilter = DispatchFilter<GJGameLevel*, int64_t*>;
+
+    int64_t id = level->m_levelID;
+
+    LevelIdEvent("setup-level-id"_spr, level, &id).post();
+
+    if (id == level->m_levelID) {
+        return std::nullopt;
+    } else {
+        return SessionId{(uint64_t)id};
+    }
+}
+
+void RoomManager::joinLevel(GJGameLevel* level) {
+    auto eid = getEditorCollabId(level);
+
+    if (eid) {
+        auto& nm = NetworkManagerImpl::get();
+        nm.sendJoinSession(*eid, level->m_accountID, level->isPlatformer(), true);
+    } else {
+        this->joinLevel(level->m_levelID, level->m_accountID, level->isPlatformer(), false);
     }
 }
 

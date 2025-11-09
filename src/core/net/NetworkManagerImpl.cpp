@@ -159,7 +159,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
             // if there was a deferred join, try to login with session, otherwise just login
             if (connInfo.m_gsDeferredJoin) {
                 auto& join = *connInfo.m_gsDeferredJoin;
-                this->sendGameLoginRequest(join.id, join.platformer);
+                this->sendGameLoginRequest(join.id, join.platformer, join.editorCollab);
             } else {
                 this->sendGameLoginRequest();
             }
@@ -804,7 +804,7 @@ void NetworkManagerImpl::maybeTryReconnect() {
     }
 }
 
-void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platformer) {
+void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab) {
     auto lock = m_connInfo.lock();
     if (!*lock) {
         log::error("Cannot join session, not connected to central server");
@@ -822,16 +822,19 @@ void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platform
     });
 
     // find the game server
-    uint8_t serverId = id.serverId();
+    // TODO: editor collab levels are currently hardcoded to use server ID 0
+    uint8_t serverId = editorCollab ? 0 : id.serverId();
+
     for (auto& srv : connInfo.m_gameServers) {
         if (srv.second.id == serverId) {
-            this->joinSessionWith(srv.second.url, id, platformer);
+            this->joinSessionWith(srv.second.url, id, platformer, editorCollab);
             return;
         }
     }
 
     // not found!
     log::error("Tried joining an invalid session, game server with ID {} does not exist", static_cast<int>(serverId));
+    toastError("Globed: join failed, no server with ID {}", serverId);
 }
 
 void NetworkManagerImpl::sendLeaveSession() {
@@ -844,7 +847,7 @@ void NetworkManagerImpl::sendLeaveSession() {
     });
 }
 
-void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId id, bool platformer) {
+void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId id, bool platformer, bool editorCollab) {
     // if already connected to another game server, disconnect and wait for the connection to close
     auto lock = m_connInfo.lock();
     if (!*lock) {
@@ -863,13 +866,13 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
             (void) m_gameConn.disconnect();
         } else if (connInfo.m_gameEstablished) {
             // same server, just send the join request
-            this->sendGameJoinRequest(id, platformer);
+            this->sendGameJoinRequest(id, platformer, editorCollab);
         } else {
-            this->sendGameLoginRequest(id, platformer);
+            this->sendGameLoginRequest(id, platformer, editorCollab);
         }
     } else {
         // not connected, connect to the game server and join later
-        connInfo.m_gsDeferredJoin = DeferredSessionJoin { id, platformer };
+        connInfo.m_gsDeferredJoin = DeferredSessionJoin { id, platformer, editorCollab };
         connInfo.m_gameServerUrl = std::string(serverUrl);
 
         (void) m_gameConn.cancelConnection();
@@ -885,7 +888,7 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
     }
 }
 
-void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer) {
+void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, bool editorCollab) {
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto login = msg.initLogin();
         login.setAccountId(GJAccountManager::get()->m_accountID);
@@ -897,15 +900,17 @@ void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer) {
             login.setSessionId(id);
             login.setPasscode(RoomManager::get().getPasscode());
             login.setPlatformer(platformer);
+            login.setEditorCollab(editorCollab);
         }
     });
 }
 
-void NetworkManagerImpl::sendGameJoinRequest(SessionId id, bool platformer) {
+void NetworkManagerImpl::sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab) {
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto join = msg.initJoinSession();
         join.setSessionId(id);
         join.setPlatformer(platformer);
+        join.setEditorCollab(editorCollab);
         join.setPasscode(RoomManager::get().getPasscode());
     });
 }

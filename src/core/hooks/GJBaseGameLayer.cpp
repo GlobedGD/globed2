@@ -67,7 +67,7 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     // TODO: disable multiplayer in editor depending on settings
 
     if (fields.m_active) {
-        RoomManager::get().joinLevel(level->m_levelID, level->m_accountID, level->isPlatformer());
+        RoomManager::get().joinLevel(level);
         CoreImpl::get().onJoinLevel(this, level, editor);
     }
 }
