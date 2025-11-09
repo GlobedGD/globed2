@@ -1,3 +1,12 @@
+"""
+Globed pre-build script.
+This script is invoked by cmake when configuring the project, you'll find that
+most of the build configuration is done here, rather than CMakeLists.txt.
+
+This file ends up generating the mod.json and a .cmake file that gets included by the main CMakeLists.txt.
+For more details, see https://github.com/dankmeme01/geobuild/
+"""
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .build.geobuild.prelude import *
