@@ -11,8 +11,6 @@ endif()
 
 project(globed2 VERSION 1.0.0)
 
-# Include geode early, since we need the platform define
-
 if (NOT DEFINED ENV{GEODE_SDK})
     message(FATAL_ERROR "Unable to find Geode SDK! Please define GEODE_SDK environment variable to point to Geode")
 else()
@@ -21,59 +19,5 @@ endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
-# Options
-
-option(GLOBED_VOICE_SUPPORT "Enable voice chat support" ON)
-option(GLOBED_QUIC_SUPPORT "Enable QUIC support" ON)
-option(GLOBED_ADVANCED_DNS_SUPPORT "Enable advanced DNS support" ON)
-option(GLOBED_DEBUG "Enable debug mode" OFF)
-option(GLOBED_RELEASE "Enable release mode optimizations" OFF)
-option(GLOBED_OSS_BUILD "Open source build that does not require closed-source dependencies" OFF)
-option(GLOBED_ALLOW_UPDATE_CHECKS "Allow checking for updates of Geode and CPM deps during builds every once in a while" OFF)
-set(GLOBED_MODULES "" CACHE STRING "Enabled modules (comma-separated)")
-set(GLOBED_DEFAULT_MAIN_SERVER_URL "qunet://globed.dev" CACHE STRING "Default main server URL")
-
-set(QUNET_VERSION "68dd378")
-set(SERVER_SHARED_VERSION "f9670e3")
-set(REQUIRED_GEODE_VERSION "4bb9f16") # minimum required geode, can be a commit or a tag
-
-# Run the pre-build python script
-
-find_package(Python3 REQUIRED)
-execute_process(
-    COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/pre-build.py"
-        # General options
-        --build-dir "${CMAKE_CURRENT_BINARY_DIR}"
-        --output-file "${CMAKE_CURRENT_BINARY_DIR}/prebuild-gen.cmake"
-        --platform "${GEODE_TARGET_PLATFORM}"
-        --geode-sdk-path "$ENV{GEODE_SDK}"
-        --require-geode "${REQUIRED_GEODE_VERSION}"
-        --compiler-id "${CMAKE_CXX_COMPILER_ID}"
-        --compiler-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}"
-        --compiler-version "${CMAKE_CXX_COMPILER_VERSION}"
-        # Globed-specific options
-        --modules "${GLOBED_MODULES}"
-        --default-server-url "${GLOBED_DEFAULT_MAIN_SERVER_URL}"
-        --debug "${GLOBED_DEBUG}"
-        --release "${GLOBED_RELEASE}"
-        --oss-build "${GLOBED_OSS_BUILD}"
-        --voice-support "${GLOBED_VOICE_SUPPORT}"
-        --quic "${GLOBED_QUIC_SUPPORT}"
-        --advanced-dns "${GLOBED_ADVANCED_DNS_SUPPORT}"
-        --server-shared-ver "${SERVER_SHARED_VERSION}"
-        --qunet-ver "${QUNET_VERSION}"
-        --allow-update-checks "${GLOBED_ALLOW_UPDATE_CHECKS}"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    RESULT_VARIABLE PREBUILD_RESULT
-)
-
-if (NOT PREBUILD_RESULT EQUAL 0)
-    message(FATAL_ERROR "Pre-build script failed with exit code ${PREBUILD_RESULT}, see above for details")
-endif()
-
-include(${CMAKE_CURRENT_BINARY_DIR}/prebuild-gen.cmake)
-
-setup_geode_mod(${PROJECT_NAME} LINK_TYPE PRIVATE)
-
-# trick to reconfigure when the script changes
-configure_file(pre-build.py ${CMAKE_CURRENT_BINARY_DIR}/pre-build-dummy.py COPYONLY)
+CPMAddPackage("gh:dankmeme01/geobuild#main")
+include("${CMAKE_CURRENT_BINARY_DIR}/geobuild-gen.cmake")

@@ -74,3 +74,5 @@ laptop.py
 bloaty.sh
 bloaty-*.txt
 mod.json
+
+__pycache__
