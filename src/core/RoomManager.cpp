@@ -24,13 +24,13 @@ void RoomManager::joinLevel(int levelId, int author, bool platformer, bool edito
     }
 }
 
-static std::optional<SessionId> getEditorCollabId(GJGameLevel* level) {
+std::optional<SessionId> RoomManager::getEditorCollabId(GJGameLevel* level) {
     using LevelIdEvent = DispatchEvent<GJGameLevel*, int64_t*>;
     using LevelIdFilter = DispatchFilter<GJGameLevel*, int64_t*>;
 
     int64_t id = level->m_levelID;
 
-    LevelIdEvent("setup-level-id"_spr, level, &id).post();
+    LevelIdEvent("dankmeme.globed2/setup-level-id", level, &id).post();
 
     if (id == level->m_levelID) {
         return std::nullopt;

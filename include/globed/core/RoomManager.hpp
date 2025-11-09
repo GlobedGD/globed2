@@ -14,6 +14,8 @@ public:
     void joinLevel(int levelId, int author, bool platformer, bool editorCollab);
     void joinLevel(GJGameLevel* level);
 
+    static std::optional<SessionId> getEditorCollabId(GJGameLevel* level);
+
     void leaveLevel();
     SessionId makeSessionId(int levelId);
 

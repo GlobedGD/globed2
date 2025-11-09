@@ -54,13 +54,15 @@ private:
 namespace globed {
 
 void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
-    // TODO: editor stuff
     auto& fields = *m_fields.self();
     auto& nm = NetworkManagerImpl::get();
     fields.m_editor = editor;
 
     // determine if mulitplayer should be active
-    fields.m_active = nm.isConnected() && level->m_levelID != 0;
+    auto ecId = RoomManager::get().getEditorCollabId(level);
+    bool isEditorCollab = ecId && ecId->asU64() && ecId->asU64() != level->m_levelID;
+
+    fields.m_active = nm.isConnected() && (level->m_levelID != 0 || isEditorCollab);
 
     fields.m_interpolator.setPlatformer(level->isPlatformer());
 

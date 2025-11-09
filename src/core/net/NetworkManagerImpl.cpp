@@ -813,13 +813,15 @@ void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platform
 
     auto& connInfo = **lock;
 
-    log::debug("Joining session with ID {}", id.asU64());
+    log::debug("Joining session with ID {} (editorcollab: {})", id.asU64(), editorCollab);
 
-    this->sendToCentral([&](CentralMessage::Builder& msg) {
-        auto joinSession = msg.initJoinSession();
-        joinSession.setSessionId(id);
-        joinSession.setAuthorId(author);
-    });
+    if (!editorCollab) {
+        this->sendToCentral([&](CentralMessage::Builder& msg) {
+            auto joinSession = msg.initJoinSession();
+            joinSession.setSessionId(id);
+            joinSession.setAuthorId(author);
+        });
+    }
 
     // find the game server
     // TODO: editor collab levels are currently hardcoded to use server ID 0
