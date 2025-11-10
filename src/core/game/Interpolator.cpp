@@ -311,14 +311,20 @@ static inline void lerpPlayer(
         out.percentage = lerpedAng / 360.f * 65535.0;
     }
 
+    // lerp if both frames are present
+
     if (newer.player1 && older.player1) {
         if (!out.player1) out.player1 = PlayerObjectData{};
         lerpSpecific(*older.player1, *newer.player1, older.timestamp, newer.timestamp, *out.player1, ctx, p1spt);
+    } else {
+        out.player1.reset();
     }
 
     if (newer.player2 && older.player2) {
         if (!out.player2) out.player2 = PlayerObjectData{};
         lerpSpecific(*older.player2, *newer.player2, older.timestamp, newer.timestamp, *out.player2, ctx, p2spt);
+    } else {
+        out.player2.reset();
     }
 }
 
