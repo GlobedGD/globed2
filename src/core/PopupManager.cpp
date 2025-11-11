@@ -178,9 +178,9 @@ CustomFLAlert* CustomFLAlert::create(
     std::string_view content,
     CStr btn1,
     CStr btn2,
-    float width
+    float rWidth
 ) {
-    auto label = Label::createWrapped("", "chatFont.fnt", BMFontAlignment::Center, width - 20.f);
+    auto label = Label::createWrapped("", "chatFont.fnt", BMFontAlignment::Center, rWidth - 20.f);
     label->setExtraLineSpacing(1.f);
 
     if (globed::containsEmoji(content)) {
@@ -196,8 +196,11 @@ CustomFLAlert* CustomFLAlert::create(
 
     CCSize size = label->getScaledContentSize() + CCSize{20.f, 100.f};
 
+    float width = std::max<float>(size.width, std::max<float>(350.f, rWidth));
+    float height = std::max<float>(size.height, 140.f);
+
     auto ret = new CustomFLAlert();
-    if (ret->initAnchored(std::max<float>(size.width, std::max<float>(350.f, width)), size.height, title, btn1, btn2, label, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    if (ret->initAnchored(width, height, title, btn1, btn2, label, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
         ret->autorelease();
         return ret;
     }
