@@ -25,6 +25,7 @@ bool SettingsLayer::init() {
 
     for (size_t i = 0; i < 5; ++i) {
         auto tab = Build(cue::ListNode::create({356.f, 220.f}, cue::Brown, cue::ListBorderStyle::SlimLevels))
+            .zOrder(6)
             .pos(winSize / 2.f)
             .parent(this)
             .visible(false)
