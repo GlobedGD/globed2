@@ -96,6 +96,7 @@ SettingsManager::SettingsManager() {
     // Developer settings
     this->registerSetting("core.dev.packet-loss-sim", 0.0f);
     this->registerSetting("core.dev.net-debug-logs", false);
+    this->registerSetting("core.dev.net-stat-dump", false);
     this->registerSetting("core.dev.fake-data", false);
 }
 

@@ -24,6 +24,7 @@
 #include <ui/menu/CreditsPopup.hpp>
 #include <ui/menu/FeaturedPopup.hpp>
 #include <ui/menu/UserSettingsPopup.hpp>
+#include <ui/menu/PinnedLevelCell.hpp>
 #include <ui/menu/levels/LevelListLayer.hpp>
 #include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
@@ -45,9 +46,7 @@ static constexpr CCSize FAR_BTN_SIZE { 45.f, 45.f };
 static constexpr float CONNECT_MENU_WIDTH = 260.f;
 
 namespace globed {
-
 namespace {
-
 class PlayerCell : public PlayerListCell {
 public:
     static PlayerListCell* create(
@@ -167,6 +166,7 @@ protected:
         ModUserPopup::create(m_accountId)->show();
     }
 };
+} // namespace
 
 // order of buttons in right side menu
 namespace RightBtn {
@@ -195,8 +195,6 @@ namespace FarRightBtn {
 namespace FarLeftBtn {
     constexpr int Levels = 300;
     constexpr int Settings = 99999; // dead last
-}
-
 }
 
 bool GlobedMenuLayer::init() {
@@ -419,6 +417,12 @@ bool GlobedMenuLayer::init() {
         return ListenerResult::Continue;
     });
 
+    m_pinnedListener = nm.listen<msg::PinnedLevelUpdatedMessage>([this](const auto& msg) {
+        this->addPinnedLevelCell();
+
+        return ListenerResult::Continue;
+    });
+
     this->onServerModified();
 
     this->update(0.f);
@@ -461,6 +465,8 @@ void GlobedMenuLayer::updateRoom(uint32_t id, const std::string& name, const std
 }
 
 void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
+    m_playerCount = players.size();
+
     if (!m_hardRefresh) {
         if (this->trySoftRefresh(players)) {
             return;
@@ -533,6 +539,8 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
         std::shuffle(firstNonFriend, sortedPlayers.end(), rng()->engine());
     }
 
+    this->addPinnedLevelCell();
+
     m_playerList->addCell(PlayerCell::createMyself(SessionId{}));
 
     for (auto& player : sortedPlayers) {
@@ -559,8 +567,43 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
     cocos::handleTouchPriority(this, true);
 }
 
+void GlobedMenuLayer::addPinnedLevelCell() {
+    // if there is no pinned level, remove instead
+    auto id = RoomManager::get().getPinnedLevel().levelId();
+    if (id == 0) {
+        this->removePinnedLevelCell();
+        return;
+    }
+
+    PinnedLevelCell* cell = nullptr;
+    if (m_playerList->size() > 0) {
+        auto lcell = m_playerList->getCell(0);
+        cell = typeinfo_cast<PinnedLevelCell*>(lcell->getInner());
+    }
+
+    if (!cell) {
+        auto cell = PinnedLevelCell::create(CELL_SIZE.width);
+        m_playerList->addCell(cell);
+    }
+
+    cell->loadLevel(id);
+}
+
+void GlobedMenuLayer::removePinnedLevelCell() {
+    if (m_playerList->size() == 0) {
+        return;
+    }
+
+    auto cell = m_playerList->getCell(0);
+    if (typeinfo_cast<PinnedLevelCell*>(cell->getInner())) {
+        m_playerList->removeCell(cell);
+    }
+}
+
 bool GlobedMenuLayer::trySoftRefresh(const std::vector<RoomPlayer>& players) {
-    if (m_playerList->size() == 0) return false;
+    if (m_playerCount == 0) return false;
+
+    this->addPinnedLevelCell();
 
     auto selfId = globed::cachedSingleton<GJAccountManager>()->m_accountID;
 
@@ -569,7 +612,7 @@ bool GlobedMenuLayer::trySoftRefresh(const std::vector<RoomPlayer>& players) {
     std::unordered_map<int, const RoomPlayer*> newp;
     std::unordered_map<int, PlayerCell*> existing;
 
-    for (auto cell : m_playerList->iter<PlayerCell>()) {
+    for (auto cell : m_playerList->iterChecked<PlayerCell>()) {
         if (cell->m_accountId == selfId) continue;
 
         existing[cell->m_accountId] = cell;
@@ -1206,6 +1249,14 @@ void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
     m_connectMenuBg->setVisible(false);
     m_connectMenu->updateLayout();
     m_connectMenuBg->setVisible(true);
+}
+
+void GlobedMenuLayer::keyDown(enumKeyCodes key) {
+    if (key == KEY_F7) {
+        NetworkManagerImpl::get().dumpNetworkStats();
+    }
+
+    BaseLayer::keyDown(key);
 }
 
 void GlobedMenuLayer::keyBackClicked() {

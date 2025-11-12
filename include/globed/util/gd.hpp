@@ -9,6 +9,10 @@
 # include <cue/PlayerIcon.hpp>
 #endif
 
+#ifdef GLOBED_API_EXT_FUNCTIONS
+# include <std23/move_only_function.h>
+#endif
+
 // Various gd related utilities
 
 namespace globed {
@@ -71,6 +75,13 @@ GLOBED_DLL Difficulty calcLevelDifficulty(GJGameLevel* level);
 #ifdef GLOBED_BUILD
 cue::Icons getPlayerIcons();
 cue::Icons convertPlayerIcons(const PlayerIconData& data);
+#endif
+
+#ifdef GLOBED_API_EXT_FUNCTIONS
+
+/// Gets a saved level from cache if available, otherwise downloads it.
+GLOBED_DLL void getOnlineLevel(int id, std23::move_only_function<void(geode::Ref<GJGameLevel>)> cb);
+
 #endif
 
 }

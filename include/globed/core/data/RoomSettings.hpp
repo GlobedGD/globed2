@@ -13,6 +13,7 @@ struct RoomSettings {
     bool levelIntegrity = false;
     bool teams = false;
     bool lockedTeams = false;
+    bool manualPinning = false;
 
     bool collision = false;
     bool twoPlayerMode = false;

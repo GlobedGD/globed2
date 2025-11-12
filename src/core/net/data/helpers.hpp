@@ -285,6 +285,7 @@ $implEncode(const RoomSettings& settings, main::RoomSettings::Builder& data) {
     data.setLevelIntegrity(settings.levelIntegrity);
     data.setTeams(settings.teams);
     data.setLockedTeams(settings.lockedTeams);
+    data.setManualPinning(settings.manualPinning);
     data.setCollision(settings.collision);
     data.setTwoPlayerMode(settings.twoPlayerMode);
     data.setDeathlink(settings.deathlink);
@@ -301,6 +302,7 @@ $implDecode(RoomSettings, main::RoomSettings::Reader& reader) {
     out.levelIntegrity = reader.getLevelIntegrity();
     out.teams = reader.getTeams();
     out.lockedTeams = reader.getLockedTeams();
+    out.manualPinning = reader.getManualPinning();
     out.collision = reader.getCollision();
     out.twoPlayerMode = reader.getTwoPlayerMode();
     out.deathlink = reader.getDeathlink();

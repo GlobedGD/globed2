@@ -180,6 +180,7 @@ void SettingsLayer::addSettings() {
     if (showDebug) {
         this->addSetting<FloatSettingCell>("core.dev.packet-loss-sim", "Packet Loss Simulation", "");
         this->addSetting<BoolSettingCell>("core.dev.net-debug-logs", "Network Debug Logs", "");
+        this->addSetting<BoolSettingCell>("core.dev.net-stat-dump", "Network Stat Dump", "");
         this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data", "");
     }
 

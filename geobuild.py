@@ -15,8 +15,9 @@ from dataclasses import dataclass
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "4bb9f16"
-QUNET_VERSION = "4215e03"
+QUNET_VERSION = "aaae58e"
 SERVER_SHARED_VERSION = "f9670e3"
+CUE_VERSION = "67df153"
 
 @dataclass
 class State:
@@ -153,7 +154,7 @@ def main(build: Build):
         "QUNET_DEBUG": "ON" if state.debug else "OFF",
     }, link_name="qunet")
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
-    build.add_cpm_dep("dankmeme01/cue", "778140ea")
+    build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
     build.add_cpm_dep("GlobedGD/argon", "v1.2.1")
     build.add_cpm_dep("Prevter/sinaps", "2541d6d")
     build.add_cpm_dep("Prevter/AdvancedLabel", "d78d7f82", link_name="advanced_label")

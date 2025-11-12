@@ -19,6 +19,7 @@ static constexpr int TAG_COLLISION = 1023;
 static constexpr int TAG_TWO_PLAYER= 1024;
 static constexpr int TAG_DEATHLINK = 1025;
 static constexpr int TAG_TEAMS = 1026;
+static constexpr int TAG_AUTO_PINNING = 1027;
 
 static std::string formatDateTime(const asp::time::SystemTime& tp, bool ms) {
     std::time_t curTime = tp.to_time_t();
@@ -227,13 +228,14 @@ bool CreateRoomPopup::setup() {
         .parent(m_mainLayer)
         .collect();
 
-    auto settings = std::to_array<std::tuple<const char*, std::string_view, int, CCMenuItemToggler**>>({
-        {"Hidden Room", "hidden-room"_spr, TAG_PRIVATE, nullptr},
-        {"Closed Invites", "closed-invites"_spr, TAG_CLOSED_INVITES, nullptr},
-        {"Collision", "collision"_spr, TAG_COLLISION, nullptr},
-        {"2-Player Mode", "2-player-mode"_spr, TAG_TWO_PLAYER, &m_twoPlayerBtn},
-        {"Death Link", "deathlink"_spr, TAG_DEATHLINK, &m_deathlinkBtn},
-        {"Teams", "teams"_spr, TAG_TEAMS, nullptr},
+    auto settings = std::to_array<std::tuple<const char*, std::string_view, int, CCMenuItemToggler**, bool>>({
+        {"Hidden Room", "hidden-room"_spr, TAG_PRIVATE, nullptr, false},
+        {"Closed Invites", "closed-invites"_spr, TAG_CLOSED_INVITES, nullptr, false},
+        {"Collision", "collision"_spr, TAG_COLLISION, nullptr, false},
+        {"2-Player Mode", "2-player-mode"_spr, TAG_TWO_PLAYER, &m_twoPlayerBtn, false},
+        {"Death Link", "deathlink"_spr, TAG_DEATHLINK, &m_deathlinkBtn, false},
+        {"Teams", "teams"_spr, TAG_TEAMS, nullptr, false},
+        {"Auto-pinning", "auto-pinning"_spr, TAG_AUTO_PINNING, nullptr, true},
     });
 
     float totalHeight = 0.f;
@@ -258,6 +260,7 @@ bool CreateRoomPopup::setup() {
             .pos(width - 11.f, height / 2.f)
             .id(std::string(std::get<1>(entry)))
             .tag(std::get<2>(entry))
+            .with([&](auto toggler) { toggler->toggle(std::get<4>(entry)); })
             .store(toggler)
             .intoNewParent(CCMenu::create())
             .contentSize(width, height)
@@ -343,6 +346,7 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
         case TAG_PRIVATE: m_settings.hidden = state; break;
         case TAG_DEATHLINK: m_settings.deathlink = state; break;
         case TAG_TEAMS: m_settings.teams = state; break;
+        case TAG_AUTO_PINNING: m_settings.manualPinning = !state; break;
     }
 
     if (isSafeMode && state && !globed::swapFlag("core.flags.seen-room-safe-mode-notice")) {

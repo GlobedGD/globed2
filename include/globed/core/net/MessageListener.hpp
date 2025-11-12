@@ -5,7 +5,7 @@
 #include <globed/core/data/PlayerDisplayData.hpp>
 
 #include <cstring>
-#if __has_include(<std23/move_only_function.h>)
+#ifdef GLOBED_API_EXT_FUNCTIONS
 # include <std23/move_only_function.h>
 #endif
 

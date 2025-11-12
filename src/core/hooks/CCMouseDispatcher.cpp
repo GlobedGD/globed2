@@ -1,6 +1,8 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/CCMouseDispatcher.hpp>
 
+#ifndef GEODE_IS_IOS
+
 #include <ui/settings/SettingsLayer.hpp>
 
 using namespace geode::prelude;
@@ -42,3 +44,5 @@ struct GLOBED_NOVTABLE CCMouseDispatcherH : Modify<CCMouseDispatcherH, CCMouseDi
     }
 };
 }
+
+#endif

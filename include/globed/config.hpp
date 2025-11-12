@@ -30,3 +30,7 @@
 #endif
 
 #define GLOBED_MODIFY_ATTR GLOBED_DLL GLOBED_NOVTABLE
+
+#if __has_include(<std23/move_only_function.h>)
+# define GLOBED_API_EXT_FUNCTIONS
+#endif

@@ -31,6 +31,8 @@ static qn::ConnectionDebugOptions getConnOpts() {
         log::warn("Packet loss simulation enabled: {}%", opts.packetLossSimulation * 100.f);
     }
 
+    opts.recordStats = globed::setting<bool>("core.dev.net-stat-dump");
+
     return opts;
 }
 
@@ -425,6 +427,37 @@ qn::ConnectionState NetworkManagerImpl::getConnState(bool game) {
     } else {
         return m_centralConnState.load();
     }
+}
+
+void NetworkManagerImpl::dumpNetworkStats() {
+    if (!globed::setting<bool>("core.dev.net-stat-dump")) return;
+
+    auto describe = [](const qn::StatWholeSnapshot& snap) {
+        log::info("> Connection duration: {}", snap.period.toString());
+        log::info("> Bytes sent: {}, received: {}", snap.bytesUp, snap.bytesDown);
+        log::info("> Messages sent: {}, received: {}", snap.messagesUp, snap.messagesDown);
+        log::info("> Packets sent: {}, received: {}", snap.packetsUp, snap.packetsDown);
+        log::info("> Compressed messages: {} sent, {} received", snap.compressedUp, snap.compressedDown);
+        log::info("> Compression savings: {} bytes ({}%), avg ratio {} (sent); {} bytes ({}%), avg ratio {} (recv)",
+            snap.compUpSavedBytes, snap.compUpSavedPercent, snap.compUpAvgRatio,
+            snap.compDownSavedBytes, snap.compDownSavedPercent, snap.compDownAvgRatio
+        );
+
+        if (snap.upReliable || snap.downReliable) {
+            log::info("> Reliable messages: {} sent, {} received; retransmissions: {}, unacked: {}, unknown acks: {}",
+                snap.upReliable, snap.downReliable, snap.upRetransmissions, snap.upUnacked, snap.downUnknownAcks
+            );
+            log::info("> Ack delay: min {}, max {}, avg {}",
+                snap.minAckDelay.toString(), snap.maxAckDelay.toString(), snap.avgAckDelay.toString()
+            );
+        }
+    };
+
+    log::info("=== Central connection stats ===");
+    describe(m_centralConn.statSnapshotFull());
+    log::info("==== Game connection stats =====");
+    describe(m_gameConn.statSnapshotFull());
+    log::info("================================");
 }
 
 std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
@@ -1160,6 +1193,13 @@ void NetworkManagerImpl::sendInvitePlayer(int32_t player) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto invp = msg.initInvitePlayer();
         invp.setPlayer(player);
+    });
+}
+
+void NetworkManagerImpl::sendUpdatePinnedLevel(uint64_t sid) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto upd = msg.initUpdatePinnedLevel();
+        upd.setId(sid);
     });
 }
 

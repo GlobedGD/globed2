@@ -51,7 +51,9 @@ private:
     CCMenuItemSpriteExtra* m_clearSearchBtn = nullptr;
     std::optional<MessageListener<msg::RoomStateMessage>> m_roomStateListener;
     std::optional<MessageListener<msg::RoomPlayersMessage>> m_roomPlayersListener;
+    std::optional<MessageListener<msg::PinnedLevelUpdatedMessage>> m_pinnedListener;
     uint32_t m_roomId = -1;
+    size_t m_playerCount = 0;
     std::optional<asp::time::Instant> m_lastRoomUpdate;
     std::optional<asp::time::Instant> m_lastInteraction;
     std::optional<cue::ScrollPos> m_lastScrollPos;
@@ -63,6 +65,7 @@ private:
     void update(float dt) override;
     void setMenuState(MenuState state, bool force = false);
 
+    void keyDown(cocos2d::enumKeyCodes key) override;
     void keyBackClicked() override;
     void onEnter() override;
     bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
@@ -78,8 +81,10 @@ private:
     void requestRoomState();
     bool shouldAutoRefresh(float dt);
     std::vector<geode::Ref<CCMenuItemSpriteExtra>> createCommonButtons();
-
     void reloadWithFilter(const std::string& filter);
+
+    void addPinnedLevelCell();
+    void removePinnedLevelCell();
 
     void onSettings();
 };

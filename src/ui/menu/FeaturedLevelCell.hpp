@@ -9,7 +9,7 @@
 
 namespace globed {
 
-class FeaturedLevelCell : public CCLayer, public LevelManagerDelegate {
+class FeaturedLevelCell : public CCLayer {
 public:
     static FeaturedLevelCell* create();
     ~FeaturedLevelCell();
@@ -20,7 +20,6 @@ public:
 protected:
     static constexpr float CELL_WIDTH = 380.f;
     static constexpr float CELL_HEIGHT = 116.f;
-    static void clearCachedLevel();
 
     bool init() override;
     void updatePlayerCount(uint16_t count);
@@ -30,8 +29,6 @@ protected:
     void hideLoading();
     void removeLoadedElements();
 
-    void loadLevelsFinished(CCArray* levels, char const* key, int p2) override;
-    void loadLevelsFailed(char const* key, int p1) override;
     void levelLoaded(Result<GJGameLevel*, int> result);
 
     void requestPlayerCount(float);

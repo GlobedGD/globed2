@@ -1,7 +1,9 @@
 #include <globed/util/gd.hpp>
+#include <globed/util/assert.hpp>
 #include <globed/util/singleton.hpp>
 
 #include <asp/iter.hpp>
+#include <queue>
 
 using namespace geode::prelude;
 
@@ -187,6 +189,93 @@ cue::Icons convertPlayerIcons(const PlayerIconData& data) {
         .color2 = data.color2.asIdx(),
         .glowColor = data.glowColor.asIdx(),
     };
+}
+
+class Downloader : public SingletonNodeBase<Downloader>, LevelManagerDelegate {
+public:
+    using Callback = std23::move_only_function<void(geode::Ref<GJGameLevel>)>;
+
+    void push(int level, Callback&& cb) {
+        m_requests.push(Request{ level, std::move(cb) });
+
+        if (m_idle) {
+            this->processNext();
+        }
+    }
+
+private:
+    friend class SingletonNodeBase;
+
+    struct Request {
+        int level;
+        Callback cb;
+    };
+
+    std::queue<Request> m_requests;
+    bool m_idle = true;
+
+    Downloader() = default;
+
+    void processNext() {
+        if (m_requests.empty()) {
+            m_idle = true;
+            return;
+        }
+
+        m_idle = false;
+
+        auto glm = cachedSingleton<GameLevelManager>();
+        glm->m_levelManagerDelegate = this;
+        glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, fmt::to_string(m_requests.front().level)));
+    }
+
+    void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) override {
+        GLOBED_ASSERT(m_requests.size() > 0 && "No callback in the request queue");
+        auto req = std::move(m_requests.front());
+        m_requests.pop();
+
+        if (!p0 || !p0->count()) {
+            log::error("Downloader: array empty for level {}", req.level);
+            req.cb(nullptr);
+            return;
+        }
+
+        auto level = static_cast<GJGameLevel*>(p0->objectAtIndex(0));
+        if (level->m_levelID != req.level) {
+            log::error("Downloader: downloaded level ID {} does not match requested ID {}", level->m_levelID, req.level);
+            req.cb(nullptr);
+            return;
+        }
+
+        reorderDownloadedLevel(level);
+        req.cb(level);
+
+        this->processNext();
+    }
+
+    void loadLevelsFailed(char const* p0, int p1) override {
+        GLOBED_ASSERT(m_requests.size() > 0 && "No callback in the request queue");
+
+        auto req = std::move(m_requests.front());
+        m_requests.pop();
+
+        log::warn("Downloader: failed to download level {} with error code {}", req.level, p1);
+        req.cb(nullptr);
+
+        this->processNext();
+    }
+};
+
+void getOnlineLevel(int id, Downloader::Callback cb) {
+    auto glm = cachedSingleton<GameLevelManager>();
+    auto level = glm->getSavedLevel(id);
+
+    if (level) {
+        cb(level);
+        return;
+    }
+
+    Downloader::get().push(id, std::move(cb));
 }
 
 }

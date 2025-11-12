@@ -99,6 +99,8 @@ public:
 
     qn::ConnectionState getConnState(bool game);
 
+    void dumpNetworkStats();
+
     /// Returns the numeric ID of the preferred game server, or nullopt if not connected
     std::optional<uint8_t> getPreferredServer();
     std::vector<GameServer> getGameServers();
@@ -169,6 +171,7 @@ public:
     void sendRoomOwnerAction(RoomOwnerActionType type, int target = 0);
     void sendUpdateRoomSettings(const RoomSettings& settings);
     void sendInvitePlayer(int32_t player);
+    void sendUpdatePinnedLevel(uint64_t sid);
     void sendFetchCredits();
     void sendGetDiscordLinkState();
     void sendSetDiscordPairingState(bool state);

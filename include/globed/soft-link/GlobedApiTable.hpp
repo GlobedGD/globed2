@@ -6,11 +6,9 @@
 #include "../core/data/Event.hpp"
 #include "../core/data/FeaturedLevel.hpp"
 
-#if __has_include(<std23/move_only_function.h>)
+#ifdef GLOBED_API_EXT_FUNCTIONS
 # include <std23/move_only_function.h>
 # include "../core/net/MessageListener.hpp"
-#else
-# define GLOBED_NO_FUNCTION_ARG
 #endif
 
 #define VA_NARGS_IMPL(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
@@ -68,7 +66,7 @@ struct NetSubtable : public FunctionTableSubcat<GlobedApiTable> {
     API_TABLE_FN(std::optional<FeaturedLevelMeta>, getFeaturedLevel);
     API_TABLE_FN(void, queueGameEvent, OutEvent&&);
 
-#ifndef GLOBED_NO_FUNCTION_ARG
+#ifdef GLOBED_API_EXT_FUNCTIONS
     API_TABLE_FN(void, addListener, const std::type_info&, void*, void*);
     API_TABLE_FN(void, removeListener, const std::type_info&, void*);
 

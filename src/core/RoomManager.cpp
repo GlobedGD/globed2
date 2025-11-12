@@ -143,6 +143,10 @@ uint32_t RoomManager::getPasscode() {
     return m_passcode;
 }
 
+SessionId RoomManager::getPinnedLevel() {
+    return m_pinnedLevel;
+}
+
 RoomManager::RoomManager() {
     m_roomId = 0;
     m_roomName = "Global Room";
@@ -166,6 +170,7 @@ RoomManager::RoomManager() {
         m_settings = msg.settings;
         m_teams = msg.teams;
         m_roomOwner = msg.roomOwner;
+        m_pinnedLevel = SessionId{msg.pinnedLevel};
         m_roomName = msg.roomName;
         m_passcode = msg.passcode;
 
@@ -211,12 +216,19 @@ RoomManager::RoomManager() {
 
         return ListenerResult::Continue;
     })->setPriority(-10000);
+
+    nm.listenGlobal<msg::PinnedLevelUpdatedMessage>([this](const auto& msg) {
+        m_pinnedLevel = SessionId{msg.id};
+
+        return ListenerResult::Continue;
+    })->setPriority(-10000);
 }
 
 void RoomManager::resetValues() {
     m_roomId = 0;
     m_roomName = "";
     m_roomOwner = 0;
+    m_pinnedLevel = SessionId{};
     m_teamId = 0;
     m_passcode = 0;
     m_teamMembers.clear();

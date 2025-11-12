@@ -61,6 +61,7 @@ struct RoomStateMessage {
     RoomSettings settings;
     std::vector<RoomTeam> teams;
     uint32_t passcode;
+    uint64_t pinnedLevel;
 };
 
 struct RoomPlayersMessage {
@@ -120,6 +121,10 @@ struct TeamsUpdatedMessage {
 
 struct RoomSettingsUpdatedMessage {
     RoomSettings settings;
+};
+
+struct PinnedLevelUpdatedMessage {
+    uint64_t id;
 };
 
 struct InvitedMessage {

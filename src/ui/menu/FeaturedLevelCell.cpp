@@ -232,8 +232,6 @@ void FeaturedLevelCell::updatePlayerCount(uint16_t count) {
     });
 }
 
-static Ref<GJGameLevel> g_cachedLevel;
-
 void FeaturedLevelCell::reload(bool fromFullReload) {
     if (!fromFullReload) this->showLoading();
     this->removeLoadedElements();
@@ -248,25 +246,18 @@ void FeaturedLevelCell::reload(bool fromFullReload) {
 
     m_levelMeta = std::move(flevel);
 
-    // see if we have the level cached
-    if (g_cachedLevel && g_cachedLevel->m_levelID == m_levelMeta->levelId) {
-        m_level = g_cachedLevel;
-        this->createCell();
-        this->hideLoading();
-        return;
-    }
-
-    auto glm = GameLevelManager::get();
-    glm->m_levelManagerDelegate = this;
-    glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, fmt::to_string(m_levelMeta->levelId)));
-}
-
-void FeaturedLevelCell::clearCachedLevel() {
-    g_cachedLevel = nullptr;
+    globed::getOnlineLevel(m_levelMeta->levelId, [ref = WeakRef(this)](GJGameLevel* level) {
+        if (auto self = ref.lock()) {
+            if (level) {
+                self->levelLoaded(Ok(level));
+            } else {
+                self->levelLoaded(Err(-1));
+            }
+        }
+    });
 }
 
 void FeaturedLevelCell::reloadFull() {
-    clearCachedLevel();
     this->removeLoadedElements();
     this->showLoading();
     NetworkManagerImpl::get().sendGetFeaturedLevel();
@@ -287,21 +278,7 @@ void FeaturedLevelCell::hideLoading() {
     m_loadingCircle->fadeOut();
 }
 
-void FeaturedLevelCell::loadLevelsFinished(CCArray* levels, char const* key, int p2) {
-    if (levels && levels->count() > 0) {
-        this->levelLoaded(Ok(static_cast<GJGameLevel*>(levels->objectAtIndex(0))));
-    } else {
-        log::warn("FeaturedLevelCell::loadLevelsFinished called with no levels");
-        this->levelLoaded(Err(-1));
-    }
-}
-
-void FeaturedLevelCell::loadLevelsFailed(char const* key, int p1) {
-    this->levelLoaded(Err(p1));
-}
-
 void FeaturedLevelCell::levelLoaded(Result<GJGameLevel*, int> result) {
-    GameLevelManager::get()->m_levelManagerDelegate = nullptr;
     this->hideLoading();
 
     if (result.isErr()) {
@@ -311,7 +288,6 @@ void FeaturedLevelCell::levelLoaded(Result<GJGameLevel*, int> result) {
 
     m_level = result.unwrap();
     globed::setFeatureTierForLevel(m_level, m_levelMeta->rateTier);
-    g_cachedLevel = m_level;
     this->createCell();
 }
 

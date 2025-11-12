@@ -1,5 +1,6 @@
 #include <globed/config.hpp>
 #include <globed/core/actions.hpp>
+#include <globed/core/RoomManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <ui/menu/levels/LevelListLayer.hpp>
@@ -40,6 +41,8 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
         }
 
         auto& nm = NetworkManagerImpl::get();
+        auto& rm = RoomManager::get();
+
         if (nm.getModPermissions().canSendFeatures) {
             this->addLevelSendButton();
         }
@@ -52,6 +55,10 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
                     break;
                 }
             }
+        }
+
+        if (rm.isOwner() && rm.getSettings().manualPinning) {
+            this->addPinButton();
         }
 
         if (auto rating = featureTierFromLevel(level)) {
@@ -88,6 +95,24 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
             .parent(leftMenu);
 
         leftMenu->updateLayout();
+    }
+
+    void addPinButton() {
+        auto rightMenu = this->getChildByIDRecursive("right-side-menu");
+        if (!rightMenu) return;
+
+        Build<CCSprite>::create("button-pin-level.png"_spr)
+            .intoMenuItem([this] {
+                globed::confirmPopup("Globed", "Are you sure you want to <cy>pin</c> this level to the <cg>current room</c>?", "Cancel", "Yes", [this](auto*) {
+                    NetworkManagerImpl::get().sendUpdatePinnedLevel(
+                        RoomManager::get().makeSessionId(m_level->m_levelID).asU64()
+                    );
+                });
+            })
+            .id("pin-level-btn"_spr)
+            .parent(rightMenu);
+
+        rightMenu->updateLayout();
     }
 
     $override
