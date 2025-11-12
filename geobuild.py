@@ -83,6 +83,7 @@ def main(build: Build):
     build.add_source_dir(src / "util")
     build.add_source_dir(src / "ui")
     build.add_source_dir(src / "soft-link")
+    build.add_source_dir(src / "old-api")
     build.add_source_dir(src / "platform" / config.platform.platform_str())
 
     # Include dirs

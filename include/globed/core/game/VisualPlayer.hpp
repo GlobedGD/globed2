@@ -30,6 +30,9 @@ public:
     void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState, bool forceHide);
     void cleanupObjectLayer();
 
+    PlayerIconData& icons();
+    PlayerDisplayData& displayData();
+
     void updateDisplayData();
     void updateTeam(uint16_t teamId);
     void playDeathEffect();
@@ -87,8 +90,6 @@ private:
     float m_tpColorDelta = 0.f;
 
     bool init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond);
-    PlayerIconData& icons();
-    PlayerDisplayData& displayData();
     void updateOpacity();
     void updateIconType(PlayerIconType iconType);
     void updateRobotAnimation();
