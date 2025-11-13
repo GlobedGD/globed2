@@ -105,7 +105,7 @@ void ServerManager::reload() {
     );
 
     if (it == m_storage.servers.end()) {
-        m_storage.servers.insert(m_storage.servers.begin(), { "Main Server", mainServerUrl });
+        m_storage.servers.insert(m_storage.servers.begin(), { "Globed Server", mainServerUrl });
     } else if (it != m_storage.servers.begin()) {
         std::iter_swap(m_storage.servers.begin(), it);
     }
