@@ -2,6 +2,7 @@
 
 from subprocess import Popen, PIPE
 from pathlib import Path
+import sys
 
 def rescale(src: Path, dst: Path, px: int):
     print(f"Rescaling {src} to {px} pixels wide")
@@ -12,7 +13,7 @@ def rescale(src: Path, dst: Path, px: int):
 
     used_dest = used_temp if used_temp else str(dst)
 
-    proc = Popen(["ffmpeg", "-i", str(src.resolve()), "-y", "-vf", f"scale={px}:-1", used_dest], stdout=PIPE, stderr=PIPE)
+    proc = Popen(["ffmpeg", "-i", str(src.resolve()), "-y", "-vf", f"format=rgba,scale={px}:-1", used_dest], stdout=PIPE, stderr=PIPE)
     if proc.wait(1.0) != 0:
         print(f"Failed to rescale {src}")
         if proc.stdout: print(proc.stdout.read())
@@ -50,14 +51,21 @@ large = [
     "moonSendBtn.png",
 ]
 
-# for s in small:
-#     rescale(gv2 / s, Path("resources/menu") / s, 128)
+what = sys.argv[1] if len(sys.argv) > 1 else "all"
 
-# for s in large:
-#     rescale(gv2 / s, Path("resources/menu") / s, 256)
+images = what == "all" or what == "images"
+emotes = what == "all" or what == "emotes"
 
-for s in esprites.iterdir():
-    if s.suffix.lower() not in [".png", ".jpg", ".jpeg"]:
-        continue
+if images:
+    for s in small:
+        rescale(gv2 / s, Path("resources/menu") / s, 128)
 
-    rescale(s, s, 128)
+    for s in large:
+        rescale(gv2 / s, Path("resources/menu") / s, 256)
+
+if emotes:
+    for s in esprites.iterdir():
+        if s.suffix.lower() not in [".png", ".jpg", ".jpeg"]:
+            continue
+
+        rescale(s, s, 128)
