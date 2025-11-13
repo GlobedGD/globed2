@@ -10,6 +10,7 @@
 #include <cue/Util.hpp>
 
 static constexpr int ROBOT_FIRE_ACTION = 1325385193;
+static constexpr int VISUAL_PLAYER_TAG = 3458738;
 static constexpr float NAME_OFFSET = 28.f;
 static constexpr float STATUS_ICONS_OFFSET = NAME_OFFSET + 15.f;
 
@@ -33,6 +34,8 @@ static inline bool hideNearby(GJBaseGameLayer* gjbgl) {
 }
 
 bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {
+    this->setTag(VISUAL_PLAYER_TAG);
+
     if (!PlayerObject::init(1, 1, gameLayer, gameLayer->m_objectLayer, !gameLayer->m_isEditor)) {
         return false;
     }
