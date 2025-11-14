@@ -206,7 +206,7 @@ private:
         }
 
         Build<CCLabelBMFont>::create(fmt::format("{} by {} for {}", action->name, issuer.username, targetStr).c_str(), "goldFont.fnt")
-            .scale(0.45f)
+            .limitLabelWidth(280.f, 0.55f, 0.1f)
             .anchorPoint(0.f, 0.5f)
             .pos(40.f, HEIGHT * 0.75f + 1.f)
             .parent(m_collapsedContainer);
@@ -385,7 +385,9 @@ void ModAuditLogPopup::populateLogs(const std::vector<AdminAuditLog>& logs, cons
         for (const auto& user : users) {
             if (user.accountId == log.accountId) {
                 issuer = &user;
-            } else if (user.accountId == log.targetId) {
+            }
+
+            if (user.accountId == log.targetId) {
                 target = &user;
             }
 
