@@ -36,8 +36,8 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
-static constexpr CCSize PLAYER_LIST_MENU_SIZE{420.f, 280.f};
-static constexpr CCSize PLAYER_LIST_SIZE{PLAYER_LIST_MENU_SIZE.width * 0.8f, 180.f};
+static constexpr CCSize PLAYER_LIST_MENU_SIZE{420.f, 290.f};
+static constexpr CCSize PLAYER_LIST_SIZE{PLAYER_LIST_MENU_SIZE.width * 0.8f, 198.f};
 static constexpr float CELL_HEIGHT = 27.f;
 static constexpr CCSize CELL_SIZE{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
 
@@ -330,7 +330,7 @@ bool GlobedMenuLayer::init() {
             this->copyRoomIdToClipboard();
         })
         .scaleMult(1.1f)
-        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, PLAYER_LIST_MENU_SIZE.height - 18.f)
+        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, PLAYER_LIST_MENU_SIZE.height - 16.f)
         .id("room-name-btn")
         .parent(m_playerListMenu);
 
@@ -340,7 +340,6 @@ bool GlobedMenuLayer::init() {
         .parent(m_playerListMenu);
 
     m_playerList->setJustify(cue::Justify::Center);
-    m_playerList->setCellHeight(CELL_HEIGHT);
     m_playerList->setCellColors(
         ccColor4B{0x28, 0x35, 0x77, 255},
         ccColor4B{0x33, 0x44, 0x99, 255}
@@ -350,7 +349,7 @@ bool GlobedMenuLayer::init() {
         .id("room-buttons")
         .layout(RowLayout::create()->setAutoScale(false))
         .contentSize(PLAYER_LIST_SIZE.width, 64.f)
-        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, 32.f)
+        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, 30.f)
         .parent(m_playerListMenu);
 
     auto colLayout = ColumnLayout::create()
@@ -582,8 +581,12 @@ void GlobedMenuLayer::addPinnedLevelCell() {
     }
 
     if (!cell) {
-        auto cell = PinnedLevelCell::create(CELL_SIZE.width);
-        m_playerList->addCell(cell);
+        cell = PinnedLevelCell::create(CELL_SIZE.width);
+        cell->setUpdateCallback([this] {
+            m_playerList->updateLayout();
+        });
+
+        m_playerList->insertCell(cell, 0);
     }
 
     cell->loadLevel(id);

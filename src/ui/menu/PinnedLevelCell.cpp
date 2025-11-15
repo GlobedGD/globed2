@@ -3,6 +3,7 @@
 
 #include <cue/Util.hpp>
 #include <UIBuilder.hpp>
+#include <asp/iter.hpp>
 
 using namespace geode::prelude;
 
@@ -22,28 +23,11 @@ bool PinnedLevelCell::init(float width) {
     return true;
 }
 
-void PinnedLevelCell::setCollapsed(bool collapsed) {
-    m_collapsed = collapsed;
-
-    if (m_collapsedCell) {
-        m_collapsedCell->setVisible(collapsed);
-    }
-
-    if (m_levelCell) {
-        m_levelCell->setVisible(!collapsed);
-    }
-
-    this->setContentHeight(collapsed ? COLLAPSED_HEIGHT : HEIGHT);
-
-    this->invokeCallback();
-}
-
 void PinnedLevelCell::loadLevel(int id) {
     if (m_level && m_level->m_levelID == id) return;
 
     m_level = nullptr;
     cue::resetNode(m_levelCell);
-    cue::resetNode(m_collapsedCell);
 
     this->setContentHeight(HEIGHT);
     m_circle->fadeIn();
@@ -68,60 +52,53 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
         return;
     }
 
+    bool useCompact = true;
+
     m_level = level;
 
     m_levelCell = new LevelCell(level->m_levelName.c_str(), this->getContentWidth(), HEIGHT);
     m_levelCell->autorelease();
+    m_levelCell->m_compactView = useCompact;
     m_levelCell->loadFromLevel(level);
     m_levelCell->setContentSize({ this->getContentWidth(), HEIGHT });
     m_levelCell->setPosition({ 0.f, 0.f });
-    m_levelCell->setVisible(false);
 
     if (auto cvoltonID = m_levelCell->m_mainLayer->getChildByIDRecursive("cvolton.betterinfo/level-id-label")) {
         cvoltonID->setVisible(false);
     }
 
-    // collapsed cel
+    // we are about to do .. mischievous things
+    if (useCompact) {
+        float shift = 20.f;
 
-    m_collapsedCell = CCNode::create();
+        std::array toHide = {
+            std::string_view{"level-place"}
+        };
 
-    auto leftMenu = Build<CCMenu>::create()
-        .pos(10.f, COLLAPSED_HEIGHT / 2.f)
-        .anchorPoint(0.f, 0.5f)
-        .layout(RowLayout::create()
-            ->setAutoScale(false)
-            ->setAxisAlignment(AxisAlignment::Start)
-            ->setGap(10.f)
-        )
-        .parent(m_collapsedCell)
-        .id("left-menu")
-        .collect();
+        std::array dontShift = {
+            std::string_view{"main-menu"}
+        };
 
-    Build<GJDifficultySprite>::create((int) globed::calcLevelDifficulty(level), GJDifficultyName::Short)
-        .scale(0.5f)
-        .anchorPoint(0.f, 0.5f)
-        .id("difficulty-sprite"_spr)
-        .parent(leftMenu);
+        for (auto child : m_levelCell->m_mainLayer->getChildrenExt()) {
+            bool hide = asp::iter::contains(toHide, child->getID());
+            bool doShift = !asp::iter::contains(dontShift, child->getID());
 
-    Build<CCLabelBMFont>::create(level->m_levelName.c_str(), "goldFont.fnt")
-        .limitLabelWidth(170.f, 0.6f, 0.1f)
-        .intoMenuItem([this] {
-            globed::pushScene(LevelInfoLayer::create(m_level, false));
-        })
-        .anchorPoint(0.5f, 0.5f)
-        .scaleMult(1.1f)
-        .parent(leftMenu);
+            if (hide) {
+                child->setVisible(false);
+            }
 
-    leftMenu->updateLayout();
+            if (doShift) {
+                child->setPositionX(child->getPositionX() - shift);
+            }
+        }
 
-    m_collapsedCell->setContentSize({ this->getContentWidth(), COLLAPSED_HEIGHT });
-    m_collapsedCell->setPosition({ 0.f, 0.f });
-    m_collapsedCell->setVisible(false);
+        // sobbing bruh
+        if (auto creator = m_levelCell->m_mainLayer->getChildByIDRecursive("creator-name")) {
+            creator->setPositionX(creator->getPositionX() - shift);
+        }
+    }
 
     this->addChild(m_levelCell);
-    this->addChild(m_collapsedCell);
-
-    this->setCollapsed(m_collapsed);
 }
 
 PinnedLevelCell* PinnedLevelCell::create(float width) {

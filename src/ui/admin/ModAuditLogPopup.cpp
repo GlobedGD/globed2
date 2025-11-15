@@ -213,7 +213,7 @@ private:
 
         std::string msgStr;
 
-        bool isPunishment =
+            bool isPunishment =
             log.type == "kick"
             || log.type == "mute"
             || log.type == "editmute"
