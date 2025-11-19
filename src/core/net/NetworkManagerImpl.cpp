@@ -898,6 +898,7 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
                 std::string(serverUrl),
                 DeferredSessionJoin { id, platformer }
             );
+            lock.unlock();
             (void) m_gameConn.disconnect();
         } else if (connInfo.m_gameEstablished) {
             // same server, just send the join request
@@ -909,6 +910,7 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
         // not connected, connect to the game server and join later
         connInfo.m_gsDeferredJoin = DeferredSessionJoin { id, platformer, editorCollab };
         connInfo.m_gameServerUrl = std::string(serverUrl);
+        lock.unlock();
 
         (void) m_gameConn.cancelConnection();
         (void) m_gameConn.disconnect();
@@ -917,6 +919,7 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
         auto res = m_gameConn.connect(serverUrl);
         if (!res) {
             log::error("Failed to connect to {}: {}", serverUrl, res.unwrapErr().message());
+            lock.relock();
             connInfo.m_gameServerUrl.clear();
             connInfo.m_gsDeferredJoin.reset();
         }
@@ -1665,6 +1668,11 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             auto rs = data::decodeUnchecked<RoomSettings>(settings.getSettings());
 
             this->invokeListeners(msg::RoomSettingsUpdatedMessage { rs });
+        } break;
+
+        case CentralMessage::PINNED_LEVEL_UPDATED: {
+            auto m = msg.getPinnedLevelUpdated();
+            this->invokeListeners(msg::PinnedLevelUpdatedMessage { m.getId() });
         } break;
 
         case CentralMessage::INVITED: {
