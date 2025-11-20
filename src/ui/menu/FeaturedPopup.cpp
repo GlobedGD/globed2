@@ -54,7 +54,7 @@ bool FeaturedPopup::setup() {
         .pos(this->fromBottom(40.f));
 
     auto viewAllBtnSpr = Build<CCSprite>::createSpriteName("GJ_longBtn03_001.png")
-        .intoMenuItem([this](auto) {
+        .intoMenuItem([](auto) {
             auto layer = FeaturedListLayer::create();
             globed::pushScene(layer);
         })

@@ -105,7 +105,7 @@ bool AudioDeviceSetupPopup::setup() {
 
             am.setActiveRecordingDevice(globed::setting<int>("core.audio.input-device"));
             am.setRecordBufferCapacity(1);
-            auto result = am.startRecordingRaw([this](const float* pcm, size_t samples) {
+            auto result = am.startRecordingRaw([](const float* pcm, size_t samples) {
                 // play back the audio
                 AudioManager::get().playFrameStreamedRaw(-1, pcm, samples);
             });

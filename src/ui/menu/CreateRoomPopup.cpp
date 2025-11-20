@@ -319,7 +319,7 @@ void CreateRoomPopup::setFollowerMode(bool follower) {
 
     auto btn = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .scale(0.5f)
-        .intoMenuItem([this](auto) {
+        .intoMenuItem([](auto) {
             globed::alert(
                 "Info",
                 "Follower rooms only allow the host to join levels, and the rest of the players will be instantly warped to the level the host joins."

@@ -134,7 +134,7 @@ void FeaturedLevelCell::createCell() {
     if (playBtnParent && playBtn) {
         auto newPlayBtn = Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
             .scale(0.75f)
-            .intoMenuItem([this, levelcell](auto) {
+            .intoMenuItem([this](auto) {
                 auto layer = LevelInfoLayer::create(m_level, false);
                 globed::pushScene(layer);
             })

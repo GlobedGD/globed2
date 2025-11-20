@@ -38,7 +38,7 @@ bool ModUserPopup::setup(int accountId) {
         return ListenerResult::Stop;
     });
 
-    m_resultListener = nm.listen<msg::AdminResultMessage>([this](const auto& msg) {
+    m_resultListener = nm.listen<msg::AdminResultMessage>([](const auto& msg) {
         if (!msg.success) {
             globed::alert("Error", fmt::format("Received error from the server: <cy>{}</c>", msg.error));
         }

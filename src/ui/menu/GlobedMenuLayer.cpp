@@ -248,7 +248,7 @@ bool GlobedMenuLayer::init() {
 
     m_connectButton = Build<ButtonSprite>::create("Connect", "bigFont.fnt", "GJ_button_01.png", 0.7f)
         .scale(0.9f)
-        .intoMenuItem([this] {
+        .intoMenuItem([] {
             auto& sm = ServerManager::get();
             auto url = sm.getActiveServer().url;
 
@@ -278,7 +278,7 @@ bool GlobedMenuLayer::init() {
     // cancel connection button
     m_cancelConnButton = Build<CCSprite>::create("exit01.png"_spr)
         .with([&](auto spr) { cue::rescaleToMatch(spr, 27.5f); })
-        .intoMenuItem([this] {
+        .intoMenuItem([] {
             (void) NetworkManagerImpl::get().cancelConnection();
         })
         .id("cancel-conn-btn")
@@ -696,7 +696,7 @@ void GlobedMenuLayer::initSideButtons() {
 
     constexpr static CCSize buttonSize {30.f, 30.f};
 
-    auto makeButton = [this](CCSprite* sprite, std::optional<EditorBaseColor> color, CCNode* parent, int zOrder, const char* id, auto cb) -> CCMenuItemSpriteExtra* {
+    auto makeButton = [](CCSprite* sprite, std::optional<EditorBaseColor> color, CCNode* parent, int zOrder, const char* id, auto cb) -> CCMenuItemSpriteExtra* {
         if (!sprite) {
             log::error("Sprite is null for {}!", id);
             return nullptr;
@@ -731,7 +731,7 @@ void GlobedMenuLayer::initSideButtons() {
         m_leftSideMenu,
         LeftBtn::Disconnect,
         "btn-disconnect",
-        [this] {
+        [] {
             globed::confirmPopup(
                 "Note",
                 "Are you sure you want to <cr>disconnect</c> from the server?",
@@ -752,7 +752,7 @@ void GlobedMenuLayer::initSideButtons() {
         m_leftSideMenu,
         LeftBtn::RegionSwitch,
         "btn-region-select",
-        [this] {
+        [] {
             if (auto popup = RegionSelectPopup::create()) {
                 popup->show();
 
@@ -770,7 +770,7 @@ void GlobedMenuLayer::initSideButtons() {
             m_leftSideMenu,
             LeftBtn::Teams,
             "btn-manage-teams",
-            [this] {
+            [] {
                 TeamManagementPopup::create(0)->show();
             }
         );
@@ -783,7 +783,7 @@ void GlobedMenuLayer::initSideButtons() {
             m_leftSideMenu,
             LeftBtn::Settings,
             "btn-settings",
-            [this] {
+            [] {
                 RoomSettingsPopup::create()->show();
             }
         );
@@ -797,12 +797,12 @@ void GlobedMenuLayer::initSideButtons() {
             m_leftSideMenu,
             LeftBtn::CloseRoom,
             "btn-close-room",
-            [this] {
+            [] {
                 globed::confirmPopup(
                     "Close Room",
                     "Are you sure you want to <cr>close</c> the room? All players will be <cy>kicked</c> from the room and it will be <cy>deleted</c>.",
                     "Cancel", "Ok",
-                    [this](auto) {
+                    [](auto) {
                         NetworkManagerImpl::get().sendRoomOwnerAction(RoomOwnerActionType::CLOSE_ROOM);
                     }
                 );
@@ -819,7 +819,7 @@ void GlobedMenuLayer::initSideButtons() {
         m_rightSideMenu,
         RightBtn::PrivacySettings,
         "btn-privacy-settings",
-        [this] {
+        [] {
             UserSettingsPopup::create()->show();
         }
     );
@@ -838,7 +838,7 @@ void GlobedMenuLayer::initSideButtons() {
                 m_rightSideMenu,
                 RightBtn::AdminPanel,
                 "btn-managemod-panel",
-                [this] { globed::openModPanel(); }
+                [] { globed::openModPanel(); }
             );
 
             badge->setScale(badge->getScale() * 0.85f);
@@ -855,7 +855,7 @@ void GlobedMenuLayer::initSideButtons() {
             m_rightSideMenu,
             RightBtn::Invite,
             "btn-invite",
-            [this] {
+            [] {
                 InvitePopup::create()->show();
             }
         );
@@ -948,7 +948,7 @@ void GlobedMenuLayer::initFarSideButtons() {
 
     Build<CCSprite>::create("levels01.png"_spr)
         .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
-        .intoMenuItem([this] {
+        .intoMenuItem([] {
             LevelListLayer::create()->switchTo();
         })
         .scaleMult(1.1f)
@@ -1008,7 +1008,7 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
     // credits
     out.push_back(Build<CCSprite>::create("support01.png"_spr)
         .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
-        .intoMenuItem([this] {
+        .intoMenuItem([] {
             CreditsPopup::create()->show();
         })
         .scaleMult(1.1f)
@@ -1019,7 +1019,7 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
     // supporter popup
     out.push_back(Build<CCSprite>::create("support02.png"_spr)
         .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
-        .intoMenuItem([this] {
+        .intoMenuItem([] {
             SupportPopup::create()->show();
         })
         .scaleMult(1.1f)
@@ -1030,7 +1030,7 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
     // discord
     out.push_back(Build<CCSprite>::create("discord01.png"_spr)
         .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
-        .intoMenuItem([this] {
+        .intoMenuItem([] {
             globed::confirmPopup(
                 "Open Discord",
                 "Join our <cp>Discord</c> server?\n\n<cr>Important: By joining the Discord server, you agree to being at least 13 years of age.</c>",

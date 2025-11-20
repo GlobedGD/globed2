@@ -52,7 +52,7 @@ protected:
 
         Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
             .scale(0.45f)
-            .intoMenuItem([this, name, desc] {
+            .intoMenuItem([name, desc] {
                 globed::alert(name, std::string(desc));
             })
             .pos(ipos)

@@ -67,7 +67,7 @@ bool ModLoginPopup::setup(std23::move_only_function<void()> callback) {
         .collect();
 
 
-    auto rememberPwd = CCMenuItemExt::createTogglerWithStandardSprites(0.75f, [this](auto toggler) {
+    auto rememberPwd = CCMenuItemExt::createTogglerWithStandardSprites(0.75f, [](auto toggler) {
         bool on = !toggler->isOn();
         globed::setting<bool>("core.mod.remember-password") = on;
     });

@@ -98,10 +98,6 @@ void listen(CallbackFn&& function) {
     // EventType will be RequestEvent<EventRet, Args...>, we use make_event to be able to unpack the tuple of arguments
     using EventType = typename make_event<RequestEvent, EventRet, EventArgsTuple>::Type;
 
-    // EventHandlerFunction will be Result<EventRet> (const Args&...)
-    // We will convert our CallbackFn to this type, and this is what callbacks should be like
-    using EventHandlerFunction = typename make_event_handler_fn<EventRet, EventArgsTuple>::Type;
-
     new geode::EventListener<EventFilter<EventType>>([listener = std::forward<CallbackFn>(function)](EventType* event) {
         if (event->type == WantedType) {
             event->result = invoke_listener(listener, event->args);

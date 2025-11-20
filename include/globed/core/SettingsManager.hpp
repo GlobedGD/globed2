@@ -189,7 +189,7 @@ SettingAccessor<T> setting(std::string_view key) {
 }
 
 template <typename T>
-SettingAccessor<T>::SettingAccessor(std::string_view key) : key(key), hash(SettingsManager::keyHash(key)) {}
+SettingAccessor<T>::SettingAccessor(std::string_view key) : hash(SettingsManager::keyHash(key)), key(key) {}
 
 template <typename T>
 SettingAccessor<T>::operator T() const {

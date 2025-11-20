@@ -139,7 +139,7 @@ void GlobedGJBGL::setupAudio() {
     // set audio device
     am.refreshDevices();
     am.setRecordBufferCapacity(globed::setting<int>("core.audio.buffer-size"));
-    auto result = am.startRecordingEncoded([this](const auto& frame) {
+    auto result = am.startRecordingEncoded([](const auto& frame) {
         NetworkManagerImpl::get().sendVoiceData(frame);
 
         if (globed::setting<bool>("core.audio.voice-loopback")) {

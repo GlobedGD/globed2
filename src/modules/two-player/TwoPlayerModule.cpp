@@ -89,7 +89,7 @@ void TwoPlayerModule::onUserlistSetup(CCNode* container, int accountId, bool mys
 
     Build<CCSprite>::createSpriteName("gj_linkBtn_001.png")
         .scale(0.8f)
-        .intoMenuItem([this, accountId, popup] {
+        .intoMenuItem([accountId, popup] {
             LinkRequestPopup::create(accountId, popup)->show();
         })
         .id("2p-unlink")

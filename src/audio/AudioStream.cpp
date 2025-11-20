@@ -9,7 +9,7 @@ namespace globed {
 
 AudioStream::AudioStream(AudioDecoder&& decoder)
     : m_decoder(std::move(decoder)),
-      m_estimator(std::move(VolumeEstimator(VOICE_TARGET_SAMPLERATE))),
+      m_estimator(VolumeEstimator(VOICE_TARGET_SAMPLERATE)),
       m_lastPlaybackTime(Instant::now())
 {
     FMOD_CREATESOUNDEXINFO exinfo = {};

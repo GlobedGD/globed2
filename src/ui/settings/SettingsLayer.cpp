@@ -156,7 +156,7 @@ void SettingsLayer::addSettings() {
     // Globed
     this->addHeader("core", "General", m_globedTab);
     this->addSetting<BoolSettingCell>("core.autoconnect", "Autoconnect", "");
-    this->addSetting(ButtonSettingCell::create("Discord Linking", "", "Link", [this] {
+    this->addSetting(ButtonSettingCell::create("Discord Linking", "", "Link", [] {
         if (!NetworkManagerImpl::get().isConnected()) {
             globed::alert("Error", "Cannot do this while not connected to a server.");
             return;
@@ -164,7 +164,7 @@ void SettingsLayer::addSettings() {
 
         DiscordLinkPopup::create()->show();
     }, CELL_SIZE));
-    this->addSetting(ButtonSettingCell::create("Keybinds", "", "Edit", [this] {
+    this->addSetting(ButtonSettingCell::create("Keybinds", "", "Edit", [] {
         KeybindsPopup::create()->show();
     }, CELL_SIZE));
 
@@ -221,7 +221,7 @@ void SettingsLayer::addSettings() {
     this->addHeader("core.audio", "Audio", m_voiceTab);
     this->addSetting<BoolSettingCell>("core.audio.voice-chat-enabled", "Voice Chat", "");
     this->addSetting<FloatSettingCell>("core.audio.playback-volume", "Voice Volume", "");
-    this->addSetting(ButtonSettingCell::create("Audio Device", "", "Set", [this] {
+    this->addSetting(ButtonSettingCell::create("Audio Device", "", "Set", [] {
         AudioDeviceSetupPopup::create()->show();
     }, CELL_SIZE));
     this->addSetting<BoolSettingCell>("core.audio.voice-proximity", "Voice Proximity (Plat)", "");

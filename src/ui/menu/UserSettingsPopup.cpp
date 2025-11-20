@@ -72,7 +72,7 @@ void UserSettingsPopup::addButton(std::string_view key, const char* onSprite, co
         .intoNewChild(
             Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
                 .scale(0.5f)
-                .intoMenuItem([this, key] {
+                .intoMenuItem([key] {
                     onDescriptionClicked(key);
                 })
                 .pos(toggler->getScaledContentSize() + CCSize{1.f, 1.f})
