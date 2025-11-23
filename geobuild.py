@@ -17,8 +17,8 @@ from datetime import datetime, UTC
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
 QUNET_VERSION = "aaae58e"
-SERVER_SHARED_VERSION = "f9670e3"
-CUE_VERSION = "67df153"
+SERVER_SHARED_VERSION = "4f536e2"
+CUE_VERSION = "233549d"
 
 @dataclass
 class State:
@@ -93,6 +93,7 @@ def main(build: Build):
     release = build.add_option("GLOBED_RELEASE", desc="Enable release mode optimizations")
     oss = build.add_option("GLOBED_OSS_BUILD", desc="Open source build that does not require closed-source dependencies")
     voice = build.add_option("GLOBED_VOICE_SUPPORT", True, desc="Enable voice chat support")
+    update_check = build.add_option("GLOBED_UPDATE_CHECK", debug, desc="Enable update checks for dependencies")
 
     state = State(
         build=build,
@@ -240,6 +241,6 @@ def main(build: Build):
     build.silence_warnings_for("libzstd_static")
     build.silence_warnings_for("opus")
 
-    # check dep updates in debug
-    if state.debug:
+    # check dep updates if enabled
+    if update_check:
         build.check_for_updates()
