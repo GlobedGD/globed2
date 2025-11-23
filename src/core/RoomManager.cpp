@@ -26,7 +26,6 @@ void RoomManager::joinLevel(int levelId, int author, bool platformer, bool edito
 
 std::optional<SessionId> RoomManager::getEditorCollabId(GJGameLevel* level) {
     using LevelIdEvent = DispatchEvent<GJGameLevel*, int64_t*>;
-    using LevelIdFilter = DispatchFilter<GJGameLevel*, int64_t*>;
 
     int64_t id = level->m_levelID;
 

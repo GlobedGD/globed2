@@ -51,11 +51,11 @@ public:
         this->setVisible(true);
 
         if (compressed) {
-            label->setString(players == -1 ? "?" : fmt::to_string(players).c_str());
+            label->setString(players == (size_t)-1 ? "?" : fmt::to_string(players).c_str());
             this->updateLayout();
         } else {
             label->setString(
-                players == -1 ?
+                players == (size_t)-1 ?
                     "? players" :
                     fmt::format("{} {}", players, players == 1 ? "player" : "players").c_str()
             );

@@ -83,7 +83,7 @@ static argon::AccountData g_argonData{};
 namespace globed {
 
 void GameServer::updateLatency(uint32_t latency) {
-    if (avgLatency == -1) {
+    if (avgLatency == (uint32_t)-1) {
         avgLatency = latency;
     } else {
         avgLatency = qn::exponentialMovingAverage(avgLatency, latency, 0.4);
@@ -635,6 +635,11 @@ std::optional<SpecialUserData> NetworkManagerImpl::getOwnSpecialData() {
     }
 
     return std::nullopt;
+}
+
+bool NetworkManagerImpl::canNameRooms() {
+    auto lock = m_connInfo.lock();
+    return *lock ? (**lock).m_canNameRooms : false;
 }
 
 void NetworkManagerImpl::invalidateIcons() {
@@ -1517,6 +1522,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             connInfo.m_userRoles = msg.userRoles;
             connInfo.m_established = true;
             connInfo.m_perms = msg.perms;
+            connInfo.m_canNameRooms = msg.canNameRooms;
             connInfo.m_nameColor = msg.nameColor;
             connInfo.m_featuredLevel = msg.featuredLevel;
 

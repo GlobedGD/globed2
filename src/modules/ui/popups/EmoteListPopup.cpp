@@ -258,7 +258,7 @@ void EmoteListPopup::loadEmoteListPage(int page) {
         emoteBtn->addChild(sprite, 5);
         cue::rescaleToMatch(sprite, 25.f);
 
-        for (int i = 0; i < m_favoriteEmoteIds.size(); i++) {
+        for (size_t i = 0; i < m_favoriteEmoteIds.size(); i++) {
             if (m_favoriteEmoteIds.at(i) == emoteId) {
                 CCSprite* star = Build<CCSprite>::createSpriteName("GJ_starsIcon_001.png")
                     .scale(0.35f)
@@ -286,10 +286,10 @@ void EmoteListPopup::onEmoteBtn(uint32_t id) {
     }
 }
 
-void EmoteListPopup::setFavorite(int emoteSlot, uint32_t id) {
+void EmoteListPopup::setFavorite(uint32_t emoteSlot, uint32_t id) {
     m_isFavoriteMode = false;
     m_favoriteEmoteIds[m_selectingFavoriteSlot] = id;
-    m_selectingFavoriteSlot = -1;
+    m_selectingFavoriteSlot = (uint32_t)-1;
     this->loadFavoriteEmotesList();
     this->loadEmoteListPage(m_selectedPage);
     m_favoriteHighlight->setVisible(false);
@@ -319,7 +319,7 @@ void EmoteListPopup::updatePage(bool increment) {
     this->loadEmoteListPage(m_selectedPage);
 }
 
-void EmoteListPopup::enterFavoriteSelectMode(int emoteSlot) {
+void EmoteListPopup::enterFavoriteSelectMode(uint32_t emoteSlot) {
     m_isFavoriteMode = true;
     m_selectingFavoriteSlot = emoteSlot;
     this->loadFavoriteEmotesList();
@@ -334,7 +334,7 @@ void EmoteListPopup::enterFavoriteSelectMode(int emoteSlot) {
 void EmoteListPopup::loadFavoriteEmotesList() {
     m_favoriteEmotesMenu->removeAllChildren();
 
-    for (int i = 0; i < m_favoriteEmoteIds.size(); i++) {
+    for (size_t i = 0; i < m_favoriteEmoteIds.size(); i++) {
         uint32_t emoteId = m_favoriteEmoteIds.at(i);
         bool selected = (i == m_selectingFavoriteSlot);
 

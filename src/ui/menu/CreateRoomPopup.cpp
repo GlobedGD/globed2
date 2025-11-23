@@ -36,6 +36,8 @@ bool CreateRoomPopup::setup() {
     this->setID("create-room-popup"_spr);
     this->setTitle("Create Room", "goldFont.fnt", 1.0f);
 
+    bool canName = NetworkManagerImpl::get().canNameRooms();
+
     m_inputsWrapper = Build<CCNode>::create()
         .id("inputs-wrapper")
         .anchorPoint(0.f, 0.5f)
@@ -66,8 +68,8 @@ bool CreateRoomPopup::setup() {
         .child(
             Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
                 .scale(0.5f)
-                .intoMenuItem([this] {
-                    this->showRoomNameWarnPopup();
+                .intoMenuItem([this, canName] {
+                    this->showRoomNameWarnPopup(canName);
                 })
         )
         .updateLayout()
@@ -77,6 +79,11 @@ bool CreateRoomPopup::setup() {
         .with([&](TextInput* input) {
             input->setCommonFilter(CommonFilter::Any);
             input->setMaxCharCount(32);
+
+            if (!canName) {
+                input->setString(fmt::format("{}'s Room", GJAccountManager::get()->m_username));
+                input->setEnabled(false);
+            }
         })
         .store(m_nameInput)
         .intoParent()
@@ -402,7 +409,7 @@ void CreateRoomPopup::showSafeModePopup(bool firstTime) {
     );
 }
 
-void CreateRoomPopup::showRoomNameWarnPopup() {
+void CreateRoomPopup::showRoomNameWarnPopup(bool canName) {
     globed::alert(
         "Note",
 

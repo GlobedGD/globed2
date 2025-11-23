@@ -74,6 +74,7 @@ struct ConnectionInfo {
     std::vector<uint8_t> m_userRoleIds;
     std::optional<MultiColor> m_nameColor;
     ModPermissions m_perms{};
+    bool m_canNameRooms = false;
     PunishReasons m_punishReasons{};
     bool m_authorizedModerator;
 
@@ -134,6 +135,8 @@ public:
     ModPermissions getModPermissions();
     PunishReasons getModPunishReasons();
     std::optional<SpecialUserData> getOwnSpecialData();
+
+    bool canNameRooms();
 
     /// Force the client to resend user icons to the connected server. Does nothing if not connected.
     void invalidateIcons();

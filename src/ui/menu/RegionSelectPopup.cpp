@@ -30,7 +30,7 @@ static ccColor3B latencyToColor(uint64_t ms) {
         auto& [lo_val, lo_color] = breakpoints[i];
         auto& [hi_val, hi_color] = breakpoints[i + 1];
 
-        if (ms > hi_val) {
+        if (ms > (uint64_t)hi_val) {
             continue;
         }
 
@@ -63,7 +63,7 @@ public:
         m_regionLabel->setString(fmt::format("Region: {}", server.region).c_str());
         m_pingLabel->setPosition(m_nameLabel->getPosition() + m_nameLabel->getScaledContentSize() + CCPoint{2.f, -27.f});
 
-        if (server.avgLatency == -1) {
+        if (server.avgLatency == (uint32_t)-1) {
             m_pingLabel->setString("? ms");
             m_pingLabel->setColor(ccColor3B{150, 150, 150});
         } else {

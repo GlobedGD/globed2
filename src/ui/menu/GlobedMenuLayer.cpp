@@ -1203,7 +1203,7 @@ void GlobedMenuLayer::update(float dt) {
             m_lastInteraction = Instant::now();
         }
 
-        if (m_roomId == -1 && (!m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > Duration::fromSecs(1))) {
+        if (m_roomId == (uint32_t)-1 && (!m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > Duration::fromSecs(1))) {
             this->requestRoomState();
         } else if (this->shouldAutoRefresh(dt)) {
             this->requestRoomState();

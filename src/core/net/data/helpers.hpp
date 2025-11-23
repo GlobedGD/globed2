@@ -658,6 +658,7 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
     msg.perms.canEditRoles = reader.getCanEditRoles();
     msg.perms.canSendFeatures = reader.getCanSendFeatures();
     msg.perms.canRateFeatures = reader.getCanRateFeatures();
+    msg.canNameRooms = reader.getCanNameRooms();
 
     FeaturedLevelMeta flm{};
     flm.levelId = reader.getFeaturedLevel();

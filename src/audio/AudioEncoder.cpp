@@ -7,7 +7,7 @@ using namespace geode::prelude;
 namespace globed {
 
 AudioEncoder::AudioEncoder(int sampleRate, int frameSize, int channels)
-    : m_encoder(nullptr), m_frameSize(frameSize), m_sampleRate(sampleRate), m_channels(channels) {
+    : m_encoder(nullptr), m_sampleRate(sampleRate), m_frameSize(frameSize), m_channels(channels) {
     (void) this->remakeEncoder().unwrap();
 }
 

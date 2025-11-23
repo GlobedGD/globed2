@@ -16,7 +16,7 @@ public:
 private:
     int m_selectedPage = 0;
     int m_maxPages;
-    int m_selectingFavoriteSlot = -1;
+    uint32_t m_selectingFavoriteSlot = -1;
 
     std::vector<uint32_t> m_favoriteEmoteIds;
 
@@ -45,8 +45,8 @@ private:
     void loadEmoteListPage(int page);
     void loadFavoriteEmotesList();
     void updatePage(bool increment);
-    void enterFavoriteSelectMode(int emoteSlot);
-    void setFavorite(int emoteSlot, uint32_t id);
+    void enterFavoriteSelectMode(uint32_t emoteSlot);
+    void setFavorite(uint32_t emoteSlot, uint32_t id);
 };
 
 }

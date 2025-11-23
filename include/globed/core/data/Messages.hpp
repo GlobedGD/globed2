@@ -26,6 +26,7 @@ struct CentralLoginOkMessage {
     std::vector<UserRole> userRoles;
     std::optional<MultiColor> nameColor;
     ModPermissions perms;
+    bool canNameRooms;
     std::optional<FeaturedLevelMeta> featuredLevel;
 };
 

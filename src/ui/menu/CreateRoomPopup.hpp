@@ -36,7 +36,7 @@ private:
     void onCheckboxToggled(cocos2d::CCObject*);
     void setFollowerMode(bool enabled);
     void showSafeModePopup(bool firstTime);
-    void showRoomNameWarnPopup();
+    void showRoomNameWarnPopup(bool canName);
 
     void waitForResponse();
     void stopWaiting(std::optional<std::string> failReason);

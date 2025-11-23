@@ -2,7 +2,7 @@
     "id": "dankmeme.globed3",
     "name": "Globed",
     "developer": "dankmeme",
-    "geode": "4.9.0",
+    "geode": "4.10.0",
     "version": "v2.0.0-beta.2",
     "gd": {
         "win": "2.2074",

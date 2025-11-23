@@ -583,7 +583,7 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
     }
 
     // try the gd resource folder
-    if (m_sstate.gameSearchPathIdx != -1) {
+    if (m_sstate.gameSearchPathIdx != (size_t)-1) {
         auto& sp = searchPaths.at(m_sstate.gameSearchPathIdx);
         TRY_PATH(sp);
     }

@@ -60,7 +60,7 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
 
     // determine if mulitplayer should be active
     auto ecId = RoomManager::get().getEditorCollabId(level);
-    bool isEditorCollab = ecId && ecId->asU64() && ecId->asU64() != level->m_levelID;
+    bool isEditorCollab = ecId && ecId->asU64() && ecId->asU64() != (uint64_t)level->m_levelID;
 
     fields.m_active = nm.isConnected() && (level->m_levelID != 0 || isEditorCollab);
 
