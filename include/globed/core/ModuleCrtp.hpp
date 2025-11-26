@@ -6,6 +6,13 @@
 namespace globed {
 
 template <typename Derived>
+struct ModuleCrtpAutoInit {
+    ModuleCrtpAutoInit() {
+        Derived::get();
+    }
+};
+
+template <typename Derived>
 class ModuleCrtpBase : public Module {
 public:
     using Module::Module;
@@ -34,10 +41,9 @@ private:
     static inline std::shared_ptr<Derived> g_instance;
 
     // automatically initialize the module when the program starts
-    static inline bool _g_initialized = []() {
-        Derived::get();
-        return true;
-    }();
+    static inline ModuleCrtpAutoInit<Derived> s_autoInit;
+    static inline auto s_autoInitRef = &ModuleCrtpBase::s_autoInit;
+
 };
 
 }

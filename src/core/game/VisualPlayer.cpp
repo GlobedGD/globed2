@@ -149,6 +149,8 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         if (m_shipStreak) m_shipStreak->setVisible(false);
     }
 
+    // XXX: sticky is pretty broken so not handled
+
     float innerRot = data.isSideways ? (data.isUpsideDown ? 90.f : -90.f) : 0.f;
 
     float distanceTo90deg = std::fmod(std::abs(data.rotation), 90.f);
@@ -343,6 +345,14 @@ PlayerIconData& VisualPlayer::icons() {
 
 PlayerDisplayData& VisualPlayer::displayData() {
     return m_remotePlayer->m_data;
+}
+
+void VisualPlayer::setStickyState(bool p1, bool sticky) {
+    if (p1) {
+        m_p1Sticky = sticky;
+    } else {
+        m_p2Sticky = sticky;
+    }
 }
 
 void VisualPlayer::updateOpacity() {

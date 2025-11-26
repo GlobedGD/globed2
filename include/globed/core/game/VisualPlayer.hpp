@@ -33,6 +33,8 @@ public:
     PlayerIconData& icons();
     PlayerDisplayData& displayData();
 
+    void setStickyState(bool p1, bool sticky);
+
     void updateDisplayData();
     void updateTeam(uint16_t teamId);
     void playDeathEffect();
@@ -88,6 +90,10 @@ private:
 
     //
     float m_tpColorDelta = 0.f;
+
+    // collision
+    bool m_p1Sticky = false;
+    bool m_p2Sticky = false;
 
     bool init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond);
     void updateOpacity();
