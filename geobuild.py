@@ -46,12 +46,13 @@ def make_constants_codegen(state: State) -> str:
     config = build.config
     build_opts = []
 
+    for mod in state.modules:
+        build_opts.append(f"mod:{mod}")
+
     if state.debug: build_opts.append("debug")
     if state.release: build_opts.append("release")
     if state.oss: build_opts.append("oss")
     if state.voice: build_opts.append("voice")
-    for mod in state.modules:
-        build_opts.append(f"mod:{mod}")
 
     constants = {
         "discord": "https://discord.gg/d56q5Dkdm3",
@@ -117,6 +118,7 @@ def main(build: Build):
     state.modules.append("deathlink")
     state.modules.append("two-player")
     state.modules.append("ui")
+    state.modules.append("collision")
 
     # Add base sources
     src = config.project_dir / "src"
@@ -243,4 +245,8 @@ def main(build: Build):
 
     # check dep updates if enabled
     if update_check:
-        build.check_for_updates()
+        try:
+            import requests as _
+            build.check_for_updates()
+        except ImportError:
+            print("!! Warning: 'requests' module not found, cannot check for updates")
