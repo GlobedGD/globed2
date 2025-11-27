@@ -1,10 +1,12 @@
 #pragma once
 
 #include "singleton.hpp"
+
 #include <asp/sync/SpinLock.hpp>
 #include <asp/time/Duration.hpp>
 #include <asp/time/Instant.hpp>
 #include <std23/move_only_function.h>
+#include <queue>
 
 namespace globed {
 
@@ -14,21 +16,34 @@ class GLOBED_DLL FunctionQueue : public SingletonNodeBase<FunctionQueue, true> {
 
 public:
     using Func = std23::move_only_function<void()>;
-    struct Delayed {
-        asp::time::Instant addedAt;
-        asp::time::Duration delay;
-        Func func;
+    struct Queued {
+        size_t expTick;
+        mutable Func func; // xd priority queue funnies
+
+        bool operator>(const Queued& other) const {
+            return expTick > other.expTick;
+        }
     };
 
-    asp::SpinLock<std::vector<Func>> m_queue;
-    asp::SpinLock<std::vector<Delayed>> m_delayedQueue;
+    struct Delayed {
+        asp::time::Instant expiry;
+        mutable Func func;
 
-    void queue(Func&& func);
+        bool operator>(const Delayed& other) const {
+            return expiry > other.expiry;
+        }
+    };
+
+    asp::SpinLock<std::priority_queue<Queued, std::vector<Queued>, std::greater<Queued>>> m_queue;
+    asp::SpinLock<std::priority_queue<Delayed, std::vector<Delayed>, std::greater<Delayed>>> m_delayedQueue;
+
+    void queue(Func&& func, size_t frames = 0);
     void queueDelay(Func&& func, asp::time::Duration delay);
     void update(float dt) override;
 
 private:
     std::vector<Func> m_executing;
+    size_t m_tick = 0;
 };
 
 }

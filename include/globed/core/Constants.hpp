@@ -5,6 +5,7 @@
 
 namespace globed {
 
+/// Constants are defined in the build script, geobuild.py
 const char* constantByHash(uint32_t hash);
 
 template <size_t N>

@@ -5,27 +5,37 @@ using namespace asp::time;
 
 namespace globed {
 
-void FunctionQueue::queue(Func&& func) {
+void FunctionQueue::queue(Func&& func, size_t frames) {
     auto guard = m_queue.lock();
-    guard->emplace_back(std::move(func));
+    guard->push(Queued{
+        .expTick = m_tick + frames,
+        .func = std::move(func),
+    });
 }
 
 void FunctionQueue::queueDelay(Func&& func, asp::time::Duration delay) {
     auto guard = m_delayedQueue.lock();
-    guard->emplace_back(Delayed{
-        .addedAt = asp::time::Instant::now(),
-        .delay = delay,
+    guard->push(Delayed{
+        .expiry = Instant::now() + delay,
         .func = std::move(func),
     });
 }
 
 void FunctionQueue::update(float dt) {
+    auto tick = m_tick++;
+
     auto guard = m_queue.lock();
 
-    // Move all functions from m_queue to m_executing, this avoids locking the mutex for long and in best case does not allocate
-    m_executing.reserve(m_executing.size() + guard->size());
-    std::move(guard->begin(), guard->end(), std::back_inserter(m_executing));
-    guard->clear();
+    // Move all expired functions from m_queue to m_executing, this avoids locking the mutex for long and in best case does not allocate
+    while (!guard->empty()) {
+        auto& top = guard->top();
+        if (top.expTick > tick) {
+            break;
+        }
+
+        m_executing.emplace_back(std::move(top.func));
+        guard->pop();
+    }
 
     guard.unlock();
 
@@ -33,17 +43,14 @@ void FunctionQueue::update(float dt) {
     auto delayedGuard = m_delayedQueue.lock();
     auto now = Instant::now();
 
-    size_t i = 0;
-    while (i < delayedGuard->size()) {
-        auto& delayed = (*delayedGuard)[i];
-
-        if (now.durationSince(delayed.addedAt) < delayed.delay) {
-            ++i;
-            continue;
+    while (!delayedGuard->empty()) {
+        auto& top = delayedGuard->top();
+        if (top.expiry > now) {
+            break;
         }
 
-        m_executing.emplace_back(std::move(delayed.func));
-        delayedGuard->erase(delayedGuard->begin() + i);
+        m_executing.emplace_back(std::move(top.func));
+        delayedGuard->pop();
     }
 
     delayedGuard.unlock();

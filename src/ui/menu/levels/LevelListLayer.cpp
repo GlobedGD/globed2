@@ -1,6 +1,7 @@
 #include "LevelListLayer.hpp"
 #include "LevelFiltersPopup.hpp"
 #include <globed/core/SettingsManager.hpp>
+#include <globed/core/RoomManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/LevelCell.hpp>
 #include <ui/menu/FeatureCommon.hpp>
@@ -144,6 +145,16 @@ struct matjson::Serialize<globed::LevelListLayer::Filters> {
 
 static std::vector<std::pair<globed::SessionId, uint16_t>> getFakeLevels();
 
+static void showInfoPopup() {
+    bool globalRoom = globed::RoomManager::get().isInGlobal();
+
+    globed::PopupManager::get().alert(
+        "Level List",
+        "The <cy>Level List</c> allows you to view the <cg>most popular</c> levels being played in <cj>your room</c>.\n\n"
+        "To make other people see <cy>your level</c> here, simply <cg>play the level!</c>"
+    ).showQueue();
+}
+
 namespace globed {
 
 bool LevelListLayer::init() {
@@ -169,6 +180,13 @@ bool LevelListLayer::init() {
         .parent(this)
         .collect();
 
+    // info button
+    Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+        .intoMenuItem([](auto) {
+            showInfoPopup();
+        })
+        .pos(32.f, 32.f)
+        .parent(menu);
 
     // refresh button
     m_btnRefresh = Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
@@ -221,6 +239,11 @@ bool LevelListLayer::init() {
     });
 
     this->onRefresh();
+
+    // if the user has never seen it, show the info popup
+    if (!globed::swapFlag("core.flags.seen-level-list-info")) {
+        FunctionQueue::get().queue(showInfoPopup, 1);
+    }
 
     return true;
 }
