@@ -5,6 +5,7 @@
 #include "Constants.hpp"
 
 #include <matjson.hpp>
+#include <std23/function_ref.h>
 
 namespace globed {
 
@@ -29,6 +30,8 @@ public:
 
     void set(std::string_view key, matjson::Value value);
     void erase(std::string_view key);
+    void eraseWithPrefix(std::string_view prefix);
+    void eraseMatching(std23::function_ref<bool(std::string_view)> predicate);
 
 private:
     friend class SingletonBase;

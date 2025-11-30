@@ -11,8 +11,10 @@
 #include "SaveSlotSwitcherPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <ui/misc/InputPopup.hpp>
 
 #include <UIBuilder.hpp>
+#include <argon/argon.hpp>
 
 using namespace geode::prelude;
 
@@ -182,6 +184,14 @@ void SettingsLayer::addSettings() {
         this->addSetting<BoolSettingCell>("core.dev.net-debug-logs", "Network Debug Logs", "");
         this->addSetting<BoolSettingCell>("core.dev.net-stat-dump", "Network Stat Dump", "");
         this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data", "");
+
+        this->addSetting(ButtonSettingCell::create("Clear Auth Tokens", "", "Clear", [] {
+            NetworkManagerImpl::get().clearAllUTokens();
+        }, CELL_SIZE));
+
+        this->addSetting(ButtonSettingCell::create("Clear Argon Token", "", "Clear", [] {
+            argon::clearToken();
+        }, CELL_SIZE));
     }
 
     // Player settings

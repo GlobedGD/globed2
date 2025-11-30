@@ -21,4 +21,25 @@ void ValueManager::erase(std::string_view key) {
     Mod::get()->getSaveContainer().erase(key);
 }
 
+void ValueManager::eraseWithPrefix(std::string_view prefix) {
+    this->eraseMatching([prefix](std::string_view key) {
+        return key.starts_with(prefix);
+    });
+}
+
+void ValueManager::eraseMatching(std23::function_ref<bool(std::string_view)> predicate) {
+    auto& container = Mod::get()->getSaveContainer();
+
+    std::vector<std::string> toErase;
+    for (const auto& [key, _] : container) {
+        if (predicate(key)) {
+            toErase.push_back(key);
+        }
+    }
+
+    for (const auto& key : toErase) {
+        container.erase(key);
+    }
+}
+
 }

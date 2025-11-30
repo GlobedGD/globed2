@@ -526,6 +526,10 @@ std::string NetworkManagerImpl::getCentralIdent() {
     return hash;
 }
 
+void NetworkManagerImpl::clearAllUTokens() {
+    ValueManager::get().eraseWithPrefix("auth.last-utoken.");
+}
+
 std::string NetworkManagerImpl::getStoredModPassword() {
     if (!globed::setting<bool>("core.mod.remember-password")) {
         return "";

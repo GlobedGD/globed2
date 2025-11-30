@@ -118,6 +118,8 @@ public:
     /// Returns an empty string when not connected.
     std::string getCentralIdent();
 
+    void clearAllUTokens();
+
     /// Returns the stored moderator password or an empty string if not connected or no password is stored
     std::string getStoredModPassword();
     void storeModPassword(const std::string& pw);
