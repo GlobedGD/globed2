@@ -76,3 +76,4 @@ bloaty-*.txt
 mod.json
 
 __pycache__
+config.toml

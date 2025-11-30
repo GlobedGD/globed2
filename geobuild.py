@@ -11,8 +11,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .build.geobuild.prelude import *
 
-from dataclasses import dataclass
+from pathlib import Path
+from dataclasses import dataclass, field
 from datetime import datetime, UTC
+import tomllib
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
@@ -21,38 +23,96 @@ SERVER_SHARED_VERSION = "4f536e2"
 CUE_VERSION = "233549d"
 
 @dataclass
+class GlobedConfig:
+    cpm_overrides: dict[str, Path] = field(default_factory=dict)
+    cmake_vars : dict[str, str] = field(default_factory=dict)
+    debug: bool = False
+    release: bool = False
+    oss: bool = False
+    voice: bool = True
+    quic: bool = True
+    advanced_dns: bool = True
+    update_check: bool = False
+    github_token: str = ""
+
+    modules: set[str] = field(default_factory=set)
+    server_url: str = "qunet://globed.dev"
+
+    @classmethod
+    def load(cls):
+        path = Path(__file__).parent / "config.toml"
+        if not path:
+            return cls()
+
+        cfg = tomllib.loads(path.read_text())
+        out = cls()
+
+        def get_or(d: dict, key: str, default):
+            if key in d and isinstance(d[key], type(default)):
+                return d[key]
+            return default
+
+        if "cpm_overrides" in cfg and isinstance(cfg["cpm_overrides"], dict):
+            for key, val in cfg["cpm_overrides"].items():
+                if isinstance(val, str):
+                    out.cpm_overrides[key] = Path(val)
+
+        if "build" in cfg and isinstance(cfg["build"], dict):
+            build = cfg["build"]
+            out.debug = get_or(build, "debug", out.debug)
+            out.release = get_or(build, "release", out.release)
+            out.oss = get_or(build, "oss", out.oss)
+            out.voice = get_or(build, "voice", out.voice)
+            out.quic = get_or(build, "quic", out.quic)
+            out.advanced_dns = get_or(build, "advanced_dns", out.advanced_dns)
+            out.update_check = get_or(build, "update_check", out.debug) # enabled by default in debug
+
+            modules = get_or(build, "modules", out.modules)
+            for mod in modules:
+                if isinstance(mod, str):
+                    out.modules.add(mod)
+
+            out.server_url = get_or(build, "server_url", out.server_url)
+            out.github_token = get_or(build, "github_token", out.github_token)
+
+        if "cmake_vars" in cfg and isinstance(cfg["cmake_vars"], dict):
+            for key, val in cfg["cmake_vars"].items():
+                if isinstance(val, str):
+                    out.cmake_vars[key] = val
+
+        return out
+
+@dataclass
 class State:
     build: Build
-    debug: bool
-    release: bool
-    oss: bool
-    voice: bool
-    modules: list[str]
-    server_url: str
-
+    config: GlobedConfig
 
 def print_info(state: State):
     build = state.build
     config = build.config
+    gc = state.config
+
+    modulestr = ', '.join(sorted(gc.modules)) or "<none>"
 
     print(f"========== Globed build configuration ==========")
-    print(f"Platform: {build.platform.name}, host: {build.config.host_desc()}, debug: {state.debug}, release: {state.release}, OSS build: {state.oss}")
-    print(f"Voice: {state.voice}, modules: {state.modules}, server URL: '{state.server_url}'")
+    print(f"Platform: {build.platform.name}, host: {build.config.host_desc()}, debug: {gc.debug}, release: {gc.release}, OSS build: {gc.oss}")
+    print(f"Voice: {gc.voice}, modules: {modulestr}, server URL: '{gc.server_url}'")
     print(f"Compiler: {config.compiler_id} {config.compiler_version}, frontend: '{config.compiler_frontend}'")
     print("=================================================")
 
 def make_constants_codegen(state: State) -> str:
     build = state.build
     config = build.config
+    gc = state.config
     build_opts = []
 
-    for mod in state.modules:
+    for mod in gc.modules:
         build_opts.append(f"mod:{mod}")
 
-    if state.debug: build_opts.append("debug")
-    if state.release: build_opts.append("release")
-    if state.oss: build_opts.append("oss")
-    if state.voice: build_opts.append("voice")
+    if gc.debug: build_opts.append("debug")
+    if gc.release: build_opts.append("release")
+    if gc.oss: build_opts.append("oss")
+    if gc.voice: build_opts.append("voice")
 
     constants = {
         "discord": "https://discord.gg/d56q5Dkdm3",
@@ -84,27 +144,8 @@ def make_constants_codegen(state: State) -> str:
 
 def main(build: Build):
     config = build.config
-
-    build.set_cache_variable("GLOBED_MODULES", "", desc="Enabled modules (comma-separated)")
-    build.set_cache_variable("GLOBED_DEFAULT_MAIN_SERVER_URL", "qunet://globed.dev", desc="Default main server URL")
-
-    quic = build.add_option("GLOBED_QUIC_SUPPORT", True, desc="Enable QUIC support")
-    advanced_dns = build.add_option("GLOBED_ADVANCED_DNS_SUPPORT", True, desc="Enable advanced DNS support")
-    debug = build.add_option("GLOBED_DEBUG", desc="Enable debug mode")
-    release = build.add_option("GLOBED_RELEASE", desc="Enable release mode optimizations")
-    oss = build.add_option("GLOBED_OSS_BUILD", desc="Open source build that does not require closed-source dependencies")
-    voice = build.add_option("GLOBED_VOICE_SUPPORT", True, desc="Enable voice chat support")
-    update_check = build.add_option("GLOBED_UPDATE_CHECK", debug, desc="Enable update checks for dependencies")
-
-    state = State(
-        build=build,
-        debug=debug,
-        release=release,
-        oss=oss,
-        voice=voice,
-        modules=[m.strip() for m in config.var("GLOBED_MODULES", "").split(",") if m.strip()],
-        server_url=config.var("GLOBED_DEFAULT_MAIN_SERVER_URL", "qunet://globed.dev")
-    )
+    gc = GlobedConfig.load()
+    state = State(build=build, config=gc)
 
     print_info(state)
 
@@ -115,10 +156,10 @@ def main(build: Build):
     build.verify_sdk_at_least(REQUIRED_GEODE_VERSION)
 
     # Add necessary modules
-    state.modules.append("deathlink")
-    state.modules.append("two-player")
-    state.modules.append("ui")
-    state.modules.append("collision")
+    gc.modules.add("deathlink")
+    gc.modules.add("two-player")
+    gc.modules.add("ui")
+    gc.modules.add("collision")
 
     # Add base sources
     src = config.project_dir / "src"
@@ -141,14 +182,14 @@ def main(build: Build):
     build.add_include_dir(config.project_dir / "libs")
 
     # Compile definitions / variables
-    if state.release:
+    if gc.release:
         build.enable_lto()
 
     build.add_definition("GLOBED_BUILD")
-    build.add_definition("GLOBED_DEFAULT_MAIN_SERVER_URL", f'"{state.server_url}"')
+    build.add_definition("GLOBED_DEFAULT_MAIN_SERVER_URL", f'"{gc.server_url}"')
     build.add_definition("UIBUILDER_NO_ARROW", "1")
 
-    if state.debug:
+    if gc.debug:
         build.add_definition("GLOBED_DEBUG", "1")
         build.set_variable("QUNET_DEBUG", "ON")
         build.add_compile_options(
@@ -165,7 +206,7 @@ def main(build: Build):
             "-Wno-unused-private-field",
         )
 
-    if state.voice:
+    if gc.voice:
         build.add_definition("GLOBED_VOICE_SUPPORT", "1")
         if config.platform.is_windows():
             build.add_definition("GLOBED_VOICE_CAN_TALK", "1")
@@ -175,11 +216,11 @@ def main(build: Build):
 
     build.add_geode_dep("geode.node-ids", ">=v1.10.0")
 
-    if 'scripting-ui' in state.modules:
+    if 'scripting-ui' in gc.modules:
         build.add_geode_dep("alphalaneous.editortab_api", ">=1.0.17")
 
     # fixup mod.json version in debug builds, be more strict for release builds
-    if state.debug:
+    if gc.debug:
         geode_ver = config.get_sdk_commit_or_tag()
         if geode_ver and ('v' in geode_ver or '.' in geode_ver):
             assert build.mod_json is not None
@@ -187,7 +228,7 @@ def main(build: Build):
 
     # Add module sources, compile defs
     modules_dir = src / "modules"
-    for module in state.modules:
+    for module in gc.modules:
         mdir = modules_dir / module
 
         if not mdir.exists():
@@ -201,7 +242,7 @@ def main(build: Build):
         build.add_definition(f"GLOBED_MODULE_{transformed}", "1")
 
     # Link to bb if not oss build
-    if state.oss:
+    if gc.oss:
         build.add_definition("GLOBED_OSS_BUILD", "1")
     else:
         if config.platform.is_windows():
@@ -219,9 +260,9 @@ def main(build: Build):
     }, link_name="CapnProto::capnp")
     build.add_cpm_dep("GlobedGD/server-shared", SERVER_SHARED_VERSION, link_name="ServerShared")
     build.add_cpm_dep("dankmeme01/qunet-cpp", QUNET_VERSION, {
-        "QUNET_QUIC_SUPPORT": "ON" if quic else "OFF",
-        "QUNET_ADVANCED_DNS": "ON" if advanced_dns else "OFF",
-        "QUNET_DEBUG": "ON" if state.debug else "OFF",
+        "QUNET_QUIC_SUPPORT": "ON" if gc.quic else "OFF",
+        "QUNET_ADVANCED_DNS": "ON" if gc.advanced_dns else "OFF",
+        "QUNET_DEBUG": "ON" if gc.debug else "OFF",
     }, link_name="qunet")
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
@@ -229,7 +270,7 @@ def main(build: Build):
     build.add_cpm_dep("Prevter/sinaps", "2541d6d")
     build.add_cpm_dep("Prevter/AdvancedLabel", "d78d7f82", link_name="advanced_label")
 
-    if state.voice:
+    if gc.voice:
         build.add_cpm_dep("xiph/opus", "v1.5.2", {
             "OPUS_INSTALL_PKG_CONFIG_MODULE": "OFF",
         })
@@ -244,7 +285,10 @@ def main(build: Build):
     build.silence_warnings_for("opus")
 
     # check dep updates if enabled
-    if update_check:
+    if gc.update_check:
+        if gc.github_token:
+            build.config.vars["GITHUB_TOKEN"] = gc.github_token
+
         try:
             import requests as _
             build.check_for_updates()
