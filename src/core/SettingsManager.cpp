@@ -25,6 +25,10 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.keybinds.voice-chat", (int)KEY_V);
     this->registerSetting("core.keybinds.deafen", (int)KEY_B);
     this->registerSetting("core.keybinds.hide-players", (int)KEY_None);
+    this->registerSetting("core.keybinds.emote-1", (int)KEY_None);
+    this->registerSetting("core.keybinds.emote-2", (int)KEY_None);
+    this->registerSetting("core.keybinds.emote-3", (int)KEY_None);
+    this->registerSetting("core.keybinds.emote-4", (int)KEY_None);
 
     // UI settings
     this->registerSetting("core.ui.allow-custom-servers", false);

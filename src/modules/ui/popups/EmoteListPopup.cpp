@@ -1,6 +1,7 @@
 #include "EmoteListPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/EmoteManager.hpp>
+#include <globed/core/KeybindsManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 
 #include <UIBuilder.hpp>
@@ -29,7 +30,7 @@ bool EmoteListPopup::setup() {
     m_maxPages = (allEmotes.size() + EMOTES_PER_PAGE - 1) / EMOTES_PER_PAGE;
 
     for (int i = 0; i < 4; i++) {
-        auto emote = Mod::get()->getSavedValue<uint32_t>(fmt::format("emote-slot-{}", i), 0);
+        auto emote = globed::value<uint32_t>(fmt::format("core.ui.emote-slot-{}", i)).value_or(0);
         m_favoriteEmoteIds.push_back(emote);
     }
 
@@ -124,15 +125,38 @@ bool EmoteListPopup::setup() {
 
 
     m_bottomList = Build(cue::ListNode::create({LIST_SIZE.width, 35.f}, cue::Brown, cue::ListBorderStyle::Comments))
-        .anchorPoint(0.5f, 0.5f)
         .pos(this->fromBottom(68.f))
         .parent(m_mainLayer);
 
+    auto favoriteLabelMenu = Build<CCMenu>::create()
+        .layout(RowLayout::create()->setAutoScale(false)->setGap(1.f))
+        .contentSize(100.f, 0.f)
+        .id("favorite-label-menu")
+        .pos(this->fromBottom(95.f))
+        .parent(m_mainLayer)
+        .collect();
+
     auto favoriteLabel = Build<CCLabelBMFont>::create("Favorites", "goldFont.fnt")
         .scale(0.4f)
-        .pos(this->fromBottom(95.f))
-        .anchorPoint(0.5f, 0.5f)
-        .parent(m_mainLayer);
+        .parent(favoriteLabelMenu)
+        .collect();
+
+    // show a warning icon if no emote hotkeys are bound
+    auto& km = KeybindsManager::get();
+    if (!km.isAnyEmoteKeyBound()) {
+        Build<CCSprite>::create("info-warning.png"_spr)
+            .scale(0.5f)
+            .intoMenuItem(+[] {
+                globed::alert(
+                    "No Keybinds",
+                    "To be able to use <cg>favorite emotes</c> without <cy>pausing</c>, you need to set up the <cj>emote keybinds</c> in Globed settings."
+                );
+            })
+            .id("favorite-emote-warning")
+            .parent(favoriteLabelMenu);
+    }
+
+    favoriteLabelMenu->updateLayout();
 
     m_favoriteEmotesMenu = Build<CCMenu>::create()
         .pos(this->fromBottom(70.f))
@@ -298,7 +322,7 @@ void EmoteListPopup::setFavorite(uint32_t emoteSlot, uint32_t id) {
     m_clearFavoriteBtn->setEnabled(false);
     m_clearFavoriteBtn->setVisible(false);
 
-    Mod::get()->setSavedValue(fmt::format("emote-slot-{}", emoteSlot), id);
+    globed::setValue(fmt::format("core.ui.emote-slot-{}", emoteSlot), id);
 }
 
 void EmoteListPopup::updatePage(bool increment) {

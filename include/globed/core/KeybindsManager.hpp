@@ -46,9 +46,11 @@ public:
     void handleKeyUp(cocos2d::enumKeyCodes key);
     void refreshBinds();
     bool isKeyUsed(cocos2d::enumKeyCodes key);
+    bool isAnyEmoteKeyBound();
 
 protected:
     cocos2d::enumKeyCodes m_kVoice, m_kDeafen, m_kHidePlayers;
+    cocos2d::enumKeyCodes m_kEmote1, m_kEmote2, m_kEmote3, m_kEmote4;
 
     friend class SingletonBase;
     KeybindsManager();

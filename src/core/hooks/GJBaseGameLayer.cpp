@@ -992,4 +992,12 @@ void GlobedGJBGL::playSelfEmote(uint32_t id) {
     NetworkManagerImpl::get().sendQuickChat(id);
 }
 
+void GlobedGJBGL::playSelfFavoriteEmote(uint32_t which) {
+    auto emote = globed::value<uint32_t>(fmt::format("core.ui.emote-slot-{}", which)).value_or(0);
+
+    if (emote != 0) {
+        this->playSelfEmote(emote);
+    }
+}
+
 }

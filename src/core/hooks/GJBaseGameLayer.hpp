@@ -156,6 +156,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void customUnscheduleAll();
 
     void playSelfEmote(uint32_t id);
+    void playSelfFavoriteEmote(uint32_t which);
 
 private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);
