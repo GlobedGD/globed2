@@ -293,8 +293,6 @@ NetworkManagerImpl::NetworkManagerImpl() {
     });
 
     m_workerThread.start();
-
-    argon::initConfigLock();
 }
 
 NetworkManagerImpl::~NetworkManagerImpl() {
