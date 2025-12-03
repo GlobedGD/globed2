@@ -13,6 +13,7 @@ jobs:
         config:
           - name: Windows
             os: windows-latest
+            build-config: RelWithDebInfo
 
           - name: macOS
             os: macos-latest
@@ -39,10 +40,12 @@ jobs:
       - name: Build the mod
         uses: geode-sdk/build-geode-mod@main
         with:
-          sdk: 'nightly'
-          # cli: 'nightly'
+          # sdk: 'nightly'
+          build-config: ${{ matrix.config.build-config || 'Release' }}
           configure-args: '-DGLOBED_RELEASE=ON'
-          combine: 'true'
+          export-pdb: true
+          export-symbols: true
+          combine: true
           target: ${{ matrix.config.target }}
 
   package:
