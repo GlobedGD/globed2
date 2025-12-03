@@ -598,6 +598,7 @@ inline std::optional<UserRole> decodeUserRole(const schema::shared::UserRole::Re
     role.id = idx;
     role.stringId = reader.getStringId();
     role.icon = reader.getIcon();
+    role.hide = reader.getHide();
 
     auto color = decodeMultiColor(reader.getNameColor());
     if (!color) {

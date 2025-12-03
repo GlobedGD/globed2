@@ -11,6 +11,8 @@ struct PlayerDisplayData {
     std::string username;
     PlayerIconData icons;
     std::optional<SpecialUserData> specialUserData;
+
+    static PlayerDisplayData getOwn();
 };
 
 static inline const PlayerDisplayData DEFAULT_PLAYER_DATA = {

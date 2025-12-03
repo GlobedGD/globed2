@@ -11,6 +11,7 @@ struct UserRole {
     std::string stringId;
     std::string icon;
     MultiColor nameColor;
+    bool hide;
 };
 
 }

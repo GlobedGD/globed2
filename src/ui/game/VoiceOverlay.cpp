@@ -26,7 +26,7 @@ bool VoiceOverlay::init() {
 void VoiceOverlay::update(float dt) {
     auto& am = AudioManager::get();
     am.forEachStream([&](int id, AudioStream& stream) {
-        if (id <= 0) return;
+        if (id <= 0 && id != -1) return;
         this->updateStream(id, stream.isStarving(), stream.getUserVolume(), stream.getLoudness());
     });
 
@@ -52,7 +52,7 @@ void VoiceOverlay::updateStream(int id, bool starving, float volume, float loudn
     auto& pcm = PlayerCacheManager::get();
 
     // recreate if the cell either doesn't exist or if it's not initialized but data is available
-    bool shouldRecreate = it == m_cells.end() || (it->second->getAccountId() == 0 && pcm.has(id));
+    bool shouldRecreate = it == m_cells.end() || (id != -1 && it->second->getAccountId() == 0 && pcm.has(id));
 
     if (shouldRecreate) {
         if (it != m_cells.end()) {
@@ -60,7 +60,13 @@ void VoiceOverlay::updateStream(int id, bool starving, float volume, float loudn
             m_cells.erase(it);
         }
 
-        auto data = pcm.getOrDefault(id);
+        PlayerDisplayData data;
+
+        if (id == -1) {
+            data = PlayerDisplayData::getOwn();
+        } else {
+            data = pcm.getOrDefault(id);
+        }
 
         auto cell = VoiceOverlayCell::create(data);
         this->addChild(cell);

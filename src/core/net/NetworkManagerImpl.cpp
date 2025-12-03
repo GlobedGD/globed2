@@ -36,31 +36,6 @@ static qn::ConnectionDebugOptions getConnOpts() {
     return opts;
 }
 
-static globed::PlayerIconData gatherIconData() {
-    auto gm = globed::cachedSingleton<GameManager>();
-
-    globed::PlayerIconData out{};
-    out.cube = gm->m_playerFrame;
-    out.ship = gm->m_playerShip;
-    out.ball = gm->m_playerBall;
-    out.ufo = gm->m_playerBird;
-    out.wave = gm->m_playerDart;
-    out.robot = gm->m_playerRobot;
-    out.spider = gm->m_playerSpider;
-    out.swing = gm->m_playerSwing;
-    out.jetpack = gm->m_playerJetpack;
-    out.deathEffect = gm->m_playerDeathEffect;
-    out.color1 = gm->m_playerColor;
-    out.color2 = gm->m_playerColor2;
-    if (gm->m_playerGlow) {
-        out.glowColor = gm->m_playerGlowColor.value();
-    }
-    out.trail = gm->m_playerStreak;
-    out.shipTrail = gm->m_playerShipFire;
-
-    return out;
-}
-
 static void gatherUserSettings(auto&& out) {
     out.setHideInLevel(globed::setting<bool>("core.user.hide-in-levels"));
     out.setHideInMenus(globed::setting<bool>("core.user.hide-in-menus"));
@@ -362,7 +337,7 @@ void NetworkManagerImpl::thrMaybeResendOwnData(ConnectionInfo& connInfo) {
         auto update = msg.initUpdateOwnData();
 
         if (icons) {
-            data::encode(gatherIconData(), update.initIcons());
+            data::encode(PlayerIconData::getOwn(), update.initIcons());
         }
 
         if (friendList) {
@@ -741,7 +716,7 @@ void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token
 
         auto login = msg.initLogin();
         login.setAccountId(accountId);
-        data::encode(gatherIconData(), login.initIcons());
+        data::encode(PlayerIconData::getOwn(), login.initIcons());
         if (kind != AuthKind::Plain) {
             auto uid = this->computeUident(accountId);
             login.setUident(kj::arrayPtr(uid.data(), uid.size()));
@@ -938,7 +913,7 @@ void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, boo
         auto login = msg.initLogin();
         login.setAccountId(GJAccountManager::get()->m_accountID);
         login.setToken(this->getUToken().value_or(""));
-        data::encode(gatherIconData(), login.initIcons());
+        data::encode(PlayerIconData::getOwn(), login.initIcons());
         gatherUserSettings(login.initSettings());
 
         if (id.asU64() != 0) {

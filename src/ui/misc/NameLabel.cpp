@@ -149,11 +149,19 @@ void NameLabel::updateWithRoles(const SpecialUserData& data) {
     for (auto id : data.roleIds) {
         // set name color to the highest prio role, if not overriden
         // server guarantees that the roles are sorted by priority
+        auto role = NetworkManagerImpl::get().findRole(id);
+        if (!role) {
+            log::warn("Role ID {} not found when updating NameLabel badges", id);
+            continue;
+        }
+
+        if (role->hide) {
+            continue;
+        }
+
         if (!colorSet) {
-            if (auto role = NetworkManagerImpl::get().findRole(id)) {
-                this->updateColor(role->nameColor);
-                colorSet = true;
-            }
+            this->updateColor(role->nameColor);
+            colorSet = true;
         }
 
         auto badge = createBadge(id);

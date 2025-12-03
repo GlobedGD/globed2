@@ -1,6 +1,8 @@
+#include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/util/gd.hpp>
 #include <globed/util/assert.hpp>
 #include <globed/util/singleton.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 
 #include <asp/iter.hpp>
 #include <queue>
@@ -189,6 +191,45 @@ cue::Icons convertPlayerIcons(const PlayerIconData& data) {
         .color2 = data.color2.asIdx(),
         .glowColor = data.glowColor.asIdx(),
     };
+}
+
+PlayerIconData PlayerIconData::getOwn() {
+    auto gm = globed::cachedSingleton<GameManager>();
+
+    globed::PlayerIconData out{};
+    out.cube = gm->m_playerFrame;
+    out.ship = gm->m_playerShip;
+    out.ball = gm->m_playerBall;
+    out.ufo = gm->m_playerBird;
+    out.wave = gm->m_playerDart;
+    out.robot = gm->m_playerRobot;
+    out.spider = gm->m_playerSpider;
+    out.swing = gm->m_playerSwing;
+    out.jetpack = gm->m_playerJetpack;
+    out.deathEffect = gm->m_playerDeathEffect;
+    out.color1 = gm->m_playerColor;
+    out.color2 = gm->m_playerColor2;
+    if (gm->m_playerGlow) {
+        out.glowColor = gm->m_playerGlowColor.value();
+    }
+    out.trail = gm->m_playerStreak;
+    out.shipTrail = gm->m_playerShipFire;
+
+    return out;
+}
+
+PlayerDisplayData PlayerDisplayData::getOwn() {
+    auto gjam = cachedSingleton<GJAccountManager>();
+    auto gm = cachedSingleton<GameManager>();
+    auto icons = getPlayerIcons();
+
+    PlayerDisplayData out{};
+    out.accountId = gjam->m_accountID;
+    out.userId = gm->m_playerUserID;
+    out.username = gjam->m_username;
+    out.icons = PlayerIconData::getOwn();
+    out.specialUserData = NetworkManagerImpl::get().getOwnSpecialData();
+    return out;
 }
 
 class Downloader : public SingletonNodeBase<Downloader>, LevelManagerDelegate {
