@@ -15,7 +15,9 @@ void AudioSampleQueue::writeData(const float* data, size_t num) {
 
 size_t AudioSampleQueue::readData(float* out, size_t max) {
     size_t toRead = std::min(max, m_queue.size());
-    this->peekData(out, toRead);
+    if (out) {
+        this->peekData(out, toRead);
+    }
     m_queue.erase(m_queue.begin(), m_queue.begin() + toRead);
     return toRead;
 }

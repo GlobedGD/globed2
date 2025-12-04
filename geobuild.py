@@ -192,19 +192,20 @@ def main(build: Build):
     if gc.debug:
         build.add_definition("GLOBED_DEBUG", "1")
         build.set_variable("QUNET_DEBUG", "ON")
-        build.add_compile_options(
-            "-Wall",
-            "-Wextra",
-            "-Wno-unused-variable",
-            "-Wno-unused-function",
-            "-Wno-unused-parameter",
-            "-Wno-ignored-qualifiers",
-            "-Wno-unused-but-set-variable",
-            "-Wno-overloaded-virtual",
-            "-Wno-missing-field-initializers",
-            "-Wno-missing-designated-field-initializers",
-            "-Wno-unused-private-field",
-        )
+        build.add_compile_options("-Wall", "-Wextra")
+
+    build.add_compile_options(
+        "-Wno-unused-variable",
+        "-Wno-unused-function",
+        "-Wno-unused-parameter",
+        "-Wno-ignored-qualifiers",
+        "-Wno-unused-but-set-variable",
+        "-Wno-overloaded-virtual",
+        "-Wno-missing-field-initializers",
+        "-Wno-missing-designated-field-initializers",
+        "-Wno-unused-private-field",
+        "-Wno-vla-cxx-extension"
+    )
 
     if gc.voice:
         build.add_definition("GLOBED_VOICE_SUPPORT", "1")

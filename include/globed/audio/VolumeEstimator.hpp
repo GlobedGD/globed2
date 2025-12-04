@@ -1,14 +1,14 @@
 #pragma once
 
 #include <globed/prelude.hpp>
+#include <asp/time/Instant.hpp>
 #include "AudioSampleQueue.hpp"
 
 namespace globed {
 
 class VolumeEstimator {
 public:
-    VolumeEstimator(size_t sampleRate);
-    VolumeEstimator();
+    VolumeEstimator(size_t sampleRate = 0);
 
     VolumeEstimator(const VolumeEstimator&) = default;
     VolumeEstimator& operator=(const VolumeEstimator&) = default;
@@ -23,12 +23,13 @@ public:
     float getVolume();
 
 private:
-    static constexpr float BUFFER_SIZE = 1.0f;
+    static constexpr float BUFFER_SIZE = 1.2f;
 
     float m_emaVolume = 0.f;
     float m_normalizedVolume = 0.f;
-    size_t m_sampleRate;
+    size_t m_sampleRate = 0;
     AudioSampleQueue m_sampleQueue;
+    std::deque<std::pair<asp::time::Instant, size_t>> m_writeHistory;
 };
 
 }

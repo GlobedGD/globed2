@@ -18,8 +18,9 @@ AudioStream::AudioStream(AudioDecoder&& decoder)
     exinfo.numchannels = 1;
     exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
     exinfo.defaultfrequency = VOICE_TARGET_SAMPLERATE;
+    exinfo.decodebuffersize = exinfo.numchannels * exinfo.defaultfrequency * AUDIO_PLAYBACK_DELAY;
     exinfo.userdata = this;
-    exinfo.length = sizeof(float) * exinfo.numchannels * exinfo.defaultfrequency * (VOICE_CHUNK_RECORD_TIME * 1);
+    exinfo.length = sizeof(float) * exinfo.numchannels * exinfo.defaultfrequency * 0.03f;
 
     exinfo.pcmreadcallback = [](FMOD_SOUND* sound_, void* data_, unsigned int len) -> FMOD_RESULT {
         FMOD::Sound* sound = reinterpret_cast<FMOD::Sound*>(sound_);
@@ -162,7 +163,8 @@ void AudioStream::updateEstimator(float dt) {
 }
 
 float AudioStream::getLoudness() {
-    return m_actualVolume.apply(m_estimator.lock()->getVolume());
+    float vol = m_estimator.lock()->getVolume();
+    return m_actualVolume.apply(vol);
 }
 
 Duration AudioStream::sinceLastPlayback() {
