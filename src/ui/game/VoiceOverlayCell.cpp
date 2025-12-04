@@ -26,11 +26,14 @@ bool VoiceOverlayCell::init(const PlayerDisplayData& data) {
         .id("visualizer");
 
     auto nameLabel = Build(NameLabel::create(data.username, "bigFont.fnt"))
-        .with([&](auto lbl) {
+        .with([&](NameLabel* lbl) {
             lbl->setScale(0.525f);
             if (data.specialUserData) {
                 lbl->updateWithRoles(*data.specialUserData);
             }
+            lbl->makeClickable([acc = data.accountId, uid = data.userId, username = data.username](auto) {
+                globed::openUserProfile(acc, uid, username);
+            });
         })
         .parent(m_wrapper)
         .collect();

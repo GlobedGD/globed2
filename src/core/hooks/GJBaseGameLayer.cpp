@@ -162,13 +162,6 @@ void GlobedGJBGL::setupAudio() {
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    m_fields->m_voiceOverlay = Build<VoiceOverlay>::create()
-        .parent(m_uiLayer)
-        .visible(globed::setting<bool>("core.level.voice-overlay"))
-        .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
-        .anchorPoint(1.f, 0.f)
-        .collect();
-
     // enable voice proximity?
     m_fields->m_isVoiceProximity = m_level->isPlatformer()
         ? globed::setting<bool>("core.audio.voice-proximity")
@@ -179,6 +172,21 @@ void GlobedGJBGL::setupAudio() {
         am.forEachStream([dt](int, AudioStream& stream) {
             stream.updateEstimator(dt);
         });
+    });
+
+    // schedule voice overlay 1 frame later, when we have a scene
+    FunctionQueue::get().queue([self = Ref(this), winSize] {
+        bool onTop = globed::setting<bool>("core.audio.overlaying-overlay");
+        CCNode* scene = self->getParent();
+        CCNode* parent = onTop && scene ? scene : self->m_uiLayer;
+
+        self->m_fields->m_voiceOverlay = Build<VoiceOverlay>::create()
+            .parent(parent)
+            .visible(globed::setting<bool>("core.level.voice-overlay"))
+            .zOrder(onTop ? 20 : 1)
+            .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
+            .anchorPoint(1.f, 0.f)
+            .collect();
     });
 }
 

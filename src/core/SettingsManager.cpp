@@ -77,6 +77,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.audio.voice-chat-enabled", true);
     this->registerSetting("core.audio.input-device", -1);
     this->registerSetting("core.audio.voice-loopback", false);
+    this->registerSetting("core.audio.overlaying-overlay", false);
 
     this->registerSetting("core.audio.buffer-size", 4);
     this->registerLimits("core.audio.buffer-size", 1, 10);

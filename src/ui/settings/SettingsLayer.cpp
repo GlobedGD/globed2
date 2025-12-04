@@ -239,6 +239,7 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.audio.deafen-notification", "Deafen Notification", "");
     this->addSetting<BoolSettingCell>("core.audio.only-friends", "Friends Only Voice", "");
     this->addSetting<BoolSettingCell>("core.audio.voice-loopback", "Voice Loopback", "");
+    this->addSetting<BoolSettingCell>("core.audio.overlaying-overlay", "Overlay On Top", "");
     this->addSetting<IntSliderSettingCell>("core.audio.buffer-size", "Audio Buffer Size", "");
 
     // Menus
