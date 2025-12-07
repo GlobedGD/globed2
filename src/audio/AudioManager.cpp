@@ -240,7 +240,7 @@ Result<> AudioManager::startRecordingInternal() {
     FMOD_ERRC(
         this->getSystem()->createSound(
             nullptr,
-            FMOD_2D | FMOD_OPENUSER | FMOD_LOOP_NORMAL,
+            FMOD_2D | FMOD_OPENUSER | FMOD_LOOP_NORMAL | FMOD_CREATESAMPLE,
             &exinfo,
             &m_recordSound
         ),

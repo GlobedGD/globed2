@@ -346,7 +346,7 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
 
                         // update server latency
                         auto info = this->connInfo();
-                        if (!info) co_return; // TODO: is this guaranteed to unlock on the same thread?
+                        if (!info) co_return;
 
                         auto& servers = info->m_gameServers;
                         auto it = servers.find(srvkey);
