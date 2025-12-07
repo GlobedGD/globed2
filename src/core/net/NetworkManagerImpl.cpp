@@ -13,15 +13,21 @@
 #include "data/helpers.hpp"
 #include <bb_public.hpp>
 
+#include <kj/exception.h>
+#include <arc/future/Select.hpp>
+#include <arc/time/Sleep.hpp>
 #include <argon/argon.hpp>
 #include <qunet/Pinger.hpp>
 #include <qunet/util/algo.hpp>
 #include <qunet/util/hash.hpp>
 #include <asp/time/Duration.hpp>
 #include <asp/time/sleep.hpp>
+#include <asp/iter.hpp>
 
 using namespace geode::prelude;
+using enum std::memory_order;
 using namespace asp::time;
+using namespace arc;
 
 static qn::ConnectionDebugOptions getConnOpts() {
     qn::ConnectionDebugOptions opts{};
@@ -53,21 +59,7 @@ static Duration getPingInterval(uint32_t sentPings) {
     }
 }
 
-static argon::AccountData g_argonData{};
-
-namespace globed {
-
-void GameServer::updateLatency(uint32_t latency) {
-    if (avgLatency == (uint32_t)-1) {
-        avgLatency = latency;
-    } else {
-        avgLatency = qn::exponentialMovingAverage(avgLatency, latency, 0.4);
-    }
-
-    lastLatency = latency;
-}
-
-std::string_view connectionStateToStr(qn::ConnectionState state) {
+static std::string_view connectionStateToStr(qn::ConnectionState state) {
     using enum qn::ConnectionState;
     switch (state) {
         case Disconnected: return "Disconnected";
@@ -81,199 +73,135 @@ std::string_view connectionStateToStr(qn::ConnectionState state) {
     }
 }
 
-NetworkManagerImpl::NetworkManagerImpl() {
+struct CapnpExceptionHandler : public kj::ExceptionCallback {
+    bool errored = false;
+
+    void onRecoverableException(kj::Exception&& exception) override {
+        log::warn("Capnp exception: {}", exception.getDescription().cStr());
+        errored = true;
+    }
+
+    void onFatalException(kj::Exception&& exception) override {
+        utils::terminate(fmt::format("Fatal capnp exception: {}", exception.getDescription().cStr()));
+    }
+
+    void logMessage(kj::LogSeverity severity, const char* file, int line, int contextDepth, kj::String&& text) override {
+        log::debug("(capnp) {}", text.cStr());
+    }
+};
+
+// Custom awaiter to bridge together geode tasks and arc futures
+template <typename T, typename P>
+struct GeodeTaskAwaiter : public arc::PollableBase<GeodeTaskAwaiter<T, P>, T> {
+    using GeodeTask = geode::Task<T, P>;
+
+    GeodeTaskAwaiter(GeodeTask task) : m_state(State::Init), m_task(std::move(task)) {}
+    GeodeTaskAwaiter(GeodeTaskAwaiter&&) = delete;
+    GeodeTaskAwaiter& operator=(GeodeTaskAwaiter&&) = delete;
+    GeodeTaskAwaiter(const GeodeTaskAwaiter&) = delete;
+    GeodeTaskAwaiter& operator=(const GeodeTaskAwaiter&) = delete;
+
+    std::optional<T> poll() {
+        switch (m_state) {
+            case State::Init: {
+                m_state = State::Waiting;
+                m_waker = ctx().cloneWaker();
+                m_listener.bind([this](GeodeTask::Event* event) mutable {
+                    if (T* result = event->getValue()) {
+                        // task finished
+                        m_output = std::move(*result);
+                        m_state = State::Done;
+                        m_waker->wake();
+                    } else if (event->isCancelled()) {
+                        // task was cancelled
+                        m_state = State::Done;
+                        m_waker->wake();
+                    }
+                });
+                m_listener.setFilter(m_task);
+            } break;
+
+            case State::Waiting: {
+                return std::nullopt;
+            } break;
+
+            case State::Done: {
+                auto out = std::move(m_output);
+                m_output.reset();
+                return out;
+            } break;
+        }
+
+        return std::nullopt;
+    }
+
+private:
+    enum class State {
+        Init,
+        Waiting,
+        Done,
+    } m_state;
+    GeodeTask m_task;
+    EventListener<GeodeTask> m_listener;
+    std::optional<T> m_output;
+    std::optional<Waker> m_waker;
+};
+
+static argon::AccountData g_argonData{};
+
+namespace globed {
+
+static Future<Result<std::string>> startArgonAuth() {
+    auto task = argon::startAuthWithAccount(g_argonData);
+    GeodeTaskAwaiter awaiter{task};
+    co_return co_await awaiter;
+}
+
+static void updateServers(ConnectionInfo& info, auto& newServers) {
+    info.m_gameServers.clear();
+
+    for (auto srv : newServers) {
+        GameServer gameServer {
+            .id = srv.getId(),
+            .stringId = srv.getStringId(),
+            .url = srv.getAddress(),
+            .name = srv.getName(),
+            .region = srv.getRegion()
+        };
+
+        log::debug("Added game server: {} (ID: {}, URL: {}, Region: {})",
+                   gameServer.name, static_cast<int>(gameServer.id), gameServer.url, gameServer.region);
+
+        info.m_gameServers[gameServer.stringId] = std::move(gameServer);
+    }
+
+    info.m_gameServersUpdated = true;
+}
+
+void GameServer::updateLatency(uint32_t latency) {
+    if (avgLatency == (uint32_t)-1) {
+        avgLatency = latency;
+    } else {
+        avgLatency = qn::exponentialMovingAverage(avgLatency, latency, 0.4);
+    }
+
+    lastLatency = latency;
+}
+
+WorkerState createWorkerState() {
+    auto [tx, rx] = arc::mpsc::channel<std::pair<std::string, qn::PingResult>>(32);
+    return WorkerState{std::move(tx), std::move(rx)};
+}
+
+NetworkManagerImpl::NetworkManagerImpl() : m_workerState(createWorkerState()) {
     m_hasSecure = bb_init();
 
-    // TODO (low): measure how much of an impact those have on bandwidth
-    m_centralConn.setActiveKeepaliveInterval(Duration::fromSecs(45));
-    m_gameConn.setActiveKeepaliveInterval(Duration::fromSecs(10));
-
-    m_centralConn.setConnectionStateCallback([this](qn::ConnectionState state) {
-        m_centralConnState = state;
-
-        log::info("Central connection state: {}", connectionStateToStr(state));
-
-        if (state == qn::ConnectionState::Connected) {
-            this->onCentralConnected();
-        } else if (state == qn::ConnectionState::Disconnected) {
-            this->onCentralDisconnected();
-        }
-    });
-
-    m_centralConn.setDataCallback([this](std::vector<uint8_t> bytes) {
-        qn::ByteReader breader{bytes};
-        size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
-
-        kj::ArrayInputStream ais{{bytes.data() + breader.position(), bytes.size() - breader.position()}};
-        capnp::PackedMessageReader reader{ais};
-
-        CentralMessage::Reader msg = reader.getRoot<CentralMessage>();
-
-        if (auto err = this->onCentralDataReceived(msg).err()) {
-            log::error("failed to process message from central server: {}", *err);
-        }
-    });
-
-    m_gameConn.setConnectionStateCallback([this](qn::ConnectionState state) {
-        log::info("Game connection state: {}", connectionStateToStr(state));
-
-        auto lock = m_connInfo.lock();
-
-        // we assert that a game connection can only happen within the context of a central connection,
-        // and this callback must never be invoked if we are not connected to a central server
-        if (!lock->has_value()) {
-            log::error("game connection state callback invoked without a central connection established!");
-            return;
-        }
-
-        auto& connInfo = **lock;
-
-        connInfo.m_gameConnState = state;
-        if (state == qn::ConnectionState::Connected) {
-            log::debug("connected to game server at {}", connInfo.m_gameServerUrl);
-            connInfo.m_gameEstablished = true;
-
-            // if there was a deferred join, try to login with session, otherwise just login
-            if (connInfo.m_gsDeferredJoin) {
-                auto& join = *connInfo.m_gsDeferredJoin;
-                this->sendGameLoginRequest(join.id, join.platformer, join.editorCollab);
-            } else {
-                this->sendGameLoginRequest();
-            }
-
-            // if there was a queued script message, send it
-            auto queuedScripts = std::move(connInfo.m_queuedScripts);
-            if (!queuedScripts.empty()) {
-                this->sendLevelScript(queuedScripts);
-            }
-        } else if (state == qn::ConnectionState::Disconnected) {
-            log::debug("disconnected from game server at {}", connInfo.m_gameServerUrl);
-            connInfo.m_gameEstablished = false;
-            connInfo.m_gameServerUrl.clear();
-
-            // if there was a deferred join, try to connect now
-            if (connInfo.m_gsDeferredConnectJoin) {
-                m_gameConn.setDebugOptions(getConnOpts());
-                auto res = m_gameConn.connect(connInfo.m_gsDeferredConnectJoin->first);
-                connInfo.m_gameServerUrl = connInfo.m_gsDeferredConnectJoin->first;
-
-                if (!res) {
-                    log::error("Failed to connect to game server {}: {}", connInfo.m_gsDeferredConnectJoin->first, res.unwrapErr().message());
-                    connInfo.m_gameServerUrl.clear();
-                }
-            }
-        }
-    });
-
-    m_gameConn.setDataCallback([this](std::vector<uint8_t> bytes) {
-        qn::ByteReader breader{bytes};
-        size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
-
-        kj::ArrayInputStream ais{{bytes.data() + breader.position(), bytes.size() - breader.position()}};
-        capnp::PackedMessageReader reader{ais};
-
-        GameMessage::Reader msg = reader.getRoot<GameMessage>();
-
-        if (auto err = this->onGameDataReceived(msg).err()) {
-            log::error("failed to process message from game server: {}", err);
-        }
-    });
-
-    m_workerThread.setName("NetworkManager worker");
-    m_workerThread.setLoopFunction([this](asp::StopToken<>& stopToken) {
-        switch (m_centralConnState.load()) {
-            case qn::ConnectionState::Disconnected: {
-                m_connInfo.lock()->reset();
-
-                // wait for a connection..
-                m_pendingConnectNotify.wait();
-                auto url = *m_pendingConnectUrl.lock();
-
-                auto connInfo = m_connInfo.lock();
-                connInfo->emplace();
-                m_centralUrl = std::string(url);
-
-                m_centralConn.setDebugOptions(getConnOpts());
-                m_disconnectRequested.store(false);
-
-                auto res = m_centralConn.connect(url);
-                if (!res) {
-                    FunctionQueue::get().queue([url, err = std::move(res).unwrapErr()] mutable {
-                        log::error("Failed to connect to central server at '{}': {}", url, err.message());
-                        globed::alertFormat(
-                            "Globed Error",
-                            "Failed to connect to central server at <cp>'{}'</c>: <cy>{}</c>",
-                            url, err.message()
-                        );
-                    });
-                }
-            } break;
-
-            case qn::ConnectionState::DnsResolving:
-            case qn::ConnectionState::Pinging:
-            case qn::ConnectionState::Connecting:
-            case qn::ConnectionState::Reconnecting:
-            case qn::ConnectionState::Closing: {
-                // do nothing!
-                asp::time::sleep(Duration::fromMillis(10));
-            } break;
-
-            case qn::ConnectionState::Connected: {
-                auto lock = m_connInfo.lock();
-                if (*lock) {
-                    auto& info = **lock;
-                    this->thrPingGameServers(info);
-                    this->thrMaybeResendOwnData(info);
-
-                    // this is a mess
-                    bool timedOut = info.m_authenticating && info.m_triedAuthAt.elapsed() > Duration::fromSecs(5);
-
-                    if (timedOut && !info.m_waitingForArgon && !info.m_established) {
-                        // cancel connection
-                        lock.unlock();
-                        this->abortConnection("Authentication timed out");
-                        return;
-                    }
-                }
-
-                lock.unlock();
-
-                if (m_disconnectNotify.wait(Duration::fromMillis(10), [&] {
-                    return m_disconnectRequested.load();
-                })) {
-                    // disconnect was requested, abort connection
-                    log::debug("disconnect was requested, aborting connection");
-                    m_disconnectRequested.store(false);
-
-                    m_manualDisconnect = true;
-
-                    (void) m_centralConn.disconnect();
-                    m_gameConn.cancelConnection();
-                    (void) m_gameConn.disconnect();
-
-                    m_finishedClosingNotify.wait(Duration::zero(), [&] {
-                        return m_centralConnState.load() != qn::ConnectionState::Connected;
-                    });
-
-                    // if a game connection is still closing, wait
-                    while (!m_gameConn.disconnected()) {
-                        log::debug("waiting for game connection to terminate..");
-                        asp::time::sleep(Duration::fromMillis(25));
-                    }
-
-                    log::debug("Connection abort finished");
-                }
-            } break;
-        }
-    });
-
-    m_workerThread.start();
+    m_runtime.spawn([](auto* self) -> arc::Future<> {
+        co_await self->asyncInit();
+    }(this));
 }
 
 NetworkManagerImpl::~NetworkManagerImpl() {
-    m_pendingConnectNotify.notifyAll();
-    m_workerThread.stopAndWait();
-
     m_destructing = true;
 }
 
@@ -281,57 +209,362 @@ NetworkManagerImpl& NetworkManagerImpl::get() {
     return *NetworkManager::get().m_impl;
 }
 
-void NetworkManagerImpl::thrPingGameServers(ConnectionInfo& connInfo) {
-    auto& servers = connInfo.m_gameServers;
+Future<> NetworkManagerImpl::asyncInit() {
+    auto [gstx, gsrx] = arc::mpsc::channel<GameServerJoinRequest>(4);
+    m_gameServerJoinTx = std::move(gstx);
+    m_gameWorkerState.joinRx = std::move(gsrx);
 
-    for (auto& [srvkey, server] : servers) {
-        if (server.lastPingTime.elapsed() > getPingInterval(server.sentPings)) {
+    m_centralConn = co_await qn::Connection::create();
+    m_gameConn = co_await qn::Connection::create();
+
+    // TODO (low): measure how much of an impact those have on bandwidth
+    m_centralConn->setActiveKeepaliveInterval(Duration::fromSecs(45));
+    m_gameConn->setActiveKeepaliveInterval(Duration::fromSecs(10));
+
+    m_centralConn->setConnectionStateCallback([this](qn::ConnectionState state) {
+        this->onCentralStateChanged(state);
+    });
+
+    m_centralConn->setDataCallback([this](std::vector<uint8_t> bytes) {
+        qn::ByteReader breader{bytes};
+        size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
+
+        CapnpExceptionHandler errHandler;
+        kj::ArrayInputStream ais{{bytes.data() + breader.position(), bytes.size() - breader.position()}};
+        capnp::PackedMessageReader reader{ais};
+        CentralMessage::Reader msg = reader.getRoot<CentralMessage>();
+
+        if (errHandler.errored) {
+            log::error("capnp error while reading central message, dropping");
+            return;
+        }
+
+        if (auto err = this->onCentralDataReceived(msg).err()) {
+            log::error("failed to process message from central server: {}", *err);
+        }
+    });
+
+    m_centralConn->setStateResetCallback([this] {
+        auto info = m_connInfo.lock();
+        info->reset();
+    });
+
+    m_gameConn->setConnectionStateCallback([this](qn::ConnectionState state) {
+        this->onGameStateChanged(state);
+    });
+
+    m_gameConn->setDataCallback([this](std::vector<uint8_t> bytes) {
+        qn::ByteReader breader{bytes};
+        size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
+
+        CapnpExceptionHandler errHandler;
+        kj::ArrayInputStream ais{{bytes.data() + breader.position(), bytes.size() - breader.position()}};
+        capnp::PackedMessageReader reader{ais};
+        GameMessage::Reader msg = reader.getRoot<GameMessage>();
+
+        if (errHandler.errored) {
+            log::error("capnp error while reading game message, dropping");
+            return;
+        }
+
+        if (auto err = this->onGameDataReceived(msg).err()) {
+            log::error("failed to process message from game server: {}", err);
+        }
+    });
+
+    // Spawn the main worker tasks
+    m_runtime.spawn([](auto* self) -> arc::Future<> {
+        while (true) {
+            co_await self->threadWorkerLoop();
+        }
+    }(this));
+
+    m_runtime.spawn([](auto* self) -> arc::Future<> {
+        while (true) {
+            co_await self->threadGameWorkerLoop();
+        }
+    }(this));
+}
+
+Future<> NetworkManagerImpl::threadWorkerLoop() {
+    using enum qn::ConnectionState;
+
+    // Worker task has the following duties:
+    // - Watch the connection state
+    // - When connected, periodically ping game servers and decide to resend own data
+    auto connState = m_centralConn->state();
+    auto prevState = m_workerState.prevCentralState;
+    m_workerState.prevCentralState = connState;
+
+    // reset connection info on disconnect, and create it when needed
+    if (connState == Disconnected) {
+        m_connInfo.lock()->reset();
+    } else if (connState == Connected && connState != prevState) {
+        auto info = m_connInfo.lock();
+        if (!*info) info->emplace();
+    }
+
+    switch (connState) {
+        case Connected: {
+            // if we weren't connected before, do some initial setup
+            if (prevState != qn::ConnectionState::Connected) {
+                m_workerState.nextGSPing = Instant::now();
+                m_workerState.pingResultRx.drain();
+                globed::setValue<bool>("core.was-connected", true);
+            }
+
+            {
+                auto info = this->connInfo();
+
+                // if we aren't authenticated yet, try to do auth
+                if (!info->m_established && !info->m_authenticating) {
+                    info.unlock();
+                    co_await this->threadTryAuth();
+                    co_return;
+                }
+
+                // check if icons or friend list need to be resent
+                this->threadMaybeResendOwnData(info);
+
+                // reset the timer to ping game servers if the server list was updated
+                if (info->m_gameServersUpdated) {
+                    log::debug("Pinging servers again soon");
+                    info->m_gameServersUpdated = false;
+                    m_workerState.nextGSPing = Instant::now();
+                }
+            }
+
+            // wait for someone to notify us or timeout for one of the tasks
+            co_await arc::select(
+                arc::selectee(m_workerNotify.notified()),
+
+                arc::selectee(
+                    m_workerState.pingResultRx.recv(),
+                    [&](auto result) -> arc::Future<> {
+                        // this should never fail
+                        auto [srvkey, res] = std::move(result).unwrap();
+
+                        // update server latency
+                        auto info = this->connInfo();
+                        if (!info) co_return; // TODO: is this guaranteed to unlock on the same thread?
+
+                        auto& servers = info->m_gameServers;
+                        auto it = servers.find(srvkey);
+                        if (it != servers.end()) {
+                            auto lat = (uint32_t)res.responseTime.millis();
+                            it->second.updateLatency(lat);
+                            log::debug(
+                                "Ping to server {} arrived, latency: {}ms avg, {}ms last",
+                                srvkey,
+                                it->second.avgLatency,
+                                it->second.lastLatency
+                            );
+                        }
+                    }
+                ),
+
+                arc::selectee(
+                    arc::sleepUntil(m_workerState.nextGSPing),
+                    [&] {
+                        auto info = this->connInfo();
+                        this->threadPingGameServers(info);
+                    }
+                )
+            );
+        } break;
+
+        default: {
+            // show a disconnect popup when reconnecting or disconnected
+            bool showDisconnect = false;
+            if ((connState == Reconnecting || connState == Disconnected) && prevState != connState) {
+                showDisconnect = true;
+            }
+
+            if (showDisconnect) {
+                this->showDisconnectCause(connState == Reconnecting);
+                co_return;
+            }
+
+            // do nothing, wait for something to happen
+            co_await m_workerNotify.notified();
+        } break;
+    }
+
+    co_return;
+}
+
+Future<> NetworkManagerImpl::threadGameWorkerLoop() {
+    using enum qn::ConnectionState;
+
+    auto connState = m_gameConn->state();
+    auto prevState = m_gameWorkerState.prevGameState;
+    m_gameWorkerState.prevGameState = connState;
+
+    auto& cur = m_gameWorkerState.currentReq;
+    if (cur) {
+        bool sameUrl, gameEstablished;
+        {
+            auto info = this->connInfo();
+            if (!info) {
+                cur.reset();
+                co_return;
+            }
+
+            sameUrl = info->m_gameServerUrl == cur->url;
+            gameEstablished = info->m_gameEstablished;
+        }
+
+        if (connState == Connected) {
+            if (!sameUrl) {
+                // connected to a different server, disconnect and then connect to the needed one
+                m_gameConn->disconnect();
+            } else if (gameEstablished) {
+                // connected to the same server as requested, simply send a join request
+                this->sendGameJoinRequest(cur->id, cur->platformer, cur->editorCollab);
+                cur.reset();
+            } else {
+                // connected but not yet logged in, send a login request
+                this->sendGameLoginRequest(cur->id, cur->platformer, cur->editorCollab);
+                cur.reset();
+            }
+        } else if (connState != Disconnected) {
+            // connecting or closing, wait
+        } else if (!cur->triedConnecting) {
+            // disconnected, connect to the requested server
+            m_gameConn->setDebugOptions(getConnOpts());
+            auto res = m_gameConn->connect(cur->url);
+            auto info = this->connInfo();
+
+            if (!res) {
+                log::error("Failed to connect to game server {}: {}", cur->url, res.unwrapErr().message());
+                info->m_gameServerUrl.clear();
+                cur.reset();
+            } else {
+                info->m_gameServerUrl = cur->url;
+            }
+        } else {
+            // already tried connecting to this server and failed, so give it up
+            this->connInfo()->m_gameServerUrl.clear();
+            cur.reset();
+        }
+    }
+
+    co_await arc::select(
+        arc::selectee(m_gameWorkerNotify.notified()),
+
+        // only poll for new join requests if there is no current request
+        arc::selectee(m_gameWorkerState.joinRx->recv(), [&](auto result) {
+            if (!result) return;
+            auto req = std::move(result).unwrap();
+            m_gameWorkerState.currentReq = std::move(req);
+        }, !m_gameWorkerState.currentReq)
+    );
+}
+
+void NetworkManagerImpl::showDisconnectCause(bool reconnecting) {
+    bool showPopup = !m_manualDisconnect.load(::acquire);
+    std::string message = "client initiated disconnect";
+
+    if (!showPopup) {
+        // only save the was-connected value if the user manually disconnected
+        if (!m_destructing) {
+            globed::setValue<bool>("core.was-connected", false);
+        }
+    } else {
+        auto abortCause = m_abortCause.lock();
+
+        if (!abortCause->first.empty()) {
+            message = std::move(abortCause->first);
+        } else {
+            auto err = m_centralConn->lastError();
+            if (err == qn::ConnectionError::Success) {
+                message = "Connection cancelled";
+            } else {
+                message = err.message();
+            }
+        }
+
+        // if this was a silent abort, don't show a popup
+        if (abortCause->second) {
+            showPopup = false;
+        }
+    }
+
+    log::info("connection to central server lost: {}", message);
+
+    FunctionQueue::get().queue([reconnecting, showPopup, message = std::move(message)] {
+        CoreImpl::get().onServerDisconnected();
+
+        if (showPopup) {
+            if (reconnecting) {
+                // if reconnecting, show a toast instead
+                globed::toastError("Globed: connection lost, reconnecting..");
+            } else {
+                auto alert = PopupManager::get().alertFormat("Globed Error", "Connection lost: <cy>{}</c>", message);
+                alert.showQueue();
+            }
+        }
+    });
+}
+
+void NetworkManagerImpl::threadPingGameServers(LockedConnInfo& info) {
+    Instant now = Instant::now();
+    Instant nextPing = Instant::farFuture();
+
+    for (auto& [srvkey, server] : info->m_gameServers) {
+        auto interval = getPingInterval(server.sentPings);
+        auto elapsed = now.durationSince(server.lastPingTime);
+
+        if (elapsed >= interval) {
+            // ping the server
             server.sentPings++;
-            server.lastPingTime = Instant::now();
+            server.lastPingTime = now;
 
-            // send a ping to the server
-            auto res = qn::Pinger::get().pingUrl(server.url, [this, srvkey = srvkey](qn::PingResult res) {
+            auto tx = m_workerState.pingResultTx;
+
+            auto res = qn::Pinger::get().pingUrl(server.url, [tx, srvkey = srvkey](qn::PingResult res) mutable {
                 if (res.timedOut) {
-                    log::debug("Ping to server {} timed out!", srvkey);
+                    log::debug("Ping to server {} timed out", srvkey);
                     return;
                 }
 
-                // update the server latency
-                auto connInfo = m_connInfo.lock();
-                if (!*connInfo) return;
-
-                auto& servers = (*connInfo)->m_gameServers;
-                auto it = servers.find(srvkey);
-                if (it != servers.end()) {
-                    auto lat = (uint32_t)res.responseTime.millis();
-                    it->second.updateLatency(lat);
-                    log::debug("Ping to server {} arrived, latency: {}ms avg, {}ms last", srvkey, it->second.avgLatency, it->second.lastLatency);
-                }
+                (void) tx.trySend({srvkey, res});
             });
 
             if (!res) {
                 log::warn("Failed to ping game server {} ({}, id {}): {}", server.url, server.name, (int)server.id, res.unwrapErr());
-                continue;
             }
+
+            interval = getPingInterval(server.sentPings);
         }
+
+        nextPing = std::min(nextPing, server.lastPingTime + interval);
     }
+
+    log::debug(
+        "Scheduling next game server ping in {:.3f}s",
+        (nextPing.durationSince(now)).seconds<float>()
+    );
+    m_workerState.nextGSPing = nextPing;
 }
 
-void NetworkManagerImpl::thrMaybeResendOwnData(ConnectionInfo& connInfo) {
-    auto& flm = FriendListManager::get();
+void NetworkManagerImpl::threadMaybeResendOwnData(LockedConnInfo& info) {
+    // don't send if we haven't authorized yet
+    if (!info->m_established) {
+        return;
+    }
 
     // check if icons or friend list need to be resent
-    bool friendList = !connInfo.m_sentFriendList && flm.isLoaded();
-    bool icons = !connInfo.m_sentIcons;
+    auto& flm = FriendListManager::get();
+    bool friendList = !info->m_sentFriendList && flm.isLoaded();
+    bool icons = !info->m_sentIcons;
 
     if (!icons && !friendList) {
         return;
     }
 
-    // don't send if we haven't authorized yet
-    if (!connInfo.m_established) {
-        return;
-    }
+
+    // send own data
 
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto update = msg.initUpdateOwnData();
@@ -351,54 +584,166 @@ void NetworkManagerImpl::thrMaybeResendOwnData(ConnectionInfo& connInfo) {
         }
     });
 
-    connInfo.m_sentIcons = true;
-    connInfo.m_sentFriendList = true;
+    info->m_sentIcons = true;
+    info->m_sentFriendList = true;
+}
+
+Future<> NetworkManagerImpl::threadTryAuth() {
+    if (auto stoken = this->getUToken()) {
+        this->connInfo()->startedAuth();
+        this->sendCentralAuth(AuthKind::Utoken, *stoken);
+        co_return;
+    }
+
+    // try argon / plain auth
+    auto info = this->connInfo();
+
+    if (!info->m_knownArgonUrl.empty()) {
+        (void) argon::setServerUrl(info->m_knownArgonUrl);
+
+        // wait to acquire an argon token
+        info.unlock();
+        auto res = co_await startArgonAuth();
+
+        if (!res) {
+            this->abortConnection(fmt::format("failed to complete Argon auth: {}", res.unwrapErr()));
+            co_return;
+        }
+
+        info.relock();
+        info->startedAuth();
+        this->sendCentralAuth(AuthKind::Argon, *res);
+    } else {
+        info->startedAuth();
+        this->sendCentralAuth(AuthKind::Plain);
+    }
+}
+
+void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        int accountId = g_argonData.accountId;
+        int userId = g_argonData.userId;
+
+        auto login = msg.initLogin();
+        login.setAccountId(accountId);
+        data::encode(PlayerIconData::getOwn(), login.initIcons());
+        if (kind != AuthKind::Plain) {
+            auto uid = this->computeUident(accountId);
+            login.setUident(kj::arrayPtr(uid.data(), uid.size()));
+        }
+        gatherUserSettings(login.initSettings());
+
+        switch (kind) {
+            case AuthKind::Utoken: {
+                log::debug("attempting login with user token {}", token);
+                login.setUtoken(token);
+            } break;
+
+            case AuthKind::Argon: {
+                log::debug("attempting login with argon token ({})", accountId);
+                login.setArgon(token);
+            } break;
+
+            case AuthKind::Plain: {
+                log::debug("attempting plain login");
+                auto plain = login.initPlain();
+                plain.setAccountId(accountId);
+                plain.setUserId(userId);
+                plain.setUsername(g_argonData.username);
+            } break;
+        }
+    });
+}
+
+Result<> NetworkManagerImpl::sendMessageToConnection(qn::Connection& conn, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed) {
+    if (!conn.connected()) {
+        return Err("not connected");
+    }
+
+    size_t unpackedSize = capnp::computeSerializedSizeInWords(msg) * 8;
+    qn::ArrayByteWriter<8> writer;
+    writer.writeVarUint(unpackedSize).unwrap();
+    auto unpSizeBuf = writer.written();
+
+    kj::VectorOutputStream vos;
+    vos.write(unpSizeBuf.data(), unpSizeBuf.size());
+    capnp::writePackedMessage(vos, msg);
+
+    auto data = std::vector<uint8_t>(vos.getArray().begin(), vos.getArray().end());
+
+    conn.sendData(std::move(data), reliable, uncompressed);
+
+    return Ok();
+}
+
+void NetworkManagerImpl::sendToCentral(std23::function_ref<void(CentralMessage::Builder&)>&& func) {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<CentralMessage>();
+    func(root);
+
+    auto res = sendMessageToConnection(*m_centralConn, msg, true, false);
+
+    if (!res) {
+        log::warn("Failed to send message to central server: {}", res.unwrapErr());
+    }
+}
+
+void NetworkManagerImpl::sendToGame(std23::function_ref<void(GameMessage::Builder&)>&& func, bool reliable, bool uncompressed) {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<GameMessage>();
+    func(root);
+
+    auto res = sendMessageToConnection(*m_gameConn, msg, reliable, uncompressed);
+
+    if (!res) {
+        log::warn("Failed to send message to game server: {}", res.unwrapErr());
+    }
+}
+
+LockedConnInfo NetworkManagerImpl::connInfo() const {
+    return LockedConnInfo{m_connInfo.lock()};
 }
 
 Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
-    if (!m_centralConn.disconnected()) {
+    if (!m_centralConn->disconnected()) {
         return Err("Already connected to central server");
     }
 
-    g_argonData = argon::getGameAccountData();
-
-    *m_pendingConnectUrl.lock() = std::string(url);
-    m_pendingConnectNotify.notifyOne();
-    m_manualDisconnect = false;
-    m_abortCause.lock()->first.clear();
-
     FriendListManager::get().refresh();
 
-    return Ok();
-}
+    g_argonData = argon::getGameAccountData();
+    m_abortCause.lock()->first.clear();
+    m_manualDisconnect.store(false, ::release);
 
-Result<> NetworkManagerImpl::disconnectCentral() {
-    auto connInfo = m_connInfo.lock();
+    m_centralConn->setDebugOptions(getConnOpts());
+    auto res = m_centralConn->connect(std::string(url));
 
-    if (!*connInfo) {
-        return Err("Not connected to central server");
+    if (!res) {
+        FunctionQueue::get().queue([url, err = std::move(res).unwrapErr()] mutable {
+            globed::alertFormat(
+                "Globed Error",
+                "Failed to connect to central server at <cp>'{}'</c>: <cy>{}</c>",
+                url, err.message()
+            );
+        });
+
+        return Err("Connection to {} failed: {}", url, res.unwrapErr().message());
     }
 
-    this->disconnectInner();
-
     return Ok();
 }
 
-Result<> NetworkManagerImpl::cancelConnection() {
-    m_centralConn.cancelConnection();
-    this->disconnectInner();
-    return Ok();
+void NetworkManagerImpl::disconnectCentral() {
+    m_manualDisconnect.store(true, ::release);
+    m_centralConn->disconnect();
+    m_gameConn->disconnect();
 }
 
 qn::ConnectionState NetworkManagerImpl::getConnState(bool game) {
-    auto connInfo = m_connInfo.lock();
-
-    if (game && *connInfo) {
-        return (*connInfo)->m_gameConnState.load();
-    } else if (game) {
-        return qn::ConnectionState::Disconnected;
+    if (game) {
+        return m_gameConn->state();
     } else {
-        return m_centralConnState.load();
+        return m_centralConn->state();
     }
 }
 
@@ -427,21 +772,16 @@ void NetworkManagerImpl::dumpNetworkStats() {
     };
 
     log::info("=== Central connection stats ===");
-    describe(m_centralConn.statSnapshotFull());
+    describe(m_centralConn->statSnapshotFull());
     log::info("==== Game connection stats =====");
-    describe(m_gameConn.statSnapshotFull());
+    describe(m_gameConn->statSnapshotFull());
     log::info("================================");
 }
 
 std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
-    auto lock = m_connInfo.lock();
-    if (!*lock) {
-        return std::nullopt;
-    }
-
-    auto& connInfo = **lock;
-
-    auto& servers = connInfo.m_gameServers;
+    auto info = this->connInfo();
+    if (!info) return std::nullopt;
+    auto& servers = info->m_gameServers;
 
     if (auto value = globed::value<std::string>("core.net.preferred-server")) {
         for (auto& srv : servers) {
@@ -464,37 +804,32 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
 }
 
 std::vector<GameServer> NetworkManagerImpl::getGameServers() {
-    auto lock = m_connInfo.lock();
-    if (!*lock) {
+    auto info = this->connInfo();
+    if (!info) {
         return {};
     }
 
-    std::vector<GameServer> out;
-
-    for (auto& server : (**lock).m_gameServers) {
-        out.push_back(server.second);
-    }
-
-    return out;
+    return asp::iter::values(info->m_gameServers).collect();
 }
 
 bool NetworkManagerImpl::isConnected() const {
-    auto lock = m_connInfo.lock();
-    return *lock && (*lock)->m_established;
+    auto info = this->connInfo();
+    return info && info->m_established;
 }
 
 Duration NetworkManagerImpl::getGamePing() {
-    return m_gameConn.getLatency();
+    return m_gameConn->getLatency();
 }
 
 Duration NetworkManagerImpl::getCentralPing() {
-    return m_centralConn.getLatency();
+    return m_centralConn->getLatency();
 }
 
 std::string NetworkManagerImpl::getCentralIdent() {
-    if (m_centralUrl.empty()) return "";
+    auto info = this->connInfo();
+    if (!info || info->m_centralUrl.empty()) return "";
 
-    auto hash = qn::blake3Hash(m_centralUrl).toString();
+    auto hash = qn::blake3Hash(info->m_centralUrl).toString();
     hash.resize(16);
     return hash;
 }
@@ -523,58 +858,53 @@ void NetworkManagerImpl::storeModPassword(const std::string& pw) {
 }
 
 uint32_t NetworkManagerImpl::getGameTickrate() {
-    auto lock = m_connInfo.lock();
-    return *lock ? (*lock)->m_gameTickrate : 0;
+    auto info = this->connInfo();
+    return info ? info->m_gameTickrate : 0;
 }
 
 std::vector<UserRole> NetworkManagerImpl::getAllRoles() {
-    auto lock = m_connInfo.lock();
-    return *lock ? (*lock)->m_allRoles : std::vector<UserRole>{};
+    auto info = this->connInfo();
+    return info ? info->m_allRoles : std::vector<UserRole>{};
 }
 
 std::vector<UserRole> NetworkManagerImpl::getUserRoles() {
-    auto lock = m_connInfo.lock();
-    return *lock ? (*lock)->m_userRoles : std::vector<UserRole>{};
+    auto info = this->connInfo();
+    return info ? info->m_userRoles : std::vector<UserRole>{};
 }
 
 std::vector<uint8_t> NetworkManagerImpl::getUserRoleIds() {
-    auto lock = m_connInfo.lock();
-    return *lock ? (*lock)->m_userRoleIds : std::vector<uint8_t>{};
+    auto info = this->connInfo();
+    return info ? info->m_userRoleIds : std::vector<uint8_t>{};
 }
 
 std::optional<UserRole> NetworkManagerImpl::getUserHighestRole() {
-    auto lock = m_connInfo.lock();
-    if (!*lock) {
-        return std::nullopt;
-    }
+    auto info = this->connInfo();
+    if (!info) return std::nullopt;
 
     // we assume that roles are sorted by priority, so the first one is the highest
-    auto& roles = (**lock).m_userRoles;
+    auto& roles = info->m_userRoles;
     return roles.empty() ? std::nullopt : std::make_optional(roles.front());
 }
 
 std::optional<UserRole> NetworkManagerImpl::findRole(uint8_t roleId) {
-    auto lock = m_connInfo.lock();
-    if (!*lock) {
-        return std::nullopt;
-    }
+    auto info = this->connInfo();
+    if (!info) return std::nullopt;
 
-    for (auto& role : (**lock).m_allRoles) {
+    for (auto& role : info->m_allRoles) {
         if (role.id == roleId) {
             return role;
         }
     }
 
     return std::nullopt;
+
 }
 
 std::optional<UserRole> NetworkManagerImpl::findRole(std::string_view roleId) {
-    auto lock = m_connInfo.lock();
-    if (!*lock) {
-        return std::nullopt;
-    }
+    auto info = this->connInfo();
+    if (!info) return std::nullopt;
 
-    for (auto& role : (**lock).m_allRoles) {
+    for (auto& role : info->m_allRoles) {
         if (role.stringId == roleId) {
             return role;
         }
@@ -588,26 +918,26 @@ bool NetworkManagerImpl::isModerator() {
 }
 
 bool NetworkManagerImpl::isAuthorizedModerator() {
-    auto lock = m_connInfo.lock();
-    return *lock ? (*lock)->m_authorizedModerator : false;
+    auto info = this->connInfo();
+    return info && info->m_authorizedModerator;
 }
 
 ModPermissions NetworkManagerImpl::getModPermissions() {
-    auto lock = m_connInfo.lock();
-    return *lock ? (*lock)->m_perms : ModPermissions{};
+    auto info = this->connInfo();
+    return info ? info->m_perms : ModPermissions{};
 }
 
 PunishReasons NetworkManagerImpl::getModPunishReasons() {
-    auto lock = m_connInfo.lock();
-    return *lock ? (*lock)->m_punishReasons : PunishReasons{};
+    auto info = this->connInfo();
+    return info ? info->m_punishReasons : PunishReasons{};
 }
 
 std::optional<SpecialUserData> NetworkManagerImpl::getOwnSpecialData() {
-    auto lock = m_connInfo.lock();
-    if (*lock && ((**lock).m_userRoleIds.size() || (**lock).m_nameColor)) {
+    auto info = this->connInfo();
+    if (info && (info->m_userRoleIds.size() || info->m_nameColor)) {
         SpecialUserData data{};
-        data.roleIds = (**lock).m_userRoleIds;
-        data.nameColor = (**lock).m_nameColor;
+        data.roleIds = info->m_userRoleIds;
+        data.nameColor = info->m_nameColor;
         return data;
     }
 
@@ -615,34 +945,34 @@ std::optional<SpecialUserData> NetworkManagerImpl::getOwnSpecialData() {
 }
 
 bool NetworkManagerImpl::canNameRooms() {
-    auto lock = m_connInfo.lock();
-    return *lock ? (**lock).m_canNameRooms : false;
+    auto info = this->connInfo();
+    return info && info->m_canNameRooms;
 }
 
 void NetworkManagerImpl::invalidateIcons() {
-    auto lock = m_connInfo.lock();
-    if (*lock) {
-        (**lock).m_sentIcons = false;
+    auto info = this->connInfo();
+    if (info) {
+        info->m_sentIcons = false;
     }
 }
 
 void NetworkManagerImpl::invalidateFriendList() {
-    auto lock = m_connInfo.lock();
-    if (*lock) {
-        (**lock).m_sentFriendList = false;
+    auto info = this->connInfo();
+    if (info) {
+        info->m_sentFriendList = false;
     }
 }
 
 void NetworkManagerImpl::markAuthorizedModerator() {
-    auto lock = m_connInfo.lock();
-    if (*lock) {
-        (**lock).m_authorizedModerator = true;
+    auto info = this->connInfo();
+    if (info) {
+        info->m_authorizedModerator = true;
     }
 }
 
 std::optional<FeaturedLevelMeta> NetworkManagerImpl::getFeaturedLevel() {
-    auto lock = m_connInfo.lock();
-    return *lock ? (**lock).m_featuredLevel : std::nullopt;
+    auto info = this->connInfo();
+    return info ? info->m_featuredLevel : std::nullopt;
 }
 
 bool NetworkManagerImpl::hasViewedFeaturedLevel() {
@@ -653,372 +983,174 @@ void NetworkManagerImpl::setViewedFeaturedLevel() {
     this->setLastFeaturedLevelId(this->getFeaturedLevel().value_or(FeaturedLevelMeta{}).levelId);
 }
 
-void NetworkManagerImpl::onCentralConnected() {
-    m_tryingReconnect = false;
-
-    globed::setValue<bool>("core.was-connected", true);
-
-    log::debug("connection to central server established, trying to log in");
-
-    this->tryAuth();
+std::optional<std::string> NetworkManagerImpl::getUToken() {
+    return globed::value<std::string>(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
 }
 
-void NetworkManagerImpl::tryAuth() {
-    auto gam = GJAccountManager::get();
-    int accountId = gam->m_accountID;
-    int userId = GameManager::get()->m_playerUserID;
-
-    auto lock = m_connInfo.lock();
-    if (!*lock) {
-        log::error("Cannot authenticate, not connected to central server");
-        return;
-    }
-
-    auto& connInfo = **lock;
-
-    if (auto stoken = this->getUToken()) {
-        connInfo.startedAuth();
-        this->sendCentralAuth(AuthKind::Utoken, *stoken);
-    } else if (!connInfo.m_knownArgonUrl.empty()) {
-        (void) argon::setServerUrl(connInfo.m_knownArgonUrl);
-        connInfo.m_waitingForArgon = true;
-        lock.unlock();
-
-        auto res = argon::startAuthWithAccount(g_argonData, [this](Result<std::string> res) {
-            auto lock = m_connInfo.lock();
-            (**lock).m_waitingForArgon = false;
-            (**lock).startedAuth();
-            lock.unlock();
-
-            if (!res) {
-                this->abortConnection(fmt::format("failed to complete Argon auth: {}", res.unwrapErr()));
-                return;
-            }
-
-            this->sendCentralAuth(AuthKind::Argon, *res);
-        });
-
-        if (!res) {
-            (**m_connInfo.lock()).m_waitingForArgon = false;
-            this->abortConnection(fmt::format("failed to start Argon auth: {}", res.unwrapErr()));
-            return;
-        }
-    } else {
-        connInfo.startedAuth();
-        this->sendCentralAuth(AuthKind::Plain);
-    }
+void NetworkManagerImpl::setUToken(std::string token) {
+    ValueManager::get().set(fmt::format("auth.last-utoken.{}", this->getCentralIdent()), std::move(token));
 }
 
-void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token) {
-    this->sendToCentral([&](CentralMessage::Builder& msg) {
-        int accountId = GJAccountManager::get()->m_accountID;
-        int userId = GameManager::get()->m_playerUserID;
+void NetworkManagerImpl::clearUToken() {
+    ValueManager::get().erase(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
+}
 
-        auto login = msg.initLogin();
-        login.setAccountId(accountId);
-        data::encode(PlayerIconData::getOwn(), login.initIcons());
-        if (kind != AuthKind::Plain) {
-            auto uid = this->computeUident(accountId);
-            login.setUident(kj::arrayPtr(uid.data(), uid.size()));
-        }
-        gatherUserSettings(login.initSettings());
+std::vector<uint8_t> NetworkManagerImpl::computeUident(int accountId) {
+    static asp::Mutex<std::pair<int, std::vector<uint8_t>>> mtx;
 
-        switch (kind) {
-            case AuthKind::Utoken: {
-                log::debug("attempting login with user token {}", token);
-                login.setUtoken(token);
-            } break;
+    auto lock = mtx.lock();
+    if (lock->first == accountId) {
+        return lock->second;
+    }
 
-            case AuthKind::Argon: {
-                log::debug("attempting login with argon token ({})", accountId);
-                login.setArgon(token);
-            } break;
+    uint8_t buf[512];
+    size_t outLen = bb_work(accountId, (char*)buf, 512);
 
-            case AuthKind::Plain: {
-                log::debug("attempting plain login");
-                auto plain = login.initPlain();
-                plain.setAccountId(accountId);
-                plain.setUserId(userId);
-                plain.setUsername(GJAccountManager::get()->m_username);
-            } break;
-        }
-    });
+    if (outLen == 0) {
+        log::error("Failed to compute uident!");
+        return {};
+    }
+
+    lock->first = accountId;
+    lock->second = std::vector<uint8_t>{buf, buf + outLen};
+
+    return lock->second;
+}
+
+int32_t NetworkManagerImpl::getLastFeaturedLevelId() {
+    return globed::value<int32_t>(fmt::format("core.last-featured-id.{}", this->getCentralIdent())).value_or(0);
+}
+
+void NetworkManagerImpl::setLastFeaturedLevelId(int32_t id) {
+    ValueManager::get().set(fmt::format("core.last-featured-id.{}", this->getCentralIdent()), id);
+}
+
+void NetworkManagerImpl::onCentralStateChanged(qn::ConnectionState state) {
+    log::info("central connection state: {}", connectionStateToStr(state));
+    m_workerNotify.notifyOne();
+}
+
+void NetworkManagerImpl::onGameStateChanged(qn::ConnectionState state) {
+    log::info("game connection state: {}", connectionStateToStr(state));
+    m_gameWorkerNotify.notifyOne();
 }
 
 void NetworkManagerImpl::abortConnection(std::string reason, bool silent) {
     log::warn("aborting connection to central server: {}", reason);
     *m_abortCause.lock() = std::make_pair(std::move(reason), silent);
-    (void) m_centralConn.disconnect();
+    m_centralConn->disconnect();
+    m_gameConn->disconnect();
 }
 
-void NetworkManagerImpl::onCentralDisconnected() {
-    m_tryingReconnect = true;
+void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener, void* dtor) {
+    std::type_index index{ty};
+    auto listeners = m_listeners.lock();
+    auto& ls = (*listeners)[index];
 
-    bool showPopup = !m_manualDisconnect;
-    std::string message = "client initiated disconnect";
+    ls.push_back({listener, dtor});
 
-    if (m_manualDisconnect) {
-        // only save the was-connected value if the user manually disconnected
-        if (!m_destructing) {
-            globed::setValue<bool>("core.was-connected", false);
-        }
-    } else {
-        auto abortCause = m_abortCause.lock();
+    log::debug(
+        "Added listener {} for message type '{}', priority: {}",
+        listener,
+        ty.name(),
+        static_cast<MessageListenerImplBase*>(listener)->m_priority
+    );
 
-        if (!abortCause->first.empty()) {
-            message = std::move(abortCause->first);
-        } else {
-            auto err = m_centralConn.lastError();
-            if (err == qn::ConnectionError::Success) {
-                message = "Connection cancelled";
-            } else {
-                message = err.message();
-            }
-        }
-
-        // if this was a silent abort, don't show a popup
-        if (abortCause->second) {
-            showPopup = false;
-        }
-    }
-
-    log::debug("connection to central server lost: {}", message);
-
-    FunctionQueue::get().queue([this, showPopup, message = std::move(message)] {
-        CoreImpl::get().onServerDisconnected();
-
-        // Reconnect, if applicable
-
-        if (message == "Server is shutting down") {
-            FunctionQueue::get().queueDelay([this] {
-                this->maybeTryReconnect();
-            }, Duration::fromMillis(500));
-        } else {
-            if (showPopup) {
-                auto alert = PopupManager::get().alertFormat("Globed Error", "Connection lost: <cy>{}</c>", message);
-                alert.showQueue();
-            }
-        }
-    });
-
-    m_finishedClosingNotify.notifyAll();
-
-    // in case this is an abnormal closure, also notify the disconnect notify
-    m_disconnectRequested.store(true);
-    m_disconnectNotify.notifyAll();
-}
-
-void NetworkManagerImpl::maybeTryReconnect() {
-    if (!m_tryingReconnect) return;
-    if (m_centralConnState.load() != qn::ConnectionState::Disconnected) return;
-
-    log::info("Attempting to reconnect to central server..");
-
-    if (auto err = this->connectCentral(m_centralUrl).err()) {
-        log::error("Failed to reconnect to central server: {}", *err);
-    }
-}
-
-void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab) {
-    auto lock = m_connInfo.lock();
-    if (!*lock) {
-        log::error("Cannot join session, not connected to central server");
-        return;
-    }
-
-    auto& connInfo = **lock;
-
-    log::debug("Joining session with ID {} (editorcollab: {})", id.asU64(), editorCollab);
-
-    if (!editorCollab) {
-        this->sendToCentral([&](CentralMessage::Builder& msg) {
-            auto joinSession = msg.initJoinSession();
-            joinSession.setSessionId(id);
-            joinSession.setAuthorId(author);
-        });
-    }
-
-    // find the game server
-    // TODO: editor collab levels are currently hardcoded to use server ID 0
-    uint8_t serverId = editorCollab ? 0 : id.serverId();
-
-    for (auto& srv : connInfo.m_gameServers) {
-        if (srv.second.id == serverId) {
-            this->joinSessionWith(srv.second.url, id, platformer, editorCollab);
-            return;
-        }
-    }
-
-    // not found!
-    log::error("Tried joining an invalid session, game server with ID {} does not exist", static_cast<int>(serverId));
-    toastError("Globed: join failed, no server with ID {}", serverId);
-}
-
-void NetworkManagerImpl::sendLeaveSession() {
-    this->sendToCentral([&](CentralMessage::Builder& msg) {
-        msg.initLeaveSession();
-    });
-
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        msg.initLeaveSession();
+    // sort them by priority
+    std::sort(ls.begin(), ls.end(), [](const auto& a, const auto& b) {
+        auto* implA = static_cast<MessageListenerImplBase*>(a.first);
+        auto* implB = static_cast<MessageListenerImplBase*>(b.first);
+        return implA->m_priority < implB->m_priority;
     });
 }
 
-void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId id, bool platformer, bool editorCollab) {
-    // if already connected to another game server, disconnect and wait for the connection to close
-    auto lock = m_connInfo.lock();
-    if (!*lock) {
-        log::error("Trying to join a session while not connected to a central server!");
-        return;
-    }
+void NetworkManagerImpl::removeListener(const std::type_info& ty, void* listener) {
+    std::type_index index{ty};
+    auto listeners = m_listeners.lock();
 
-    auto& connInfo = **lock;
+    log::debug(
+        "Removing listener {} for message type '{}'",
+        listener,
+        ty.name()
+    );
 
-    if (m_gameConn.connected()) {
-        if (connInfo.m_gameServerUrl != serverUrl) {
-            connInfo.m_gsDeferredConnectJoin = std::make_pair(
-                std::string(serverUrl),
-                DeferredSessionJoin { id, platformer }
-            );
-            lock.unlock();
-            (void) m_gameConn.disconnect();
-        } else if (connInfo.m_gameEstablished) {
-            // same server, just send the join request
-            this->sendGameJoinRequest(id, platformer, editorCollab);
-        } else {
-            this->sendGameLoginRequest(id, platformer, editorCollab);
-        }
-    } else {
-        // not connected, connect to the game server and join later
-        connInfo.m_gsDeferredJoin = DeferredSessionJoin { id, platformer, editorCollab };
-        connInfo.m_gameServerUrl = std::string(serverUrl);
-        lock.unlock();
+    auto it = listeners->find(index);
+    if (it != listeners->end()) {
+        auto& vec = it->second;
+        for (auto pos = vec.begin(); pos != vec.end(); ++pos) {
+            if (pos->first != listener) continue;
+            auto dtor = reinterpret_cast<void(*)(void*)>(pos->second);
 
-        (void) m_gameConn.cancelConnection();
-        (void) m_gameConn.disconnect();
-
-        m_gameConn.setDebugOptions(getConnOpts());
-        auto res = m_gameConn.connect(serverUrl);
-        if (!res) {
-            log::error("Failed to connect to {}: {}", serverUrl, res.unwrapErr().message());
-            lock.relock();
-            connInfo.m_gameServerUrl.clear();
-            connInfo.m_gsDeferredJoin.reset();
-        }
-    }
-}
-
-void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, bool editorCollab) {
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        auto login = msg.initLogin();
-        login.setAccountId(GJAccountManager::get()->m_accountID);
-        login.setToken(this->getUToken().value_or(""));
-        data::encode(PlayerIconData::getOwn(), login.initIcons());
-        gatherUserSettings(login.initSettings());
-
-        if (id.asU64() != 0) {
-            login.setSessionId(id);
-            login.setPasscode(RoomManager::get().getPasscode());
-            login.setPlatformer(platformer);
-            login.setEditorCollab(editorCollab);
-        }
-    });
-}
-
-void NetworkManagerImpl::sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab) {
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        auto join = msg.initJoinSession();
-        join.setSessionId(id);
-        join.setPlatformer(platformer);
-        join.setEditorCollab(editorCollab);
-        join.setPasscode(RoomManager::get().getPasscode());
-    });
-}
-
-void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests, CCPoint cameraCenter, float cameraRadius) {
-    auto lock = m_connInfo.lock();
-    if (!*lock || !(**lock).m_gameEstablished) {
-        log::warn("Cannot send player state, not connected to game server");
-        return;
-    }
-
-    auto& connInfo = **lock;
-
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        auto playerData = msg.initPlayerData();
-        auto data = playerData.initData();
-        data::encode(state, data);
-
-        playerData.setCameraX(cameraCenter.x);
-        playerData.setCameraY(cameraCenter.y);
-        playerData.setCameraRadius(cameraRadius);
-
-        auto reqs = playerData.initDataRequests(dataRequests.size());
-        for (size_t i = 0; i < dataRequests.size(); ++i) {
-            reqs.set(i, dataRequests[i]);
-        }
-
-        qn::HeapByteWriter eventEncoder;
-        for (size_t i = 0; i < std::min<size_t>(64, connInfo.m_gameEventQueue.size()); i++) {
-            auto& event = connInfo.m_gameEventQueue.front();
-            if (auto err = event.encode(eventEncoder).err()) {
-                log::warn("Failed to encode event: {}", *err);
+            vec.erase(pos);
+            if (vec.empty()) {
+                listeners->erase(it);
             }
 
-            connInfo.m_gameEventQueue.pop();
+            dtor(listener);
+            break;
         }
-
-        auto eventData = std::move(eventEncoder).intoVector();
-        playerData.setEventData(kj::ArrayPtr{eventData.data(), eventData.size()});
-    }, !connInfo.m_gameEventQueue.empty());
-}
-
-void NetworkManagerImpl::queueLevelScript(const std::vector<EmbeddedScript>& scripts) {
-    auto lock = m_connInfo.lock();
-    if (!*lock) return;
-
-    auto& connInfo = **lock;
-    if (connInfo.m_gameEstablished) {
-        (*lock)->m_queuedScripts.clear();
-        this->sendLevelScript(scripts);
-    } else {
-        (*lock)->m_queuedScripts = scripts;
     }
 }
 
-void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scripts) {
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        data::encode(scripts, msg.initSendLevelScript());
-    }, true, true);
-}
+void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reason) {
+    using enum schema::main::LoginFailedReason;
 
-void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
-    auto lock = m_connInfo.lock();
-    if (!*lock) {
-        return;
+    auto info = this->connInfo();
+    info->m_established = false;
+    info->m_authenticating = false;
+
+    switch (reason) {
+        case INVALID_USER_TOKEN: {
+            log::warn("Login failed: invalid user token, clearing token and trying to re-auth");
+            this->clearUToken();
+            m_workerNotify.notifyOne();
+        } break;
+
+        case INVALID_ARGON_TOKEN: {
+            log::warn("Login failed: invalid Argon token, clearing token and trying to re-auth");
+            argon::clearToken();
+            m_workerNotify.notifyOne();
+        } break;
+
+        case ARGON_NOT_SUPPORTED: {
+            log::warn("Login failed: Argon is not supported by the server, falling back to plain login");
+            info->m_knownArgonUrl.clear();
+            m_workerNotify.notifyOne();
+        } break;
+
+        case ARGON_UNREACHABLE:
+        case ARGON_INTERNAL_ERROR: {
+            log::warn("Login failed: internal server error, argon is unreachable or failing");
+            this->abortConnection("Internal server error (auth system is failing), please contact the developer!");
+        } break;
+
+        case INTERNAL_DB_ERROR: {
+            log::warn("Login failed: internal database error");
+            this->abortConnection("Internal server error (database error), please contact the developer!");
+        } break;
+
+        case INVALID_ACCOUNT_DATA: {
+            log::warn("Login failed: invalid account data");
+            this->abortConnection("Internal server error (invalid account data), please contact the developer!");
+        } break;
+
+        case NOT_WHITELISTED: {
+            log::warn("Login failed: user is not whitelisted");
+            this->abortConnection("You are not whitelisted on this server!");
+        } break;
+
+        default: {
+            log::warn("Login failed: unknown reason {}", static_cast<int>(reason));
+            this->abortConnection(fmt::format("Login failed due to unknown server error: {}", static_cast<int>(reason)));
+        } break;
     }
-
-    (**lock).m_gameEventQueue.push(std::move(event));
 }
 
-void NetworkManagerImpl::sendVoiceData(const EncodedAudioFrame& frame) {
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        auto voice = msg.initVoiceData();
-        auto frames = voice.initFrames(frame.size());
-
-        for (size_t i = 0; i < frame.size(); ++i) {
-            auto& fr = frame.getFrames()[i];
-            frames.set(i, kj::arrayPtr(fr.data.get(), fr.size));
-        }
-    }, false, true);
+void NetworkManagerImpl::handleSuccessfulLogin(LockedConnInfo& info) {
+    m_workerNotify.notifyOne();
 }
 
-void NetworkManagerImpl::sendQuickChat(uint32_t id) {
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        auto qc = msg.initQuickChat();
-        qc.setId(id);
-    }, false);
-}
+// Central messages
 
 void NetworkManagerImpl::sendUpdateUserSettings() {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
@@ -1037,7 +1169,6 @@ void NetworkManagerImpl::sendRoomStateCheck() {
         msg.setCheckRoomState();
     });
 }
-
 void NetworkManagerImpl::sendRequestRoomPlayers(const std::string& nameFilter) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto reqr = msg.initRequestRoomPlayers();
@@ -1114,6 +1245,7 @@ void NetworkManagerImpl::sendLeaveRoom() {
         msg.setLeaveRoom();
     });
 }
+
 
 void NetworkManagerImpl::sendRequestRoomList(CStr nameFilter, uint32_t page) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
@@ -1407,111 +1539,209 @@ void NetworkManagerImpl::sendAdminUpdateUser(int32_t accountId, const std::strin
     });
 }
 
-void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener, void* dtor) {
-    std::type_index index{ty};
-    auto listeners = m_listeners.lock();
-    auto& ls = (*listeners)[index];
+// Game server messages
 
-    ls.push_back({listener, dtor});
+void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, bool editorCollab) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto login = msg.initLogin();
+        login.setAccountId(g_argonData.accountId);
+        login.setToken(this->getUToken().value_or(""));
+        data::encode(PlayerIconData::getOwn(), login.initIcons());
+        gatherUserSettings(login.initSettings());
 
-    log::debug(
-        "Added listener {} for message type '{}', priority: {}",
-        listener,
-        ty.name(),
-        static_cast<MessageListenerImplBase*>(listener)->m_priority
-    );
-
-    // sort them by priority
-    std::sort(ls.begin(), ls.end(), [](const auto& a, const auto& b) {
-        auto* implA = static_cast<MessageListenerImplBase*>(a.first);
-        auto* implB = static_cast<MessageListenerImplBase*>(b.first);
-        return implA->m_priority < implB->m_priority;
+        if (id.asU64() != 0) {
+            login.setSessionId(id);
+            login.setPasscode(RoomManager::get().getPasscode());
+            login.setPlatformer(platformer);
+            login.setEditorCollab(editorCollab);
+        }
     });
 }
 
-void NetworkManagerImpl::removeListener(const std::type_info& ty, void* listener) {
-    std::type_index index{ty};
-    auto listeners = m_listeners.lock();
+void NetworkManagerImpl::sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto join = msg.initJoinSession();
+        join.setSessionId(id);
+        join.setPlatformer(platformer);
+        join.setEditorCollab(editorCollab);
+        join.setPasscode(RoomManager::get().getPasscode());
+    });
+}
 
-    log::debug(
-        "Removing listener {} for message type '{}'",
-        listener,
-        ty.name()
-    );
+void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests, CCPoint cameraCenter, float cameraRadius) {
+    auto info = this->connInfo();
+    if (!info || !info->m_gameEstablished) {
+        log::warn("Cannot send player state, not connected to game server");
+        return;
+    }
 
-    auto it = listeners->find(index);
-    if (it != listeners->end()) {
-        auto& vec = it->second;
-        for (auto pos = vec.begin(); pos != vec.end(); ++pos) {
-            if (pos->first != listener) continue;
-            auto dtor = reinterpret_cast<void(*)(void*)>(pos->second);
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto playerData = msg.initPlayerData();
+        auto data = playerData.initData();
+        data::encode(state, data);
 
-            vec.erase(pos);
-            if (vec.empty()) {
-                listeners->erase(it);
+        playerData.setCameraX(cameraCenter.x);
+        playerData.setCameraY(cameraCenter.y);
+        playerData.setCameraRadius(cameraRadius);
+
+        auto reqs = playerData.initDataRequests(dataRequests.size());
+        for (size_t i = 0; i < dataRequests.size(); ++i) {
+            reqs.set(i, dataRequests[i]);
+        }
+
+        qn::HeapByteWriter eventEncoder;
+        for (size_t i = 0; i < std::min<size_t>(64, info->m_gameEventQueue.size()); i++) {
+            auto& event = info->m_gameEventQueue.front();
+            if (auto err = event.encode(eventEncoder).err()) {
+                log::warn("Failed to encode event: {}", *err);
             }
 
-            dtor(listener);
-            break;
+            info->m_gameEventQueue.pop();
         }
+
+        auto eventData = std::move(eventEncoder).intoVector();
+        playerData.setEventData(kj::ArrayPtr{eventData.data(), eventData.size()});
+    }, !info->m_gameEventQueue.empty());
+}
+
+void NetworkManagerImpl::queueLevelScript(const std::vector<EmbeddedScript>& scripts) {
+    auto info = this->connInfo();
+    if (!info) return;
+
+    if (info->m_gameEstablished) {
+        info->m_queuedScripts.clear();
+        this->sendLevelScript(scripts);
+    } else {
+        info->m_queuedScripts = scripts;
     }
 }
 
-static void updateServers(std::unordered_map<std::string, GameServer>& servers, auto& newServers) {
-    servers.clear();
+void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scripts) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        data::encode(scripts, msg.initSendLevelScript());
+    }, true, true);
+}
 
-    for (auto srv : newServers) {
-        GameServer gameServer {
-            .id = srv.getId(),
-            .stringId = srv.getStringId(),
-            .url = srv.getAddress(),
-            .name = srv.getName(),
-            .region = srv.getRegion()
-        };
+void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
+    auto info = this->connInfo();
+    if (!info) return;
 
-        log::debug("Added game server: {} (ID: {}, URL: {}, Region: {})",
-                   gameServer.name, static_cast<int>(gameServer.id), gameServer.url, gameServer.region);
+    info->m_gameEventQueue.push(std::move(event));
+}
 
-        servers[gameServer.stringId] = std::move(gameServer);
+void NetworkManagerImpl::sendVoiceData(const EncodedAudioFrame& frame) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto voice = msg.initVoiceData();
+        auto frames = voice.initFrames(frame.size());
+
+        for (size_t i = 0; i < frame.size(); ++i) {
+            auto& fr = frame.getFrames()[i];
+            frames.set(i, kj::arrayPtr(fr.data.get(), fr.size));
+        }
+    }, false, true);
+}
+
+void NetworkManagerImpl::sendQuickChat(uint32_t id) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto qc = msg.initQuickChat();
+        qc.setId(id);
+    }, false);
+}
+
+// Messages for both servers
+
+void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab) {
+    auto info = this->connInfo();
+    if (!info) {
+        log::error("Cannot send join session, not connected");
+        return;
     }
+
+    log::debug("Joining session with ID {} (editorcollab: {})", id.asU64(), editorCollab);
+
+    if (!editorCollab) {
+        this->sendToCentral([&](CentralMessage::Builder& msg) {
+            auto joinSession = msg.initJoinSession();
+            joinSession.setSessionId(id);
+            joinSession.setAuthorId(author);
+        });
+    }
+
+    // find the game server
+    // TODO: editor collab levels are currently hardcoded to use server ID 0
+    uint8_t serverId = editorCollab ? 0 : id.serverId();
+
+    for (auto& srv : info->m_gameServers) {
+        if (srv.second.id == serverId) {
+            this->joinSessionWith(info, srv.second.url, id, platformer, editorCollab);
+            return;
+        }
+    }
+
+    // not found!
+    log::error("Tried joining an invalid session, game server with ID {} does not exist", static_cast<int>(serverId));
+    toastError("Globed: join failed, no server with ID {}", serverId);
+}
+
+void NetworkManagerImpl::joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, SessionId id, bool platformer, bool editorCollab) {
+    GameServerJoinRequest req;
+    req.url = serverUrl;
+    req.id = id;
+    req.platformer = platformer;
+    req.editorCollab = editorCollab;
+    (void) m_gameServerJoinTx->trySend(std::move(req));
+}
+
+void NetworkManagerImpl::sendLeaveSession() {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        msg.initLeaveSession();
+    });
+
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        msg.initLeaveSession();
+    });
 }
 
 Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) {
-    switch (msg.which()) {
-        case CentralMessage::LOGIN_OK: {
-            auto lock = m_connInfo.lock();
-            auto& connInfo = **lock;
+    using enum CentralMessage::Which;
 
+    switch (msg.which()) {
+        case LOGIN_OK: {
+            auto info = this->connInfo();
             auto loginOk = msg.getLoginOk();
 
             if (loginOk.hasServers()) {
                 auto servers = loginOk.getServers();
-                updateServers(connInfo.m_gameServers, servers);
+                updateServers(*info, servers);
             }
 
             auto res = data::decodeOpt<msg::CentralLoginOkMessage>(loginOk);
             if (!res) {
+                this->abortConnection("invalid CentralLoginOkMessage");
                 return Err("invalid CentralLoginOkMessage");
             }
 
             auto msg = std::move(res).value();
-            connInfo.m_allRoles = msg.allRoles;
-            connInfo.m_userRoles = msg.userRoles;
-            connInfo.m_established = true;
-            connInfo.m_perms = msg.perms;
-            connInfo.m_canNameRooms = msg.canNameRooms;
-            connInfo.m_nameColor = msg.nameColor;
-            connInfo.m_featuredLevel = msg.featuredLevel;
+            info->m_allRoles = msg.allRoles;
+            info->m_userRoles = msg.userRoles;
+            info->m_established = true;
+            info->m_perms = msg.perms;
+            info->m_canNameRooms = msg.canNameRooms;
+            info->m_nameColor = msg.nameColor;
+            info->m_featuredLevel = msg.featuredLevel;
 
-            for (auto& role : connInfo.m_userRoles) {
-                connInfo.m_userRoleIds.push_back(role.id);
+            for (auto& role : info->m_userRoles) {
+                info->m_userRoleIds.push_back(role.id);
             }
+
+            this->handleSuccessfulLogin(info);
+            info.unlock();
+
+            this->invokeListeners(msg);
 
             if (!msg.newToken.empty()) {
                 this->setUToken(msg.newToken);
             }
-
-            this->invokeListeners(msg);
         } break;
 
         case CentralMessage::LOGIN_FAILED: {
@@ -1526,9 +1756,15 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
                 return Err("Login required message does not contain Argon URL");
             }
 
-            (**m_connInfo.lock()).m_knownArgonUrl = loginRequired.getArgonUrl();
+            // store the argon url and try to re-auth
+            {
+                auto info = this->connInfo();
+                info->m_knownArgonUrl = loginRequired.getArgonUrl();
+                info->m_authenticating = false;
+            }
+
             this->clearUToken();
-            this->tryAuth();
+            m_workerNotify.notifyOne();
         } break;
 
         case CentralMessage::BANNED: {
@@ -1537,37 +1773,36 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             this->abortConnection("User is banned from the server", true);
         } break;
 
+
         case CentralMessage::MUTED: {
             this->invokeListeners(data::decodeUnchecked<msg::MutedMessage>(msg.getMuted()));
         } break;
 
         case CentralMessage::SERVERS_CHANGED: {
-            auto lock = m_connInfo.lock();
-            auto& connInfo = **lock;
-
             auto serversChanged = msg.getServersChanged();
             auto servers = serversChanged.getServers();
 
-            updateServers(connInfo.m_gameServers, servers);
+            auto info = this->connInfo();
+            updateServers(*info, servers);
         } break;
 
         case CentralMessage::USER_DATA_CHANGED: {
             auto outp = data::decodeUnchecked<msg::UserDataChangedMessage>(msg.getUserDataChanged());
-            auto lock = m_connInfo.lock();
-            auto& connInfo = **lock;
+            auto info = this->connInfo();
 
-            connInfo.m_perms = outp.perms;
-            connInfo.m_nameColor = outp.nameColor;
-            connInfo.m_userRoleIds = outp.roles;
+            info->m_perms = outp.perms;
+            info->m_nameColor = outp.nameColor;
+            info->m_userRoleIds = outp.roles;
 
-            connInfo.m_userRoles.clear();
+            info->m_userRoles.clear();
             for (auto id : outp.roles) {
-                if (id < connInfo.m_allRoles.size()) {
-                    connInfo.m_userRoles.push_back(connInfo.m_allRoles[id]);
+                if (id < info->m_allRoles.size()) {
+                    info->m_userRoles.push_back(info->m_allRoles[id]);
                 } else {
                     log::warn("Unknown role ID: {}", id);
                 }
             }
+            info.unlock();
 
             this->invokeListeners(std::move(outp));
         } break;
@@ -1709,7 +1944,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::FEATURED_LEVEL: {
             auto out = data::decodeUnchecked<msg::FeaturedLevelMessage>(msg.getFeaturedLevel());
-            (**m_connInfo.lock()).m_featuredLevel = out.meta;
+            this->connInfo()->m_featuredLevel = out.meta;
 
             this->invokeListeners(std::move(out));
         } break;
@@ -1749,7 +1984,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::ADMIN_PUNISHMENT_REASONS: {
             auto m = data::decodeUnchecked<msg::AdminPunishmentReasonsMessage>(msg.getAdminPunishmentReasons());
-            (**m_connInfo.lock()).m_punishReasons = m.reasons;
+            this->connInfo()->m_punishReasons = m.reasons;
             this->invokeListeners(std::move(m));
         } break;
 
@@ -1762,8 +1997,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 }
 
 Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
+    using enum GameMessage::Which;
+
     switch (msg.which()) {
-        case GameMessage::LOGIN_OK: {
+        case LOGIN_OK: {
             auto lock = m_connInfo.lock();
             auto& connInfo = **lock;
 
@@ -1774,7 +2011,7 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
             log::debug("Successfully logged in to game server");
         } break;
 
-        case GameMessage::LOGIN_FAILED: {
+        case LOGIN_FAILED: {
             using enum schema::game::LoginFailedReason;
 
             auto reason = msg.getLoginFailed().getReason();
@@ -1791,14 +2028,14 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
                 } break;
             }
 
-            (void) m_gameConn.disconnect();
+            m_gameConn->disconnect();
         } break;
 
-        case GameMessage::JOIN_SESSION_OK: {
+        case JOIN_SESSION_OK: {
             // TODO: post listener message
         } break;
 
-        case GameMessage::JOIN_SESSION_FAILED: {
+        case JOIN_SESSION_FAILED: {
             using enum schema::game::JoinSessionFailedReason;
 
             auto reason = msg.getJoinSessionFailed().getReason();
@@ -1816,27 +2053,27 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
             }
         } break;
 
-        case GameMessage::LEVEL_DATA: {
+        case LEVEL_DATA: {
             this->invokeListeners(data::decodeUnchecked<msg::LevelDataMessage>(msg.getLevelData()));
         } break;
 
-        case GameMessage::SCRIPT_LOGS: {
+        case SCRIPT_LOGS: {
             this->invokeListeners(data::decodeUnchecked<msg::ScriptLogsMessage>(msg.getScriptLogs()));
         } break;
 
-        case GameMessage::VOICE_BROADCAST: {
+        case VOICE_BROADCAST: {
             this->invokeListeners(data::decodeUnchecked<msg::VoiceBroadcastMessage>(msg.getVoiceBroadcast()));
         } break;
 
-        case GameMessage::QUICK_CHAT_BROADCAST: {
+        case QUICK_CHAT_BROADCAST: {
             this->invokeListeners(data::decodeUnchecked<msg::QuickChatBroadcastMessage>(msg.getQuickChatBroadcast()));
         } break;
 
-        case GameMessage::CHAT_NOT_PERMITTED: {
+        case CHAT_NOT_PERMITTED: {
             this->invokeListeners(msg::ChatNotPermittedMessage{});
         } break;
 
-        case GameMessage::KICKED: {
+        case KICKED: {
             // TODO
         } break;
 
@@ -1846,148 +2083,6 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
     }
 
     return Ok();
-}
-
-Result<> NetworkManagerImpl::sendMessageToConnection(qn::Connection& conn, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed) {
-    if (!conn.connected()) {
-        return Err("not connected");
-    }
-
-    size_t unpackedSize = capnp::computeSerializedSizeInWords(msg) * 8;
-    qn::ArrayByteWriter<8> writer;
-    writer.writeVarUint(unpackedSize).unwrap();
-    auto unpSizeBuf = writer.written();
-
-    kj::VectorOutputStream vos;
-    vos.write(unpSizeBuf.data(), unpSizeBuf.size());
-    capnp::writePackedMessage(vos, msg);
-
-    auto data = std::vector<uint8_t>(vos.getArray().begin(), vos.getArray().end());
-
-    conn.sendData(std::move(data), reliable, uncompressed);
-
-    return Ok();
-}
-
-void NetworkManagerImpl::sendToCentral(std23::function_ref<void(CentralMessage::Builder&)>&& func) {
-    capnp::MallocMessageBuilder msg;
-    auto root = msg.initRoot<CentralMessage>();
-    func(root);
-
-    auto res = sendMessageToConnection(m_centralConn, msg, true, false);
-
-    if (!res) {
-        log::warn("Failed to send message to central server: {}", res.unwrapErr());
-    }
-}
-
-void NetworkManagerImpl::sendToGame(std23::function_ref<void(GameMessage::Builder&)>&& func, bool reliable, bool uncompressed) {
-    capnp::MallocMessageBuilder msg;
-    auto root = msg.initRoot<GameMessage>();
-    func(root);
-
-    auto res = sendMessageToConnection(m_gameConn, msg, reliable, uncompressed);
-
-    if (!res) {
-        log::warn("Failed to send message to game server: {}", res.unwrapErr());
-    }
-}
-
-void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reason) {
-    using enum schema::main::LoginFailedReason;
-
-    switch (reason) {
-        case INVALID_USER_TOKEN: {
-            log::warn("Login failed: invalid user token, clearing token and trying to re-auth");
-            this->clearUToken();
-            this->tryAuth();
-        } break;
-
-        case INVALID_ARGON_TOKEN: {
-            log::warn("Login failed: invalid Argon token, clearing token and trying to re-auth");
-            argon::clearToken();
-            this->tryAuth();
-        } break;
-
-        case ARGON_NOT_SUPPORTED: {
-            log::warn("Login failed: Argon is not supported by the server, falling back to plain login");
-            (**m_connInfo.lock()).m_knownArgonUrl.clear();
-            this->tryAuth();
-        } break;
-
-        case ARGON_UNREACHABLE:
-        case ARGON_INTERNAL_ERROR: {
-            log::warn("Login failed: internal server error, argon is unreachable or failing");
-            this->abortConnection("Internal server error (auth system is failing), please contact the developer!");
-        } break;
-
-        case INTERNAL_DB_ERROR: {
-            log::warn("Login failed: internal database error");
-            this->abortConnection("Internal server error (database error), please contact the developer!");
-        } break;
-
-        case INVALID_ACCOUNT_DATA: {
-            log::warn("Login failed: invalid account data");
-            this->abortConnection("Internal server error (invalid account data), please contact the developer!");
-        } break;
-
-        case NOT_WHITELISTED: {
-            log::warn("Login failed: user is not whitelisted");
-            this->abortConnection("You are not whitelisted on this server!");
-        } break;
-
-        default: {
-            log::warn("Login failed: unknown reason {}", static_cast<int>(reason));
-            this->abortConnection(fmt::format("Login failed due to unknown server error: {}", static_cast<int>(reason)));
-        } break;
-    }
-}
-
-void NetworkManagerImpl::disconnectInner() {
-    m_disconnectRequested.store(true);
-    m_disconnectNotify.notifyOne();
-}
-
-std::optional<std::string> NetworkManagerImpl::getUToken() {
-    return globed::value<std::string>(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
-}
-
-void NetworkManagerImpl::setUToken(std::string token) {
-    ValueManager::get().set(fmt::format("auth.last-utoken.{}", this->getCentralIdent()), std::move(token));
-}
-
-void NetworkManagerImpl::clearUToken() {
-    ValueManager::get().erase(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
-}
-
-int32_t NetworkManagerImpl::getLastFeaturedLevelId() {
-    return globed::value<int32_t>(fmt::format("core.last-featured-id.{}", this->getCentralIdent())).value_or(0);
-}
-
-void NetworkManagerImpl::setLastFeaturedLevelId(int32_t id) {
-    ValueManager::get().set(fmt::format("core.last-featured-id.{}", this->getCentralIdent()), id);
-}
-
-std::vector<uint8_t> NetworkManagerImpl::computeUident(int accountId) {
-    static asp::Mutex<std::pair<int, std::vector<uint8_t>>> mtx;
-
-    auto lock = mtx.lock();
-    if (lock->first == accountId) {
-        return lock->second;
-    }
-
-    uint8_t buf[512];
-    size_t outLen = bb_work(accountId, (char*)buf, 512);
-
-    if (outLen == 0) {
-        log::error("Failed to compute uident!");
-        return {};
-    }
-
-    lock->first = accountId;
-    lock->second = std::vector<uint8_t>{buf, buf + outLen};
-
-    return lock->second;
 }
 
 }

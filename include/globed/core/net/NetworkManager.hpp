@@ -22,8 +22,7 @@ public:
     // Connect to the central server at the given URL.
     // See qunet's documentation for the URL format.
     geode::Result<> connectCentral(std::string_view url);
-    geode::Result<> disconnectCentral();
-    geode::Result<> cancelConnection();
+    void disconnectCentral();
 
     ConnectionState getConnectionState();
 

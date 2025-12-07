@@ -43,7 +43,8 @@ static void addNetFunctions() {
     auto category = "net";
 
     TABLE_FN(void, disconnect) {
-        return NetworkManagerImpl::get().disconnectCentral();
+        NetworkManagerImpl::get().disconnectCentral();
+        return Ok();
     };
 
     TABLE_FN(bool, isConnected) {

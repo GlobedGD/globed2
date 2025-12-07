@@ -14,6 +14,8 @@
 #include <globed/util/FunctionQueue.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
 
+#include <arc/runtime/Runtime.hpp>
+#include <arc/sync/mpsc.hpp>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <std23/function_ref.h>
@@ -42,35 +44,58 @@ struct GameServer {
     void updateLatency(uint32_t latency);
 };
 
-struct DeferredSessionJoin {
+struct GameServerJoinRequest {
+    std::string url;
     SessionId id;
     bool platformer;
     bool editorCollab;
+    bool triedConnecting = false;
 };
 
+struct WorkerState {
+    /// Next time to ping game servers
+    asp::time::Instant nextGSPing = asp::time::Instant::farFuture();
+    arc::mpsc::Sender<std::pair<std::string, qn::PingResult>> pingResultTx;
+    arc::mpsc::Receiver<std::pair<std::string, qn::PingResult>> pingResultRx;
+    qn::ConnectionState prevCentralState{qn::ConnectionState::Disconnected};
 
-// Struct for fields that are the same across one connection but are cleared on disconnect
+    WorkerState(
+        decltype(pingResultTx) tx,
+        decltype(pingResultRx) rx
+    ) : pingResultTx(std::move(tx)), pingResultRx(std::move(rx)) {}
+};
+
+struct GameWorkerState {
+    qn::ConnectionState prevGameState;
+    std::optional<arc::mpsc::Receiver<GameServerJoinRequest>> joinRx;
+    std::optional<GameServerJoinRequest> currentReq;
+};
+
+/// Connection info across a single session. This gets reset on disconnect or stateless reconnect.
 struct ConnectionInfo {
+    // central server info
+    std::string m_centralUrl;
     std::string m_knownArgonUrl;
-    bool m_waitingForArgon = false;
+    std::unordered_map<std::string, GameServer> m_gameServers;
+    bool m_gameServersUpdated = true;
     bool m_established = false;
     bool m_authenticating = false;
     asp::time::Instant m_triedAuthAt;
 
-    std::unordered_map<std::string, GameServer> m_gameServers;
-
-    std::atomic<qn::ConnectionState> m_gameConnState;
+    // game server info
     std::string m_gameServerUrl;
-    std::optional<std::pair<std::string, DeferredSessionJoin>> m_gsDeferredConnectJoin;
-    std::optional<DeferredSessionJoin> m_gsDeferredJoin;
+    bool m_gameEstablished = false;
     std::queue<OutEvent> m_gameEventQueue;
     std::vector<EmbeddedScript> m_queuedScripts;
-    bool m_gameEstablished = false;
 
-    uint32_t m_gameTickrate = 0;
-    std::optional<FeaturedLevelMeta> m_featuredLevel;
+    bool m_sentFriendList = false;
+    bool m_sentIcons = true; // icons are sent at login
+
+    // server data send in login ok message
     std::vector<UserRole> m_allRoles;
     std::vector<UserRole> m_userRoles;
+    uint32_t m_gameTickrate = 0;
+    std::optional<FeaturedLevelMeta> m_featuredLevel;
     std::vector<uint8_t> m_userRoleIds;
     std::optional<MultiColor> m_nameColor;
     ModPermissions m_perms{};
@@ -78,13 +103,48 @@ struct ConnectionInfo {
     PunishReasons m_punishReasons{};
     bool m_authorizedModerator;
 
-    bool m_sentIcons = true; // icons are sent at login
-    bool m_sentFriendList = false;
 
     void startedAuth() {
         m_authenticating = true;
         m_triedAuthAt = asp::time::Instant::now();
     }
+};
+
+struct LockedConnInfo {
+public:
+    LockedConnInfo(asp::MutexGuard<std::optional<ConnectionInfo>, false>&& guard) : _guard(std::move(guard)) {}
+    LockedConnInfo(const LockedConnInfo&) = delete;
+    LockedConnInfo& operator=(const LockedConnInfo&) = delete;
+    LockedConnInfo(LockedConnInfo&&) = default;
+    LockedConnInfo& operator=(LockedConnInfo&&) = default;
+
+    operator bool() const {
+        return _guard->has_value();
+    }
+
+    ConnectionInfo& operator*() {
+        this->check();
+        return **_guard;
+    }
+
+    ConnectionInfo* operator->() {
+        this->check();
+        return &**_guard;
+    }
+
+    void unlock() {
+        _guard.unlock();
+    }
+
+    void relock() {
+        _guard.relock();
+    }
+
+    void check() {
+        GLOBED_DEBUG_ASSERT(_guard->has_value());
+    }
+private:
+    asp::MutexGuard<std::optional<ConnectionInfo>, false> _guard;
 };
 
 class NetworkManagerImpl {
@@ -94,9 +154,8 @@ public:
 
     static NetworkManagerImpl& get();
 
-    geode::Result<> connectCentral(std::string_view url);
-    geode::Result<> disconnectCentral();
-    geode::Result<> cancelConnection();
+    Result<> connectCentral(std::string_view url);
+    void disconnectCentral();
 
     qn::ConnectionState getConnState(bool game);
 
@@ -194,11 +253,14 @@ public:
     );
     void sendNoticeReply(int32_t recipientId, const std::string& message);
 
-    void sendAdminLogin(const std::string& password);
-    void sendAdminKick(int32_t accountId, const std::string& message);
     void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply, bool showSender);
     void sendAdminNoticeEveryone(const std::string& message);
+    void sendAdminLogin(const std::string& password);
+    void sendAdminKick(int32_t accountId, const std::string& message);
     void sendAdminFetchUser(const std::string& query);
+    void sendAdminFetchMods();
+    void sendAdminSetWhitelisted(int32_t accountId, bool whitelisted);
+    void sendAdminCloseRoom(uint32_t roomId);
     void sendAdminFetchLogs(const FetchLogsFilters& filters);
     void sendAdminBan(int32_t accountId, const std::string& reason, int64_t expiresAt);
     void sendAdminUnban(int32_t accountId);
@@ -209,9 +271,6 @@ public:
     void sendAdminEditRoles(int32_t accountId, const std::vector<uint8_t>& roles);
     void sendAdminSetPassword(int32_t accountId, const std::string& password);
     void sendAdminUpdateUser(int32_t accountId, const std::string& username, int16_t cube, uint16_t color1, uint16_t color2, uint16_t glowColor);
-    void sendAdminFetchMods();
-    void sendAdminSetWhitelisted(int32_t accountId, bool whitelisted);
-    void sendAdminCloseRoom(uint32_t roomId);
 
     // Both servers
     void sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab = false);
@@ -230,7 +289,8 @@ public:
     void sendVoiceData(const EncodedAudioFrame& frame);
     void sendQuickChat(uint32_t id);
 
-    // Listeners
+
+    /// Listeners
 
     template <typename T>
     [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]
@@ -259,66 +319,61 @@ private:
         Utoken, Argon, Plain
     };
 
-    qn::Connection m_centralConn;
-    qn::Connection m_gameConn;
-
-    std::string m_centralUrl;
-    std::atomic<qn::ConnectionState> m_centralConnState;
-    asp::Mutex<std::optional<ConnectionInfo>, true> m_connInfo;
-
-    asp::Mutex<std::string> m_pendingConnectUrl;
-    asp::Notify m_pendingConnectNotify;
-    asp::Notify m_disconnectNotify;
-    asp::AtomicBool m_disconnectRequested;
-    asp::AtomicBool m_manualDisconnect = false;
-    asp::AtomicBool m_tryingReconnect = false;
-    asp::Mutex<std::pair<std::string, bool>> m_abortCause;
-    asp::Notify m_finishedClosingNotify;
+    arc::Runtime m_runtime{2};
+    std::shared_ptr<qn::Connection> m_centralConn, m_gameConn;
+    arc::Notify m_workerNotify, m_gameWorkerNotify;
+    WorkerState m_workerState;
+    GameWorkerState m_gameWorkerState;
+    std::optional<arc::mpsc::Sender<GameServerJoinRequest>> m_gameServerJoinTx;
     bool m_destructing = false;
-    bool m_hasSecure = false;
+    bool m_hasSecure;
+
+    asp::Mutex<std::optional<ConnectionInfo>> m_connInfo;
+    asp::SpinLock<std::pair<std::string, bool>> m_abortCause;
+    std::atomic<bool> m_manualDisconnect{false};
 
     // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
     asp::Mutex<std::unordered_map<std::type_index, std::vector<std::pair<void*, void*>>>, true> m_listeners;
-    asp::Thread<> m_workerThread;
 
-    void onCentralConnected();
-    void onCentralDisconnected();
-    geode::Result<> onCentralDataReceived(CentralMessage::Reader& msg);
-    geode::Result<> onGameDataReceived(GameMessage::Reader& msg);
+    arc::Future<> asyncInit();
 
-    static Result<> sendMessageToConnection(qn::Connection& conn, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed);
+    LockedConnInfo connInfo() const;
+
+    Result<> onCentralDataReceived(CentralMessage::Reader& msg);
+    Result<> onGameDataReceived(GameMessage::Reader& msg);
+
+    arc::Future<> threadWorkerLoop();
+    arc::Future<> threadGameWorkerLoop();
+    void threadPingGameServers(LockedConnInfo& info);
+    void threadMaybeResendOwnData(LockedConnInfo& info);
+    arc::Future<> threadTryAuth();
+
+    void sendCentralAuth(AuthKind kind, const std::string& token = "");
+    Result<> sendMessageToConnection(qn::Connection& conn, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed);
     void sendToCentral(std23::function_ref<void(CentralMessage::Builder&)>&& func);
     void sendToGame(std23::function_ref<void(GameMessage::Builder&)>&& func, bool reliable = true, bool uncompressed = false);
-
-    void maybeTryReconnect();
-    void disconnectInner();
-    void resetGameVars();
 
     // Returns the user token for the current central server
     std::optional<std::string> getUToken();
     void setUToken(std::string token);
     void clearUToken();
+    std::vector<uint8_t> computeUident(int accountId);
 
     // Returns the last known featured level ID on this server
     int32_t getLastFeaturedLevelId();
     void setLastFeaturedLevelId(int32_t id);
 
-    std::vector<uint8_t> computeUident(int accountId);
+    void onCentralStateChanged(qn::ConnectionState state);
+    void onGameStateChanged(qn::ConnectionState state);
 
-    void tryAuth();
-    void sendCentralAuth(AuthKind kind, const std::string& token = "");
     void abortConnection(std::string reason, bool silent = false);
+    void handleSuccessfulLogin(LockedConnInfo& info);
+    void handleLoginFailed(schema::main::LoginFailedReason reason);
+    void showDisconnectCause(bool reconnecting);
 
-    void joinSessionWith(std::string_view serverUrl, SessionId id, bool platformer, bool editorCollab = false);
+    void joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, SessionId id, bool platformer, bool editorCollab);
     void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false, bool editorCollab = false);
     void sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab);
-
-    // Handlers for messages
-    void handleLoginFailed(schema::main::LoginFailedReason reason);
-
-    // Thread functions
-    void thrPingGameServers(ConnectionInfo& info);
-    void thrMaybeResendOwnData(ConnectionInfo& info);
 
     template <typename T>
     void invokeListeners(T&& message) {

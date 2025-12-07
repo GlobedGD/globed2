@@ -35,12 +35,8 @@ ConnectionState NetworkManager::getConnectionState() {
     }
 }
 
-Result<> NetworkManager::disconnectCentral() {
-    return m_impl->disconnectCentral();
-}
-
-Result<> NetworkManager::cancelConnection() {
-    return m_impl->cancelConnection();
+void NetworkManager::disconnectCentral() {
+    m_impl->disconnectCentral();
 }
 
 bool NetworkManager::isConnected() const {

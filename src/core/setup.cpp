@@ -3,6 +3,7 @@
 #include <globed/core/SettingsManager.hpp>
 #include <qunet/Log.hpp>
 #include <asp/Log.hpp>
+#include <arc/util/Trace.hpp>
 
 using namespace geode::prelude;
 
@@ -51,6 +52,20 @@ $execute {
 
             case qn::log::Level::Error: {
                 log::error("[Qunet] {}", message);
+            } break;
+        }
+    });
+
+    arc::setLogFunction([](std::string message, arc::LogLevel level) {
+        switch (level) {
+            case arc::LogLevel::Trace: {
+#ifdef GLOBED_DEBUG
+                log::debug("[arc] {}", message);
+#endif
+            } break;
+
+            case arc::LogLevel::Error: {
+                log::error("[arc] {}", message);
             } break;
         }
     });

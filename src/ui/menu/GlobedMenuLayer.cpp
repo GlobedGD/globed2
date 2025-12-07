@@ -279,7 +279,7 @@ bool GlobedMenuLayer::init() {
     m_cancelConnButton = Build<CCSprite>::create("exit01.png"_spr)
         .with([&](auto spr) { cue::rescaleToMatch(spr, 27.5f); })
         .intoMenuItem([] {
-            (void) NetworkManagerImpl::get().cancelConnection();
+            NetworkManagerImpl::get().disconnectCentral();
         })
         .id("cancel-conn-btn")
         .parent(m_connStateContainer);
@@ -737,9 +737,7 @@ void GlobedMenuLayer::initSideButtons() {
                 "Are you sure you want to <cr>disconnect</c> from the server?",
                 "Cancel", "Yes",
                 [](auto) {
-                    if (auto err = NetworkManagerImpl::get().disconnectCentral().err()) {
-                        globed::toastError("{}", *err);
-                    }
+                    NetworkManagerImpl::get().disconnectCentral();
                 }
             );
         }
