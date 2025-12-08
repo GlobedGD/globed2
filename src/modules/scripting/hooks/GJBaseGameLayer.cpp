@@ -190,7 +190,7 @@ CustomFollowAction& SCBaseGameLayer::insertCustomFollow(int player, int group) {
 
     size_t idx = this->getCustomFollowIndex(player, group);
 
-    if (idx == -1) {
+    if (idx == (size_t)-1) {
         fields.m_followActions.push_back(CustomFollowAction {
             .m_playerId = player,
             .m_groupId = group,
@@ -218,7 +218,7 @@ void SCBaseGameLayer::disableCustomFollow(int player, int group, bool disableMov
 
     size_t idx = this->getCustomFollowIndex(player, group);
 
-    if (idx == -1) return;
+    if (idx == (size_t)-1) return;
 
     auto& action = fields.m_followActions[idx];
     if (disableMov) {

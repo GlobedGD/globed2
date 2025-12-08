@@ -67,7 +67,7 @@ class GlobedConfig:
             out.advanced_dns = get_or(build, "advanced_dns", out.advanced_dns)
             out.update_check = get_or(build, "update_check", out.debug) # enabled by default in debug
 
-            modules = get_or(build, "modules", out.modules)
+            modules = get_or(build, "modules", [])
             for mod in modules:
                 if isinstance(mod, str):
                     out.modules.add(mod)
@@ -96,7 +96,7 @@ def print_info(state: State):
 
     print(f"========== Globed build configuration ==========")
     print(f"Platform: {build.platform.name}, host: {build.config.host_desc()}, debug: {gc.debug}, release: {gc.release}, OSS build: {gc.oss}")
-    print(f"Voice: {gc.voice}, modules: {modulestr}, server URL: '{gc.server_url}'")
+    print(f"Voice: {gc.voice}, server URL: '{gc.server_url}', modules: {modulestr}")
     print(f"Compiler: {config.compiler_id} {config.compiler_version}, frontend: '{config.compiler_frontend}'")
     print("=================================================")
 

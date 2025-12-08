@@ -34,7 +34,8 @@ private:
 
     FireServerPayload getPayload();
 
-    CCNode* addBaseCheckbox(const char* label, CCMenuItemToggler** store, std23::move_only_function<void(CCMenuItemToggler*)> callback);
+    // TODO: in v5 change to move_only_function
+    CCNode* addBaseCheckbox(const char* label, CCMenuItemToggler** store, std::function<void(CCMenuItemToggler*)> callback);
     void setTriggerState(bool spawn, bool touch);
 };
 

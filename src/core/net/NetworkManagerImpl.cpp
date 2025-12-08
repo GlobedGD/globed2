@@ -1098,6 +1098,7 @@ void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reaso
     auto info = this->connInfo();
     info->m_established = false;
     info->m_authenticating = false;
+    info.unlock();
 
     switch (reason) {
         case INVALID_USER_TOKEN: {
@@ -1114,6 +1115,7 @@ void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reaso
 
         case ARGON_NOT_SUPPORTED: {
             log::warn("Login failed: Argon is not supported by the server, falling back to plain login");
+            info.relock();
             info->m_knownArgonUrl.clear();
             m_workerNotify.notifyOne();
         } break;
