@@ -18,7 +18,7 @@ import tomllib
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
-QUNET_VERSION = "42242b3"
+QUNET_VERSION = "c87fba4"
 SERVER_SHARED_VERSION = "49d7eab"
 CUE_VERSION = "233549d"
 
@@ -41,7 +41,7 @@ class GlobedConfig:
     @classmethod
     def load(cls):
         path = Path(__file__).parent / "config.toml"
-        if not path:
+        if not path.exists():
             return cls()
 
         cfg = tomllib.loads(path.read_text())
