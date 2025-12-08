@@ -65,7 +65,7 @@ struct HookedFileUtils : public CCFileUtils {
         auto path = asp::local_format(buf, "{}{}{}{}", searchPath, filePath, resolutionDirectory, file);
 
         if (this->fileExists(path.data())) {
-            return gd::string(path);
+            return gd::string(path.data(), path.size());
         } else {
             return gd::string{};
         }

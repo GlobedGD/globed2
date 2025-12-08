@@ -55,7 +55,13 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
         std::vector<uint64_t> ids;
 
         if (listLayer) {
+#ifdef GEODE_IS_ANDROID
+            auto& gdLevels = listLayer->m_levelList->m_levels;
+            std::vector<int> vec{gdLevels.begin(), gdLevels.end()};
+            ids = asp::iter::from(vec)
+#else
             ids = asp::iter::from(listLayer->m_levelList->m_levels)
+#endif
                 .mapCast<uint64_t>()
                 .collect();
         } else {
