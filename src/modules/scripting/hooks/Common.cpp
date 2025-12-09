@@ -18,7 +18,7 @@ static void setObjectTexture(GameObject* obj, ScriptObjectType type) {
     }
 
     if (type == ScriptObjectType::EmbeddedScript) {
-        obj->m_hasSpecialChild = true;
+        obj->m_addToNodeContainer = true;
         obj->removeAllChildren();
 
         auto spr = CCSprite::createWithTexture(tex);
@@ -110,7 +110,7 @@ bool onAddObject(GameObject* original, bool editor, std::optional<EmbeddedScript
                     log::warn("Failed to decode embedded script: {}", res.unwrapErr());
                 }
 
-                original->m_hasSpecialChild = true; // force it to be in the ccnodecontainer instead of batch node, thank you alpha :)
+                original->m_addToNodeContainer = true; // force it to be in the ccnodecontainer instead of batch node, thank you alpha :)
             }
         } break;
 

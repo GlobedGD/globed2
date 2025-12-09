@@ -55,9 +55,12 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
 
     // send over the scripts to the server if we are the room owner
     auto& rm = RoomManager::get();
+    fields.m_hasScripts = !scripts.empty();
+
     if (rm.isOwner() && !scripts.empty()) {
         log::info("Sending {} scripts to the server", scripts.size());
         nm.queueLevelScript(scripts);
+        fields.m_scriptsSent = true;
 
         auto gjbgl = GlobedGJBGL::get(this);
         gjbgl->customSchedule("2p-send-log-request"_spr, [this](GlobedGJBGL*, float dt) {

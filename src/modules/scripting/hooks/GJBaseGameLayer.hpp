@@ -48,6 +48,8 @@ struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBas
         std::vector<CustomFollowAction> m_followActions;
         std::unordered_map<int, CustomFollowedData> m_lastPlayerPositions;
         int m_localId = 0;
+        bool m_hasScripts = false;
+        bool m_scriptsSent = false;
     };
 
     static SCBaseGameLayer* get(GJBaseGameLayer* base = nullptr);
