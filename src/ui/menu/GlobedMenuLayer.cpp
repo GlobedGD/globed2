@@ -30,6 +30,7 @@
 #include <ui/misc/Badges.hpp>
 #include <ui/misc/CellGradients.hpp>
 
+#include <argon/argon.hpp>
 #include <cue/RepeatingBackground.hpp>
 #include <UIBuilder.hpp>
 
@@ -249,6 +250,19 @@ bool GlobedMenuLayer::init() {
     m_connectButton = Build<ButtonSprite>::create("Connect", "bigFont.fnt", "GJ_button_01.png", 0.7f)
         .scale(0.9f)
         .intoMenuItem([] {
+            // don't allow if not logged into an account
+            if (!argon::signedIn()) {
+                globed::confirmPopup(
+                    "Globed Error",
+                    "You must be logged into a <cg>Geometry Dash account</c> in order to play online. Want to visit the <cy>account page</c>?",
+                    "Cancel", "Ok",
+                    [](auto) {
+                        AccountLayer::create()->showLayer(false);
+                    }
+                );
+                return;
+            }
+
             auto& sm = ServerManager::get();
             auto url = sm.getActiveServer().url;
 

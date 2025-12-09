@@ -12,6 +12,11 @@ using namespace geode::prelude;
 namespace globed {
 
 static void initiateAutoConnect() {
+    // check if signed into an account
+    if (!argon::signedIn()) {
+        return;
+    }
+
     if (globed::value<bool>("core.was-connected").value_or(false)) {
         auto& sm = ServerManager::get();
         auto url = sm.getActiveServer().url;

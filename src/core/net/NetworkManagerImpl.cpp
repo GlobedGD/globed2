@@ -603,6 +603,7 @@ Future<> NetworkManagerImpl::threadTryAuth() {
 
         // wait to acquire an argon token
         info.unlock();
+        log::debug("acquiring argon token with url {}", info->m_knownArgonUrl);
         auto res = co_await startArgonAuth();
 
         if (!res) {
@@ -671,7 +672,9 @@ Result<> NetworkManagerImpl::sendMessageToConnection(qn::Connection& conn, capnp
 
     auto data = std::vector<uint8_t>(vos.getArray().begin(), vos.getArray().end());
 
-    conn.sendData(std::move(data), reliable, uncompressed);
+    if (!conn.sendData(std::move(data), reliable, uncompressed)) {
+        return Err("failed to send data");
+    }
 
     return Ok();
 }

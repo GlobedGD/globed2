@@ -64,6 +64,10 @@ $execute {
 #endif
             } break;
 
+            case arc::LogLevel::Warn: {
+                log::warn("[arc] {}", message);
+            } break;
+
             case arc::LogLevel::Error: {
                 log::error("[arc] {}", message);
             } break;

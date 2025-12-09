@@ -18,7 +18,7 @@ import tomllib
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
-QUNET_VERSION = "84c08ab"
+QUNET_VERSION = "a7189d5"
 SERVER_SHARED_VERSION = "49d7eab"
 CUE_VERSION = "233549d"
 
@@ -267,7 +267,7 @@ def main(build: Build):
     }, link_name="qunet")
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
-    build.add_cpm_dep("GlobedGD/argon", "v1.3.0")
+    build.add_cpm_dep("GlobedGD/argon", "v1.3.1")
     build.add_cpm_dep("Prevter/sinaps", "2541d6d")
     build.add_cpm_dep("Prevter/AdvancedLabel", "d78d7f82", link_name="advanced_label")
 
@@ -284,6 +284,10 @@ def main(build: Build):
     build.silence_warnings_for("capnp")
     build.silence_warnings_for("libzstd_static")
     build.silence_warnings_for("opus")
+
+    # cpm overrides
+    for name, path in gc.cpm_overrides.items():
+        build.set_variable(f"CPM_{name}_SOURCE", str(path.resolve()))
 
     # check dep updates if enabled
     if gc.update_check:
