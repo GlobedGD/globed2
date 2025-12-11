@@ -210,6 +210,15 @@ bool GlobedMenuLayer::init() {
 
     auto winSize = CCDirector::get()->getWinSize();
 
+    // add a small version label in top right
+    Build<Label>::create(fmt::format("{}", Mod::get()->getVersion().toVString()), "chatFont.fnt")
+        .opacity(127)
+        .scale(0.55f)
+        .anchorPoint(1.f, 1.f)
+        .pos(winSize - CCSize{1.f, 1.f})
+        .zOrder(111)
+        .parent(this);
+
     // create the connection menu
     auto connectMenuLayout = ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setGap(10.f);
     connectMenuLayout->ignoreInvisibleChildren(true);
