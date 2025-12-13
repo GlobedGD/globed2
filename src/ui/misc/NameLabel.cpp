@@ -14,7 +14,7 @@ bool NameLabel::init(const std::string& name, const char* font) {
     m_font = font;
     m_shadow = false;
 
-    auto bcLayout = RowLayout::create()->setAutoScale(false)->setGap(3.f);
+    auto bcLayout = SimpleRowLayout::create()->setMainAxisScaling(AxisScaling::None)->setGap(3.f);
     bcLayout->ignoreInvisibleChildren(true);
     m_badgeContainer = Build<CCNode>::create()
         .id("badge-container")
@@ -26,11 +26,15 @@ bool NameLabel::init(const std::string& name, const char* font) {
     this->setAnchorPoint({0.5f, 0.5f});
     this->ignoreAnchorPointForPosition(false);
 
-    auto myLayout = RowLayout::create()->setGap(4.f)->setAutoScale(false);
+    auto myLayout = SimpleRowLayout::create()
+        ->setGap(4.f)
+        ->setMainAxisScaling(AxisScaling::None);
     myLayout->ignoreInvisibleChildren(true);
 
     this->setLayout(myLayout);
     this->updateName(name);
+
+    this->setContentHeight(m_label->getScaledContentHeight());
 
     if (std::string_view{font} == "chatFont.fnt") {
         this->setShadowEnabled(true);
