@@ -34,10 +34,16 @@ $execute {
         }
     });
 
+    static bool debugEnabled = globed::setting<bool>("core.dev.net-debug-logs");
+    globed::SettingsManager::get().listenForChanges("core.dev.net-debug-logs", [](const matjson::Value& val) {
+        debugEnabled = val.asBool().unwrapOr(false);
+    });
+
     qn::log::setLogFunction([](qn::log::Level level, const std::string& message) {
+
         switch (level) {
             case qn::log::Level::Debug: {
-                if (globed::setting<bool>("core.dev.net-debug-logs")) {
+                if (debugEnabled) {
                     log::info("[Qunet] {}", message);
                 }
             } break;

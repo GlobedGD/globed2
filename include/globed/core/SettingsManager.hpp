@@ -45,6 +45,7 @@ struct SaveSlotMeta {
 class GLOBED_DLL SettingsManager : public SingletonBase<SettingsManager> {
 public:
     using Validator = std23::move_only_function<bool(const matjson::Value&)>;
+    using ListenCallback = std23::move_only_function<void(const matjson::Value&)>;
 
     template <typename T>
     SettingAccessor<T> setting(std::string_view key) {
@@ -57,6 +58,7 @@ public:
             // internal error, means we used a wrong id somewhere
             throw std::runtime_error(fmt::format("setting not found with hash {}", hash));
         }
+        geode::log::debug("Getting {}", m_fullKeys[hash]);
 
         auto set = m_settings.at(hash);
         if (auto res = set.as<T>()) {
@@ -82,6 +84,8 @@ public:
             geode::utils::terminate(fmt::format("setting not found with hash {}", hash));
         }
 
+        geode::log::debug("Setting {}", m_fullKeys[hash]);
+
         matjson::Value val = std::forward<T>(value);
         auto it = m_validators.find(hash);
         if (it != m_validators.end()) {
@@ -92,6 +96,12 @@ public:
         }
 
         m_settings[hash] = val;
+        auto callbacksIt = m_callbacks.find(hash);
+        if (callbacksIt != m_callbacks.end()) {
+            for (auto& cb : callbacksIt->second) {
+                cb(val);
+            }
+        }
         // ValueManager::get().set(m_fullKeys[hash], std::move(val));
 
         if (m_activeSaveSlot >= m_saveSlots.size()) {
@@ -123,6 +133,11 @@ public:
         std::string_view key,
         matjson::Value min,
         matjson::Value max
+    );
+
+    void listenForChanges(
+        std::string_view key,
+        std23::move_only_function<void(const matjson::Value&)> callback
     );
 
     void commitSlotsToDisk();
@@ -159,6 +174,7 @@ private:
     std::unordered_map<uint64_t, matjson::Value, NoHashHasher<uint64_t>> m_defaults;
     std::unordered_map<uint64_t, std::string, NoHashHasher<uint64_t>> m_fullKeys;
     std::unordered_map<uint64_t, Validator, NoHashHasher<uint64_t>> m_validators;
+    std::unordered_map<uint64_t, std::vector<ListenCallback>, NoHashHasher<uint64_t>> m_callbacks;
     std::unordered_map<uint64_t, std::pair<matjson::Value, matjson::Value>, NoHashHasher<uint64_t>> m_limits;
 
     std::filesystem::path m_slotDir;
