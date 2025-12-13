@@ -232,6 +232,10 @@ Future<> NetworkManagerImpl::asyncInit() {
     m_centralConn->setActiveKeepaliveInterval(Duration::fromSecs(45));
     m_gameConn->setActiveKeepaliveInterval(Duration::fromSecs(10));
 
+    auto qdbPath = Mod::get()->getSaveDir() / "qdb-cache";
+    m_centralConn->setQdbFolder(qdbPath);
+    m_gameConn->setQdbFolder(qdbPath);
+
     m_centralConn->setConnectionStateCallback([this](qn::ConnectionState state) {
         this->onCentralStateChanged(state);
     });

@@ -53,10 +53,26 @@ private:
 
 namespace globed {
 
+/// Cache for some settings that are often accessed
+struct CachedSettings {
+    bool selfName = globed::setting<bool>("core.level.self-name");
+    bool selfStatusIcons = globed::setting<bool>("core.level.self-status-icons");
+    bool quickChat = globed::setting<bool>("core.player.quick-chat-enabled");
+    bool voiceChat = globed::setting<bool>("core.audio.voice-chat-enabled");
+    bool voiceLoopback = globed::setting<bool>("core.audio.voice-loopback");
+    bool friendsOnlyAudio = globed::setting<bool>("core.audio.only-friends");
+
+    void reload() {
+        *this = CachedSettings{};
+    }
+} g_settings;
+
 void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     auto& fields = *m_fields.self();
     auto& nm = NetworkManagerImpl::get();
     fields.m_editor = editor;
+
+    this->reloadCachedSettings();
 
     // determine if mulitplayer should be active
     auto ecId = RoomManager::get().getEditorCollabId(level);
@@ -142,7 +158,7 @@ void GlobedGJBGL::setupAudio() {
     auto result = am.startRecordingEncoded([](const auto& frame) {
         NetworkManagerImpl::get().sendVoiceData(frame);
 
-        if (globed::setting<bool>("core.audio.voice-loopback")) {
+        if (g_settings.voiceLoopback) {
             log::debug("Playing loopback voice frame");
             auto& am = AudioManager::get();
 
@@ -429,8 +445,8 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     flags.speaking = AudioManager::get().isPassiveRecording();
     flags.speakingMuted = flags.speaking && fields.m_knownServerMuted;
 
-    bool showSelfName = globed::setting<bool>("core.level.self-name");
-    bool showSelfIcons = flags.speaking && globed::setting<bool>("core.level.self-status-icons");
+    bool showSelfName = g_settings.selfName;
+    bool showSelfIcons = flags.speaking && g_settings.selfStatusIcons;
 
     if (showSelfIcons) {
         fields.m_selfStatusIcons->setVisible(true);
@@ -822,9 +838,13 @@ bool GlobedGJBGL::shouldLetMessageThrough(int playerId) {
     if (sm.isPlayerBlacklisted(playerId)) return false;
     if (sm.isPlayerWhitelisted(playerId)) return true;
 
-    if (globed::setting<bool>("core.audio.only-friends") && !flm.isFriend(playerId)) return false;
+    if (g_settings.friendsOnlyAudio && !flm.isFriend(playerId)) return false;
 
     return true;
+}
+
+void GlobedGJBGL::reloadCachedSettings() {
+    g_settings.reload();
 }
 
 void GlobedGJBGL::toggleCullingEnabled(bool culling) {
@@ -926,7 +946,7 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
 void GlobedGJBGL::onVoiceDataReceived(const msg::VoiceBroadcastMessage& message) {
     auto& am = AudioManager::get();
 
-    if (am.getDeafen() || !globed::setting<bool>("core.audio.voice-chat-enabled")) {
+    if (am.getDeafen() || !g_settings.voiceChat) {
         return;
     }
 
@@ -945,7 +965,7 @@ void GlobedGJBGL::onVoiceDataReceived(const msg::VoiceBroadcastMessage& message)
 }
 
 void GlobedGJBGL::onQuickChatReceived(int accountId, uint32_t quickChatId) {
-    if (!globed::setting<bool>("core.player.quick-chat-enabled")) {
+    if (!g_settings.quickChat) {
         return;
     }
 

@@ -38,9 +38,19 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
         );
     }
 
+    struct Fields {
+        ~Fields() {
+            if (auto gjbgl = GlobedGJBGL::get()) {
+                gjbgl->reloadCachedSettings();
+            }
+        }
+    };
+
     $override
     void customSetup() {
         PauseLayer::customSetup();
+
+        m_fields.self();
 
         auto gpl = GlobedGJBGL::get();
         if (!gpl || !gpl->active()) return;

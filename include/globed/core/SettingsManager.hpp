@@ -58,7 +58,6 @@ public:
             // internal error, means we used a wrong id somewhere
             throw std::runtime_error(fmt::format("setting not found with hash {}", hash));
         }
-        geode::log::debug("Getting {}", m_fullKeys[hash]);
 
         auto set = m_settings.at(hash);
         if (auto res = set.as<T>()) {

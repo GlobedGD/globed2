@@ -161,7 +161,7 @@ void SetupEmbeddedScriptPopup::onPaste() {
 }
 
 Result<> SetupEmbeddedScriptPopup::loadCodeFromPath(const std::filesystem::path& path) {
-    auto code = GEODE_UNWRAP(asp::fs::readToString(path).mapErr([](auto err) { return err.message(); }));
+    auto code = GEODE_UNWRAP(asp::fs::readToString(path));
     this->loadCodeFromString(std::move(code));
 
     return Ok();
