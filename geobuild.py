@@ -18,7 +18,7 @@ import tomllib
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
-QUNET_VERSION = "2d78a63"
+QUNET_VERSION = "a99a508"
 SERVER_SHARED_VERSION = "49d7eab"
 CUE_VERSION = "233549d"
 
@@ -82,6 +82,17 @@ class GlobedConfig:
 
         return out
 
+    @classmethod
+    def release_config(cls):
+        out = cls()
+        # set some important defaults for release
+        out.debug = False
+        out.release = True
+        out.voice = True
+        out.quic = True
+        out.advanced_dns = True
+        return out
+
 @dataclass
 class State:
     build: Build
@@ -143,8 +154,13 @@ def make_constants_codegen(state: State) -> str:
     return out
 
 def main(build: Build):
+    if build.config.bool_var("GLOBED_RELEASE"):
+        print("!! GLOBED_RELEASE is defined, setting actions configuration !!")
+        gc = GlobedConfig.release_config()
+    else:
+        gc = GlobedConfig.load()
+
     config = build.config
-    gc = GlobedConfig.load()
     state = State(build=build, config=gc)
 
     print_info(state)
@@ -267,7 +283,7 @@ def main(build: Build):
     }, link_name="qunet")
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
-    build.add_cpm_dep("GlobedGD/argon", "v1.3.1")
+    build.add_cpm_dep("GlobedGD/argon", "0ce19b7")
     build.add_cpm_dep("Prevter/sinaps", "2541d6d")
     build.add_cpm_dep("Prevter/AdvancedLabel", "d78d7f82", link_name="advanced_label")
 

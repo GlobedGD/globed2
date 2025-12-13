@@ -18,10 +18,10 @@
 #include <arc/time/Sleep.hpp>
 #include <argon/argon.hpp>
 #include <qunet/Pinger.hpp>
+#include <qunet/dns/Resolver.hpp>
 #include <qunet/util/algo.hpp>
 #include <qunet/util/hash.hpp>
 #include <asp/time/Duration.hpp>
-#include <asp/time/sleep.hpp>
 #include <asp/iter.hpp>
 
 using namespace geode::prelude;
@@ -199,9 +199,20 @@ NetworkManagerImpl::NetworkManagerImpl() : m_workerState(createWorkerState()) {
     m_runtime.spawn([](auto* self) -> arc::Future<> {
         co_await self->asyncInit();
     }(this));
+
+    if (globed::value<bool>("net.dont-override-dns").value_or(false)) {
+        log::info("Not overriding DNS servers");
+    } else {
+        qn::Resolver::get().setCustomDnsServers(
+            qsox::Ipv4Address{1, 1, 1, 1},
+            qsox::Ipv4Address{8, 8, 8, 8}
+        );
+    }
 }
 
 NetworkManagerImpl::~NetworkManagerImpl() {
+    m_centralConn->destroy();
+    m_gameConn->destroy();
     m_destructing = true;
 }
 
