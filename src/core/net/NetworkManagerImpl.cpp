@@ -725,6 +725,11 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
 
     FriendListManager::get().refresh();
 
+    bool certVerification = globed::setting<bool>("core.dev.cert-verification");
+    argon::setCertVerification(certVerification);
+    m_centralConn->setTlsCertVerification(certVerification);
+    m_gameConn->setTlsCertVerification(certVerification);
+
     g_argonData = argon::getGameAccountData();
     m_abortCause.lock()->first.clear();
     m_manualDisconnect.store(false, ::release);

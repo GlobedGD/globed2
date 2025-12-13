@@ -103,6 +103,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.dev.net-debug-logs", false);
     this->registerSetting("core.dev.net-stat-dump", false);
     this->registerSetting("core.dev.fake-data", false);
+    this->registerSetting("core.dev.cert-verification", true);
 }
 
 void SettingsManager::loadSaveSlots() {

@@ -32,8 +32,6 @@ target_link_libraries(${PROJECT_NAME} std23::nontype_functional)
 
 ## Usage
 
-TODO, this is a lot of work oh god
-
 ```cpp
 // One of the two, depending on whether you added the line of cmake above
 #include <dankmeme.globed2/include/globed/soft-link/API.hpp>
@@ -41,3 +39,5 @@ TODO, this is a lot of work oh god
 
 Result<bool> res = globed::api()->net.isConnected();
 ```
+
+You can take a look at other available functions in your intellisense.

@@ -184,6 +184,7 @@ void SettingsLayer::addSettings() {
         this->addSetting<BoolSettingCell>("core.dev.net-debug-logs", "Network Debug Logs", "");
         this->addSetting<BoolSettingCell>("core.dev.net-stat-dump", "Network Stat Dump", "");
         this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data", "");
+        this->addSetting<BoolSettingCell>("core.dev.cert-verification", "SSL Verification", "");
 
         this->addSetting(ButtonSettingCell::create("Clear Auth Tokens", "", "Clear", [] {
             NetworkManagerImpl::get().clearAllUTokens();
