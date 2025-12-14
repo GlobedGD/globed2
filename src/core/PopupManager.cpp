@@ -194,7 +194,7 @@ CustomFLAlert* CustomFLAlert::create(
         globed::colorizeLabel(label, content);
     }
 
-    CCSize size = label->getScaledContentSize() + CCSize{20.f, 100.f};
+    CCSize size = label->getScaledContentSize() + CCSize{24.f, 100.f};
 
     float width = std::max<float>(size.width, std::max<float>(350.f, rWidth));
     float height = std::max<float>(size.height, 140.f);

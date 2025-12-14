@@ -609,12 +609,17 @@ void SettingsManager::registerLimits(
     m_limits[hash] = std::make_pair(std::move(min), std::move(max));
 }
 
-void SettingsManager::listenForChanges(
+bool SettingsManager::listenForChanges(
     std::string_view key,
     std23::move_only_function<void(const matjson::Value&)> callback
 ) {
     auto hash = this->keyHash(key);
+    if (!m_settings.contains(hash)) {
+        return false;
+    }
+
     m_callbacks[hash].emplace_back(std::move(callback));
+    return true;
 }
 
 std::optional<std::pair<matjson::Value, matjson::Value>> SettingsManager::getLimits(std::string_view key) {

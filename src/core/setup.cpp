@@ -40,7 +40,6 @@ $execute {
     });
 
     qn::log::setLogFunction([](qn::log::Level level, const std::string& message) {
-
         switch (level) {
             case qn::log::Level::Debug: {
                 if (debugEnabled) {

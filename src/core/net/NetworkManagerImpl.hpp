@@ -369,7 +369,7 @@ private:
     void abortConnection(std::string reason, bool silent = false);
     void handleSuccessfulLogin(LockedConnInfo& info);
     void handleLoginFailed(schema::main::LoginFailedReason reason);
-    void showDisconnectCause(bool reconnecting);
+    void showDisconnectCause(bool reconnecting, bool wasConnected);
 
     void joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, SessionId id, bool platformer, bool editorCollab);
     void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false, bool editorCollab = false);

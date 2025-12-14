@@ -83,8 +83,6 @@ public:
             geode::utils::terminate(fmt::format("setting not found with hash {}", hash));
         }
 
-        geode::log::debug("Setting {}", m_fullKeys[hash]);
-
         matjson::Value val = std::forward<T>(value);
         auto it = m_validators.find(hash);
         if (it != m_validators.end()) {
@@ -134,7 +132,7 @@ public:
         matjson::Value max
     );
 
-    void listenForChanges(
+    bool listenForChanges(
         std::string_view key,
         std23::move_only_function<void(const matjson::Value&)> callback
     );

@@ -73,6 +73,65 @@ static std::string_view connectionStateToStr(qn::ConnectionState state) {
     }
 }
 
+static std::string_view connTypeToString(qn::ConnectionType type) {
+    using enum qn::ConnectionType;
+
+    switch (type) {
+        case Udp: return "udp";
+        case Tcp: return "tcp";
+        case Quic: return "quic";
+        default: return "unknown";
+    }
+}
+
+// addr/type/error priority is as follows:
+// * TransportError -> handshake failure / defragmentation / unreliable / invalid qdb
+// * IPv4 over IPv6
+// * prefer tcp over udp over quic
+// * non socket error
+// * socket error
+static int rankError(const qsox::SocketAddress& addr, qn::ConnectionType type, const qn::ConnectionError& err) {
+    int score = 0;
+
+    if (err.isTransportError()) {
+        using Code = qn::TransportError::CustomCode;
+        auto& te = err.asTransportError();
+
+        if (std::holds_alternative<qn::TransportError::HandshakeFailure>(te.m_kind)) {
+            score += 100'000'000;
+        } else if (std::holds_alternative<qn::TransportError::CustomKind>(te.m_kind)) {
+            auto code = std::get<qn::TransportError::CustomKind>(te.m_kind).code;
+            if (code == Code::DefragmentationError || code == Code::TooUnreliable || code == Code::InvalidQunetDatabase) {
+                score += 100'000'000;
+            }
+        }
+    }
+
+    if (addr.isV4()) {
+        score += 50'000'000;
+    }
+
+    if (type == qn::ConnectionType::Tcp) {
+        score += 25'000'000;
+    } else if (type == qn::ConnectionType::Udp) {
+        score += 24'000'000;
+    } else if (type == qn::ConnectionType::Quic) {
+        score += 23'000'000;
+    }
+
+    if (err.isTransportError()) {
+        auto& te = err.asTransportError();
+
+        if (!std::holds_alternative<qsox::Error>(te.m_kind)) {
+            score += 10'000'000;
+        } else {
+            score += 1'000'000;
+        }
+    }
+
+    return score;
+};
+
 struct CapnpExceptionHandler : public kj::ExceptionCallback {
     bool errored = false;
 
@@ -196,6 +255,13 @@ WorkerState createWorkerState() {
 NetworkManagerImpl::NetworkManagerImpl() : m_workerState(createWorkerState()) {
     m_hasSecure = bb_init();
 
+    m_runtime.setTerminateHandler([](const std::exception& e) {
+        utils::terminate(fmt::format(
+            "arc runtime terminated due to unhandled exception: {}",
+            e.what()
+        ));
+    });
+
     m_runtime.spawn([](auto* self) -> arc::Future<> {
         co_await self->asyncInit();
     }(this));
@@ -260,6 +326,7 @@ Future<> NetworkManagerImpl::asyncInit() {
     });
 
     m_centralConn->setStateResetCallback([this] {
+        log::debug("State reset callback invoked, assuming stateless reconnect happened");
         auto info = m_connInfo.lock();
         info->reset();
     });
@@ -395,8 +462,11 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                 showDisconnect = true;
             }
 
+            // wasConnected is true if we were connected before losing connection
+            bool wasConnected = prevState == Connected || (prevState == Reconnecting && connState == Disconnected);
+
             if (showDisconnect) {
-                this->showDisconnectCause(connState == Reconnecting);
+                this->showDisconnectCause(connState == Reconnecting, wasConnected);
                 co_return;
             }
 
@@ -476,9 +546,11 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
     );
 }
 
-void NetworkManagerImpl::showDisconnectCause(bool reconnecting) {
+void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnected) {
     bool showPopup = !m_manualDisconnect.load(::acquire);
-    std::string message = "client initiated disconnect";
+
+    std::string_view messageStart = wasConnected ? "Connection lost" : "Failed to connect to the server";
+    std::string message = fmt::format("{}: <cy>client initiated disconnect</c>", messageStart);
 
     if (!showPopup) {
         // only save the was-connected value if the user manually disconnected
@@ -489,13 +561,30 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting) {
         auto abortCause = m_abortCause.lock();
 
         if (!abortCause->first.empty()) {
-            message = std::move(abortCause->first);
+            message = fmt::format("Connection aborted: <cy>{}</c>", abortCause->first);
         } else {
             auto err = m_centralConn->lastError();
             if (err == qn::ConnectionError::Success) {
-                message = "Connection cancelled";
+                message = "Connection failed due to unknown error";
+            } else if (!err.isAllAddressesFailed()) {
+                message = fmt::format("{}: <cy>{}</c>", messageStart, err.message());
             } else {
-                message = err.message();
+                // if this is the AllAddressesFailed error, try to get more info to show
+                // sort all errors and pick the clearest one to show to the user
+                auto addrs = err.asAllAddressesFailed().addresses;
+                std::sort(addrs.begin(), addrs.end(), [&](auto& a, auto& b) {
+                    auto aRank = rankError(std::get<0>(a), std::get<1>(a), std::get<2>(a));
+                    auto bRank = rankError(std::get<0>(b), std::get<1>(b), std::get<2>(b));
+                    return aRank < bRank;
+                });
+
+                auto& [addr, type, cause] = addrs.back();
+                message = fmt::format(
+                    "Error connecting to <cg>{} ({})</c>: <cy>{}</c>.",
+                    addr.toString(),
+                    connTypeToString(type),
+                    cause.message()
+                );
             }
         }
 
@@ -515,7 +604,10 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting) {
                 // if reconnecting, show a toast instead
                 globed::toastError("Globed: connection lost, reconnecting..");
             } else {
-                auto alert = PopupManager::get().alertFormat("Globed Error", "Connection lost: <cy>{}</c>", message);
+                auto alert = PopupManager::get().alert(
+                    "Globed Error",
+                    message
+                );
                 alert.showQueue();
             }
         }
