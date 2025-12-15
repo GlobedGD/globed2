@@ -102,6 +102,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     $override
     bool init(GJGameLevel* level);
 
+    void onEnterHook();
+
     // Schedules
     void selUpdateProxy(float dt);
     void selUpdate(float dt);

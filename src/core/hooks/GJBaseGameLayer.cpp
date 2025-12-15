@@ -13,6 +13,7 @@
 #include <core/PreloadManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
+#include <Geode/utils/VMTHookManager.hpp>
 #include <UIBuilder.hpp>
 #include <asp/time/Instant.hpp>
 #include <qunet/util/algo.hpp>
@@ -296,6 +297,26 @@ void GlobedGJBGL::setupListeners() {
     fields.m_mutedListener = nm.listen<msg::ChatNotPermittedMessage>([this](const msg::ChatNotPermittedMessage&) {
         m_fields->m_knownServerMuted = true;
         return ListenerResult::Continue;
+    });
+}
+
+void GlobedGJBGL::onEnterHook() {
+    // when unpausing regularly, this is true, otherwise false
+    auto weRunningScene = this->getParent() == CCScene::get();
+
+    if (weRunningScene) {
+        CCLayer::onEnter();
+        return;
+    }
+
+    Loader::get()->queueInMainThread([self = Ref(this)] {
+        // i forgot why i don't use `self` here and also apparently GlobedGJBGL::get can be null here for 1 person in the world
+        auto l = GlobedGJBGL::get();
+        bool isPaused = l ? l->isPaused(false) : self->isPaused(false);
+
+        if (!isPaused) {
+            self->CCLayer::onEnter();
+        }
     });
 }
 
@@ -786,7 +807,7 @@ PlayLayer* GlobedGJBGL::asPlayLayer() {
 
 GlobedGJBGL* GlobedGJBGL::get(GJBaseGameLayer* base) {
     if (!base) {
-        base = GJBaseGameLayer::get();
+        base = cachedSingleton<GameManager>()->m_gameLayer;
     }
 
     return static_cast<GlobedGJBGL*>(base);
