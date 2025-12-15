@@ -58,21 +58,21 @@ bool UserPunishmentPopup::setup() {
         .pos(this->fromBottom(24.f))
         .parent(m_buttonMenu);
 
-    if (ServerManager::get().isOfficialServerActive()) {
-        Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
-            .scale(0.85f)
-            .intoMenuItem(+[] {
-                web::openLinkInBrowser(globed::constant<"discord">());
-            })
-            .pos(this->fromBottomRight(20.f, 20.f))
-            .parent(m_buttonMenu);
+    // if (ServerManager::get().isOfficialServerActive()) {
+    //     Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
+    //         .scale(0.85f)
+    //         .intoMenuItem(+[] {
+    //             web::openLinkInBrowser(globed::constant<"discord">());
+    //         })
+    //         .pos(this->fromBottomRight(20.f, 20.f))
+    //         .parent(m_buttonMenu);
 
-        Build<CCLabelBMFont>::create("Appeal:", "bigFont.fnt")
-            .scale(0.35f)
-            .anchorPoint(1.f, 0.5f)
-            .pos(this->fromBottomRight(36.f, 16.f))
-            .parent(m_buttonMenu);
-    }
+    //     Build<CCLabelBMFont>::create("Appeal:", "bigFont.fnt")
+    //         .scale(0.35f)
+    //         .anchorPoint(1.f, 0.5f)
+    //         .pos(this->fromBottomRight(36.f, 16.f))
+    //         .parent(m_buttonMenu);
+    // }
 
     return true;
 }
