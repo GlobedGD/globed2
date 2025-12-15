@@ -30,9 +30,9 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
             "PauseLayer::onQuit",
             "PauseLayer::onEdit",
             "PauseLayer::goEdit",
-            // "PauseLayer::onResume",
-            // "PauseLayer::onNormalMode",
-            // "PauseLayer::onPracticeMode",
+            "PauseLayer::onResume",
+            "PauseLayer::onNormalMode",
+            "PauseLayer::onPracticeMode",
             "PauseLayer::onRestart",
             "PauseLayer::onRestartFull",
         );
@@ -144,27 +144,9 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
         } \
     }
 
-#define REPLACE_UNPAUSE(method) \
-    void method(CCObject* s) {\
-        if (!this->hasPopup()) { \
-            if (auto* gpl = GlobedGJBGL::get()) { \
-                bool shouldResume = true; \
-                for (auto& mod : gpl->m_fields->modules) { \
-                    shouldResume = shouldResume && mod->onUnpause(); \
-                } \
-                \
-                if (!shouldResume) { \
-                    return; \
-                } \
-            } \
-            PauseLayer::method(s); \
-        } \
-    }
-
-    // TODO:
-    // REPLACE_UNPAUSE(onResume);
-    // REPLACE_UNPAUSE(onNormalMode);
-    // REPLACE_UNPAUSE(onPracticeMode);
+    REPLACE(onResume);
+    REPLACE(onNormalMode);
+    REPLACE(onPracticeMode);
 
     $override
     REPLACE(onEdit);

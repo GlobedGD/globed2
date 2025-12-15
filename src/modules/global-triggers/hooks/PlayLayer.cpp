@@ -13,7 +13,6 @@ struct GLOBED_MODIFY_ATTR GTPlayLayerHook : geode::Modify<GTPlayLayerHook, PlayL
     static void onModify(auto& self) {
         GLOBED_CLAIM_HOOKS(GlobalTriggersModule::get(), self,
             "PlayLayer::setupHasCompleted",
-            "PlayLayer::resetLevel",
         );
     }
 
