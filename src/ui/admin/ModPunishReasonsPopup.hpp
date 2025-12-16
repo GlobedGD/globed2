@@ -4,6 +4,8 @@
 #include <globed/core/data/UserPunishment.hpp>
 #include <ui/BasePopup.hpp>
 
+#include <cue/ListNode.hpp>
+
 namespace globed {
 
 class ModPunishReasonsPopup : public BasePopup<ModPunishReasonsPopup, UserPunishmentType> {
@@ -23,10 +25,25 @@ public:
         this->onClose(nullptr);
     }
 
+    void commitNewReason(std::string reason);
+    void commitEditReason(size_t index, std::string reason);
+    void commitDeleteReason(size_t index);
+    void openEditReasonPopup(size_t index, const std::string& currentReason);
+    void deleteCustomReason(size_t index);
+
 private:
     Callback m_callback;
+    cue::ListNode* m_serverList;
+    cue::ListNode* m_customList;
+    UserPunishmentType m_type;
 
     bool setup(UserPunishmentType type) override;
+    void toggleCustomReasons(bool custom);
+    cue::ListNode* makeList(std::span<std::string> reasons, bool custom);
+    std::vector<std::string> getCustomReasons();
+    void saveCustomReasons(const std::vector<std::string>& reasons);
+
+    void createBlankReason();
 };
 
 }
