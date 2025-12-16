@@ -893,6 +893,10 @@ void NetworkManagerImpl::dumpNetworkStats() {
     log::info("================================");
 }
 
+void NetworkManagerImpl::simulateConnectionDrop() {
+    m_centralConn->simulateConnectionDrop();
+}
+
 std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
     auto info = this->connInfo();
     if (!info) return std::nullopt;

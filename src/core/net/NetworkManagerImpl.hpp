@@ -160,6 +160,7 @@ public:
     qn::ConnectionState getConnState(bool game);
 
     void dumpNetworkStats();
+    void simulateConnectionDrop();
 
     /// Returns the numeric ID of the preferred game server, or nullopt if not connected
     std::optional<uint8_t> getPreferredServer();

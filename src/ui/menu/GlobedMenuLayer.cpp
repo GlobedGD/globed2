@@ -1276,11 +1276,35 @@ void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
 }
 
 void GlobedMenuLayer::keyDown(enumKeyCodes key) {
-    if (key == KEY_F7) {
-        NetworkManagerImpl::get().dumpNetworkStats();
+#ifdef GLOBED_DEBUG
+    bool showDebug = true;
+#else
+    bool showDebug = globed::value<bool>("core.dev.enable-dev-settings").value_or(false);
+#endif
+
+    // a couple dev controls
+    if (showDebug) {
+        this->handleDebugKey(key);
     }
 
     BaseLayer::keyDown(key);
+}
+
+void GlobedMenuLayer::handleDebugKey(cocos2d::enumKeyCodes key) {
+    // Debug keys:
+    // F6 - simulate a connection breakage (for testing reconnects)
+    // F7 - dump network stats (requires net stat dump setting to be enabled)
+    switch (key) {
+        case KEY_F6: {
+            NetworkManagerImpl::get().simulateConnectionDrop();
+        } break;
+
+        case KEY_F7: {
+            NetworkManagerImpl::get().dumpNetworkStats();
+        } break;
+
+        default: break;
+    }
 }
 
 void GlobedMenuLayer::keyBackClicked() {

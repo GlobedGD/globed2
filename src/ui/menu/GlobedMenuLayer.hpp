@@ -66,6 +66,7 @@ private:
     void setMenuState(MenuState state, bool force = false);
 
     void keyDown(cocos2d::enumKeyCodes key) override;
+    void handleDebugKey(cocos2d::enumKeyCodes key);
     void keyBackClicked() override;
     void onEnter() override;
     bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
