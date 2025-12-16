@@ -171,6 +171,9 @@ def main(build: Build):
 
     build.verify_sdk_at_least(REQUIRED_GEODE_VERSION)
 
+    # Reconfigure when certain files change
+    build.reconfigure_if_changed(config.project_dir / "config.toml")
+
     # Add necessary modules
     gc.modules.add("deathlink")
     gc.modules.add("two-player")
