@@ -31,15 +31,25 @@ constexpr inline PatchDef<22074, 0x4932b0> PATCH_EGO_GETSAVESTRING_START;
 
 #elif defined GEODE_IS_ANDROID32
 
+constexpr inline PatchDef<0, 0> PATCH_EGO_GETSAVESTRING_START;
+
 #elif defined GEODE_IS_ANDROID64
 
+constexpr inline PatchDef<0, 0> PATCH_EGO_GETSAVESTRING_START;
+
 #elif defined GEODE_IS_ARM_MAC
+
+constexpr inline PatchDef<0, 0> PATCH_EGO_GETSAVESTRING_START;
 
 constexpr inline PatchDef<22074, 0xaa390> PATCH_SAVE_PERCENTAGE_CALL;
 
 #elif defined GEODE_IS_INTEL_MAC
 
+constexpr inline PatchDef<0, 0> PATCH_EGO_GETSAVESTRING_START;
+
 #elif defined GEODE_IS_IOS
+
+constexpr inline PatchDef<0, 0> PATCH_EGO_GETSAVESTRING_START;
 
 #endif
 
