@@ -14,6 +14,7 @@
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 namespace globed {
 
@@ -296,16 +297,49 @@ protected:
 }
 
 bool UserListPopup::setup() {
-    this->setTitle("Players");
+    this->setTitle("Players", "goldFont.fnt", 0.7f, 17.5f);
 
     m_noElasticity = true;
 
     m_list = Build(cue::ListNode::create(LIST_SIZE))
         .anchorPoint(0.5f, 1.f)
-        .pos(this->fromTop(45.f))
+        .pos(this->fromTop(40.f))
         .parent(m_mainLayer);
     m_list->setCellColors(cue::DarkBrown, cue::Brown);
     m_list->setAutoUpdate(false);
+
+    auto filterContainer = Build<CCMenu>::create()
+        .layout(SimpleRowLayout::create()
+            ->setGap(5.f)
+            ->setMainAxisScaling(AxisScaling::Fit)
+            ->setCrossAxisScaling(AxisScaling::Fit))
+        .parent(m_mainLayer)
+        .anchorPoint(0.5f, 0.f)
+        .pos(this->fromBottom(10.f))
+        .collect();
+
+    auto ti = Build<TextInput>::create(200.f, "Username")
+        .parent(filterContainer)
+        .collect();
+
+    ti->setScale(0.8f);
+    ti->setCommonFilter(CommonFilter::Name);
+    ti->setCallback([this](auto input) {
+        m_searchFilter = input;
+        m_lastKeystroke = Instant::now();
+        m_needsFilterUpdate = true;
+    });
+
+    Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
+        .scale(0.54f)
+        .intoMenuItem([this, ti] {
+            ti->setString("");
+            m_searchFilter.clear();
+            m_needsFilterUpdate = true;
+        })
+        .parent(filterContainer);
+
+    filterContainer->updateLayout();
 
     this->hardRefresh();
 
@@ -363,7 +397,7 @@ bool UserListPopup::setup() {
             ->setAxisReverse(true))
         .contentSize(80.f, 30.f)
         .anchorPoint(0.5f, 0.5f)
-        .pos(this->fromTopRight(50.f, 25.f))
+        .pos(this->fromTopRight(50.f, 22.f))
         .parent(m_mainLayer)
         .updateLayout();
 
@@ -379,6 +413,7 @@ bool UserListPopup::setup() {
     cbLayout->updateLayout();
 
     // this->schedule(schedule_selector(GlobedUserListPopup::reorderWithVolume), 0.5f);
+    this->scheduleUpdate();
 
     return true;
 }
@@ -389,16 +424,24 @@ void UserListPopup::hardRefresh() {
     auto gjbgl = GlobedGJBGL::get();
     auto& players = gjbgl->m_fields->m_players;
 
-    this->setTitle(fmt::format("Players ({})", players.size()));
+    this->setTitle(fmt::format("Players ({})", players.size() + 1));
 
-    bool createdSelf = false;
+    m_list->addCell(PlayerCell::createMyself(this));
 
     for (auto& [playerId, player] : players) {
         if (playerId == cachedSingleton<GJAccountManager>()->m_accountID) {
-            m_list->addCell(PlayerCell::createMyself(this));
-            createdSelf = true;
+            continue;
         } else if (player->isDataInitialized()) {
             auto& data = player->displayData();
+            // filter by username
+            if (!m_searchFilter.empty()) {
+                auto usernameLower = utils::string::toLower(data.username);
+                auto filterLower = utils::string::toLower(m_searchFilter);
+                if (usernameLower.find(filterLower) == std::string::npos) {
+                    continue;
+                }
+            }
+
             m_list->addCell(PlayerCell::create(
                 data.accountId,
                 data.userId,
@@ -418,11 +461,6 @@ void UserListPopup::hardRefresh() {
         }
     }
 
-    if (!createdSelf) {
-        m_list->addCell(PlayerCell::createMyself(this));
-        createdSelf = true;
-    }
-
     auto selfId = cachedSingleton<GJAccountManager>()->m_accountID;
     auto& flm = FriendListManager::get();
 
@@ -437,13 +475,22 @@ void UserListPopup::hardRefresh() {
             return aFriend;
         }
 
-        auto aName = geode::utils::string::toLower(a->m_username);
-        auto bName = geode::utils::string::toLower(b->m_username);
-
-        return aName < bName;
+        return utils::string::caseInsensitiveCompare(a->m_username,  b->m_username) < 0;
     });
 
     m_list->updateLayout();
+}
+
+void UserListPopup::update(float dt) {
+    if (!m_needsFilterUpdate) return;
+
+    // update if the user stopped typing for a bit
+    if (m_lastKeystroke.elapsed() < Duration::fromMillis(300)) {
+        return;
+    }
+
+    m_needsFilterUpdate = false;
+    this->hardRefresh();
 }
 
 void UserListPopup::onVolumeChanged(double value) {

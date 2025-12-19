@@ -4,6 +4,7 @@
 
 #include <cue/ListNode.hpp>
 #include <cue/Slider.hpp>
+#include <asp/time/Instant.hpp>
 
 namespace globed {
 
@@ -16,8 +17,12 @@ public:
 private:
     cue::ListNode* m_list;
     cue::Slider* m_volumeSlider;
+    std::string m_searchFilter;
+    asp::time::Instant m_lastKeystroke;
+    bool m_needsFilterUpdate = false;
 
     bool setup() override;
+    void update(float dt) override;
     void onVolumeChanged(double value);
 };
 

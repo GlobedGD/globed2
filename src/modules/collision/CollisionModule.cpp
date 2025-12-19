@@ -36,6 +36,8 @@ static bool shouldCorrectCollision(const CCRect& p1, const CCRect& p2, CCPoint& 
 }
 
 void CollisionModule::checkCollisions(GlobedGJBGL* gjbgl, PlayerObject* player, float dt, bool p2) {
+    if (!this->isEnabled()) return;
+
     bool isSecond = player == gjbgl->m_player2;
 
     for (const auto& [_, rp] : gjbgl->m_fields->m_players) {
@@ -108,6 +110,12 @@ void CollisionModule::checkCollisions(GlobedGJBGL* gjbgl, PlayerObject* player, 
 }
 
 struct GLOBED_MODIFY_ATTR CollisionGJBGL : Modify<CollisionGJBGL, GJBaseGameLayer> {
+    static void onModify(auto& self) {
+        GLOBED_CLAIM_HOOKS(CollisionModule::get(), self,
+            "GJBaseGameLayer::checkCollisions"
+        );
+    }
+
     int checkCollisions(PlayerObject* player, float dt, bool p2) {
         int retval = GJBaseGameLayer::checkCollisions(player, dt, p2);
 

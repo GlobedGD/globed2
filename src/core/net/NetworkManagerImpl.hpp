@@ -110,7 +110,7 @@ struct ConnectionInfo {
     }
 };
 
-struct LockedConnInfo {
+struct GLOBED_DLL LockedConnInfo {
 public:
     LockedConnInfo(asp::MutexGuard<std::optional<ConnectionInfo>, false>&& guard) : _guard(std::move(guard)) {}
     LockedConnInfo(const LockedConnInfo&) = delete;
@@ -147,7 +147,7 @@ private:
     asp::MutexGuard<std::optional<ConnectionInfo>, false> _guard;
 };
 
-class NetworkManagerImpl {
+class GLOBED_DLL NetworkManagerImpl {
 public:
     NetworkManagerImpl();
     ~NetworkManagerImpl();
