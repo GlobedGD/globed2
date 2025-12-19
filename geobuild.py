@@ -188,7 +188,10 @@ def main(build: Build):
     build.add_source_dir(src / "ui")
     build.add_source_dir(src / "soft-link")
     build.add_source_dir(src / "old-api")
-    build.add_source_dir(src / "platform" / config.platform.platform_str())
+    plat_dir = src / "platform" / config.platform.platform_str()
+    if plat_dir.exists():
+        # src/platform/<windows|android|ios|macos> , optional
+        build.add_source_dir(plat_dir)
 
     # Add codegenned source file
     codegen_path = config.build_dir / "globed-constants-codegen.cpp"
