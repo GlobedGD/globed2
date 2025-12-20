@@ -74,6 +74,7 @@ laptop.py
 bloaty.sh
 bloaty-*.txt
 mod.json
+!libs/bb/*
 
 __pycache__
 config.toml
