@@ -1,7 +1,6 @@
 #pragma once
 
 #include <globed/util/CStr.hpp>
-#include <core/net/NetworkManagerImpl.hpp>
 
 #include <Geode/Geode.hpp>
 
