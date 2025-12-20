@@ -719,20 +719,13 @@ void GlobedMenuLayer::initSideButtons() {
 
     constexpr static CCSize buttonSize {30.f, 30.f};
 
-    auto makeButton = [](CCSprite* sprite, std::optional<EditorBaseColor> color, CCNode* parent, int zOrder, const char* id, auto cb) -> CCMenuItemSpriteExtra* {
+    auto makeButton = [](CCSprite* sprite, CCNode* parent, int zOrder, const char* id, auto cb) -> CCMenuItemSpriteExtra* {
         if (!sprite) {
             log::error("Sprite is null for {}!", id);
             return nullptr;
         }
 
-        CCSprite* spr;
-        if (color) {
-            spr = EditorButtonSprite::create(sprite, *color);
-        } else {
-            spr = sprite;
-        }
-
-        return Build(spr)
+        return Build(sprite)
             .with([&](auto btn) { cue::rescaleToMatch(btn, buttonSize); })
             .intoMenuItem([cb = std::move(cb)](auto) {
                 cb();
@@ -750,7 +743,6 @@ void GlobedMenuLayer::initSideButtons() {
 
     makeButton(
         CCSprite::create("exit02.png"_spr),
-        std::nullopt,
         m_leftSideMenu,
         LeftBtn::Disconnect,
         "btn-disconnect",
@@ -769,7 +761,6 @@ void GlobedMenuLayer::initSideButtons() {
     // region switching button
     makeButton(
         CCSprite::create("server02.png"_spr),
-        std::nullopt,
         m_leftSideMenu,
         LeftBtn::RegionSwitch,
         "btn-region-select",
@@ -787,7 +778,6 @@ void GlobedMenuLayer::initSideButtons() {
     if (rm.getSettings().teams) {
         makeButton(
             CCSprite::create("teams02.png"_spr),
-            std::nullopt,
             m_leftSideMenu,
             LeftBtn::Teams,
             "btn-manage-teams",
@@ -800,7 +790,6 @@ void GlobedMenuLayer::initSideButtons() {
     if (rm.isOwner()) {
         auto btn = makeButton(
             CCSprite::create("settings01.png"_spr),
-            std::nullopt,
             m_leftSideMenu,
             LeftBtn::Settings,
             "btn-settings",
@@ -814,7 +803,6 @@ void GlobedMenuLayer::initSideButtons() {
     if (!rm.isInGlobal() && (rm.isOwner() || NetworkManagerImpl::get().isAuthorizedModerator())) {
         makeButton(
             CCSprite::create("exit01.png"_spr),
-            std::nullopt,
             m_leftSideMenu,
             LeftBtn::CloseRoom,
             "btn-close-room",
@@ -835,8 +823,7 @@ void GlobedMenuLayer::initSideButtons() {
 
     // user settings button
     makeButton(
-        CCSprite::create("privacy-settings.png"_spr),
-        std::nullopt,
+        CCSprite::create("privacySettings.png"_spr),
         m_rightSideMenu,
         RightBtn::PrivacySettings,
         "btn-privacy-settings",
@@ -853,9 +840,13 @@ void GlobedMenuLayer::initSideButtons() {
         }
 
         if (badge) {
+            auto wrapper = CCSprite::create("aquaBlank.png"_spr);
+            badge->setPosition(wrapper->getContentSize() / 2.f + CCPoint{0.f, 1.f});
+            cue::rescaleToMatch(badge, wrapper->getContentWidth() * 0.7f);
+            wrapper->addChild(badge);
+
             makeButton(
-                badge,
-                EditorBaseColor::Aqua,
+                wrapper,
                 m_rightSideMenu,
                 RightBtn::AdminPanel,
                 "btn-managemod-panel",
@@ -871,8 +862,7 @@ void GlobedMenuLayer::initSideButtons() {
     // invite button
     if (!rm.isInGlobal() && (rm.isOwner() || !rm.getSettings().privateInvites)) {
         makeButton(
-            CCSprite::create("icon-invite.png"_spr),
-            EditorBaseColor::Cyan,
+            CCSprite::create("invite.png"_spr),
             m_rightSideMenu,
             RightBtn::Invite,
             "btn-invite",
@@ -885,7 +875,6 @@ void GlobedMenuLayer::initSideButtons() {
     // filter button
     m_searchBtn = makeButton(
         CCSprite::create("search01.png"_spr),
-        std::nullopt,
         m_rightSideMenu,
         RightBtn::Search,
         "btn-search",
@@ -908,7 +897,6 @@ void GlobedMenuLayer::initSideButtons() {
     // clear filter button
     m_clearSearchBtn = makeButton(
         CCSprite::create("search02.png"_spr),
-        std::nullopt,
         m_rightSideMenu,
         RightBtn::ClearSearch,
         "btn-clear-search",
@@ -921,7 +909,6 @@ void GlobedMenuLayer::initSideButtons() {
     // refresh button
     makeButton(
         CCSprite::create("refresh01.png"_spr),
-        std::nullopt,
         m_rightSideMenu,
         RightBtn::Refresh,
         "btn-refresh",

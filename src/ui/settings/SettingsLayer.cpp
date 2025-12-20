@@ -48,7 +48,7 @@ bool SettingsLayer::init() {
         "Globed",
         "Players",
         "Level UI",
-        "Chat",
+        "Voice",
         "Menus",
     };
 
@@ -240,7 +240,18 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.audio.voice-chat-enabled", "Voice Chat", "");
     this->addSetting<FloatSettingCell>("core.audio.playback-volume", "Voice Volume", "");
     this->addSetting(ButtonSettingCell::create("Audio Device", "", "Set", [] {
+#ifdef GLOBED_VOICE_CAN_TALK
         AudioDeviceSetupPopup::create()->show();
+#else
+        globed::alert(
+            "Error",
+#ifdef GEODE_IS_MACOS
+            "Microphone support is currently <cr>not available</c> on this platform, and is unlikely to be added in the future due to macOS restrictions."
+#else
+            "Microphone support is currently <cr>not available</c> on this platform."
+#endif
+        );
+#endif
     }, CELL_SIZE));
     this->addSetting<BoolSettingCell>("core.audio.voice-proximity", "Voice Proximity (Plat)", "");
     this->addSetting<BoolSettingCell>("core.audio.classic-proximity", "Voice Proximity (Classic)", "");

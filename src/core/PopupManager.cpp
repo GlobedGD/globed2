@@ -171,8 +171,6 @@ void CustomFLAlert::onClick(bool btn2) {
     this->onClose(nullptr);
 }
 
-static void colorizeLabel(Label* label, std::string_view text);
-
 CustomFLAlert* CustomFLAlert::create(
     CStr title,
     std::string_view content,

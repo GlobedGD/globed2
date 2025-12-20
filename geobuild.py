@@ -20,7 +20,7 @@ import tomllib
 REQUIRED_GEODE_VERSION = "v4.10.0"
 QUNET_VERSION = "8a69689"
 SERVER_SHARED_VERSION = "fc066e0"
-CUE_VERSION = "233549d"
+CUE_VERSION = "11a2418"
 
 @dataclass
 class GlobedConfig:

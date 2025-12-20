@@ -4,6 +4,7 @@
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/ServerManager.hpp>
 #include <ui/menu/GlobedMenuLayer.hpp>
+#include <ui/menu/ConsentPopup.hpp>
 
 #include <argon/argon.hpp>
 
@@ -13,11 +14,11 @@ namespace globed {
 
 static void initiateAutoConnect() {
     // check if signed into an account
-    if (!argon::signedIn()) {
+    if (!argon::signedIn() || !globed::flag("core.flags.seen-consent-notice")) {
         return;
     }
 
-    if (globed::value<bool>("core.was-connected").value_or(false)) {
+    if (globed::flag("core.was-connected")) {
         auto& sm = ServerManager::get();
         auto url = sm.getActiveServer().url;
 
@@ -105,25 +106,20 @@ void HookedMenuLayer::recreateButton() {
 }
 
 void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
-    if (!globed::value<bool>("core.flags.seen-consent-notice").value_or(false)) {
-        globed::confirmPopup(
-            "Note",
-            "For <cy>verification</c> purposes, Globed may send a <cy>message</c> to a <cp>bot account</c>, using Argon.\n\n"
-            "Additionally, to make <cg>certain features</c> work, Globed reads some account data: <cj>your friend list, blocked list, username</c>.\n\n"
-            "If you <cr>do not consent</c> to these actions, press <cr>Cancel</c>.",
-            "Cancel",
-            "Ok",
-            [this](auto) {
-                globed::setValue("core.flags.seen-consent-notice", true);
-                this->onGlobedButton(nullptr);
-            },
-            400.f
-        );
-
+    if (globed::value<bool>("core.flags.seen-consent-notice").value_or(false)) {
+        GlobedMenuLayer::create()->switchTo();
         return;
     }
 
-    GlobedMenuLayer::create()->switchTo();
+    auto p = ConsentPopup::create();
+    p->setCallback([](bool accepted) {
+        globed::setValue("core.flags.seen-consent-notice", accepted);
+
+        if (accepted) {
+            GlobedMenuLayer::create()->switchTo();
+        }
+    });
+    p->show();
 }
 
 }

@@ -47,10 +47,14 @@ void setValue(std::string_view key, T value) {
     ValueManager::get().set(key, matjson::Value(value));
 }
 
+inline bool flag(std::string_view key) {
+    return value<bool>(key).value_or(false);
+}
+
 /// Sets a flag to true, returning the previous value (false if unset)
 /// Flag should be formatted like core.flags.*
 inline bool swapFlag(std::string_view key) {
-    bool result = value<bool>(key).value_or(false);
+    bool result = flag(key);
     setValue(key, true);
 
     return result;

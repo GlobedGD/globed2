@@ -7,6 +7,8 @@
 
 #include <queue>
 
+class Label;
+
 namespace asp::time {
     class Duration; // to prevent leaking asp headers into the public interface
 }
@@ -203,5 +205,7 @@ template <class... Args>
 void toastSuccess(fmt::format_string<Args...> fmt, Args&&... args) {
     return toast(geode::NotificationIcon::Success, fmt, std::forward<Args>(args)...);
 }
+
+void colorizeLabel(Label* label, std::string_view text);
 
 }

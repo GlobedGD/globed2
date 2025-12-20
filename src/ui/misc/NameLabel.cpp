@@ -39,7 +39,7 @@ bool NameLabel::init(const std::string& name, const char* font) {
     auto myLayout = SimpleRowLayout::create()
         ->setGap(4.f)
         ->setCrossAxisScaling(AxisScaling::Fit)
-        ->setMainAxisScaling(AxisScaling::None);
+        ->setMainAxisScaling(AxisScaling::Fit);
     myLayout->ignoreInvisibleChildren(true);
 
     this->setLayout(myLayout);
@@ -106,17 +106,6 @@ void NameLabel::updateName(const char* name) {
 }
 
 void NameLabel::updateSelfWidth() {
-    float gap = static_cast<AxisLayout*>(this->getLayout())->getGap();
-    bool hasBadges = m_badgeContainer->getChildrenCount() > 0;
-    m_badgeContainer->setVisible(hasBadges);
-
-    float width = m_labelButton->getScaledContentWidth();
-    if (hasBadges) {
-        width += gap + m_badgeContainer->getScaledContentWidth();
-    }
-
-    this->setContentWidth(width);
-
     this->updateLayout();
 }
 

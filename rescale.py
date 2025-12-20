@@ -27,8 +27,11 @@ gv2 = Path("resources/_raw/globedV2")
 esprites = Path("resources/emotes_sprites")
 
 small = [
+    "aquaBlank.png",
     "exit01.png",
     "exit02.png",
+    "invite.png",
+    "privacySettings.png",
     "refresh01.png",
     "search01.png",
     "search02.png",
