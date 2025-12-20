@@ -1070,6 +1070,8 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
 }
 
 void GlobedMenuLayer::copyRoomIdToClipboard() {
+    if (m_roomId == 0) return;
+
     geode::utils::clipboard::write(fmt::to_string(m_roomId));
     globed::toastSuccess("Copied room ID to clipboard!");
 }

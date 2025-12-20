@@ -21,6 +21,9 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.autoconnect", true);
     this->registerSetting("core.streamer-mode", false);
 
+    // Editor related
+    this->registerSetting("core.editor.enabled", true);
+
     // Keybinds
     this->registerSetting("core.keybinds.voice-chat", (int)KEY_V);
     this->registerSetting("core.keybinds.deafen", (int)KEY_B);

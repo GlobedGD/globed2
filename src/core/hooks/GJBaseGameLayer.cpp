@@ -62,6 +62,7 @@ struct CachedSettings {
     bool voiceChat = globed::setting<bool>("core.audio.voice-chat-enabled");
     bool voiceLoopback = globed::setting<bool>("core.audio.voice-loopback");
     bool friendsOnlyAudio = globed::setting<bool>("core.audio.only-friends");
+    bool editorEnabled = globed::setting<bool>("core.editor.enabled");
 
     void reload() {
         *this = CachedSettings{};
@@ -76,10 +77,14 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     this->reloadCachedSettings();
 
     // determine if mulitplayer should be active
+
     auto ecId = RoomManager::get().getEditorCollabId(level);
     bool isEditorCollab = ecId && ecId->asU64() && ecId->asU64() != (uint64_t)level->m_levelID;
 
     fields.m_active = nm.isConnected() && (level->m_levelID != 0 || isEditorCollab);
+    if (level->m_levelType == GJLevelType::Editor && !g_settings.editorEnabled) {
+        fields.m_active = false;
+    }
 
     fields.m_interpolator.setPlatformer(level->isPlatformer());
 

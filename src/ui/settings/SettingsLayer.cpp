@@ -169,6 +169,7 @@ void SettingsLayer::addSettings() {
     this->addSetting(ButtonSettingCell::create("Keybinds", "", "Edit", [] {
         KeybindsPopup::create()->show();
     }, CELL_SIZE));
+    this->addSetting<BoolSettingCell>("core.editor.enabled", "Show Players in Editor", "Hosts local (editor) levels as well, letting you see other players playing the level while you are in the editor. Note: <cy>this does not let you build levels together!</c>");
 
     // Preload
     this->addHeader("core.player", "Preloading", m_globedTab);

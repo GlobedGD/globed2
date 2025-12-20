@@ -48,9 +48,8 @@ jobs:
           export-symbols: true
           combine: true
           target: ${{ matrix.config.target }}
-
-      - name: sccache stats
-        run: sccache --show-stats
+          # sccache is broken on macos, so use no cache there :(
+          ccache-variant: ${{ matrix.config.os == 'macos-latest' && '' || 'sccache' }}
 
   package:
     name: Package builds
