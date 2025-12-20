@@ -15,9 +15,8 @@ jobs:
             os: windows-latest
             build-config: RelWithDebInfo
 
-          # TODO: typeinfo for ccsequence
-          # - name: macOS
-          #   os: macos-latest
+          - name: macOS
+            os: macos-latest
 
           # - name: iOS
           #   os: macos-latest
@@ -48,6 +47,9 @@ jobs:
           export-symbols: true
           combine: true
           target: ${{ matrix.config.target }}
+
+      - name: sccache stats
+        run: sccache --show-stats
 
   package:
     name: Package builds
