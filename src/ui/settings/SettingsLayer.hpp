@@ -34,9 +34,9 @@ private:
     void selectTab(size_t idx);
     void selectTab(cue::ListNode* tab);
 
-    template <typename T>
-    T* addSetting(CStr key, CStr name, CStr desc) {
-        auto cell = T::create(key, name, desc, CELL_SIZE);
+    template <typename T, typename... Args>
+    T* addSetting(CStr key, CStr name, CStr desc, Args&&... args) {
+        auto cell = T::create(key, name, desc, std::forward<Args>(args)..., CELL_SIZE);
         this->addSetting(cell);
         return cell;
     }

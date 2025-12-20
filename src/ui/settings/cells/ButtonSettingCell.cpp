@@ -8,16 +8,23 @@ using namespace geode::prelude;
 namespace globed {
 
 void ButtonSettingCell::setup() {
-    auto btn = Build<ButtonSprite>::create(m_btnText, "goldFont.fnt", "GJ_button_04.png", 0.8f)
+    this->createButton(m_btnText);
+}
+
+void ButtonSettingCell::createButton(CStr text) {
+    cue::resetNode(m_button);
+
+    m_button = Build<ButtonSprite>::create(m_btnText, "goldFont.fnt", "GJ_button_04.png", 0.8f)
         .scale(0.8f)
         .intoMenuItem([this] {
             m_callback();
         })
+        .scaleMult(1.15f)
         .parent(this)
         .posY(m_size.height / 2.f)
         .collect();
 
-    btn->setPositionX(m_size.width - 8.f - btn->getContentWidth() / 2.f);
+    m_button->setPositionX(m_size.width - 8.f - m_button->getContentWidth() / 2.f);
 }
 
 ButtonSettingCell* ButtonSettingCell::create(

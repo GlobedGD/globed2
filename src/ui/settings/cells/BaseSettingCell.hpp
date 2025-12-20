@@ -1,6 +1,7 @@
 #pragma once
 
-#include <Geode/Geode.hpp>
+#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
+#include <cocos2d.h>
 #include <globed/util/CStr.hpp>
 #include <globed/core/SettingsManager.hpp>
 

@@ -11,6 +11,16 @@
 
 namespace globed {
 
+// Enums for some settings
+
+enum class InvitesFrom : int {
+    Everyone = 0,
+    Friends = 1,
+    Nobody = 2,
+};
+
+// Settings implementation
+
 template <typename T>
 class SettingAccessor {
 public:

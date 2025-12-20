@@ -20,6 +20,7 @@ SettingsManager::SettingsManager() {
     // Various
     this->registerSetting("core.autoconnect", true);
     this->registerSetting("core.streamer-mode", false);
+    this->registerSetting("core.invites-from", (int)InvitesFrom::Friends);
 
     // Editor related
     this->registerSetting("core.editor.enabled", true);

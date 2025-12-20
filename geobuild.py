@@ -19,7 +19,7 @@ import tomllib
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
 QUNET_VERSION = "8a69689"
-SERVER_SHARED_VERSION = "49d7eab"
+SERVER_SHARED_VERSION = "fc066e0"
 CUE_VERSION = "233549d"
 
 @dataclass
@@ -301,6 +301,10 @@ def main(build: Build):
     if gc.voice:
         build.add_cpm_dep("xiph/opus", "v1.5.2", {
             "OPUS_INSTALL_PKG_CONFIG_MODULE": "OFF",
+            "OPUS_BUILD_SHARED_LIBRARY": "OFF",
+            "OPUS_BUILD_TESTING": "OFF",
+            "BUILD_TESTING": "OFF",
+            "OPUS_BUILD_PROGRAMS": "OFF",
         })
         build.add_definition("GLOBED_VOICE_SUPPORT", "1", Privacy.PUBLIC)
 

@@ -38,11 +38,11 @@ bool BaseSettingCellBase::initNoSetting(CStr name, CStr desc, cocos2d::CCSize si
 
     if (!desc.empty()) {
         Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-            .scale(0.7f)
+            .scale(0.5f)
             .intoMenuItem([this] {
                 globed::alert(m_name, std::string(m_desc));
             })
-            .pos(8.f + label->getScaledContentWidth() + 4.f, size.height / 2.f + label->getScaledContentHeight() / 2.f + 2.f)
+            .pos(8.f + label->getScaledContentWidth() + 4.f, size.height / 2.f + label->getScaledContentHeight() / 2.f - 3.f)
             .parent(this);
     }
 

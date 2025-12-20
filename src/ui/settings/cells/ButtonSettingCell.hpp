@@ -21,9 +21,11 @@ public:
 protected:
     Callback m_callback;
     CStr m_btnText;
+    CCMenuItemSpriteExtra* m_button = nullptr;
 
     void setup() override;
     void reload() override {}
+    void createButton(CStr text);
 };
 
 }

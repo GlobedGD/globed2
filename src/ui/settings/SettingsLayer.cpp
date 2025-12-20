@@ -1,6 +1,7 @@
 #include "SettingsLayer.hpp"
 #include "AudioDeviceSetupPopup.hpp"
 #include "cells/BoolSettingCell.hpp"
+#include "cells/EnumSettingCell.hpp"
 #include "cells/FloatSettingCell.hpp"
 #include "cells/TitleSettingCell.hpp"
 #include "cells/ButtonSettingCell.hpp"
@@ -170,6 +171,11 @@ void SettingsLayer::addSettings() {
         KeybindsPopup::create()->show();
     }, CELL_SIZE));
     this->addSetting<BoolSettingCell>("core.editor.enabled", "Show Players in Editor", "Hosts local (editor) levels as well, letting you see other players playing the level while you are in the editor. Note: <cy>this does not let you build levels together!</c>");
+    this->addSetting<EnumSettingCell>("core.invites-from", "Allow Invites From", "", std::vector<std::pair<CStr, InvitesFrom>>{
+        {"Everyone", InvitesFrom::Everyone},
+        {"Friends", InvitesFrom::Friends},
+        {"Nobody", InvitesFrom::Nobody},
+    });
 
     // Preload
     this->addHeader("core.player", "Preloading", m_globedTab);
