@@ -15,6 +15,8 @@ static constexpr int SPIDER_TELEPORT_COLOR_ACTION = 1000729;
 static constexpr int SPIDER_DASH_CIRCLE_WAVE_TAG = 234562345;
 static constexpr int SPIDER_DASH_SPRITE_TAG = 234562347;
 static constexpr int DEATH_EFFECT_TAG = 234562349;
+static constexpr float NAME_OFFSET = 30.f;
+static constexpr float STATUS_ICONS_OFFSET = NAME_OFFSET + 15.f;
 
 class RemotePlayer;
 class NameLabel;

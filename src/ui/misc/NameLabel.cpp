@@ -10,6 +10,10 @@ using namespace geode::prelude;
 
 namespace globed {
 
+// controls scale of the names
+static constexpr float NAME_HEIGHT = 17.f;
+static constexpr float MAX_NAME_WIDTH = 140.f;
+
 bool NameLabel::init(const std::string& name, const char* font) {
     if (!CCMenu::init()) return false;
 
@@ -77,9 +81,12 @@ void NameLabel::updateName(const char* name) {
     m_labelShadow->setString(name);
     m_labelShadow->setVisible(m_shadow);
 
-    float yScale = 20.f / m_label->getContentHeight();
-    m_label->setScale(yScale);
-    m_labelShadow->setScale(yScale);
+    float yScale = NAME_HEIGHT / m_label->getContentHeight();
+    float xScale = MAX_NAME_WIDTH / m_label->getContentWidth();
+
+    float scale = std::min(xScale, yScale);
+    m_label->setScale(scale);
+    m_labelShadow->setScale(scale);
 
     m_labelContainer->setScaledContentSize(m_label->getScaledContentSize());
 
@@ -119,7 +126,7 @@ void NameLabel::onClick(CCMenuItemSpriteExtra* btn) {
     }
 }
 
-void NameLabel::updateTeam(size_t idx, cocos2d::ccColor4B color) {
+void NameLabel::updateTeam(size_t idx, ccColor4B color) {
     if (!globed::setting<bool>("core.ui.colorblind-mode")) {
         if (m_label) {
             m_label->setColor(cue::into<ccColor3B>(color));

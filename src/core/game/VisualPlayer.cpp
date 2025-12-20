@@ -11,8 +11,6 @@
 
 static constexpr int ROBOT_FIRE_ACTION = 1325385193;
 static constexpr int VISUAL_PLAYER_TAG = 3458738;
-static constexpr float NAME_OFFSET = 28.f;
-static constexpr float STATUS_ICONS_OFFSET = NAME_OFFSET + 15.f;
 
 using namespace geode::prelude;
 

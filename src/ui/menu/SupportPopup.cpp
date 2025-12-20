@@ -155,19 +155,19 @@ bool SupportPopup::setup(CCSprite* bg) {
             auto playerSequence = CCSequence::create(
                 CCDelayTime::create(0.25f),
                 CCCallFunc::create(this, callfunc_selector(SupportPopup::kofiEnableParticlesCallback)),
-                CCEaseExponentialOut::create(CCMoveBy::create(1.25f, {150.f, 0.f})),
+                CCEaseExponentialOut::create(CCMoveBy::create(1.25f, {155.f, 0.f})),
                 nullptr
             );
 
             player->runAction(playerSequence);
         })
         .store(player)
-        .intoNewChild(NameLabel::create(gm->m_playerName.c_str(), "chatFont.fnt"))
+        .intoNewChild(NameLabel::create(gm->m_playerName, "chatFont.fnt"))
         .with([&](NameLabel* label) {
             label->addBadge(createBadge("role-supporter.png"));
             label->updateColor(Color3{ 154, 88, 255 });
         })
-        .pos(15.f, 40.f);
+        .pos(15.f, 45.f);
 
     auto emitter = Build<CCParticleSystemQuad>::create()
         .pos(0.f, 0.f)

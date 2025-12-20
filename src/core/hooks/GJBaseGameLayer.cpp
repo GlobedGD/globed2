@@ -270,7 +270,7 @@ void GlobedGJBGL::setupUi() {
 
     fields.m_selfNameLabel = Build(NameLabel::create(GJAccountManager::get()->m_username.c_str(), "chatFont.fnt"))
         .opacity(globed::setting<float>("core.player.name-opacity") * 255.f)
-        .pos(0.f, 28.f)
+        .pos(0.f, NAME_OFFSET)
         .parent(fields.m_playerNode)
         .id("self-player-name"_spr);
     fields.m_selfNameLabel->setShadowEnabled(true);
@@ -478,7 +478,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         fields.m_selfStatusIcons->setVisible(true);
         fields.m_selfStatusIcons->updateStatus(flags);
         fields.m_selfStatusIcons->setPosition({
-            m_player1->getPosition() + CCPoint{0.f, showSelfName ? 43.f : 28.f}
+            m_player1->getPosition() + CCPoint{0.f, showSelfName ? STATUS_ICONS_OFFSET : NAME_OFFSET}
         });
     } else {
         fields.m_selfStatusIcons->setVisible(false);
@@ -487,7 +487,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     if (showSelfName) {
         fields.m_selfNameLabel->setVisible(true);
         fields.m_selfNameLabel->setPosition({
-            m_player1->getPosition() + CCPoint{0.f, 28.f}
+            m_player1->getPosition() + CCPoint{0.f, NAME_OFFSET}
         });
     } else {
         fields.m_selfNameLabel->setVisible(false);

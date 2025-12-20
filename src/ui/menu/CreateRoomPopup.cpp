@@ -1,6 +1,7 @@
 #include "CreateRoomPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/ValueManager.hpp>
+#include <globed/core/ServerManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <globed/util/gd.hpp>
 #include <ui/misc/LoadingPopup.hpp>
@@ -410,6 +411,19 @@ void CreateRoomPopup::showSafeModePopup(bool firstTime) {
 }
 
 void CreateRoomPopup::showRoomNameWarnPopup(bool canName) {
+    if (!canName) {
+        auto msg = ServerManager::get().isOfficialServerActive()
+            ? "Room names are currently <cy>disabled</c> for regular users due to <cr>abuse</c>. "
+            "You can gain the ability to name rooms by <cp>supporting Globed</c>, otherwise "
+            "your room will be named automatically."
+
+            : "Room names are <cy>disabled</c> on this server for your account.";
+
+        globed::alert("Info", msg);
+
+        return;
+    }
+
     globed::alert(
         "Note",
 
