@@ -27,6 +27,7 @@ Added / reworked:
 * <cj>Name gradients</c> have been changed to be way more pretty for the roles that have them
 * Added <cj>Contributor</c> role and badge for people that contributed to the mod
 * Added player counts inside level lists
+* Added an improved consent popup when first launching the mod
 * Featured levels now have a queue system and will be consistently featured
 * The level list now has a message that clarifies its purpose, due to people often finding it confusing
 
