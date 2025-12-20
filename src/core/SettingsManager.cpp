@@ -33,7 +33,7 @@ SettingsManager::SettingsManager() {
     // UI settings
     this->registerSetting("core.ui.allow-custom-servers", false);
     this->registerSetting("core.ui.increase-level-list", false);
-    this->registerSetting("core.ui.compressed-player-count", false);
+    this->registerSetting("core.ui.compressed-player-count", true);
     this->registerSetting("core.ui.colorblind-mode", false);
 
     // Player settings

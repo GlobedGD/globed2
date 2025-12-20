@@ -1,6 +1,7 @@
 #include "ModRoleModifyPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <ui/misc/Badges.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 
 #include <cue/Util.hpp>
 #include <UIBuilder.hpp>

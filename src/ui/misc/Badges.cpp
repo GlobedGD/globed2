@@ -1,5 +1,6 @@
 #include "Badges.hpp"
 
+#include <core/net/NetworkManagerImpl.hpp>
 #include <cue/Util.hpp>
 
 using namespace geode::prelude;

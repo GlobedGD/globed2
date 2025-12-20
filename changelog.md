@@ -1,3 +1,32 @@
+## v2.0.0
+
+After a long pause, this update brings <cg>an entire rewrite</c> to Globed and the server, and we are very happy to finally release it.
+
+Major changes:
+* <cj>Quick Chat</c> was added, allowing players to send <cp>emotes</c> during gameplay!
+* Player interpolation has been <cy>rewritten</c>, and now player movement should be <cj>way smoother</c>, even on worse connections
+* Servers are now only used for <cg>gameplay</c>, meaning you can see rooms and players across <cj>different servers</c>
+* Rooms now can be <cj>Follower Rooms</c>, which makes it so that every player gets <cg>automatically warped</c> to any level the <cj>room creator</c> joins
+* Regular players will no longer be able to set <cy>room names</c>, due to frequent <cr>abuse</c> of the feature to type <cy>offensive messages</c>
+* Players now must link their <cb>Discord</c> account to use <cy>voice chat</c>, to help reduce ban evasion
+
+Added / reworked:
+* Networking was remade from scratch, featuring full support for <cy>IPv4 and IPv6</c> over <cj>UDP/TCP/QUIC</c> connections, better <cp>bandwidth</c> usage and significantly improved reconnecting logic
+* Rooms will by default <cg>automatically pin</c> the level played by the host, making it easier for everyone to join
+* Discord linking is now <cg>more interactive</c> and simpler to do
+* Credits menu is now automatically updated server-side
+* <cj>Streamer Mode</c> setting was added, which will hide room password and ID
+* <cj>Ping overlay</c> is now hidden by default when not connected to Globed
+* Certain settings were split into two, for choosing different behavior for classic and platformer
+* You can now search for players in the in-game player list menu
+* The level list now has a message that clarifies its purpose, due to people often finding it confusing
+
+Fixed / removed:
+* Player list and room list menus now should be way less laggy
+* Room names must consist
+* Certain <cy>rarely used</c> settings were removed, however they might get added in the future: DNS over HTTPS, Force TCP, Packet limit, Server relays
+* Discord RPC setting was removed, the <cb>Discord Rich Presence</c> mod is planning on adding Globed support entirely in that mod
+
 ## v1.8.5
 
 * Fix crash when receiving a notice in the editor

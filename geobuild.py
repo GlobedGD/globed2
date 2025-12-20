@@ -198,6 +198,11 @@ def main(build: Build):
     codegen_path.write_text(make_constants_codegen(state))
     build.add_source_file(codegen_path)
 
+    # Add precompiled headers
+    # Release builds have way more headers, since they build from scratch anyway
+    pch = src / "platform" / ("pch-release.hpp" if gc.release else "pch-debug.hpp")
+    build.add_precompile_headers(pch)
+
     # Include dirs
     build.add_include_dir(config.project_dir / "include", Privacy.PUBLIC)
     build.add_include_dir(config.project_dir / "src")

@@ -1,4 +1,6 @@
 #include "NameLabel.hpp"
+#include <globed/core/SettingsManager.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/Badges.hpp>
 
 #include <UIBuilder.hpp>
