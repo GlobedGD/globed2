@@ -49,7 +49,7 @@ jobs:
           combine: true
           target: ${{ matrix.config.target }}
           # sccache is broken on macos, so use no cache there :(
-          ccache-variant: ${{ matrix.config.os == 'macos-latest' && '' || 'sccache' }}
+          ccache-variant: ${{ matrix.config.os != 'macos-latest' && 'sccache' || '' }}
 
   package:
     name: Package builds
