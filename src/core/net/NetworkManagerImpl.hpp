@@ -169,6 +169,9 @@ public:
     /// Returns whether the client is connected and authenticated with the central server
     bool isConnected() const;
 
+    /// Returns whether the client is connected and authenticated with the game server
+    bool isGameConnected() const;
+
     /// Returns the average latency to the game server, or 0 if not connected
     asp::time::Duration getGamePing();
     /// Returns the average latency to the central server, or 0 if not connected

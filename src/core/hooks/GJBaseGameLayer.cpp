@@ -532,6 +532,10 @@ void GlobedGJBGL::selPostInitActions(float dt) {
 }
 
 void GlobedGJBGL::selSendPlayerData(float dt) {
+    auto& nm = NetworkManagerImpl::get();
+    // do not do anything if we aren't connected
+    if (!nm.isGameConnected()) return;
+
     auto& fields = *m_fields.self();
     fields.m_totalSentPackets++;
 
@@ -567,7 +571,7 @@ void GlobedGJBGL::selSendPlayerData(float dt) {
         ? INFINITY
         : std::max(coverage.width, coverage.height) / 2.f * 2.75f;
 
-    NetworkManagerImpl::get().sendPlayerState(state, toRequest, camCenter, camRadius);
+    nm.sendPlayerState(state, toRequest, camCenter, camRadius);
 }
 
 PlayerState GlobedGJBGL::getPlayerState() {

@@ -936,6 +936,11 @@ bool NetworkManagerImpl::isConnected() const {
     return info && info->m_established;
 }
 
+bool NetworkManagerImpl::isGameConnected() const {
+    auto info = this->connInfo();
+    return info && info->m_gameEstablished && m_gameConn->state() == qn::ConnectionState::Connected;
+}
+
 Duration NetworkManagerImpl::getGamePing() {
     return m_gameConn->getLatency();
 }
@@ -1151,6 +1156,12 @@ void NetworkManagerImpl::onCentralStateChanged(qn::ConnectionState state) {
 
 void NetworkManagerImpl::onGameStateChanged(qn::ConnectionState state) {
     log::info("game connection state: {}", connectionStateToStr(state));
+    {
+        auto info = this->connInfo();
+        if (info && state == qn::ConnectionState::Disconnected) {
+            info->m_gameEstablished = false;
+        }
+    }
     m_gameWorkerNotify.notifyOne();
 }
 
@@ -1691,7 +1702,7 @@ void NetworkManagerImpl::sendGameJoinRequest(SessionId id, bool platformer, bool
 
 void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests, CCPoint cameraCenter, float cameraRadius) {
     auto info = this->connInfo();
-    if (!info || !info->m_gameEstablished) {
+    if (!info || !info->m_gameEstablished || m_gameConn->state() != qn::ConnectionState::Connected) {
         log::warn("Cannot send player state, not connected to game server");
         return;
     }
