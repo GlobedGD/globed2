@@ -19,6 +19,7 @@
 #include <tuple>
 #include <atomic>
 #include <fmt/format.h>
+#include <Geode/loader/Log.hpp>
 #include <Geode/Result.hpp>
 #include <std23/move_only_function.h>
 #include <core/net/data/generated.hpp>

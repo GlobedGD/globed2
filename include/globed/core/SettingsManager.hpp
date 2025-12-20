@@ -6,6 +6,7 @@
 #include "ValueManager.hpp"
 
 #include <Geode/utils/terminate.hpp>
+#include <Geode/loader/Log.hpp>
 #include <std23/move_only_function.h>
 
 namespace globed {
