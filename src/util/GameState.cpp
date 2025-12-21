@@ -4,10 +4,6 @@
 #include <Geode/modify/AppDelegate.hpp>
 #include <asp/time.hpp>
 
-#ifdef GEODE_IS_WINDOWS
-# include <Windows.h>
-#endif
-
 using namespace geode::prelude;
 using namespace asp::time;
 
@@ -15,13 +11,12 @@ static bool g_minimized = false;
 
 namespace globed {
 
-static bool isGameFocused();
-static Duration timeSinceInput();
-
 GameState getCurrentGameState() {
     bool focused = isGameFocused();
     bool minimized = g_minimized;
-    auto sinceInput = timeSinceInput();
+    auto sinceInput = Duration::fromMillis(timeSinceInput());
+
+    // log::debug("Game focus: {}, minimized: {}, since input: {}", focused, minimized, sinceInput.toString());
 
     if (focused && sinceInput < Duration::fromSecs(60)) {
         return GameState::Active;
@@ -36,27 +31,14 @@ GameState getCurrentGameState() {
     }
 }
 
-#ifdef GEODE_IS_WINDOWS
-
-bool isGameFocused() {
-    HWND wnd = WindowFromDC(wglGetCurrentDC());
-    return GetForegroundWindow() == wnd;
-}
-
-Duration timeSinceInput() {
-    LASTINPUTINFO lii;
-    lii.cbSize = sizeof(LASTINPUTINFO);
-    GetLastInputInfo(&lii);
-    DWORD tickCount = GetTickCount();
-    DWORD elapsed = tickCount - lii.dwTime;
-    return Duration::fromMillis(elapsed);
-}
-
-#else
-
+#ifndef GEODE_IS_DESKTOP
+// Cannot unfocus on mobile platforms
 bool isGameFocused() {
     return true;
 }
+#endif
+
+#ifndef GEODE_IS_WINDOWS
 
 static Instant g_lastInputTime = Instant::now();
 

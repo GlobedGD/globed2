@@ -28,6 +28,7 @@ Added / reworked:
 * Added <cj>Contributor</c> role and badge for people that contributed to the mod
 * Added player counts inside level lists
 * Added an improved consent popup when first launching the mod
+* Automatically lower the used bandwidth when the game is minimized or user is AFK for a while
 * Featured levels now have a queue system and will be consistently featured
 * The level list now has a message that clarifies its purpose, due to people often finding it confusing
 

@@ -186,6 +186,12 @@ enumKeyCodes KeybindsManager::getBind(const char* key) {
     return (cocos2d::enumKeyCodes)(int)globed::setting<int>(key);
 }
 
+void KeybindsManager::releaseAll() {
+    auto gjbgl = GlobedGJBGL::get();
+#ifdef GLOBED_VOICE_CAN_TALK
+    gjbgl->pauseVoiceRecording();
+#endif
+}
 
 void KeybindsManager::handleKeyDown(cocos2d::enumKeyCodes key) {
     if (key == KEY_None || key == KEY_Unknown) return;

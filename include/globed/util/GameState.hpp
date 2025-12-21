@@ -18,4 +18,10 @@ enum class GameState {
 /// Closed: the game window is minimized, or the user has been inactive for a long period while unfocused
 GLOBED_DLL GameState getCurrentGameState();
 
+/// Returns whether the game is currently focused, only implemented on Windows and MacOS.
+GLOBED_DLL bool isGameFocused();
+
+/// Returns how many ms passed since last user input
+GLOBED_DLL uint64_t timeSinceInput();
+
 }

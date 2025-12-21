@@ -45,6 +45,7 @@ public:
     void handleKeyDown(cocos2d::enumKeyCodes key);
     void handleKeyUp(cocos2d::enumKeyCodes key);
     void refreshBinds();
+    void releaseAll();
     bool isKeyUsed(cocos2d::enumKeyCodes key);
     bool isAnyEmoteKeyBound();
 

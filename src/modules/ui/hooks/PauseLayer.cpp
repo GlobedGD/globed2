@@ -1,6 +1,7 @@
 #include <globed/config.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <globed/core/KeybindsManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <modules/ui/UIModule.hpp>
@@ -49,6 +50,9 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
     $override
     void customSetup() {
         PauseLayer::customSetup();
+
+        // prevent some keybinds from being active in pause menu
+        KeybindsManager::get().releaseAll();
 
         m_fields.self();
 

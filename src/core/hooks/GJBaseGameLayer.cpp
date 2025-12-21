@@ -9,6 +9,7 @@
 #include <globed/util/algo.hpp>
 #include <globed/util/gd.hpp>
 #include <globed/util/FunctionQueue.hpp>
+#include <globed/util/GameState.hpp>
 #include <core/CoreImpl.hpp>
 #include <core/PreloadManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -458,12 +459,17 @@ void GlobedGJBGL::selUpdate(float tsdt) {
             float interval = 1.f / (float)tr;
             fields.m_sendDataInterval = interval;
         }
-    } else {
-        // send player data to the server
-        if (fields.m_timeCounter - fields.m_lastDataSend >= fields.m_sendDataInterval) {
-            fields.m_lastDataSend += fields.m_sendDataInterval;
-            this->selSendPlayerData(dt);
+    }
+
+    // send player data to the server
+    if (fields.m_timeCounter >= fields.m_nextDataSend) {
+        // update the next interval to be strictly in the future, dont want to repeat things
+        float sendInterval = fields.m_sendDataInterval * (fields.m_throttleUpdates ? 6.f : 1.f);
+        while (fields.m_nextDataSend <= fields.m_timeCounter) {
+            fields.m_nextDataSend += sendInterval;
         }
+
+        this->selSendPlayerData(dt);
     }
 
     // update position for self icons / username
@@ -515,7 +521,20 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
 
     fields.m_pingOverlay->updatePing(NetworkManagerImpl::get().getGamePing().millis());
 
-    // idk
+    // check if the user is afk
+    auto state = getCurrentGameState();
+    if (state != GameState::Active) {
+        // stop recording audio if the user is afk
+        this->pauseVoiceRecording();
+    }
+
+    // send data less often if the game is inactive
+    bool prevThrottle = fields.m_throttleUpdates;
+    fields.m_throttleUpdates = state == GameState::Closed;
+
+    if (prevThrottle != fields.m_throttleUpdates) {
+        log::debug("updating data send interval to {}", fields.m_throttleUpdates ? "throttled" : "normal");
+    }
 }
 
 void GlobedGJBGL::selPostInitActions(float dt) {

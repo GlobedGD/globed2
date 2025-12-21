@@ -37,14 +37,15 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_editor = false;
         bool m_didSchedule = false;
         bool m_quitting = false;
+        bool m_throttleUpdates = false;
         float m_sendDataInterval = 0.0f;
         float m_periodicalDelta = 0.f;
         std::vector<std::string> m_customSchedules;
 
         float m_timeCounter = 0.0f;
         float m_lastServerUpdate = 0.0f;
-        float m_lastDataSend = 0.0f;
         float m_lastTeamRefresh = 0.0f;
+        float m_nextDataSend = 0.0f;
         uint32_t m_totalSentPackets = 0;
         Interpolator m_interpolator;
         VectorSpeedTracker m_cameraTracker;
