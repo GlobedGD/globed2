@@ -106,7 +106,7 @@ void HookedMenuLayer::recreateButton() {
 }
 
 void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
-    if (globed::value<bool>("core.flags.seen-consent-notice").value_or(false)) {
+    if (globed::flag("core.flags.seen-consent-notice")) {
         GlobedMenuLayer::create()->switchTo();
         return;
     }

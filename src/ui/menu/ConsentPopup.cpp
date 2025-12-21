@@ -85,7 +85,7 @@ bool ConsentPopup::setup() {
         .id("vc-label")
         .parent(chatContainer);
 
-    Build(AxisGap::create(10.f))
+    Build(AxisGap::create(25.f))
         .parent(chatContainer);
 
     m_qcButton = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f, [](auto) {}))
@@ -93,7 +93,7 @@ bool ConsentPopup::setup() {
         .parent(chatContainer);
     m_qcButton->toggle(globed::setting<bool>("core.player.quick-chat-enabled"));
 
-    Build<Label>::create("Quick chat", "bigFont.fnt")
+    Build<Label>::create("Emotes", "bigFont.fnt")
         .scale(0.55f)
         .id("qc-label")
         .parent(chatContainer);
@@ -105,8 +105,8 @@ bool ConsentPopup::setup() {
     });
 
     // small text above
-    Build<Label>::create("Do you want to communicate with other people?", "chatFont.fnt")
-        .scale(0.55f)
+    Build<Label>::create("Communication with other players (both can be adjusted later in settings)", "chatFont.fnt")
+        .scale(0.5f)
         .id("chat-label")
         .parent(m_mainLayer)
         .pos(cue::fromTop(chatContainer, 14.f));
