@@ -13,6 +13,7 @@
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/util/FunctionQueue.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
+#include "ConnectionLogger.hpp"
 
 #include <arc/runtime/Runtime.hpp>
 #include <arc/sync/mpsc.hpp>
@@ -21,6 +22,7 @@
 #include <std23/function_ref.h>
 #include "data/generated.hpp"
 #include <qunet/Connection.hpp>
+#include <qunet/Log.hpp>
 #include <Geode/Result.hpp>
 #include <typeindex>
 
@@ -214,6 +216,9 @@ public:
     bool hasViewedFeaturedLevel();
     void setViewedFeaturedLevel();
 
+    void logQunetMessage(qn::log::Level level, const std::string& msg);
+    void logArcMessage(arc::LogLevel level, const std::string& msg);
+
     // Message sending functions
 
     // Central server
@@ -329,8 +334,10 @@ private:
     WorkerState m_workerState;
     GameWorkerState m_gameWorkerState;
     std::optional<arc::mpsc::Sender<GameServerJoinRequest>> m_gameServerJoinTx;
+    std::optional<ConnectionLogger> m_centralLogger;
+    std::optional<ConnectionLogger> m_gameLogger;
     bool m_destructing = false;
-    bool m_hasSecure;
+    bool m_hasSecure = false;
 
     asp::Mutex<std::optional<ConnectionInfo>> m_connInfo;
     asp::SpinLock<std::pair<std::string, bool>> m_abortCause;
@@ -351,9 +358,11 @@ private:
     void threadPingGameServers(LockedConnInfo& info);
     void threadMaybeResendOwnData(LockedConnInfo& info);
     arc::Future<> threadTryAuth();
+    arc::Future<> threadSetupLogger(bool central);
+    void threadFlushLogger(bool central);
 
     void sendCentralAuth(AuthKind kind, const std::string& token = "");
-    Result<> sendMessageToConnection(qn::Connection& conn, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed);
+    Result<> sendMessageToConnection(qn::Connection& conn, std::optional<ConnectionLogger>& logger, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed);
     void sendToCentral(std23::function_ref<void(CentralMessage::Builder&)>&& func);
     void sendToGame(std23::function_ref<void(GameMessage::Builder&)>&& func, bool reliable = true, bool uncompressed = false);
 

@@ -22,17 +22,6 @@ static constexpr int TAG_DEATHLINK = 1025;
 static constexpr int TAG_TEAMS = 1026;
 static constexpr int TAG_AUTO_PINNING = 1027;
 
-static std::string formatDateTime(const asp::time::SystemTime& tp, bool ms) {
-    std::time_t curTime = tp.to_time_t();
-
-    if (ms) {
-        auto millis = tp.timeSinceEpoch().subsecMillis();
-        return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:03}", fmt::localtime(curTime), millis);
-    } else {
-        return fmt::format("{:%Y-%m-%d %H:%M:%S}", fmt::localtime(curTime));
-    }
-}
-
 bool CreateRoomPopup::setup() {
     this->setID("create-room-popup"_spr);
     this->setTitle("Create Room", "goldFont.fnt", 1.0f);
@@ -476,7 +465,7 @@ void CreateRoomPopup::waitForResponse() {
         this->stopWaiting(fmt::format(
             "You are banned from creating rooms{}{}. Reason: {}",
             msg.expiresAt == 0 ? " " : " until ",
-            msg.expiresAt == 0 ? std::string{"forever"} : formatDateTime(SystemTime::fromUnix(msg.expiresAt), false),
+            msg.expiresAt == 0 ? std::string{"forever"} : SystemTime::fromUnix(msg.expiresAt).toString(),
             msg.reason.empty() ? "(no reason given)" : msg.reason
         ));
         return ListenerResult::Stop;

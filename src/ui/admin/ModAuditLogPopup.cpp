@@ -17,17 +17,6 @@ static constexpr float TYPE_WIDTH = 155.f;
 static constexpr float USER_HEIGHT = 20.f;
 static constexpr float USER_WIDTH = 155.f;
 
-static std::string formatDateTime(const asp::time::SystemTime& tp, bool ms) {
-    std::time_t curTime = tp.to_time_t();
-
-    if (ms) {
-        auto millis = tp.timeSinceEpoch().subsecMillis();
-        return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:03}", fmt::localtime(curTime), millis);
-    } else {
-        return fmt::format("{:%Y-%m-%d %H:%M:%S}", fmt::localtime(curTime));
-    }
-}
-
 struct ActionType {
     std::string_view id;
     const char* iconSprite;
@@ -270,9 +259,9 @@ private:
             // if the issued time is unknown, the expire time is shown as a date, otherwise it's shown as a duration
             else if (issuedAt.to_time_t() == 0) {
                 issuedStr = "Unknown";
-                expiresStr = isPermanent ? "Permanent" : formatDateTime(expiresAt, false);
+                expiresStr = isPermanent ? "Permanent" : expiresAt.toString();
             } else {
-                issuedStr = formatDateTime(issuedAt, false);
+                issuedStr = issuedAt.toString();
                 expiresStr = isPermanent ? "Permanent" : expiresAt.durationSince(issuedAt)->toHumanString();
             }
 

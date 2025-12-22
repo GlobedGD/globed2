@@ -214,7 +214,7 @@ void SettingsLayer::addSettings() {
             "Artificially simulate outbound packet loss for testing purposes. Results depend on the transport: for <cy>TCP</c> the data is permanently lost, for <cy>UDP</c> the data may be resent if it was a reliable message, for <cy>QUIC</c> there's no loss as it will be handled by the protocol."
         );
         this->addSetting<BoolSettingCell>("core.dev.net-stat-dump", "Network Stat Dump",
-            "Enables highly detailed network statistics dumping for debugging. This will write very detailed information about all inbound and outbound packets to a log file, and dump exact packet bytes. F7 can be pressed while in the Globed menu to show current connection stats."
+            "Enables highly detailed network statistics dumping for debugging. This will write very detailed information about all inbound and outbound packets to a log file, and dump exact packet bytes. F7 can be pressed while in the Globed menu to show current connection stats. <cy>This will use a lot of memory</c>."
         );
         this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data",
             "Uses randomly generated data in some places (room list, level list) for testing purposes"

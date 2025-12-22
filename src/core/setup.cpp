@@ -1,6 +1,7 @@
 // Global setup stuff
 #include <Geode/Geode.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 #include <qunet/Log.hpp>
 #include <asp/Log.hpp>
 #include <arc/util/Trace.hpp>
@@ -40,6 +41,8 @@ $execute {
     });
 
     qn::log::setLogFunction([](qn::log::Level level, const std::string& message) {
+        // globed::NetworkManagerImpl::get().logQunetMessage(level, message);
+
         switch (level) {
             case qn::log::Level::Debug: {
                 if (debugEnabled) {
@@ -62,6 +65,8 @@ $execute {
     });
 
     arc::setLogFunction([](std::string message, arc::LogLevel level) {
+        // globed::NetworkManagerImpl::get().logArcMessage(level, message);
+
         switch (level) {
             case arc::LogLevel::Trace: {
 #ifdef GLOBED_DEBUG

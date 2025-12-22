@@ -265,15 +265,6 @@ NetworkManagerImpl::NetworkManagerImpl() : m_workerState(createWorkerState()) {
     m_runtime.spawn([](auto* self) -> arc::Future<> {
         co_await self->asyncInit();
     }(this));
-
-    if (globed::value<bool>("net.dont-override-dns").value_or(false)) {
-        log::info("Not overriding DNS servers");
-    } else {
-        qn::Resolver::get().setCustomDnsServers(
-            qsox::Ipv4Address{1, 1, 1, 1},
-            qsox::Ipv4Address{8, 8, 8, 8}
-        );
-    }
 }
 
 NetworkManagerImpl::~NetworkManagerImpl() {
@@ -287,6 +278,16 @@ NetworkManagerImpl& NetworkManagerImpl::get() {
 }
 
 Future<> NetworkManagerImpl::asyncInit() {
+    // this does not have to be async but it also must not be in the constructor
+    if (globed::value<bool>("net.dont-override-dns").value_or(false)) {
+        log::info("Not overriding DNS servers");
+    } else {
+        qn::Resolver::get().setCustomDnsServers(
+            qsox::Ipv4Address{1, 1, 1, 1},
+            qsox::Ipv4Address{8, 8, 8, 8}
+        );
+    }
+
     auto [gstx, gsrx] = arc::mpsc::channel<GameServerJoinRequest>(4);
     m_gameServerJoinTx = std::move(gstx);
     m_gameWorkerState.joinRx = std::move(gsrx);
@@ -307,6 +308,10 @@ Future<> NetworkManagerImpl::asyncInit() {
     });
 
     m_centralConn->setDataCallback([this](std::vector<uint8_t> bytes) {
+        if (m_centralLogger) {
+            m_centralLogger->sendPacketLog(bytes, false);
+        }
+
         qn::ByteReader breader{bytes};
         size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
 
@@ -336,6 +341,10 @@ Future<> NetworkManagerImpl::asyncInit() {
     });
 
     m_gameConn->setDataCallback([this](std::vector<uint8_t> bytes) {
+        if (m_gameLogger) {
+            m_gameLogger->sendPacketLog(bytes, false);
+        }
+
         qn::ByteReader breader{bytes};
         size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
 
@@ -393,6 +402,8 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                 m_workerState.nextGSPing = Instant::now();
                 m_workerState.pingResultRx.drain();
                 globed::setValue<bool>("core.was-connected", true);
+
+                co_await this->threadSetupLogger(true);
             }
 
             {
@@ -465,6 +476,10 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
             // wasConnected is true if we were connected before losing connection
             bool wasConnected = prevState == Connected || (prevState == Reconnecting && connState == Disconnected);
 
+            if (wasConnected) {
+                this->threadFlushLogger(true);
+            }
+
             if (showDisconnect) {
                 this->showDisconnectCause(connState == Reconnecting, wasConnected);
                 co_return;
@@ -484,6 +499,13 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
     auto connState = m_gameConn->state();
     auto prevState = m_gameWorkerState.prevGameState;
     m_gameWorkerState.prevGameState = connState;
+
+    // do some logger things if connected / disconnected
+    if (connState == Connected && connState != prevState) {
+        co_await this->threadSetupLogger(false);
+    } else if (connState == Disconnected && connState != prevState) {
+        this->threadFlushLogger(false);
+    }
 
     auto& cur = m_gameWorkerState.currentReq;
     if (cur) {
@@ -695,6 +717,29 @@ void NetworkManagerImpl::threadMaybeResendOwnData(LockedConnInfo& info) {
     info->m_sentFriendList = true;
 }
 
+Future<> NetworkManagerImpl::threadSetupLogger(bool central) {
+    if (!globed::setting<bool>("core.dev.net-stat-dump")) {
+        co_return;
+    }
+
+    auto& opt = central ? m_centralLogger : m_gameLogger;
+    if (!opt) {
+        opt.emplace();
+
+        auto base = Mod::get()->getConfigDir() / (central ? "central-logs" : "game-logs");
+        co_await opt->setup(std::move(base));
+    }
+
+    opt->reset();
+}
+
+void NetworkManagerImpl::threadFlushLogger(bool central) {
+    auto& opt = central ? m_centralLogger : m_gameLogger;
+    if (opt) {
+        opt->reset();
+    }
+}
+
 Future<> NetworkManagerImpl::threadTryAuth() {
     if (auto stoken = this->getUToken()) {
         this->connInfo()->startedAuth();
@@ -763,7 +808,13 @@ void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token
     });
 }
 
-Result<> NetworkManagerImpl::sendMessageToConnection(qn::Connection& conn, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed) {
+Result<> NetworkManagerImpl::sendMessageToConnection(
+    qn::Connection& conn,
+    std::optional<ConnectionLogger>& logger,
+    capnp::MallocMessageBuilder& msg,
+    bool reliable,
+    bool uncompressed
+) {
     if (!conn.connected()) {
         return Err("not connected");
     }
@@ -778,6 +829,9 @@ Result<> NetworkManagerImpl::sendMessageToConnection(qn::Connection& conn, capnp
     capnp::writePackedMessage(vos, msg);
 
     auto data = std::vector<uint8_t>(vos.getArray().begin(), vos.getArray().end());
+    if (logger) {
+        logger->sendPacketLog(data, true);
+    }
 
     if (!conn.sendData(std::move(data), reliable, uncompressed)) {
         return Err("failed to send data");
@@ -791,7 +845,7 @@ void NetworkManagerImpl::sendToCentral(std23::function_ref<void(CentralMessage::
     auto root = msg.initRoot<CentralMessage>();
     func(root);
 
-    auto res = sendMessageToConnection(*m_centralConn, msg, true, false);
+    auto res = sendMessageToConnection(*m_centralConn, m_centralLogger, msg, true, false);
 
     if (!res) {
         log::warn("Failed to send message to central server: {}", res.unwrapErr());
@@ -803,7 +857,7 @@ void NetworkManagerImpl::sendToGame(std23::function_ref<void(GameMessage::Builde
     auto root = msg.initRoot<GameMessage>();
     func(root);
 
-    auto res = sendMessageToConnection(*m_gameConn, msg, reliable, uncompressed);
+    auto res = sendMessageToConnection(*m_gameConn, m_gameLogger, msg, reliable, uncompressed);
 
     if (!res) {
         log::warn("Failed to send message to game server: {}", res.unwrapErr());
@@ -1170,6 +1224,22 @@ void NetworkManagerImpl::abortConnection(std::string reason, bool silent) {
     *m_abortCause.lock() = std::make_pair(std::move(reason), silent);
     m_centralConn->disconnect();
     m_gameConn->disconnect();
+}
+
+void NetworkManagerImpl::logQunetMessage(qn::log::Level level, const std::string& msg) {
+    if (!m_centralLogger && !m_gameLogger) return;
+
+    // auto content = fmt::format("[Qunet] [{}] {}", qn::log::levelToString(level), msg);
+    // if (m_centralLogger) m_centralLogger->sendTextLog(content);
+    // if (m_gameLogger) m_gameLogger->sendTextLog(content);
+}
+
+void NetworkManagerImpl::logArcMessage(arc::LogLevel level, const std::string& msg) {
+    if (!m_centralLogger && !m_gameLogger) return;
+
+    // auto content = fmt::format("[Arc] [{}] {}", arc::levelToString(level), msg);
+    // if (m_centralLogger) m_centralLogger->sendTextLog(content);
+    // if (m_gameLogger) m_gameLogger->sendTextLog(content);
 }
 
 void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener, void* dtor) {
