@@ -158,8 +158,13 @@ void SettingsLayer::addSettings() {
     // TODO: descriptions
     // Globed
     this->addHeader("core", "General", m_globedTab);
-    this->addSetting<BoolSettingCell>("core.autoconnect", "Autoconnect", "");
-    this->addSetting(ButtonSettingCell::create("Discord Linking", "", "Link", [] {
+    this->addSetting<BoolSettingCell>("core.autoconnect", "Autoconnect",
+        "Automatically connect to <cj>Globed</c> when launching the game, if you were connected the last time."
+    );
+    this->addSetting(ButtonSettingCell::create(
+        "Discord Linking",
+        "Link your <cb>Discord</c> account to receive <cg>roles</c> (for example <ca>Supporter</c>, <cp>Booster</c>, <cg>Moderator</c>, etc.) and unlock <cy>voice chat</c>.",
+        "Link", [] {
         if (!NetworkManagerImpl::get().isConnected()) {
             globed::alert("Error", "Cannot do this while not connected to a server.");
             return;
@@ -167,11 +172,18 @@ void SettingsLayer::addSettings() {
 
         DiscordLinkPopup::create()->show();
     }, CELL_SIZE));
-    this->addSetting(ButtonSettingCell::create("Keybinds", "", "Edit", [] {
+    this->addSetting(ButtonSettingCell::create(
+        "Keybinds",
+        "Configure in-game Globed keybinds.",
+        "Edit", [] {
         KeybindsPopup::create()->show();
     }, CELL_SIZE));
-    this->addSetting<BoolSettingCell>("core.editor.enabled", "Show Players in Editor", "Hosts local (editor) levels as well, letting you see other players playing the level while you are in the editor. Note: <cy>this does not let you build levels together!</c>");
-    this->addSetting<EnumSettingCell>("core.invites-from", "Allow Invites From", "", std::vector<std::pair<CStr, InvitesFrom>>{
+    this->addSetting<BoolSettingCell>("core.editor.enabled", "Show Players in Editor",
+        "Hosts local (editor) levels as well, letting you see other players playing the level while you are in the editor. Note: <cy>this does not let you build levels together!</c>"
+    );
+    this->addSetting<EnumSettingCell>("core.invites-from", "Allow Invites From",
+        "Controls who is allowed to invite you into rooms.",
+        std::vector<std::pair<CStr, InvitesFrom>>{
         {"Everyone", InvitesFrom::Everyone},
         {"Friends", InvitesFrom::Friends},
         {"Nobody", InvitesFrom::Nobody},
@@ -179,67 +191,144 @@ void SettingsLayer::addSettings() {
 
     // Preload
     this->addHeader("core.player", "Preloading", m_globedTab);
-    this->addSetting<BoolSettingCell>("core.preload.enabled", "Preload Assets", "");
-    this->addSetting<BoolSettingCell>("core.preload.defer", "Defer Preloading", "");
+    this->addSetting<BoolSettingCell>("core.preload.enabled", "Preload Assets",
+        "Loads <cy>player assets</c> (icons, death effects) in advance to reduce <cr>lag spikes</c> in levels. This will use extra <cg>memory</c> and will increase <cy>load times</c> unless <cj>Defer Preloading</c> is enabled."
+    );
+    this->addSetting<BoolSettingCell>("core.preload.defer", "Defer Preloading",
+        "Instead of preloading all assets on the loading screen, they are only loaded when joining a level (while connected to server)."
+    );
 
     // Advanced settings
     this->addHeader("core.dev", "Advanced", m_globedTab);
-    this->addSetting<BoolSettingCell>("core.ui.allow-custom-servers", "Allow Custom Servers", "");
+    this->addSetting<BoolSettingCell>("core.ui.allow-custom-servers", "Allow Custom Servers",
+        "Allow adding and connecting to <cy>custom Globed servers</c>, hosted by the community or yourself."
+    );
+    this->addSetting<BoolSettingCell>("core.dev.net-debug-logs", "Network Debug Logs",
+        "Enables more detailed network logging for debugging purposes."
+    );
+    this->addSetting<BoolSettingCell>("core.dev.cert-verification", "SSL Verification",
+        "Enables SSL certificate verification when connecting to servers. Disabling this is <cr>not recommended</c> in general, unless experiencing connection issues. This will only affect <cy>Argon authentication</c>, <cy>QUIC/WS</c> connections and <cy>DoH</c>, not TCP or UDP."
+    );
 
     if (showDebug) {
-        this->addSetting<FloatSettingCell>("core.dev.packet-loss-sim", "Packet Loss Simulation", "");
-        this->addSetting<BoolSettingCell>("core.dev.net-debug-logs", "Network Debug Logs", "");
-        this->addSetting<BoolSettingCell>("core.dev.net-stat-dump", "Network Stat Dump", "");
-        this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data", "");
-        this->addSetting<BoolSettingCell>("core.dev.cert-verification", "SSL Verification", "");
+        this->addSetting<FloatSettingCell>("core.dev.packet-loss-sim", "Packet Loss Simulation",
+            "Artificially simulate outbound packet loss for testing purposes. Results depend on the transport: for <cy>TCP</c> the data is permanently lost, for <cy>UDP</c> the data may be resent if it was a reliable message, for <cy>QUIC</c> there's no loss as it will be handled by the protocol."
+        );
+        this->addSetting<BoolSettingCell>("core.dev.net-stat-dump", "Network Stat Dump",
+            "Enables highly detailed network statistics dumping for debugging. This will write very detailed information about all inbound and outbound packets to a log file, and dump exact packet bytes. F7 can be pressed while in the Globed menu to show current connection stats."
+        );
+        this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data",
+            "Uses randomly generated data in some places (room list, level list) for testing purposes"
+        );
 
-        this->addSetting(ButtonSettingCell::create("Clear Auth Tokens", "", "Clear", [] {
+        this->addSetting(ButtonSettingCell::create(
+            "Clear Auth Tokens",
+            "Deletes all stored authentication tokens for all servers.",
+            "Clear", [] {
             NetworkManagerImpl::get().clearAllUTokens();
         }, CELL_SIZE));
 
-        this->addSetting(ButtonSettingCell::create("Clear Argon Token", "", "Clear", [] {
+        this->addSetting(ButtonSettingCell::create(
+            "Clear Argon Token",
+            "Deletes the stored Argon authentication token.",
+            "Clear", [] {
             argon::clearToken();
         }, CELL_SIZE));
     }
 
     // Player settings
     this->addHeader("core.player", "Players", m_playersTab);
-    this->addSetting<FloatSettingCell>("core.player.opacity", "Player Opacity", "");
-    this->addSetting<BoolSettingCell>("core.player.quick-chat-enabled", "Emotes", "");
-    this->addSetting<BoolSettingCell>("core.player.show-names", "Player Names", "");
-    this->addSetting<BoolSettingCell>("core.player.dual-name", "Player Dual Names", "");
-    this->addSetting<FloatSettingCell>("core.player.name-opacity", "Name Opacity", "");
-    this->addSetting<BoolSettingCell>("core.player.force-visibility", "Force Visibility", "");
-    this->addSetting<BoolSettingCell>("core.player.hide-nearby-classic", "Hide Nearby (Classic)", "");
-    this->addSetting<BoolSettingCell>("core.player.hide-nearby-plat", "Hide Nearby (Plat)", "");
-    this->addSetting<BoolSettingCell>("core.player.hide-practicing", "Hide Practicing Players", "");
-    this->addSetting<BoolSettingCell>("core.player.status-icons", "Show Status Icons", "");
-    this->addSetting<BoolSettingCell>("core.player.rotate-names", "Rotate Names", "");
-    this->addSetting<BoolSettingCell>("core.player.death-effects", "Death Effects", "");
-    this->addSetting<BoolSettingCell>("core.player.default-death-effects", "Default Death Effects", "");
+    this->addSetting<FloatSettingCell>("core.player.opacity", "Player Opacity",
+        "Sets the opacity of other players' icons in levels."
+    );
+    this->addSetting<BoolSettingCell>("core.player.quick-chat-enabled", "Emotes",
+        "Enables the use of <cy>emotes</c> (quick chat) in levels. They can be accessed via the <cg>pause menu</c> and then bound to <cr>keybinds</c> (by default numbers 1-4)."
+    );
+    this->addSetting<BoolSettingCell>("core.player.show-names", "Player Names",
+        "Shows player names above their icons."
+    );
+    this->addSetting<BoolSettingCell>("core.player.dual-name", "Player Dual Names",
+        "Show player names on secondary icons as well."
+    );
+    this->addSetting<FloatSettingCell>("core.player.name-opacity", "Name Opacity",
+        "Sets the opacity of other players' names in levels."
+    );
+    this->addSetting<BoolSettingCell>("core.player.force-visibility", "Force Visibility",
+        "Forces other players to always be visible in levels, even when hidden by e.g. hide triggers."
+    );
+    this->addSetting<BoolSettingCell>("core.player.hide-nearby-classic", "Hide Nearby (Classic)",
+        "Fade nearby players in <cg>classic levels</c> to reduce visual clutter with a lot of people nearby."
+    );
+    this->addSetting<BoolSettingCell>("core.player.hide-nearby-plat", "Hide Nearby (Plat)",
+        "Fade nearby players in <cg>platformer levels</c> to reduce visual clutter with a lot of people nearby."
+    );
+    this->addSetting<BoolSettingCell>("core.player.hide-practicing", "Hide Practicing Players",
+        "Hide players that are in practice mode."
+    );
+    this->addSetting<BoolSettingCell>("core.player.status-icons", "Show Status Icons",
+        "Show icons indicating player states, such as paused, practicing, voice chatting, editor."
+    );
+    this->addSetting<BoolSettingCell>("core.player.rotate-names", "Rotate Names",
+        "Rotates player names together with the camera to keep them aligned."
+    );
+    this->addSetting<BoolSettingCell>("core.player.death-effects", "Death Effects",
+        "Plays other players' death effects when they die in levels."
+    );
+    this->addSetting<BoolSettingCell>("core.player.default-death-effects", "Default Death Effects",
+        "Replaces all player death effects with the default explosion effect."
+    );
 
     // Level UI
     this->addHeader("core.level", "Level UI", m_levelUiTab);
-    this->addSetting<BoolSettingCell>("core.level.progress-indicators", "Progress Icons (Classic)", "");
-    this->addSetting<BoolSettingCell>("core.level.progress-indicators-plat", "Progress Icons (Plat)", "");
-    this->addSetting<FloatSettingCell>("core.level.progress-opacity", "Progress Opacity", "");
-    this->addSetting<BoolSettingCell>("core.level.voice-overlay", "Voice Chat Overlay", "");
-    this->addSetting<BoolSettingCell>("core.level.force-progressbar", "Force Progress Bar", "");
-    this->addSetting<BoolSettingCell>("core.level.self-status-icons", "Show Own Status Icons", "");
-    this->addSetting<BoolSettingCell>("core.level.self-name", "Show Own Name", "");
+    this->addSetting<BoolSettingCell>("core.level.progress-indicators", "Progress Markers (Classic)",
+        "Show icons under the progress bar indicating other players' <cy>progress</c> in <cg>classic levels</c>."
+    );
+    this->addSetting<BoolSettingCell>("core.level.progress-indicators-plat", "Direction Markers (Plat)",
+        "Show icons near edges of the screen indicating where other players are located (if offscreen) in <cg>platformer levels</c>."
+    );
+    this->addSetting<FloatSettingCell>("core.level.progress-opacity", "Progress Opacity",
+        "Adjusts the opacity of progress/direction markers of other players."
+    );
+    this->addSetting<BoolSettingCell>("core.level.voice-overlay", "Voice Chat Overlay",
+        "Show an overlay indicating which players are currently <cg>speaking</c>."
+    );
+    this->addSetting<BoolSettingCell>("core.level.force-progressbar", "Force Progress Bar",
+        "Forces the <cg>progress bar</c> to be shown in classic levels when connected to Globed, even if the user has it disabled."
+    );
+    this->addSetting<BoolSettingCell>("core.level.self-status-icons", "Show Own Status Icons",
+        "Show your own status icons. (paused, speaking, etc.)"
+    );
+    this->addSetting<BoolSettingCell>("core.level.self-name", "Show Own Name",
+        "Show your own name in levels."
+    );
 
     // Overlay
     this->addHeader("core.overlay", "Ping overlay", m_levelUiTab);
-    this->addSetting<BoolSettingCell>("core.overlay.enabled", "Enable Overlay", "");
-    this->addSetting<FloatSettingCell>("core.overlay.opacity", "Overlay Opacity", "");
-    this->addSetting<IntCornerSettingCell>("core.overlay.position", "Overlay Position", "");
-    this->addSetting<BoolSettingCell>("core.overlay.always-show", "Always Show Overlay", "");
+    this->addSetting<BoolSettingCell>("core.overlay.enabled", "Enable Overlay",
+        "Show a small text overlay displaying your current <cy>ping</c> to the server."
+    );
+    this->addSetting<FloatSettingCell>("core.overlay.opacity", "Overlay Opacity",
+        "Set the opacity of the ping overlay."
+    );
+    this->addSetting<IntCornerSettingCell>("core.overlay.position", "Overlay Position",
+        "Choose where the ping overlay appears on the screen."
+    );
+    this->addSetting<BoolSettingCell>("core.overlay.always-show", "Always Show Overlay",
+        "Show the <cy>ping overlay</c> even when not connected or in unsupported levels, replacing the ping with a text like <cr>'Not connected'</c> or <cr>'N/A'</c>."
+    );
 
     // Audio
     this->addHeader("core.audio", "Audio", m_voiceTab);
-    this->addSetting<BoolSettingCell>("core.audio.voice-chat-enabled", "Voice Chat", "");
-    this->addSetting<FloatSettingCell>("core.audio.playback-volume", "Voice Volume", "");
-    this->addSetting(ButtonSettingCell::create("Audio Device", "", "Set", [] {
+    this->addSetting<BoolSettingCell>("core.audio.voice-chat-enabled", "Voice Chat",
+        "Enable in-game voice chat (default keybind is V). Note: <cy>this is currently only supported on Windows, and requires you to link your </c><cb>Discord</c><cy>account</c>."
+    );
+    this->addSetting<FloatSettingCell>("core.audio.playback-volume", "Voice Volume",
+        "Adjust the global voice chat volume."
+    );
+    this->addSetting(ButtonSettingCell::create(
+        "Audio Device",
+        "Sets the used input device for voice chat.",
+        "Set", [] {
 #ifdef GLOBED_VOICE_CAN_TALK
         AudioDeviceSetupPopup::create()->show();
 #else
@@ -253,19 +342,39 @@ void SettingsLayer::addSettings() {
         );
 #endif
     }, CELL_SIZE));
-    this->addSetting<BoolSettingCell>("core.audio.voice-proximity", "Voice Proximity (Plat)", "");
-    this->addSetting<BoolSettingCell>("core.audio.classic-proximity", "Voice Proximity (Classic)", "");
-    this->addSetting<BoolSettingCell>("core.audio.deafen-notification", "Deafen Notification", "");
-    this->addSetting<BoolSettingCell>("core.audio.only-friends", "Friends Only Voice", "");
-    this->addSetting<BoolSettingCell>("core.audio.voice-loopback", "Voice Loopback", "");
-    this->addSetting<BoolSettingCell>("core.audio.overlaying-overlay", "Overlay On Top", "");
-    this->addSetting<IntSliderSettingCell>("core.audio.buffer-size", "Audio Buffer Size", "");
+    this->addSetting<BoolSettingCell>("core.audio.voice-proximity", "Voice Proximity (Plat)",
+        "Enables proximity voice chat in <cg>platformer</c> levels, meaning players get quieter the further away they are from you."
+    );
+    this->addSetting<BoolSettingCell>("core.audio.classic-proximity", "Voice Proximity (Classic)",
+        "Enables proximity voice chat in <cg>classic</c> levels, meaning players get quieter the further away they are from you."
+    );
+    this->addSetting<BoolSettingCell>("core.audio.deafen-notification", "Deafen Notification",
+        "Show a notification when you deafen or undeafen."
+    );
+    this->addSetting<BoolSettingCell>("core.audio.only-friends", "Friends Only Voice",
+        "Only hear voice chat from your <cg>friends</c>."
+    );
+    this->addSetting<BoolSettingCell>("core.audio.voice-loopback", "Voice Loopback",
+        "Hear your own voice while speaking."
+    );
+    this->addSetting<BoolSettingCell>("core.audio.overlaying-overlay", "Overlay On Top",
+        "Render the voice overlay above other UI elements, allowing it to be used in the <cg>pause menu</c>."
+    );
+    this->addSetting<IntSliderSettingCell>("core.audio.buffer-size", "Audio Buffer Size",
+        "Adjusts the audio buffer size (in 60ms frames). Lower sizes reduce audio latency but may decrease stability."
+    );
 
     // Menus
     this->addHeader("core.ui", "Menus", m_menusTab);
-    this->addSetting<BoolSettingCell>("core.streamer-mode", "Streamer Mode", "");
-    this->addSetting<BoolSettingCell>("core.ui.increase-level-list", "Increase Level List", "");
-    this->addSetting<BoolSettingCell>("core.ui.compressed-player-count", "Simple Player Count", "");
+    this->addSetting<BoolSettingCell>("core.streamer-mode", "Streamer Mode",
+        "Hides some sensitive information (room ID, password)."
+    );
+    this->addSetting<BoolSettingCell>("core.ui.increase-level-list", "Increase Level List",
+        "Shows more levels per page in the level list."
+    );
+    this->addSetting<BoolSettingCell>("core.ui.compressed-player-count", "Simple Player Count",
+        "Shows a simplified player count (number + icon rather than 'x players') in all places instead of just Tower/Gauntlets."
+    );
 
     for (auto tab : m_tabs) {
         tab->updateLayout();

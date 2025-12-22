@@ -1063,6 +1063,10 @@ void GlobedGJBGL::updateProximityVolume(int playerId) {
 }
 
 void GlobedGJBGL::playSelfEmote(uint32_t id) {
+    if (!g_settings.quickChat) {
+        return;
+    }
+
     auto& fields = *m_fields.self();
     fields.m_selfEmoteBubble->playEmote(id);
 
@@ -1070,6 +1074,10 @@ void GlobedGJBGL::playSelfEmote(uint32_t id) {
 }
 
 void GlobedGJBGL::playSelfFavoriteEmote(uint32_t which) {
+    if (!g_settings.quickChat) {
+        return;
+    }
+
     auto emote = globed::value<uint32_t>(fmt::format("core.ui.emote-slot-{}", which)).value_or(0);
 
     if (emote != 0) {

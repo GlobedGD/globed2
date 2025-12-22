@@ -78,13 +78,15 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
             .id("btn-open-playerlist"_spr)
             .parent(menu);
 
-        Build<CCSprite>::create("icon-emotes.png"_spr)
-            .scale(0.9f)
-            .intoMenuItem(+[] {
-                EmoteListPopup::create()->show();
-            })
-            .id("btn-open-emotelist"_spr)
-            .parent(menu);
+        if (globed::setting<bool>("core.player.quick-chat-enabled")) {
+            Build<CCSprite>::create("icon-emotes.png"_spr)
+                .scale(0.9f)
+                .intoMenuItem(+[] {
+                    EmoteListPopup::create()->show();
+                })
+                .id("btn-open-emotelist"_spr)
+                .parent(menu);
+        }
 
         menu->updateLayout();
 
