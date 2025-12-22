@@ -464,7 +464,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     // send player data to the server
     if (fields.m_timeCounter >= fields.m_nextDataSend) {
         // update the next interval to be strictly in the future, dont want to repeat things
-        float sendInterval = fields.m_sendDataInterval * (fields.m_throttleUpdates ? 6.f : 1.f);
+        float sendInterval = fields.m_sendDataInterval * (fields.m_throttleUpdates ? 10.f : 1.f);
         while (fields.m_nextDataSend <= fields.m_timeCounter) {
             fields.m_nextDataSend += sendInterval;
         }
@@ -528,9 +528,9 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
         this->pauseVoiceRecording();
     }
 
-    // send data less often if the game is inactive
+    // send data less often if the game is inactive or there are no other players
     bool prevThrottle = fields.m_throttleUpdates;
-    fields.m_throttleUpdates = state == GameState::Closed;
+    fields.m_throttleUpdates = state == GameState::Closed || fields.m_players.empty();
 
     if (prevThrottle != fields.m_throttleUpdates) {
         log::debug("updating data send interval to {}", fields.m_throttleUpdates ? "throttled" : "normal");
