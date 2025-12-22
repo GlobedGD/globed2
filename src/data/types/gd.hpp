@@ -13,6 +13,14 @@
 static constexpr uint8_t NO_GLOW = -1;
 static constexpr uint8_t NO_TRAIL = 1;
 
+enum class PlayerSex : uint8_t {
+    Unspecified = 0,
+    Male = 1,
+    Female = 2
+};
+
+GLOBED_SERIALIZABLE_ENUM(PlayerSex, Unspecified, Male, Female);
+
 class PlayerIconData {
 public:
     static const PlayerIconData DEFAULT_ICONS;
@@ -73,10 +81,11 @@ struct SpecialUserData {
     bool operator==(const SpecialUserData&) const = default;
 
     std::optional<std::vector<uint8_t>> roles;
+    PlayerSex sex = PlayerSex::Unspecified;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(SpecialUserData, (
-    roles
+    roles, sex
 ));
 
 class PlayerRoomPreviewAccountData {
