@@ -46,33 +46,27 @@ struct matjson::Serialize<globed::LevelListLayer::Filters> {
     static Result<globed::LevelListLayer::Filters> fromJson(const matjson::Value& value) {
         globed::LevelListLayer::Filters filters{};
 
-        if (value["difficulty"].isArray()) {
-            for (auto& diff : value["difficulty"].asArray().unwrap()) {
-                auto diffe = globed::difficultyFromString(GEODE_UNWRAP(diff.asString()));
-                if (diffe) {
-                    filters.difficulty.insert(diffe.value());
-                }
+        for (auto& diff : value["difficulty"]) {
+            auto diffe = globed::difficultyFromString(GEODE_UNWRAP(diff.asString()));
+            if (diffe) {
+                filters.difficulty.insert(diffe.value());
             }
         }
 
-        if (value["demonDifficulty"].isArray()) {
-            for (auto& diff : value["demonDifficulty"].asArray().unwrap()) {
-                auto diffe = globed::difficultyFromString(GEODE_UNWRAP(diff.asString()));
-                if (diffe) {
-                    filters.demonDifficulty.insert(diffe.value());
-                }
+        for (auto& diff : value["demonDifficulty"]) {
+            auto diffe = globed::difficultyFromString(GEODE_UNWRAP(diff.asString()));
+            if (diffe) {
+                filters.demonDifficulty.insert(diffe.value());
             }
         }
 
-        if (value["length"].isArray()) {
-            for (auto& len : value["length"].asArray().unwrap()) {
-                filters.length.insert(GEODE_UNWRAP(len.asInt()));
-            }
+        for (auto& len : value["length"]) {
+            filters.length.insert(GEODE_UNWRAP(len.asInt()));
         }
 
         if (value["rateTier"].isArray()) {
             filters.rateTier = std::set<globed::LevelListLayer::Filters::RateTier>{};
-            for (auto& tier : value["rateTier"].asArray().unwrap()) {
+            for (auto& tier : value["rateTier"]) {
                 auto rt = rateTierFromString(GEODE_UNWRAP(tier.asString()));
                 if (rt) {
                     filters.rateTier.value().insert(rt.value());
@@ -107,23 +101,23 @@ struct matjson::Serialize<globed::LevelListLayer::Filters> {
         matjson::Value obj;
         obj["difficulty"] = matjson::Value::array();
         for (auto diff : filters.difficulty) {
-            obj["difficulty"].asArray().unwrap().push_back(globed::difficultyToString(diff));
+            obj["difficulty"].push(globed::difficultyToString(diff));
         }
 
         obj["demonDifficulty"] = matjson::Value::array();
         for (auto diff : filters.demonDifficulty) {
-            obj["demonDifficulty"].asArray().unwrap().push_back(globed::difficultyToString(diff));
+            obj["demonDifficulty"].push(globed::difficultyToString(diff));
         }
 
         obj["length"] = matjson::Value::array();
         for (auto len : filters.length) {
-            obj["length"].asArray().unwrap().push_back(len);
+            obj["length"].push(len);
         }
 
         if (auto& rt = filters.rateTier) {
             obj["rateTier"] = matjson::Value::array();
             for (auto tier : rt.value()) {
-                obj["rateTier"].asArray().unwrap().push_back(rateTierToString(tier));
+                obj["rateTier"].push(rateTierToString(tier));
             }
         }
 

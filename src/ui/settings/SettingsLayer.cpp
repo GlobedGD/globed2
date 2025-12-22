@@ -155,7 +155,6 @@ void SettingsLayer::addSettings() {
     bool showDebug = globed::value<bool>("core.dev.enable-dev-settings").value_or(false);
 #endif
 
-    // TODO: descriptions
     // Globed
     this->addHeader("core", "General", m_globedTab);
     this->addSetting<BoolSettingCell>("core.autoconnect", "Autoconnect",

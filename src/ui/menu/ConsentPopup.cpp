@@ -17,7 +17,7 @@ static constexpr auto ARGON_DESC = "I accept the <cy>privacy policy</c> and allo
 static constexpr auto RULES_TEXT = R"(
 # Punishments
 
-Breaking any of the rules below may result in your account being <cr>muted or banned</c>, depending on the severity of the offense.
+Breaking any of the rules below may result in your account being <cr>muted or banned from Globed</c>, depending on the severity of the offense.
 
 # In-game Chat
 
