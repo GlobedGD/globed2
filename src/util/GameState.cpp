@@ -53,8 +53,8 @@ class $modify(CCTouchDispatcher) {
     }
 };
 
-Duration timeSinceInput() {
-    return g_lastInputTime.elapsed();
+uint64_t timeSinceInput() {
+    return g_lastInputTime.elapsed().millis();
 }
 
 #endif

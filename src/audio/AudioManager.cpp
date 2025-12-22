@@ -453,7 +453,8 @@ void AudioManager::setStreamVolume(int streamId, float volume) {
     auto it = m_playbackStreams.find(streamId);
 
     if (it != m_playbackStreams.end()) {
-        it->second->setUserVolume(volume, m_globalPlaybackLayer);
+        float vol = this->mapStreamVolume(streamId, volume);
+        it->second->setUserVolume(vol, m_globalPlaybackLayer);
     }
 }
 
@@ -476,11 +477,35 @@ bool AudioManager::getDeafen() {
     return m_deafen;
 }
 
+void AudioManager::setFocusedPlayer(int playerId) {
+    m_focusedPlayer = playerId;
+    this->updatePlaybackVolume();
+}
+
+void AudioManager::clearFocusedPlayer() {
+    this->setFocusedPlayer(-1);
+}
+
+int AudioManager::getFocusedPlayer() {
+    return m_focusedPlayer;
+}
+
+float AudioManager::mapStreamVolume(int playerId, float vol) {
+    if (m_focusedPlayer == -1) {
+        return vol;
+    } else if (m_focusedPlayer == playerId) {
+        return vol;
+    } else {
+        return vol * 0.2f;
+    }
+}
+
 void AudioManager::updatePlaybackVolume() {
     m_globalPlaybackLayer = m_playbackLayer * (m_deafen ? 0.f : 1.f);
 
     for (auto& [id, stream] : m_playbackStreams) {
-        stream->setUserVolume(stream->getUserVolume(), m_globalPlaybackLayer);
+        float vol = this->mapStreamVolume(id, stream->getUserVolume());
+        stream->setUserVolume(vol, m_globalPlaybackLayer);
     }
 }
 

@@ -44,16 +44,16 @@ Future<> ConnectionLogger::setup(std::filesystem::path path) {
     m_textLogTx = std::move(tTx);
 
     m_handle = arc::spawn(
-        [this, pRx = std::move(pRx), tRx = std::move(tRx)](this auto self) -> Future<> {
+        [](ConnectionLogger* self, auto pRx, auto tRx) -> Future<> {
         while (true) {
             co_await arc::select(
                 arc::selectee(
-                    m_reset.notified(),
+                    self->m_reset.notified(),
                     [&] {
                         // drain receiver and reset folder
                         pRx.drain();
                         tRx.drain();
-                        this->resetInternal();
+                        self->resetInternal();
                     }
                 ),
 
@@ -61,7 +61,7 @@ Future<> ConnectionLogger::setup(std::filesystem::path path) {
                     pRx.recv(),
                     [&](auto result) -> arc::Future<> {
                         if (!result) co_return;
-                        co_await this->doLog(std::move(result).unwrap());
+                        co_await self->doLog(std::move(result).unwrap());
                     }
                 ),
 
@@ -70,14 +70,14 @@ Future<> ConnectionLogger::setup(std::filesystem::path path) {
                     [&](auto result) {
                         if (!result) return;
                         auto msg = std::move(result).unwrap();
-                        m_curLog += fmt::format("[{:.6f}] {}\n", m_startTime.elapsed().seconds<double>(), msg);
+                        self->m_curLog += fmt::format("[{:.6f}] {}\n", self->m_startTime.elapsed().seconds<double>(), msg);
                     }
                 )
             );
         }
 
         co_return;
-    }());
+    }(this, std::move(pRx), std::move(tRx)));
 
     this->resetInternal();
 

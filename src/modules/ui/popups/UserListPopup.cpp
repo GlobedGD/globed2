@@ -83,6 +83,7 @@ protected:
         bool createBtnAdmin = NetworkManagerImpl::get().isAuthorizedModerator();
         bool createBtnTp = createBtnAdmin && !self;
         bool createVisualizer = !self && globed::setting<bool>("core.audio.voice-chat-enabled");
+        bool createBtnVCFocus = createVisualizer && createBtnAdmin;
         size_t buttonCount = countBools(createBtnHide, createBtnMute, createBtnAdmin, createBtnTp, createVisualizer);
 
         // if no visualizer, max button count is 4, otherwise 2
@@ -97,6 +98,14 @@ protected:
         CCSize btnSizeBig = {28.f, 28.f};
         CCSize btnSize = createSettingsBtn ? btnSizeBig : btnSizeSmall;
 
+        auto addButton = [&](auto btn) {
+            if (createSettingsBtn) {
+                popupButtons->addObject(btn);
+            } else {
+                mainButtons->addObject(btn);
+            }
+        };
+
         // Create various buttons
 
         // god i hate this
@@ -104,6 +113,7 @@ protected:
 
         bool isMuted = !gjbgl->shouldLetMessageThrough(m_accountId);
         bool isHidden = self ? false : SettingsManager::get().isPlayerHidden(m_accountId);
+        bool isVcFocused = AudioManager::get().getFocusedPlayer() == m_accountId;
 
         // Mute button
         if (createBtnMute) {
@@ -134,11 +144,7 @@ protected:
             muteButton->m_offButton->m_scaleMultiplier = 1.2f;
             muteButton->toggle(!isMuted); // fucked up
 
-            if (createSettingsBtn) {
-                popupButtons->addObject(muteButton);
-            } else {
-                mainButtons->addObject(muteButton);
-            }
+            addButton(muteButton);
         }
 
         // Hide button
@@ -167,11 +173,7 @@ protected:
             hideButton->m_offButton->m_scaleMultiplier = 1.2f;
             hideButton->toggle(!isHidden); // fucked up
 
-            if (createSettingsBtn) {
-                popupButtons->addObject(hideButton);
-            } else {
-                mainButtons->addObject(hideButton);
-            }
+            addButton(hideButton);
         }
 
         // admin menu button
@@ -214,11 +216,7 @@ protected:
                 .id("teleport-button"_spr)
                 .collect();
 
-            if (createSettingsBtn) {
-                popupButtons->addObject(btn);
-            } else {
-                mainButtons->addObject(btn);
-            }
+            addButton(btn);
         }
 
         if (createVisualizer) {
@@ -232,6 +230,35 @@ protected:
 
             m_visualizer->setLayoutOptions(AxisLayoutOptions::create()->setAutoScale(false));
             mainButtons->addObject(m_visualizer);
+        }
+
+        if (createBtnVCFocus) {
+            // TODO: icons
+            auto on = CCSprite::createWithSpriteFrameName("GJ_starsIcon_gray_001.png");
+            auto off = CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png");
+            cue::rescaleToMatch(on, btnSizeBig);
+            cue::rescaleToMatch(off, btnSizeBig);
+
+            auto button = CCMenuItemExt::createToggler(
+                on,
+                off,
+                [accountId = m_accountId](CCMenuItemToggler* btn) {
+                    bool focused = btn->isOn();
+                    auto& am = AudioManager::get();
+
+                    if (focused) {
+                        am.setFocusedPlayer(accountId);
+                    } else {
+                        am.clearFocusedPlayer();
+                    }
+            });
+
+            button->setID("vc-focus-btn"_spr);
+            button->m_onButton->m_scaleMultiplier = 1.2f;
+            button->m_offButton->m_scaleMultiplier = 1.2f;
+            button->toggle(!isVcFocused); // fucked up
+
+            addButton(button);
         }
 
         for (auto btn : CCArrayExt<CCNode>(mainButtons)) {

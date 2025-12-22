@@ -96,6 +96,11 @@ public:
     void setDeafen(bool deafen);
     bool getDeafen();
 
+    void setFocusedPlayer(int playerId);
+    void clearFocusedPlayer();
+    int getFocusedPlayer();
+    float mapStreamVolume(int playerId, float vol);
+
     /* Misc */
 
     // play a sound and return the channel associated with it
@@ -149,8 +154,9 @@ private:
     /* playback */
     std::unordered_map<int, std::unique_ptr<AudioStream>> m_playbackStreams;
     VolumeLayer m_playbackLayer;
-    bool m_deafen = false;
     VolumeLayer m_globalPlaybackLayer;
+    int m_focusedPlayer = -1;
+    bool m_deafen = false;
 
     AudioStream* preparePlaybackStream(int id);
     void updatePlaybackVolume();
