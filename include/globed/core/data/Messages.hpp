@@ -241,6 +241,7 @@ struct UserDataChangedMessage {
     std::vector<uint8_t> roles;
     std::optional<MultiColor> nameColor;
     ModPermissions perms;
+    std::string newToken;
 };
 
 // Chat not permitted

@@ -772,6 +772,7 @@ $implDecode(msg::UserDataChangedMessage, main::UserDataChangedMessage::Reader& r
     out.perms.canEditRoles = reader.getCanEditRoles();
     out.perms.canSendFeatures = reader.getCanSendFeatures();
     out.perms.canRateFeatures = reader.getCanRateFeatures();
+    if (reader.hasNewToken()) out.newToken = reader.getNewToken();
 
     return out;
 }

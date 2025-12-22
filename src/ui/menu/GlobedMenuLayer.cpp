@@ -84,20 +84,13 @@ public:
     }
 
     void softRefresh(const RoomPlayer& rp) {
-        if (rp.specialUserData) {
-            m_nameLabel->updateWithRoles(*rp.specialUserData);
-        } else {
-            m_nameLabel->updateNoRoles();
-        }
+        this->softRefreshInner(rp.specialUserData, rp.session);
+    }
 
-        m_leftContainer->updateLayout();
-
-        if (rp.session != m_sessionId) {
-            m_sessionId = rp.session;
-            this->recreateSessionButton();
-        }
-
-        this->initGradients();
+    // assuming this is the local player, refresh certain things
+    void softRefreshSelf() {
+        auto sud = NetworkManagerImpl::get().getOwnSpecialData();
+        this->softRefreshInner(sud, SessionId{});
     }
 
 protected:
@@ -139,6 +132,23 @@ protected:
         this->initGradients();
 
         return true;
+    }
+
+    void softRefreshInner(std::optional<SpecialUserData> sud, SessionId session) {
+        if (sud) {
+            m_nameLabel->updateWithRoles(*sud);
+        } else {
+            m_nameLabel->updateNoRoles();
+        }
+
+        m_leftContainer->updateLayout();
+
+        if (session != m_sessionId) {
+            m_sessionId = session;
+            this->recreateSessionButton();
+        }
+
+        this->initGradients();
     }
 
     void recreateSessionButton() {
@@ -445,6 +455,13 @@ bool GlobedMenuLayer::init() {
         return ListenerResult::Continue;
     });
 
+    m_userChangedListener = nm.listen<msg::UserDataChangedMessage>([this](const auto& msg) {
+        this->initSideButtons();
+        this->softRefreshSelf();
+
+        return ListenerResult::Continue;
+    });
+
     this->onServerModified();
 
     this->update(0.f);
@@ -676,6 +693,17 @@ bool GlobedMenuLayer::trySoftRefresh(const std::vector<RoomPlayer>& players) {
     m_playerList->setScrollPos(scrollPos);
 
     return true;
+}
+
+void GlobedMenuLayer::softRefreshSelf() {
+    auto selfId = globed::cachedSingleton<GJAccountManager>()->m_accountID;
+    for (auto cell : m_playerList->iterChecked<PlayerCell>()) {
+        if (cell->m_accountId != selfId) continue;
+
+        cell->softRefreshSelf();
+
+        break;
+    }
 }
 
 void GlobedMenuLayer::initRoomButtons() {

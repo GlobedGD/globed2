@@ -719,6 +719,8 @@ void NetworkManagerImpl::threadMaybeResendOwnData(LockedConnInfo& info) {
 
 Future<> NetworkManagerImpl::threadSetupLogger(bool central) {
     if (!globed::setting<bool>("core.dev.net-stat-dump")) {
+        m_centralLogger.reset();
+        m_gameLogger.reset();
         co_return;
     }
 
@@ -2005,6 +2007,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
                 }
             }
             info.unlock();
+
+            if (!outp.newToken.empty()) {
+                this->setUToken(outp.newToken);
+            }
 
             this->invokeListeners(std::move(outp));
         } break;
