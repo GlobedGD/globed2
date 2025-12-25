@@ -910,6 +910,13 @@ bool GlobedGJBGL::shouldLetMessageThrough(int playerId) {
     return true;
 }
 
+bool GlobedGJBGL::isSpeaking(int playerId) {
+    if (!g_settings.voiceChat) return false;
+
+    auto& am = AudioManager::get();
+    return am.isStreamActive(playerId);
+}
+
 void GlobedGJBGL::reloadCachedSettings() {
     g_settings.reload();
 }
@@ -949,12 +956,22 @@ void GlobedGJBGL::toggleDeafen() {
 }
 
 void GlobedGJBGL::resumeVoiceRecording() {
+#ifdef GLOBED_VOICE_CAN_TALK
+    auto& am = AudioManager::get();
+
+    if (!g_settings.voiceChat || am.getDeafen()) {
+        return;
+    }
+
     log::debug("Resuming voice recording");
     AudioManager::get().resumePassiveRecording();
+#endif
 }
 
 void GlobedGJBGL::pauseVoiceRecording() {
+#ifdef GLOBED_VOICE_CAN_TALK
     AudioManager::get().pausePassiveRecording();
+#endif
 }
 
 void GlobedGJBGL::customSchedule(const std::string& id, std23::move_only_function<void(GlobedGJBGL*, float)>&& f, float interval) {

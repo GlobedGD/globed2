@@ -239,8 +239,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         flags.practicing = state.isPracticing;
         flags.speakingMuted = false;
         flags.editing = state.isInEditor;
-        // flags.speaking = ;
-        // flags.loudness = ;
+        flags.speaking = gjbgl->isSpeaking(state.accountId);
         m_statusIcons->updateStatus(flags);
     }
 

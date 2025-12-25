@@ -146,6 +146,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     float calculateVolumeFor(int playerId);
     bool shouldLetMessageThrough(int playerId);
     void reloadCachedSettings();
+    bool isSpeaking(int playerId);
 
     void toggleCullingEnabled(bool culling);
     void toggleExtendedData(bool extended);
