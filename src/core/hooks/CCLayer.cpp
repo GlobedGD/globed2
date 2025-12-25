@@ -13,7 +13,7 @@ struct GLOBED_MODIFY_ATTR HookedCCLayer : Modify<HookedCCLayer, CCLayer> {
         auto* gjbgl = GlobedGJBGL::get();
         void* self = this;
 
-        if (gjbgl && gjbgl == self && gjbgl->active()) {
+        if (gjbgl && gjbgl == self && !gjbgl->isEditor() && gjbgl->active()) {
             gjbgl->onEnterHook();
         } else {
             CCLayer::onEnter();

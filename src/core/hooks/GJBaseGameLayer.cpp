@@ -64,11 +64,16 @@ struct CachedSettings {
     bool voiceLoopback = globed::setting<bool>("core.audio.voice-loopback");
     bool friendsOnlyAudio = globed::setting<bool>("core.audio.only-friends");
     bool editorEnabled = globed::setting<bool>("core.editor.enabled");
+    bool ghostFollower = globed::setting<bool>("core.dev.ghost-follower");
 
     void reload() {
         *this = CachedSettings{};
     }
 } g_settings;
+
+static int myAccountId() {
+    return cachedSingleton<GJAccountManager>()->m_accountID;
+}
 
 void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     auto& fields = *m_fields.self();
@@ -88,8 +93,6 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     }
 
     fields.m_interpolator.setPlatformer(level->isPlatformer());
-
-    // TODO: disable multiplayer in editor depending on settings
 
     if (fields.m_active) {
         RoomManager::get().joinLevel(level);
@@ -112,6 +115,11 @@ void GlobedGJBGL::setupPostInit() {
     this->setupUpdateLoop();
     this->setupUi();
     this->setupListeners();
+
+
+    if (g_settings.ghostFollower) {
+        this->handlePlayerJoin(myAccountId());
+    }
 
     CoreImpl::get().onJoinLevelPostInit(this);
 }
@@ -464,7 +472,8 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     // send player data to the server
     if (fields.m_timeCounter >= fields.m_nextDataSend) {
         // update the next interval to be strictly in the future, dont want to repeat things
-        float sendInterval = fields.m_sendDataInterval * (fields.m_throttleUpdates ? 10.f : 1.f);
+        float baseInterval = std::max(1.f / 240.f, fields.m_sendDataInterval);
+        float sendInterval = baseInterval * (fields.m_throttleUpdates ? 10.f : 1.f);
         while (fields.m_nextDataSend <= fields.m_timeCounter) {
             fields.m_nextDataSend += sendInterval;
         }
@@ -591,13 +600,18 @@ void GlobedGJBGL::selSendPlayerData(float dt) {
         : std::max(coverage.width, coverage.height) / 2.f * 2.75f;
 
     nm.sendPlayerState(state, toRequest, camCenter, camRadius);
+
+    // if the ghost player is enabled, update it
+    if (g_settings.ghostFollower) {
+        fields.m_interpolator.updatePlayer(state, fields.m_timeCounter);
+    }
 }
 
 PlayerState GlobedGJBGL::getPlayerState() {
     auto& fields = *m_fields.self();
 
     PlayerState out{};
-    out.accountId = globed::cachedSingleton<GJAccountManager>()->m_accountID;
+    out.accountId = myAccountId();
     out.timestamp = fields.m_timeCounter;
     out.frameNumber = 0;
     out.deathCount = fields.m_deathCount;

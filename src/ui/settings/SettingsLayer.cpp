@@ -219,6 +219,9 @@ void SettingsLayer::addSettings() {
         this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data",
             "Uses randomly generated data in some places (room list, level list) for testing purposes"
         );
+        this->addSetting<BoolSettingCell>("core.dev.ghost-follower", "Ghost Follower",
+            "For debugging, enables a ghost player that will follow you in levels."
+        );
 
         this->addSetting(ButtonSettingCell::create(
             "Clear Auth Tokens",
