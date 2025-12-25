@@ -62,7 +62,6 @@ private:
 
 
     bool m_isSecond = false;
-    bool m_isPlatformer = false;
     bool m_isEditor = false;
     bool m_forceHideName = false;
 
