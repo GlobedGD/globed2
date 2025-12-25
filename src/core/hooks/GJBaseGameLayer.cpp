@@ -284,6 +284,10 @@ void GlobedGJBGL::setupUi() {
         .id("self-player-name"_spr);
     fields.m_selfNameLabel->setShadowEnabled(true);
 
+    if (auto sud = NetworkManagerImpl::get().getOwnSpecialData()) {
+        fields.m_selfNameLabel->updateWithRoles(*sud);
+    }
+
     fields.m_selfEmoteBubble = Build<EmoteBubble>::create()
         .parent(fields.m_playerNode)
         .id("emote-bubble-node"_spr);
