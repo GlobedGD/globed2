@@ -3,44 +3,64 @@
 
 using namespace geode::prelude;
 
-namespace globed {
+namespace globed::rng {
 
-bool Rng::randomRatio(double ratio) {
-    ratio = std::clamp(ratio, 0.0, 1.0);
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-    return dist(m_engine) < ratio;
+std::array<uint64_t, 3>& _getState() {
+    static thread_local std::array<uint64_t, 3> state = []{
+        std::array<uint64_t, 3> seed;
+        std::random_device rd;
+
+        for (auto& s : seed) {
+            auto a = rd(), b = rd();
+            s = (uint64_t(a) << 32) ^ uint64_t(b);
+        }
+        return seed;
+    }();
+
+    return state;
 }
 
-void Rng::fillBytes(void* buffer, size_t size) {
-    uint8_t* buf = static_cast<uint8_t*>(buffer);
+static char genHexChar() {
+    return "0123456789abcdef"[generate<size_t>(0, 16)];
+}
 
-    while (size > 8) {
-        uint64_t value = m_engine();
-        std::memcpy(buf, &value, sizeof(value));
-        buf += sizeof(value);
-        size -= sizeof(value);
+std::string generateString(size_t length, std::string_view alphabet) {
+    std::string out;
+    out.reserve(length);
+    for (size_t i = 0; i < length; i++) {
+        out += alphabet[generate<size_t>(0, alphabet.size())];
+    }
+    return out;
+}
+
+std::string generateHexString(size_t length) {
+    return generateString(length, "0123456789abcdef");
+}
+
+std::string generateAlphanumericString(size_t length) {
+    return generateString(length, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+}
+
+bool ratio(double ratio) {
+    ratio = std::clamp(ratio, 0.0, 1.0);
+    return generate<double>() < ratio;
+}
+
+void fillBytes(void* buffer, size_t size) {
+    uint8_t* buf = (uint8_t*)buffer;
+
+    // fill 8 bytes at a time for speed
+    while (size >= 8) {
+        uint64_t val = nextU64();
+        std::memcpy(buf, &val, 8);
+        buf += 8;
+        size -= 8;
     }
 
     if (size > 0) {
-        uint64_t value = m_engine();
-        std::memcpy(buf, &value, size);
+        uint64_t val = nextU64();
+        std::memcpy(buf, &val, size);
     }
-}
-
-ThreadRngHandle::ThreadRngHandle(std::shared_ptr<Rng> rng) : m_rng(std::move(rng)) {}
-
-ThreadRngHandle::ThreadRngHandle() {}
-
-ThreadRngHandle::~ThreadRngHandle() {}
-
-ThreadRngHandle rng() {
-    static thread_local ThreadRngHandle handle{};
-
-    if (!handle) {
-        handle = ThreadRngHandle{std::make_shared<Rng>()};
-    }
-
-    return handle;
 }
 
 }

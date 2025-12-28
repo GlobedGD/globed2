@@ -575,7 +575,7 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
         }
 
         // shuffle everything afterwards
-        std::shuffle(firstNonFriend, sortedPlayers.end(), rng()->engine());
+        rng::shuffle(firstNonFriend, sortedPlayers.end());
     }
 
     this->addPinnedLevelCell();

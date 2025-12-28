@@ -1,88 +1,102 @@
 #pragma once
-#include <memory>
-#include <random>
 #include <globed/config.hpp>
+#include <array>
+#include <cstdint>
+#include <cstring>
+#include <type_traits>
 
-namespace globed {
+// TODO: this is copied from geode until v4.11 or v5
+namespace globed::rng {
+    GLOBED_DLL std::array<uint64_t, 3>& _getState();
 
-class Rng {
-public:
-    Rng() : m_engine(std::random_device{}()) {}
-
-    std::mt19937_64& engine() {
-        return m_engine;
+    /// Generates a random 64-bit integer, prefer to use generate<T>() instead
+    inline uint64_t nextU64() {
+        // https://www.romu-random.org/
+        // this is the RomuTrio algorithm, inlined for better speed
+        auto rotl = [](uint64_t x, int k) {
+            return (x << k) | (x >> (64 - k));
+        };
+        auto& state = _getState();
+        uint64_t xp = state[0];
+        uint64_t yp = state[1];
+        uint64_t zp = state[2];
+        state[0] = 15241094284759029579u * zp;
+        state[1] = yp - xp;
+        state[1] = rotl(state[1], 12);
+        state[2] = zp - yp;
+        state[2] = rotl(state[2], 44);
+        return xp;
     }
 
-    template <std::integral T>
-    T random() {
-        T out;
-        this->fill(&out, 1);
-        return out;
-    }
-
-    template <>
-    bool random() {
-        return this->random<uint8_t>() % 2 == 0;
-    }
-
-    template <std::integral T>
-    T random(T min, T max) {
-        std::uniform_int_distribution<T> dist(min, max);
-        return dist(m_engine);
-    }
-
-    template <std::floating_point T>
-    T random(T min, T max) {
-        std::uniform_real_distribution<T> dist(min, max);
-        return dist(m_engine);
-    }
-
-    bool randomRatio(double ratio);
-    void fillBytes(void* buffer, size_t size);
-
+    /// Generates a random value of type T
+    /// For bools, this is either true or false
+    /// For integral types, this is any value that fits in the type
+    /// For floating point types, this is a value in the range [0.0, 1.0)
     template <typename T>
-    void fill(T* buffer, size_t count) {
-        static_assert(alignof(T) <= sizeof(T));
-
-        return this->fillBytes(buffer, count * sizeof(T));
+    T generate() {
+        if constexpr (std::is_same_v<T, bool>) {
+            return (nextU64() & 1) != 0;
+        } else if constexpr (std::is_integral_v<T>) {
+            uint64_t val = nextU64();
+            T out;
+            std::memcpy(&out, &val, sizeof(T));
+            return out;
+        } else if constexpr (std::is_floating_point_v<T>) {
+            uint64_t val = nextU64();
+            double y = (val >> 11) * (1.0 / (1ULL << 53));
+            return static_cast<T>(y);
+        } else {
+            static_assert(!std::is_same_v<T, T>, "unsupported type for generate");
+        }
     }
 
-    template <typename T>
-    void fill(std::span<T> buffer) {
-        return this->fill(buffer.data(), buffer.size());
+    /// Generates a random value of type T, in the range [min, max),
+    /// meaning the max value can never be returned
+    template <typename R = void, typename T, typename Y>
+    auto generate(T min_, Y max_) {
+        using Out = std::conditional_t<std::is_void_v<R>, std::common_type_t<T, Y>, R>;
+
+        Out min = static_cast<Out>(min_);
+        Out max = static_cast<Out>(max_);
+
+        if (max <= min) return min;
+
+        if constexpr (std::is_integral_v<Out>) {
+            Out range = max - min;
+            uint64_t val = nextU64();
+            return static_cast<Out>(static_cast<Out>(min) + (val % range));
+        } else if constexpr (std::is_floating_point_v<Out>) {
+            double range = static_cast<double>(max) - static_cast<double>(min);
+            double val = generate<double>();
+            return static_cast<Out>(static_cast<double>(min) + val * range);
+        } else {
+            static_assert(!std::is_same_v<T, T>, "unsupported type for generate");
+        }
     }
 
-    template <typename T>
-    void fill(std::vector<T>& buffer) {
-        return this->fill(buffer.data(), buffer.size());
+    /// Shuffles an array of elements in place.
+    /// Use the shuffle(T&) overload for easier usage if your container supports iterators
+    template <typename Iter>
+    void shuffle(Iter begin, Iter end) {
+        using diff_t = std::iterator_traits<Iter>::difference_type;
+        for (diff_t i = end - begin - 1; i > 0; i--) {
+            using std::swap;
+            auto j = generate<diff_t>(0, i + 1);
+            swap(*(begin + i), *(begin + j));
+        }
     }
 
-private:
-    std::mt19937_64 m_engine;
-};
-
-class ThreadRngHandle {
-public:
-    ThreadRngHandle(std::shared_ptr<Rng> rng);
-    ThreadRngHandle();
-    ~ThreadRngHandle();
-
-    inline operator bool() const {
-        return m_rng != nullptr;
+    template <typename Cont>
+    void shuffle(Cont& vec) {
+        using std::begin, std::end;
+        shuffle(begin(vec), end(vec));
     }
 
-    inline Rng& operator*() const {
-        return *m_rng;
-    }
+    GLOBED_DLL std::string generateString(size_t length, std::string_view alphabet);
+    GLOBED_DLL std::string generateHexString(size_t length);
+    GLOBED_DLL std::string generateAlphanumericString(size_t length);
 
-    inline Rng* operator->() const {
-        return m_rng.get();
-    }
+    GLOBED_DLL void fillBytes(void* buffer, size_t size);
 
-protected:
-    std::shared_ptr<Rng> m_rng;
-};
-
-GLOBED_DLL ThreadRngHandle rng();
-
+    GLOBED_DLL bool ratio(double ratio);
 }

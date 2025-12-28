@@ -33,7 +33,7 @@ public:
     }
 
 protected:
-    bool setup(Args... args) {
+    bool setup(Args... args) override {
         return true;
     }
 

@@ -92,7 +92,7 @@ void SCBaseGameLayer::customMoveTo(int group, int center, double x, double y) {
     if (parent) {
         centerObj = parent;
     } else {
-        centerObj = CCArrayExt<GameObject*>(centerGroup)[rng()->random<size_t>(0, centerGroup->count() - 1)];
+        centerObj = CCArrayExt<GameObject*>(centerGroup)[rng::generate<size_t>(0, centerGroup->count() - 1)];
     }
 
     double dx = x - centerObj->m_positionX;
@@ -336,7 +336,7 @@ void SCBaseGameLayer::handleEvent(const InEvent& event) {
         if (data.delayVariance > 0.f) {
             double min = std::max(0.0, delay - data.delayVariance);
             double max = delay + data.delayVariance;
-            delay = rng()->random(min, max);
+            delay = rng::generate(min, max);
         }
 
         log::debug("Spawning group {} with delay {} (ordered: {}), remaps {}", data.groupId, delay, data.ordered, data.remaps.size());
