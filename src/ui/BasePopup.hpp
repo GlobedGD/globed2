@@ -7,7 +7,7 @@
 namespace globed {
 
 template <typename Derived, typename... Args>
-class BasePopup : public geode::Popup<Args...> {
+class GLOBED_NOVTABLE BasePopup : public geode::Popup<Args...> {
 public:
     BasePopup() = default;
     BasePopup(const BasePopup&) = delete;
@@ -35,6 +35,10 @@ public:
 protected:
     bool setup(Args... args) {
         return true;
+    }
+
+    void keyBackClicked() override {
+        this->onClose(this);
     }
 
     // various helper methods for positioning ui elements
