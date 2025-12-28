@@ -183,7 +183,6 @@ void GlobedGJBGL::setupAudio() {
         }
     });
     am.setPassiveMode(true);
-    am.setGlobalPlaybackVolume(globed::setting<float>("core.audio.playback-volume"));
 
     if (!result) {
         log::warn("[Globed] Failed to start recording audio: {}", result.unwrapErr());

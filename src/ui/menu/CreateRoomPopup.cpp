@@ -21,6 +21,7 @@ static constexpr int TAG_TWO_PLAYER= 1024;
 static constexpr int TAG_DEATHLINK = 1025;
 static constexpr int TAG_TEAMS = 1026;
 static constexpr int TAG_AUTO_PINNING = 1027;
+static constexpr int TAG_SWITCHEROO = 1028;
 
 bool CreateRoomPopup::setup() {
     this->setID("create-room-popup"_spr);
@@ -228,11 +229,12 @@ bool CreateRoomPopup::setup() {
     auto settings = std::to_array<std::tuple<const char*, std::string_view, int, CCMenuItemToggler**, bool>>({
         {"Hidden Room", "hidden-room"_spr, TAG_PRIVATE, nullptr, false},
         {"Closed Invites", "closed-invites"_spr, TAG_CLOSED_INVITES, nullptr, false},
+        {"Teams", "teams"_spr, TAG_TEAMS, nullptr, false},
+        {"Auto-pinning", "auto-pinning"_spr, TAG_AUTO_PINNING, nullptr, true},
         {"Collision", "collision"_spr, TAG_COLLISION, nullptr, false},
         {"2-Player Mode", "2-player-mode"_spr, TAG_TWO_PLAYER, &m_twoPlayerBtn, false},
         {"Death Link", "deathlink"_spr, TAG_DEATHLINK, &m_deathlinkBtn, false},
-        {"Teams", "teams"_spr, TAG_TEAMS, nullptr, false},
-        {"Auto-pinning", "auto-pinning"_spr, TAG_AUTO_PINNING, nullptr, true},
+        {"Switcheroo", "switcheroo"_spr, TAG_SWITCHEROO, &m_switcherooBtn, false},
     });
 
     float totalHeight = 0.f;
@@ -337,13 +339,14 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
     bool isSafeMode = false;
 
     switch (p->getTag()) {
-        case TAG_TWO_PLAYER: isSafeMode = true; m_settings.twoPlayerMode = state; break;
-        case TAG_COLLISION: isSafeMode = true; m_settings.collision = state; break;
+        case TAG_TWO_PLAYER:     m_settings.twoPlayerMode = state; isSafeMode = true; break;
+        case TAG_COLLISION:      m_settings.collision = state; isSafeMode = true; break;
         case TAG_CLOSED_INVITES: m_settings.privateInvites = state; break;
-        case TAG_PRIVATE: m_settings.hidden = state; break;
-        case TAG_DEATHLINK: m_settings.deathlink = state; break;
-        case TAG_TEAMS: m_settings.teams = state; break;
-        case TAG_AUTO_PINNING: m_settings.manualPinning = !state; break;
+        case TAG_PRIVATE:        m_settings.hidden = state; break;
+        case TAG_DEATHLINK:      m_settings.deathlink = state; break;
+        case TAG_TEAMS:          m_settings.teams = state; break;
+        case TAG_AUTO_PINNING:   m_settings.manualPinning = !state; break;
+        case TAG_SWITCHEROO:     m_settings.switcheroo = state; isSafeMode = true; break;
     }
 
     if (isSafeMode && state && !globed::swapFlag("core.flags.seen-room-safe-mode-notice")) {
@@ -358,7 +361,7 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
         m_deathlinkBtn->toggle(false);
     }
 
-    bool enableSafeModeDot = (m_settings.twoPlayerMode || m_settings.collision);
+    bool enableSafeModeDot = (m_settings.twoPlayerMode || m_settings.collision || m_settings.switcheroo);
 
     m_safeModeBtn->getChildByType<CCSprite>(0)->setColor(enableSafeModeDot ? ccORANGE : ccGREEN);
 }

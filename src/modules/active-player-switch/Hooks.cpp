@@ -108,7 +108,7 @@ void APSPlayLayer::handleEvent(const ActivePlayerSwitchEvent& event) {
     }
 
     if (fields.m_meActive) {
-        float delay = rng::generate(3.5f, 7.5f);
+        float delay = rng::generate(3.5f, 8.0f);
 
         auto scene = this->getParent();
         scene->scheduleOnce(schedule_selector(APSPlayLayer::performPreSwitchProxy), delay);

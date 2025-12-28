@@ -291,9 +291,6 @@ void SettingsLayer::addSettings() {
     this->addSetting<FloatSettingCell>("core.level.progress-opacity", "Progress Opacity",
         "Adjusts the opacity of progress/direction markers of other players."
     );
-    this->addSetting<BoolSettingCell>("core.level.voice-overlay", "Voice Chat Overlay",
-        "Show an overlay indicating which players are currently <cg>speaking</c>."
-    );
     this->addSetting<BoolSettingCell>("core.level.force-progressbar", "Force Progress Bar",
         "Forces the <cg>progress bar</c> to be shown in classic levels when connected to Globed, even if the user has it disabled."
     );
@@ -302,6 +299,15 @@ void SettingsLayer::addSettings() {
     );
     this->addSetting<BoolSettingCell>("core.level.self-name", "Show Own Name",
         "Show your own name in levels."
+    );
+
+    // Voice overlay
+    this->addHeader("core.level.voice", "Voice Chat Overlay", m_levelUiTab);
+    this->addSetting<BoolSettingCell>("core.level.voice-overlay", "Enabled",
+        "Show an overlay indicating which players are currently <cg>speaking</c>."
+    );
+    this->addSetting<FloatSettingCell>("core.level.voice-overlay-threshold", "Volume Threshold",
+        "Adjust how loud players have to be speaking to be shown on the voice overlay."
     );
 
     // Overlay

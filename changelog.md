@@ -30,6 +30,7 @@ Added / reworked:
 * Added player counts inside level lists
 * Added an improved consent popup when first launching the mod
 * Automatically lower the used bandwidth when the game is minimized or user is AFK for a while
+* Voice chat overlay now doesn't show players unless actively speaking (or making other noise)
 * Featured levels now have a queue system and will be consistently featured
 * The level list now has a message that clarifies its purpose, due to people often finding it confusing
 

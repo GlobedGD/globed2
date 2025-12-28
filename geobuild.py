@@ -19,7 +19,7 @@ import tomllib
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
 QUNET_VERSION = "babb523"
-SERVER_SHARED_VERSION = "4b4a053"
+SERVER_SHARED_VERSION = "652576e"
 CUE_VERSION = "11a2418"
 
 @dataclass
@@ -179,6 +179,7 @@ def main(build: Build):
     gc.modules.add("two-player")
     gc.modules.add("ui")
     gc.modules.add("collision")
+    gc.modules.add("active-player-switch")
 
     # Add base sources
     src = config.project_dir / "src"

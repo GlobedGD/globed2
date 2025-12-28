@@ -64,10 +64,11 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.level.progress-indicators", true);
     this->registerSetting("core.level.progress-indicators-plat", true);
     this->registerSetting("core.level.progress-opacity", 1.0f);
-    this->registerSetting("core.level.voice-overlay", true);
     this->registerSetting("core.level.force-progressbar", false);
     this->registerSetting("core.level.self-status-icons", true);
     this->registerSetting("core.level.self-name", false);
+    this->registerSetting("core.level.voice-overlay", true);
+    this->registerSetting("core.level.voice-overlay-threshold", 0.05f);
 
     // Overlay
     this->registerSetting("core.overlay.enabled", true);
@@ -614,7 +615,7 @@ void SettingsManager::registerLimits(
     m_limits[hash] = std::make_pair(std::move(min), std::move(max));
 }
 
-bool SettingsManager::listenForChanges(
+bool SettingsManager::listenForChangesRaw(
     std::string_view key,
     std23::move_only_function<void(const matjson::Value&)> callback
 ) {

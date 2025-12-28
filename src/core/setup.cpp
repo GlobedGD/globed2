@@ -36,8 +36,8 @@ $execute {
     });
 
     static bool debugEnabled = globed::setting<bool>("core.dev.net-debug-logs");
-    globed::SettingsManager::get().listenForChanges("core.dev.net-debug-logs", [](const matjson::Value& val) {
-        debugEnabled = val.asBool().unwrapOr(false);
+    globed::SettingsManager::get().listenForChanges<bool>("core.dev.net-debug-logs", [](bool value) {
+        debugEnabled = value;
     });
 
     qn::log::setLogFunction([](qn::log::Level level, const std::string& message) {

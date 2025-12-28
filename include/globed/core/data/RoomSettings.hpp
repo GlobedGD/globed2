@@ -18,6 +18,7 @@ struct RoomSettings {
     bool collision = false;
     bool twoPlayerMode = false;
     bool deathlink = false;
+    bool switcheroo = false;
 };
 
 }

@@ -27,6 +27,7 @@ private:
     CCMenuItemSpriteExtra* m_safeModeBtn = nullptr;
     CCMenuItemToggler* m_twoPlayerBtn = nullptr;
     CCMenuItemToggler* m_deathlinkBtn = nullptr;
+    CCMenuItemToggler* m_switcherooBtn = nullptr;
     std::optional<MessageListener<msg::RoomStateMessage>> m_successListener;
     std::optional<MessageListener<msg::RoomCreateFailedMessage>> m_failListener;
     std::optional<MessageListener<msg::RoomBannedMessage>> m_bannedListener;

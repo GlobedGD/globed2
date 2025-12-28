@@ -51,6 +51,11 @@ AudioManager::AudioManager()
     m_thread.start(this);
 
     m_recordDevice = AudioRecordingDevice{.id = -1};
+    this->setGlobalPlaybackVolume(globed::setting<float>("core.audio.playback-volume"));
+
+    SettingsManager::get().listenForChanges<float>("core.audio.playback-volume", [this](float value) {
+        this->setGlobalPlaybackVolume(value);
+    });
 }
 
 AudioManager::~AudioManager() {

@@ -289,6 +289,7 @@ $implEncode(const RoomSettings& settings, main::RoomSettings::Builder& data) {
     data.setCollision(settings.collision);
     data.setTwoPlayerMode(settings.twoPlayerMode);
     data.setDeathlink(settings.deathlink);
+    data.setSwitcheroo(settings.switcheroo);
 }
 
 $implDecode(RoomSettings, main::RoomSettings::Reader& reader) {
@@ -306,6 +307,7 @@ $implDecode(RoomSettings, main::RoomSettings::Reader& reader) {
     out.collision = reader.getCollision();
     out.twoPlayerMode = reader.getTwoPlayerMode();
     out.deathlink = reader.getDeathlink();
+    out.switcheroo = reader.getSwitcheroo();
     return out;
 }
 

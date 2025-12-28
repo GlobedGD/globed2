@@ -6,6 +6,7 @@
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 namespace globed {
 
@@ -68,6 +69,11 @@ bool VoiceOverlayCell::init(const PlayerDisplayData& data) {
 
 void VoiceOverlayCell::updateLoudness(float loudness) {
     m_visualizer->setVolume(loudness);
+    m_lastSpoken = Instant::now();
+}
+
+asp::time::Duration VoiceOverlayCell::sinceLastSpoken() {
+    return m_lastSpoken.elapsed();
 }
 
 VoiceOverlayCell* VoiceOverlayCell::create(const PlayerDisplayData& data) {

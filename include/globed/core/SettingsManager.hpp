@@ -143,10 +143,22 @@ public:
         matjson::Value max
     );
 
-    bool listenForChanges(
+    bool listenForChangesRaw(
         std::string_view key,
         std23::move_only_function<void(const matjson::Value&)> callback
     );
+
+    template <typename T>
+    bool listenForChanges(
+        std::string_view key,
+        std23::move_only_function<void(const T&)> callback
+    ) {
+        return this->listenForChangesRaw(key, [cb = std::move(callback)](const matjson::Value& value) mutable {
+            if (auto res = value.as<T>()) {
+                cb(*res);
+            }
+        });
+    }
 
     void commitSlotsToDisk();
 

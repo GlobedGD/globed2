@@ -4,11 +4,17 @@
 #include <globed/core/PlayerCacheManager.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 namespace globed {
 
 bool VoiceOverlay::init() {
     CCNode::init();
+
+    m_threshold = globed::setting<float>("core.level.voice-overlay-threshold");
+    SettingsManager::get().listenForChanges<double>("core.level.voice-overlay-threshold", [this](double value) {
+        m_threshold = value;
+    });
 
     this->setLayout(
         ColumnLayout::create()
@@ -37,13 +43,17 @@ void VoiceOverlay::updateSoft() {
 }
 
 void VoiceOverlay::updateStream(int id, bool starving, float volume, float loudness) {
-    bool shouldShow = volume > 0.005f && !starving;
+    bool shouldShow = loudness >= m_threshold && !starving;
     auto it = m_cells.find(id);
 
     if (!shouldShow) {
         if (it != m_cells.end()) {
-            it->second->removeFromParent();
-            m_cells.erase(it);
+            // remove the cell if the user hasnt spoken in over a second
+            auto cell = it->second;
+            if (cell->sinceLastSpoken() > Duration::fromSecs(1)) {
+                cell->removeFromParent();
+                m_cells.erase(it);
+            }
         }
 
         return;
