@@ -1,6 +1,7 @@
 #include "NotificationPanel.hpp"
 #include "InviteNotification.hpp"
 #include <globed/util/singleton.hpp>
+#include <globed/core/FriendListManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 
@@ -8,6 +9,21 @@ using namespace geode::prelude;
 using namespace asp::time;
 
 namespace globed {
+
+static bool allowInvite(int sender) {
+    auto setting = (InvitesFrom)globed::setting<int>("core.invites-from").value();
+    auto& flm = FriendListManager::get();
+
+    // block the invite if either..
+    return !(
+        // a. invites are disabled
+        setting == InvitesFrom::Nobody
+        // b. invites are friend-only and the user is not a friend
+        || (setting == InvitesFrom::Friends && !flm.isFriend(sender))
+        // c. user is blocked
+        || flm.isBlocked(sender)
+    );
+}
 
 bool NotificationPanel::init() {
     CCNode::init();
@@ -26,9 +42,14 @@ bool NotificationPanel::init() {
     SceneManager::get()->keepAcrossScenes(this);
 
     m_listener = NetworkManagerImpl::get().listen<msg::InvitedMessage>([this](const auto& msg) {
+        if (!allowInvite(msg.invitedBy.accountId)) {
+            return ListenerResult::Stop; // halt early
+        }
+
         this->queueInviteNotification(msg);
         return ListenerResult::Continue;
     });
+    m_listener->setPriority(-100);
 
     return true;
 }

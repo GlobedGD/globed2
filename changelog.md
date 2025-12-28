@@ -8,6 +8,7 @@ Major changes:
 * Servers are now only used for <cg>gameplay</c>, meaning you can see rooms and players across <cj>different servers</c>
 * Rooms now can be <cj>Follower Rooms</c>, which makes it so that every player gets <cg>automatically warped</c> to any level the <cj>room creator</c> joins
 * Rooms now can have <cj>Teams</c>, to make it easy to separate players for minigames
+* A new mode was added (as a <cy>room setting</c>): <cy>Switcheroo!</c> In this mode players randomly swap and take turns to beat the level together, first commissioned by Doggie for a [video](https://www.youtube.com/watch?v=u-3rZHIZZsE)
 * Regular players will no longer be able to set <cy>room names</c>, due to frequent <cr>abuse</c> of the feature to type <cy>offensive messages</c>
 * Players now must link their <cb>Discord</c> account to use <cy>voice chat</c>, to help reduce ban evasion
 * Added <cj>two APIs</c> that allow mod developers to interact with various parts of Globed (see [Globed API page](https://github.com/GlobedGD/globed2/blob/main/docs/link-api.md))
