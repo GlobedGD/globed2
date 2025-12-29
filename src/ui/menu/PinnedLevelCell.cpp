@@ -94,8 +94,28 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
         }
 
         // sobbing bruh
-        if (auto creator = m_levelCell->m_mainLayer->getChildByIDRecursive("creator-name")) {
+        auto creator = m_levelCell->m_mainLayer->getChildByIDRecursive("creator-name");
+        if (creator) {
             creator->setPositionX(creator->getPositionX() - shift);
+        }
+
+        CCNode* cper = m_levelCell->m_mainLayer->getChildByID("completed-icon");
+        if (!cper) {
+            cper = m_levelCell->m_mainLayer->getChildByID("percentage-label");
+        }
+
+        auto levelName = m_levelCell->m_mainLayer->getChildByID("level-name");
+
+        if (cper && levelName && creator) {
+            // downright disgusting
+            auto point = levelName->getPosition();
+            point.x += levelName->getScaledContentWidth();
+            point.x += 5.f;
+            point.x += creator->getScaledContentWidth();
+            point.x += 4.f;
+
+            cper->setPosition(point);
+            cper->setAnchorPoint({0.f, 0.5f});
         }
     }
 
