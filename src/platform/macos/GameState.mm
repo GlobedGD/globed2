@@ -1,8 +1,6 @@
 #include <globed/util/GameState.hpp>
 #import <Cocoa/Cocoa.h>
 
-using namespace geode::prelude;
-
 namespace globed {
 
 bool isGameFocused() {
