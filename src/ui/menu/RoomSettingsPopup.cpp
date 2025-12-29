@@ -1,7 +1,5 @@
 #include "RoomSettingsPopup.hpp"
-#include <globed/core/RoomManager.hpp>
 #include <globed/core/PopupManager.hpp>
-#include <globed/util/CStr.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
@@ -20,9 +18,9 @@ class Cell : public CCMenu {
 public:
     using Callback = std23::move_only_function<void(bool)>;
 
-    static Cell* create(CStr name, CStr desc, bool value, Callback&& cb) {
+    static Cell* create(CStr name, CStr desc, bool RoomSettings::* ptr, bool invert, Callback&& cb) {
         auto ret = new Cell;
-        if (ret->init(name, desc, value, std::move(cb))) {
+        if (ret->init(name, desc, ptr, invert, std::move(cb))) {
             ret->autorelease();
             return ret;
         }
@@ -31,13 +29,31 @@ public:
         return nullptr;
     }
 
+    void reload() {
+        auto& settings = RoomManager::get().getSettings();
+        bool value = settings.*m_ptr;
+        if (m_invert) value = !value;
+        m_toggler->toggle(value);
+    }
+
+    bool getValue() const {
+        return m_toggler->isOn();
+    }
+
 protected:
     Callback m_callback;
+    CStr m_name;
+    CCMenuItemToggler* m_toggler;
+    bool RoomSettings::* m_ptr;
+    bool m_invert;
 
-    bool init(CStr name, CStr desc, bool value, Callback&& cb) {
+    bool init(CStr name, CStr desc, bool RoomSettings::* ptr, bool invert, Callback&& cb) {
         if (!CCMenu::init()) return false;
 
         m_callback = std::move(cb);
+        m_name = name;
+        m_ptr = ptr;
+        m_invert = invert;
 
         this->setContentSize({RoomSettingsPopup::LIST_SIZE.width, CELL_HEIGHT});
 
@@ -58,7 +74,7 @@ protected:
             .pos(ipos)
             .parent(this);
 
-        auto toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.7f, [this](auto toggler) {
+        m_toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.7f, [this](auto toggler) {
             m_callback(!toggler->isOn());
         }))
             .scale(0.85f)
@@ -66,7 +82,7 @@ protected:
             .parent(this)
             .collect();
 
-        toggler->toggle(value);
+        this->reload();
 
         return true;
     }
@@ -74,15 +90,27 @@ protected:
 }
 
 /// Name and desc must be static strings
-static Cell* makeCell(CStr name, CStr desc, bool RoomSettings::* bptr) {
-    // yeah i hate this too
-    bool value = RoomManager::get().getSettings().*bptr;
-
-    return Cell::create(name, desc, value, [bptr](bool state) {
+CCNode* RoomSettingsPopup::makeCell(
+    CStr name,
+    CStr desc,
+    bool RoomSettings::* bptr,
+    std::vector<bool RoomSettings::*> incompats,
+    bool invert
+) {
+    return Cell::create(name, desc, bptr, invert, [this, bptr, invert, incompats = std::move(incompats)](bool state) {
         auto& rm = RoomManager::get();
-        auto settings = rm.getSettings();
+        auto& settings = rm.getSettings();
 
+        if (invert) state = !state;
         settings.*bptr = state;
+
+        for (auto& incomp : incompats) {
+            settings.*incomp = false;
+        }
+
+        FunctionQueue::get().queue([this] {
+            this->reloadCheckboxes();
+        });
 
         NetworkManagerImpl::get().sendUpdateRoomSettings(settings);
     });
@@ -108,30 +136,54 @@ bool RoomSettingsPopup::setup() {
     ));
 
     m_list->addCell(makeCell(
-        "Collision",
-        "While enabled, players can collide with each other.\n\n<cy>Note: this enables safe mode, making it impossible to make progress on levels.</c>",
-        &RoomSettings::collision
-    ));
-
-    m_list->addCell(makeCell(
-        "2-Player Mode",
-        "While enabled, players can link with another player to play a 2-player enabled level together.\n\n<cy>Note: this enables safe mode, making it impossible to make progress on levels.</c>",
-        &RoomSettings::twoPlayerMode
-    ));
-
-    m_list->addCell(makeCell(
-        "Death Link",
-        "Whenever a player dies, everyone on the level dies as well. <cy>Inspired by the mod DeathLink from</c> <cg>Alphalaneous</c>.",
-        &RoomSettings::deathlink
-    ));
-
-    m_list->addCell(makeCell(
         "Teams",
         "Enables ability to create and join <cj>Teams</c>. In deathlink, <cy>deaths will only impact your teammates</c>. Otherwise, it only makes a visual difference.",
         &RoomSettings::teams
     ));
 
+    m_list->addCell(makeCell(
+        "Auto-pinning",
+        "When enabled, any levels the <cg>room owner</c> plays will be automatically pinned and easy to join for other players.",
+        &RoomSettings::manualPinning,
+        {},
+        true
+    ));
+
+    m_list->addCell(makeCell(
+        "Collision",
+        "While enabled, players can collide with each other.\n\n<cy>Note: this enables safe mode, making it impossible to make progress on levels.</c>",
+        &RoomSettings::collision,
+        {&RoomSettings::twoPlayerMode, &RoomSettings::switcheroo}
+    ));
+
+    m_list->addCell(makeCell(
+        "2-Player Mode",
+        "While enabled, players can link with another player to play a 2-player enabled level together.\n\n<cy>Note: this enables safe mode, making it impossible to make progress on levels.</c>",
+        &RoomSettings::twoPlayerMode,
+        {&RoomSettings::collision, &RoomSettings::deathlink, &RoomSettings::switcheroo}
+    ));
+
+    m_list->addCell(makeCell(
+        "Death Link",
+        "Whenever a player dies, everyone on the level dies as well. <cy>Inspired by the mod DeathLink from</c> <cg>Alphalaneous</c>.",
+        &RoomSettings::deathlink,
+        {&RoomSettings::twoPlayerMode, &RoomSettings::switcheroo}
+    ));
+
+    m_list->addCell(makeCell(
+        "Switcheroo",
+        "Players take turns playing the level one at a time, in a random order and at random intervals. Mode activates once the <cj>room owner</c> presses the appropriate button in the pause menu\n\n<cy>Note: this enables safe mode, making it impossible to make progress on levels.</c>",
+        &RoomSettings::switcheroo,
+        {&RoomSettings::collision, &RoomSettings::twoPlayerMode, &RoomSettings::deathlink}
+    ));
+
     return true;
+}
+
+void RoomSettingsPopup::reloadCheckboxes() {
+    for (auto cell : m_list->iter<Cell>()) {
+        cell->reload();
+    }
 }
 
 }

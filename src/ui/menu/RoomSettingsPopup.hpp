@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ui/BasePopup.hpp>
+#include <globed/core/RoomManager.hpp>
+#include <globed/util/CStr.hpp>
 
 #include <Geode/Geode.hpp>
 #include <cue/ListNode.hpp>
@@ -16,6 +18,16 @@ protected:
     cue::ListNode* m_list;
 
     bool setup() override;
+
+    CCNode* makeCell(
+        CStr name,
+        CStr desc,
+        bool RoomSettings::* bptr,
+        std::vector<bool RoomSettings::*> incompats = {},
+        bool invert = false
+    );
+
+    void reloadCheckboxes();
 };
 
 }

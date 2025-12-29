@@ -28,6 +28,7 @@ private:
     CCMenuItemToggler* m_twoPlayerBtn = nullptr;
     CCMenuItemToggler* m_deathlinkBtn = nullptr;
     CCMenuItemToggler* m_switcherooBtn = nullptr;
+    CCMenuItemToggler* m_collisionBtn = nullptr;
     std::optional<MessageListener<msg::RoomStateMessage>> m_successListener;
     std::optional<MessageListener<msg::RoomCreateFailedMessage>> m_failListener;
     std::optional<MessageListener<msg::RoomBannedMessage>> m_bannedListener;
@@ -35,6 +36,7 @@ private:
 
     bool setup() override;
     void onCheckboxToggled(cocos2d::CCObject*);
+    void handleMutuallyExclusive(int activated);
     void setFollowerMode(bool enabled);
     void showSafeModePopup(bool firstTime);
     void showRoomNameWarnPopup(bool canName);

@@ -231,7 +231,7 @@ bool CreateRoomPopup::setup() {
         {"Closed Invites", "closed-invites"_spr, TAG_CLOSED_INVITES, nullptr, false},
         {"Teams", "teams"_spr, TAG_TEAMS, nullptr, false},
         {"Auto-pinning", "auto-pinning"_spr, TAG_AUTO_PINNING, nullptr, true},
-        {"Collision", "collision"_spr, TAG_COLLISION, nullptr, false},
+        {"Collision", "collision"_spr, TAG_COLLISION, &m_collisionBtn, false},
         {"2-Player Mode", "2-player-mode"_spr, TAG_TWO_PLAYER, &m_twoPlayerBtn, false},
         {"Death Link", "deathlink"_spr, TAG_DEATHLINK, &m_deathlinkBtn, false},
         {"Switcheroo", "switcheroo"_spr, TAG_SWITCHEROO, &m_switcherooBtn, false},
@@ -353,43 +353,77 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
         this->showSafeModePopup(true);
     }
 
-    if (p->getTag() == TAG_DEATHLINK && m_settings.deathlink && m_settings.twoPlayerMode) {
-        m_settings.twoPlayerMode = false;
-        m_twoPlayerBtn->toggle(false);
-    } else if (p->getTag() == TAG_TWO_PLAYER && m_settings.twoPlayerMode && m_settings.deathlink) {
-        m_settings.deathlink = false;
-        m_deathlinkBtn->toggle(false);
+
+    int which = p->getTag();
+    if (state) {
+        this->handleMutuallyExclusive(which);
     }
 
-    bool enableSafeModeDot = (m_settings.twoPlayerMode || m_settings.collision || m_settings.switcheroo);
+    m_safeModeBtn->getChildByType<CCSprite>(0)->setColor(m_settings.needsSafeMode() ? ccORANGE : ccGREEN);
+}
 
-    m_safeModeBtn->getChildByType<CCSprite>(0)->setColor(enableSafeModeDot ? ccORANGE : ccGREEN);
+void CreateRoomPopup::handleMutuallyExclusive(int which) {
+    // some settings are mutually exclusive
+    // collision -> disables 2p mode and switcheroo
+    // 2p mode -> disables collision, deathlink and switcheroo
+    // deathlink -> disables 2p mode and switcheroo
+    // switcheroo -> disables collision, 2p mode and deathlink
+
+    auto disable = [](auto btn, bool& setting) {
+        setting = false;
+        btn->toggle(false);
+    };
+
+    switch (which) {
+        case TAG_COLLISION: {
+            disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
+            disable(m_switcherooBtn, m_settings.switcheroo);
+        } break;
+
+        case TAG_TWO_PLAYER: {
+            disable(m_collisionBtn, m_settings.collision);
+            disable(m_deathlinkBtn, m_settings.deathlink);
+            disable(m_switcherooBtn, m_settings.switcheroo);
+        } break;
+
+        case TAG_DEATHLINK: {
+            disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
+            disable(m_switcherooBtn, m_settings.switcheroo);
+        } break;
+
+        case TAG_SWITCHEROO: {
+            disable(m_collisionBtn, m_settings.collision);
+            disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
+            disable(m_deathlinkBtn, m_settings.deathlink);
+        } break;
+    }
 }
 
 void CreateRoomPopup::showSafeModePopup(bool firstTime) {
     auto getSafeModeString = [&]() -> std::string {
-        std::string mods;
+        std::vector<std::string> mods;
 
         if (m_settings.twoPlayerMode) {
-            mods += "2-Player Mode";
+            mods.push_back("2-Player Mode");
         }
-
         if (m_settings.collision) {
-            if (!mods.empty()) {
-                mods += ", ";
-            }
-
-            mods += "Collision";
+            mods.push_back("Collision");
+        }
+        if (m_settings.switcheroo) {
+            mods.push_back("Switcheroo");
         }
 
-        if (mods.find(", ") != std::string::npos) {
-            return fmt::format("<cy>Safe mode</c> is <cr>enabled</c> due to the following settings: <cy>{}</c>.\n\nYou won't be able to make progress on levels while these settings are enabled.", mods);
-        } else {
-            return fmt::format("<cy>Safe mode</c> is <cr>enabled</c> due to the following setting: <cy>{}</c>.\n\nYou won't be able to make progress on levels while this setting is enabled.", mods);
-        }
+        auto joined = utils::string::join(mods, ", ");
+
+        return fmt::format(
+            "<cy>Safe mode</c> is <cr>enabled</c> due to the following setting{}: <cy>{}</c>.\n\n"
+            "You won't be able to make progress on levels while these settings are enabled.",
+            mods.size() > 1 ? "s" : "",
+            joined
+        );
     };
 
-    if (!m_settings.twoPlayerMode && !m_settings.collision) {
+    if (!m_settings.needsSafeMode()) {
         globed::alert("Safe Mode", "<cy>Safe Mode</c> is <cg>not enabled</c> with these room settings. You are able to make progress on levels while in this room.");
         return;
     }
