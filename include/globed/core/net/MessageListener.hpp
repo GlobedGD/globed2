@@ -21,16 +21,16 @@ enum class ListenerResult {
 template <typename T>
 using ListenerFn = std23::move_only_function<ListenerResult (const T&)>;
 
-void _destroyListener(const std::type_info& ty, void* ptr);
-
 struct MessageListenerImplBase {
     int m_priority = 0;
     bool m_threadSafe = false;
     alignas(8) uint8_t m_reserved[31];
+
+    void destroy(const std::type_info& ty);
 };
 
 template <typename T>
-class MessageListenerImpl : MessageListenerImplBase {
+class MessageListenerImpl : public MessageListenerImplBase {
 public:
     MessageListenerImpl(const MessageListenerImpl&) = delete;
     MessageListenerImpl& operator=(const MessageListenerImpl&) = delete;
@@ -87,9 +87,7 @@ public:
 
     inline MessageListener& operator=(MessageListener&& other) noexcept {
         if (this != &other) {
-            if (m_impl) {
-                _destroyListener(typeid(T), m_impl);
-            }
+            if (m_impl) m_impl->destroy(typeid(T));
             m_impl = other.m_impl;
             other.m_impl = nullptr;
         }
@@ -105,10 +103,7 @@ public:
     }
 
     inline ~MessageListener() {
-        if (m_impl) {
-            _destroyListener(typeid(T), m_impl);
-            m_impl = nullptr;
-        }
+        if (m_impl) m_impl->destroy(typeid(T));
     }
 
     /// Set the priority of this listener. Lower values are called first. The default is 0.
@@ -132,7 +127,7 @@ public:
 private:
     friend class NetworkManagerImpl;
     friend class NetworkManager;
-    MessageListenerImpl<T>* m_impl;
+    MessageListenerImpl<T>* m_impl = nullptr;
 
     inline MessageListener(MessageListenerImpl<T>* impl) : m_impl(impl) {}
 };

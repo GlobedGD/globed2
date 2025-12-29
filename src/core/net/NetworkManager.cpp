@@ -131,4 +131,8 @@ void NetworkManager::removeListener(const std::type_info& ty, void* listener) {
     m_impl->removeListener(ty, listener);
 }
 
+void MessageListenerImplBase::destroy(const std::type_info& ty) {
+    NetworkManager::get().removeListener(ty, this);
+}
+
 }

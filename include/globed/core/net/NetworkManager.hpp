@@ -16,7 +16,6 @@ namespace globed {
 
 class NetworkManagerImpl;
 
-
 class GLOBED_DLL NetworkManager : public SingletonBase<NetworkManager> {
 public:
     // Connect to the central server at the given URL.
@@ -95,8 +94,10 @@ private:
     ~NetworkManager();
 };
 
-inline void _destroyListener(const std::type_info& ty, void* ptr) {
-    NetworkManager::get().removeListener(ty, ptr);
+#ifndef globed2_EXPORTS
+inline void MessageListenerImplBase::destroy(const std::type_info& ty) {
+    NetworkManager::get().removeListener(ty, this);
 }
+#endif
 
 }
