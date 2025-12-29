@@ -132,6 +132,7 @@ void PlayerListCell::initGradients(Context ctx) {
         if (!m_gradient) this->setGradient(CellGradientType::RoomOwner);
         m_crownIcon = Build<CCSprite>::create("icon-crown-small.png"_spr)
             .with([&](auto spr) { cue::rescaleToMatch(spr, iconSize); })
+            .zOrder(3)
             .parent(m_leftContainer);
     }
 

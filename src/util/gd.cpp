@@ -267,7 +267,7 @@ private:
 
         auto glm = cachedSingleton<GameLevelManager>();
         glm->m_levelManagerDelegate = this;
-        glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, fmt::to_string(m_requests.front().level)));
+        glm->getOnlineLevels(GJSearchObject::create(SearchType::Type26, fmt::to_string(m_requests.front().level)));
     }
 
     void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) override {

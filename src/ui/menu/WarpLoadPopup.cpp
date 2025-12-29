@@ -29,7 +29,7 @@ bool WarpLoadPopup::setup(int levelId, bool openLevel, bool replaceScene) {
 
     auto glm = GameLevelManager::get();
     glm->m_levelManagerDelegate = this;
-    glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, fmt::to_string(levelId)));
+    glm->getOnlineLevels(GJSearchObject::create(SearchType::Type26, fmt::to_string(levelId)));
 
     return true;
 }
@@ -41,7 +41,7 @@ void WarpLoadPopup::onClose(cocos2d::CCObject* obj) {
 void WarpLoadPopup::loadLevelsFinished(cocos2d::CCArray* levels, char const* p1, int p2) {
     if (levels->count() == 0) {
         this->onClose(nullptr);
-        globed::alertFormat("Error", "Failed to load data for the level (no results for ID {}). It could be unlisted or deleted.", m_levelId);
+        globed::alertFormat("Error", "Failed to join the level. It is likely unlisted or deleted.", m_levelId);
         return;
     }
 
@@ -61,7 +61,7 @@ void WarpLoadPopup::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) {
 
 void WarpLoadPopup::loadLevelsFailed(char const* p0, int p1) {
     this->onClose(nullptr);
-    globed::alertFormat("Error", "Failed to load data for the level {} (error code {}). It could be unlisted or deleted.", m_levelId, p1);
+    globed::alertFormat("Error", "Failed to join the level. It is likely unlisted or deleted.", m_levelId, p1);
 }
 
 void WarpLoadPopup::loadLevelsFailed(char const* p0) {

@@ -209,12 +209,13 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     float mult = data.isMini ? 0.6f : 1.0f;
     this->setScaleX((data.isLookingLeft ? -1.0f : 1.0f) * mult);
 
-    // swing is not flipped
-    if (data.iconType == PlayerIconType::Swing) {
-        this->setScaleY(mult);
-    } else {
-        this->setScaleY((data.isUpsideDown ? -1.0f : 1.0f) * mult);
-    }
+    // m_isUpsideDown on pobj already handles y scale!
+
+    // if (data.iconType == PlayerIconType::Swing) {
+    //     this->setScaleY(mult);
+    // } else {
+    //     this->setScaleY((data.isUpsideDown ? -1.0f : 1.0f) * mult);
+    // }
 
     m_scaleX = mult;
     m_scaleY = mult;

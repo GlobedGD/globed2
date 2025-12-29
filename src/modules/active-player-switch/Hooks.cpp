@@ -255,6 +255,7 @@ void APSPlayLayer::handleUpdate() {
         auto rp = self->getPlayer(fields.m_activePlayer);
         if (rp) {
             this->handleUpdateFromRp(m_player1, rp, false);
+            this->handleUpdateFromRp(m_player2, rp, true);
         } else {
             log::warn("active player {} not found!", fields.m_activePlayer);
             fields.m_activePlayer = 0;
