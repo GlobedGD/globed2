@@ -42,7 +42,7 @@ bool BaseSettingCellBase::initNoSetting(CStr name, CStr desc, cocos2d::CCSize si
             .intoMenuItem([this] {
                 globed::alert(m_name, std::string(m_desc));
             })
-            .pos(8.f + label->getScaledContentWidth() + 4.f, size.height / 2.f + label->getScaledContentHeight() / 2.f - 3.f)
+            .pos(8.f + label->getScaledContentWidth() + 6.f, size.height / 2.f + label->getScaledContentHeight() / 2.f - 3.5f)
             .parent(this);
     }
 

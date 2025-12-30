@@ -279,6 +279,12 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.player.default-death-effects", "Default Death Effects",
         "Replaces all player death effects with the default explosion effect."
     );
+    this->addSetting<BoolSettingCell>("core.level.self-status-icons", "Show Own Status Icons",
+        "Show your own status icons. (paused, speaking, etc.)"
+    );
+    this->addSetting<BoolSettingCell>("core.level.self-name", "Show Own Name",
+        "Show your own name in levels."
+    );
 
     // Level UI
     this->addHeader("core.level", "Level UI", m_levelUiTab);
@@ -293,12 +299,6 @@ void SettingsLayer::addSettings() {
     );
     this->addSetting<BoolSettingCell>("core.level.force-progressbar", "Force Progress Bar",
         "Forces the <cg>progress bar</c> to be shown in classic levels when connected to Globed, even if the user has it disabled."
-    );
-    this->addSetting<BoolSettingCell>("core.level.self-status-icons", "Show Own Status Icons",
-        "Show your own status icons. (paused, speaking, etc.)"
-    );
-    this->addSetting<BoolSettingCell>("core.level.self-name", "Show Own Name",
-        "Show your own name in levels."
     );
 
     // Voice overlay

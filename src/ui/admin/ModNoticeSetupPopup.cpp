@@ -193,6 +193,8 @@ void ModNoticeSetupPopup::submit() {
     }
 
     NetworkManagerImpl::get().sendAdminNotice(text, userQuery, roomId, levelId, m_canReplyCheckbox->isOn(), m_showSenderCheckbox->isOn());
+
+    globed::toastSuccess("Notice sent successfully!");
 }
 
 void ModNoticeSetupPopup::onSelectMode(int mode, bool on) {

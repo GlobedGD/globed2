@@ -64,8 +64,8 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
         auto menu = Build<CCMenu>::create()
             .id("playerlist-menu"_spr)
             .parent(this)
-            .pos(28.f, 24.f)
-            .anchorPoint(0.f, 0.f)
+            .pos(winSize.width - 52.f, 24.f)
+            .anchorPoint(0.5f, 0.f)
             .contentSize(48.f, winSize.height - 48.f)
             .layout(ColumnLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start)->setGap(0.f))
             .collect();
