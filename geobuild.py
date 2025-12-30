@@ -18,7 +18,7 @@ import tomllib
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
-QUNET_VERSION = "4eed495"
+QUNET_VERSION = "cddabf7"
 SERVER_SHARED_VERSION = "652576e"
 CUE_VERSION = "11a2418"
 

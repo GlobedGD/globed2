@@ -169,6 +169,9 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
         if (rotateNames && *gjbgl) {
             dir = gjbgl->getCameraDirection();
+        } else {
+            dir.vector = CCPoint{0.f, 1.f};
+            dir.angle = 0.f;
         }
 
         m_nameLabel->setPosition(data.position + dir.vector * NAME_OFFSET);
