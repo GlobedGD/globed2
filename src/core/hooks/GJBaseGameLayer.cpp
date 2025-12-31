@@ -283,8 +283,14 @@ void GlobedGJBGL::setupUi() {
         .id("self-player-name"_spr);
     fields.m_selfNameLabel->setShadowEnabled(true);
 
-    if (auto sud = NetworkManagerImpl::get().getOwnSpecialData()) {
+    auto& nm = NetworkManagerImpl::get();
+    if (auto sud = nm.getOwnSpecialData()) {
         fields.m_selfNameLabel->updateWithRoles(*sud);
+    }
+
+    auto& rm = RoomManager::get();
+    if (auto team = rm.getCurrentTeam()) {
+        fields.m_selfNameLabel->updateTeam(rm.getCurrentTeamId(), team->color);
     }
 
     fields.m_selfEmoteBubble = Build<EmoteBubble>::create()
