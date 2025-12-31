@@ -36,6 +36,7 @@ private:
     }
 
     void onLevelLoaded(GJGameLevel* level);
+    void hide();
 };
 
 }

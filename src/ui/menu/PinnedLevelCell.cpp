@@ -23,9 +23,20 @@ bool PinnedLevelCell::init(float width) {
     return true;
 }
 
+void PinnedLevelCell::hide() {
+    this->setContentHeight(0);
+    this->invokeCallback();
+}
+
 void PinnedLevelCell::loadLevel(int id) {
     if (m_lastLoaded == id) return;
     m_lastLoaded = id;
+
+    // don't load main/tower levels
+    if (globed::classifyLevel(id).kind != GameLevelKind::Custom) {
+        this->hide();
+        return;
+    }
 
     m_level = nullptr;
     cue::resetNode(m_levelCell);
@@ -48,8 +59,7 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
 
     if (!level) {
         globed::toastError("(Globed) Failed to load pinned level");
-        this->setContentHeight(0);
-        this->invokeCallback();
+        this->hide();
         return;
     }
 
