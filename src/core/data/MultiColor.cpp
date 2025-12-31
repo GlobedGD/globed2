@@ -116,4 +116,8 @@ Result<MultiColor> MultiColor::decode(std::span<const uint8_t> data) {
     ));
 }
 
+MultiColor MultiColor::fromColor(const Color3& color) {
+    return MultiColor(Type::Static, { color });
+}
+
 }

@@ -116,29 +116,14 @@ void NameLabel::onClick(CCMenuItemSpriteExtra* btn) {
 }
 
 void NameLabel::updateTeam(size_t idx, ccColor4B color) {
-    if (!globed::setting<bool>("core.ui.colorblind-mode")) {
-        if (m_label) {
-            m_label->setColor(cue::into<ccColor3B>(color));
-            m_label->setOpacity(color.a);
-        }
-    } else {
-        if (!m_teamLabel) {
-            m_teamLabel = Build<Label>::create("", "bigFont.fnt")
-                .parent(m_badgeContainer);
-        }
-
-        m_teamLabel->setString(fmt::format("{}", idx + 1).c_str());
-        m_teamLabel->setColor(cue::into<ccColor3B>(color));
-
-        this->resizeBadgeContainer();
-        this->updateLayout();
-    }
+    m_teamColor = color;
+    m_teamIdx = idx;
+    this->updateLabelColors();
 }
 
 void NameLabel::updateNoTeam() {
-    m_teamLabel->setVisible(false);
-    this->resizeBadgeContainer();
-    this->updateLayout();
+    m_teamColor = std::nullopt;
+    this->updateLabelColors();
 }
 
 void NameLabel::updateWithRoles(const SpecialUserData& data) {
@@ -231,18 +216,52 @@ void NameLabel::updateOpacity(float opacity) {
     this->updateOpacity(static_cast<unsigned char>(opacity * 255.f));
 }
 
-void NameLabel::updateColor(const MultiColor& color) {
-    if (color.isGradient()) {
-        m_label->setGradientColors(color);
-    } else if (color.isTint()) {
-        color.animateNode(m_label);
-    } else {
-        m_label->setColor(color.getColor());
-    }
+void NameLabel::updateColor(MultiColor color) {
+    m_color = std::move(color);
+    this->updateLabelColors();
 }
 
 void NameLabel::updateColor(const Color3& color) {
-    if (m_label) m_label->setColor(color);
+    this->updateColor(MultiColor::fromColor(color));
+}
+
+void NameLabel::updateLabelColors() {
+    if (!m_label) return;
+
+    // team color always overrides the name color
+    if (m_teamColor) {
+        bool colorblind = globed::setting<bool>("core.ui.colorblind-mode");
+        auto color = cue::into<ccColor3B>(*m_teamColor);
+
+        if (colorblind) {
+            if (!m_teamLabel) {
+                m_teamLabel = Build<Label>::create("", "bigFont.fnt")
+                    .parent(m_badgeContainer);
+            }
+
+            m_teamLabel->setString(fmt::to_string(m_teamIdx + 1));
+            m_teamLabel->setColor(color);
+
+            this->resizeBadgeContainer();
+        } else {
+            m_label->setColor(color);
+            m_label->setOpacity(m_teamColor->a);
+        }
+
+        return;
+    }
+
+    if (m_teamLabel) m_teamLabel->setVisible(false);
+
+    if (m_color.isGradient()) {
+        m_label->setGradientColors(m_color);
+    } else if (m_color.isTint()) {
+        m_color.animateNode(m_label);
+    } else {
+        m_label->setColor(m_color.getColor());
+    }
+
+    this->resizeBadgeContainer();
 }
 
 void NameLabel::updateOpacity(unsigned char opacity) {

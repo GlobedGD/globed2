@@ -21,7 +21,7 @@ public:
     void updateNoRoles();
     void updateOpacity(unsigned char opacity);
     void updateOpacity(float opacity);
-    void updateColor(const MultiColor& color);
+    void updateColor(MultiColor color);
     void updateColor(const Color3& color);
     void setMultipleBadges(bool multiple);
     void setShadowEnabled(bool enabled);
@@ -40,10 +40,14 @@ private:
     const char* m_font = nullptr;
     bool m_multipleBadges = false;
     bool m_shadow = true;
+    MultiColor m_color;
+    std::optional<cocos2d::ccColor4B> m_teamColor;
+    size_t m_teamIdx = 0;
 
     bool init(const std::string& name, const char* font);
     void resizeBadgeContainer();
     void onClick(CCMenuItemSpriteExtra* btn);
+    void updateLabelColors();
 };
 
 }

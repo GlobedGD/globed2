@@ -16,8 +16,15 @@ public:
     };
 
     static geode::Result<MultiColor> decode(std::span<const uint8_t> data);
+    static MultiColor fromColor(const Color3& color);
+
     MultiColor();
     MultiColor(Type type, std::vector<Color3> colors);
+
+    MultiColor(const MultiColor&) = default;
+    MultiColor& operator=(const MultiColor&) = default;
+    MultiColor(MultiColor&&) noexcept = default;
+    MultiColor& operator=(MultiColor&&) noexcept = default;
 
     bool operator==(const MultiColor&) const = default;
     bool isMultiple() const;
