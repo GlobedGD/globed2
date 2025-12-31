@@ -1,6 +1,7 @@
 #include "EmoteListPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/EmoteManager.hpp>
+#include <globed/util/FunctionQueue.hpp>
 #include <globed/core/KeybindsManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 
@@ -244,9 +245,11 @@ void EmoteListPopup::onSubmitBtn() {
 
     this->onClose(this);
 
-    if (auto pause = CCScene::get()->getChildByType<PauseLayer>(0)) {
-        pause->onResume(pause);
-    }
+    FunctionQueue::get().queue([] {
+        if (auto pause = CCScene::get()->getChildByType<PauseLayer>(0)) {
+            pause->onResume(pause);
+        }
+    });
 }
 
 void EmoteListPopup::loadEmoteListPage(int page) {
