@@ -108,6 +108,8 @@ public:
 
     // create a sound from raw PCM data
     Result<FMOD::Sound*> createSound(const float* pcm, size_t samples, int sampleRate = VOICE_TARGET_SAMPLERATE);
+    // create a sound from a filepath
+    Result<FMOD::Sound*> createSound(const std::filesystem::path& path);
 
     void setActiveRecordingDevice(int deviceId);
     void setActiveRecordingDevice(const AudioRecordingDevice& device);

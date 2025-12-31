@@ -246,6 +246,9 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.player.quick-chat-enabled", "Emotes",
         "Enables the use of <cy>emotes</c> (quick chat) in levels. They can be accessed via the <cg>pause menu</c> and then bound to <cr>keybinds</c> (by default numbers 1-4)."
     );
+    this->addSetting<BoolSettingCell>("core.player.quick-chat-sfx", "Emote Sound Effects",
+        "Plays sound effects when you or other players use certain <cy>emotes</c> in levels."
+    );
     this->addSetting<BoolSettingCell>("core.player.show-names", "Player Names",
         "Shows player names above their icons."
     );

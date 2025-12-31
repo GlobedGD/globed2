@@ -353,6 +353,21 @@ Result<FMOD::Sound*> AudioManager::createSound(const float* pcm, size_t samples,
     return Ok(sound);
 }
 
+Result<FMOD::Sound*> AudioManager::createSound(const std::filesystem::path& path) {
+    FMOD::Sound* sound = nullptr;
+    FMOD_ERRC(
+        this->getSystem()->createSound(
+            utils::string::pathToString(path).c_str(),
+            FMOD_DEFAULT,
+            nullptr,
+            &sound
+        ),
+        "System::createSound"
+    );
+
+    return Ok(sound);
+}
+
 void AudioManager::setActiveRecordingDevice(int deviceId) {
     auto dev = this->getRecordingDevice(deviceId);
 

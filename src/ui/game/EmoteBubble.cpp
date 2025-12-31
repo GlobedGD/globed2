@@ -2,6 +2,7 @@
 #include <globed/core/EmoteManager.hpp>
 
 #include <UIBuilder.hpp>
+#include <asp/format.hpp>
 #include <cue/Util.hpp>
 #include <globed/util/Random.hpp>
 
@@ -71,16 +72,14 @@ void EmoteBubble::playEmote(uint32_t emoteId) {
     );
 
     m_emoteSpr->runAction(
-    CCSpawn::create(
+        CCSpawn::create(
             CCEaseExponentialOut::create(CCMoveBy::create(0.6f, {0, 10.f})),
             CCEaseBounceOut::create(CCMoveBy::create(0.75f, {0, -10.f})),
-            0
+            nullptr
         )
     );
 
-    auto fmod = FMODAudioEngine::sharedEngine();
-    std::string path = fmt::format("emote_sfx_{}.ogg"_spr, emoteId).c_str();
-    fmod->playEffect(path, 1.f + rng::generate(-0.05f, 0.05f), 1.f, 0.75f);
+    em.playEmoteSfx(emoteId);
 
     this->runAction(
         CCSequence::create(
