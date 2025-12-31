@@ -88,9 +88,13 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         this->updateLerpTrajectory(data);
     }
 
+
+    bool changedGravity = m_prevUpsideDown != data.isUpsideDown;
+
     m_prevRotating = data.isRotating;
     m_prevPosition = data.position;
     m_prevRotation = data.rotation;
+    m_prevUpsideDown = data.isUpsideDown;
 
     // set some PlayerObject members
 
@@ -227,7 +231,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     bool turningOffSwing = (data.iconType == PlayerIconType::Swing && switchedMode);
     bool turningOffRobot = (data.iconType == PlayerIconType::Robot && switchedMode);
 
-    if (switchedMode) {
+    if (switchedMode || changedGravity) {
         this->updateIconType(data.iconType);
         m_prevMode = data.iconType;
     }
@@ -274,10 +278,9 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
             m_swingFireMiddle->animateFireIn();
         }
 
-        if (cameNearby || ((m_prevUpsideDown != data.isUpsideDown || switchedMode) && isNearby)) {
-            m_prevUpsideDown = data.isUpsideDown;
+        if (cameNearby || ((changedGravity || switchedMode) && isNearby)) {
             // now depending on the gravity, toggle either the bottom or top fire
-            this->animateSwingFire(!m_prevUpsideDown);
+            this->animateSwingFire(!data.isUpsideDown);
         }
     }
     // remove swing fire

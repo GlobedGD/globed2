@@ -771,6 +771,8 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
 }
 
 void GlobedGJBGL::handlePlayerLeave(int playerId) {
+    if (playerId == myAccountId()) return;
+
     auto& am = AudioManager::get();
     am.stopOutputStream(playerId);
 

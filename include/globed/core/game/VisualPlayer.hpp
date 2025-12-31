@@ -75,7 +75,7 @@ private:
     // used in many animations
     bool m_prevNearby = false;
 
-    // used in swing animations
+    // used in swing animations and updating for gravity
     bool m_prevUpsideDown = false;
 
     // used for platformer jump anim
