@@ -276,7 +276,9 @@ bool GlobedMenuLayer::init() {
                     "You must be logged into a <cg>Geometry Dash account</c> in order to play online. Want to visit the <cy>account page</c>?",
                     "Cancel", "Ok",
                     [](auto) {
-                        AccountLayer::create()->showLayer(false);
+                        auto layer = AccountLayer::create();
+                        CCScene::get()->addChild(layer);
+                        layer->showLayer(false);
                     }
                 );
                 return;
