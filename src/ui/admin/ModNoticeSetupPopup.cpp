@@ -94,7 +94,19 @@ bool ModNoticeSetupPopup::setup() {
         .parent(m_inputsContainer)
         .store(m_levelInput);
 
-    Build(CCMenuItemExt::createTogglerWithStandardSprites(0.5f, +[](CCMenuItemToggler* toggler) {}))
+    Build(CCMenuItemExt::createTogglerWithStandardSprites(0.5f, [this](CCMenuItemToggler* toggler) {
+        bool on = !toggler->isOn();
+
+        // if can reply is on, it forces show sender to be on as well
+        if (on) {
+            m_showSenderCheckbox->toggle(true);
+            m_showSenderCheckbox->setEnabled(false);
+            m_showSenderCheckbox->setColor({150, 150, 150});
+        } else {
+            m_showSenderCheckbox->setEnabled(true);
+            m_showSenderCheckbox->setColor({255, 255, 255});
+        }
+    }))
         .parent(m_inputsContainer)
         .store(m_canReplyCheckbox);
 
@@ -118,6 +130,7 @@ bool ModNoticeSetupPopup::setup() {
         .parent(m_buttonMenu)
         .pos(this->fromBottom({60.f, 27.f}))
         .store(m_showSenderCheckbox);
+    m_showSenderCheckbox->setCascadeColorEnabled(true);
 
     Build<CCLabelBMFont>::create("Show\nsender", "bigFont.fnt")
         .scale(0.35f)
