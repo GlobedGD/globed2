@@ -69,6 +69,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_sendExtData = false;
         bool m_knownServerMuted = false;
         bool m_deafened = false;
+        bool m_showingNoticeAlert = false;
         BoolExt m_didJustJump1, m_didJustJump2;
 
         CCNode* m_playerNode = nullptr;
@@ -78,6 +79,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         Ref<NameLabel> m_selfNameLabel;
         Ref<VoiceOverlay> m_voiceOverlay;
         Ref<PingOverlay> m_pingOverlay;
+        Ref<CCSprite> m_noticeAlert;
 
         Ref<EmoteBubble> m_selfEmoteBubble = nullptr;
     };
@@ -147,6 +149,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     bool shouldLetMessageThrough(int playerId);
     void reloadCachedSettings();
     bool isSpeaking(int playerId);
+    void setNoticeAlertActive(bool active);
 
     void toggleCullingEnabled(bool culling);
     void toggleExtendedData(bool extended);
@@ -162,6 +165,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
 
     void playSelfEmote(uint32_t id);
     void playSelfFavoriteEmote(uint32_t which);
+
 
 private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);

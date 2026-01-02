@@ -106,6 +106,11 @@ public:
     PopupRef manage(FLAlertLayer* alert);
 
     bool isManaged(FLAlertLayer* alert);
+
+    // Returns whether there are currently any queued popups that can't be shown,
+    // either because the player is transitioning or in a level and unpaused.
+    bool hasPendingPopups() const;
+
 private:
     cocos2d::CCScene* m_prevScene = nullptr;
     bool m_isTransitioning = false;

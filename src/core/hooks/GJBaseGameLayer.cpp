@@ -532,6 +532,13 @@ void GlobedGJBGL::selUpdate(float tsdt) {
 void GlobedGJBGL::selPeriodicalUpdate(float dt) {
     auto& fields = *m_fields.self();
 
+    // show a little alert icon in the corner if there's any popups waiting to be shown
+    bool anyPopups = PopupManager::get().hasPendingPopups();
+    if (anyPopups != fields.m_showingNoticeAlert) {
+        fields.m_showingNoticeAlert = anyPopups;
+        this->setNoticeAlertActive(anyPopups);
+    }
+
     if (!fields.m_active) {
         fields.m_pingOverlay->updateWithDisconnected();
         return;
@@ -922,6 +929,46 @@ bool GlobedGJBGL::isSpeaking(int playerId) {
 
     auto& am = AudioManager::get();
     return am.isStreamActive(playerId);
+}
+
+void GlobedGJBGL::setNoticeAlertActive(bool active) {
+    auto& fields = *m_fields.self();
+
+    if (m_isEditor) {
+        // todo
+        return;
+    }
+
+    // Add the alert if it does not exist
+    if (!fields.m_noticeAlert) {
+        auto pbm = this->m_uiLayer->getChildByID("pause-button-menu");
+        if (!pbm) {
+            log::warn("pause-button-menu not found, not toggling notice alert");
+            return;
+        }
+
+        Build<CCSprite>::createSpriteName("geode.loader/info-alert.png")
+            .scale(0.45f)
+            .opacity(255)
+            .pos(8.f, 8.f)
+            .id("notice-alert"_spr)
+            .parent(pbm)
+            .store(fields.m_noticeAlert);
+
+        fields.m_noticeAlert->runAction(
+            CCRepeatForever::create(
+                CCSequence::create(
+                    CCFadeTo::create(0.65f, 150),
+                    CCFadeTo::create(0.65f, 255),
+                    nullptr
+                )
+            )
+        );
+    }
+
+    if (fields.m_noticeAlert) {
+        fields.m_noticeAlert->setVisible(active);
+    }
 }
 
 void GlobedGJBGL::reloadCachedSettings() {

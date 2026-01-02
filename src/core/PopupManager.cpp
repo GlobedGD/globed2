@@ -253,6 +253,10 @@ void PopupManager::queuePopup(const PopupRef& popup) {
     m_queuedPopups.push(popup);
 }
 
+bool PopupManager::hasPendingPopups() const {
+    return !m_queuedPopups.empty();
+}
+
 void PopupManager::update(float dt) {
     m_frameCounter++;
 
