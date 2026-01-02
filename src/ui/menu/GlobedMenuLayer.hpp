@@ -53,6 +53,7 @@ private:
     std::optional<MessageListener<msg::RoomPlayersMessage>> m_roomPlayersListener;
     std::optional<MessageListener<msg::PinnedLevelUpdatedMessage>> m_pinnedListener;
     std::optional<MessageListener<msg::UserDataChangedMessage>> m_userChangedListener;
+    std::optional<MessageListener<msg::AdminPunishmentReasonsMessage>> m_adminResultListener;
     uint32_t m_roomId = -1;
     size_t m_playerCount = 0;
     std::optional<asp::time::Instant> m_lastRoomUpdate;
@@ -76,6 +77,7 @@ private:
     void updateRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings);
     void updatePlayerList(const std::vector<RoomPlayer>& players);
     bool trySoftRefresh(const std::vector<RoomPlayer>& players);
+    void softRefreshAll();
     void softRefreshSelf();
     void initRoomButtons();
     void initSideButtons();

@@ -2166,12 +2166,6 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         case CentralMessage::ADMIN_RESULT: {
             auto adminResult = msg.getAdminResult();
 
-            // this is a bit hacky, but if the result is ok, mark the client as authorized admin
-            // a successful result can only be sent as a response to auth or to an actual admin packet
-            if (adminResult.getSuccess()) {
-                this->markAuthorizedModerator();
-            }
-
             this->invokeListeners(msg::AdminResultMessage {
                 .success = adminResult.getSuccess(),
                 .error = adminResult.getError(),
@@ -2192,6 +2186,11 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::ADMIN_PUNISHMENT_REASONS: {
             auto m = data::decodeUnchecked<msg::AdminPunishmentReasonsMessage>(msg.getAdminPunishmentReasons());
+
+            // admin punishment reasons is de facto the "admin login successful" message,
+            // so after receiving it we can mark ourselves as an authorized moderator
+            this->markAuthorizedModerator();
+
             this->connInfo()->m_punishReasons = m.reasons;
             this->invokeListeners(std::move(m));
         } break;

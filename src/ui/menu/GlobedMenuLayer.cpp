@@ -87,6 +87,10 @@ public:
         this->softRefreshInner(rp.specialUserData, rp.session);
     }
 
+    void softRefresh() {
+        this->recreateButtons();
+    }
+
     // assuming this is the local player, refresh certain things
     void softRefreshSelf() {
         auto sud = NetworkManagerImpl::get().getOwnSpecialData();
@@ -96,39 +100,11 @@ public:
 protected:
     SessionId m_sessionId;
     CCMenuItemSpriteExtra* m_joinBtn = nullptr;
+    CCMenuItemSpriteExtra* m_modBtn = nullptr;
     static constexpr CCSize BTN_SIZE { 22.f, 22.f };
 
     bool customSetup() {
-        this->recreateSessionButton();
-
-        // if we are room host or a moderator, add a button that allows us kicking/banning the person or opening mod panel
-        auto& rm = RoomManager::get();
-        bool isMod = NetworkManagerImpl::get().isAuthorizedModerator();
-        bool isOwner = rm.isOwner();
-        bool isInRoom = !rm.isInGlobal();
-
-        if (isInRoom && (isMod || isOwner)) {
-            Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
-                .with([&](auto spr) { cue::rescaleToMatch(spr, BTN_SIZE); })
-                .intoMenuItem([this] {
-                    this->openUserControls();
-                })
-                .zOrder(9)
-                .scaleMult(1.1f)
-                .parent(m_rightMenu);
-        } else if (isMod) {
-            Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
-                .with([&](auto spr) { cue::rescaleToMatch(spr, BTN_SIZE); })
-                .intoMenuItem([this] {
-                    this->openModPanel();
-                })
-                .zOrder(9)
-                .scaleMult(1.1f)
-                .parent(m_rightMenu);
-        }
-
-        m_rightMenu->updateLayout();
-
+        this->recreateButtons();
         this->initGradients();
 
         return true;
@@ -145,14 +121,20 @@ protected:
 
         if (session != m_sessionId) {
             m_sessionId = session;
-            this->recreateSessionButton();
         }
 
+        this->recreateButtons();
         this->initGradients();
     }
 
-    void recreateSessionButton() {
+    void recreateButtons() {
+        auto& rm = RoomManager::get();
+        bool isMod = NetworkManagerImpl::get().isAuthorizedModerator();
+        bool isOwner = rm.isOwner();
+        bool isInRoom = !rm.isInGlobal();
+
         cue::resetNode(m_joinBtn);
+        cue::resetNode(m_modBtn);
 
         if (m_sessionId.asU64() != 0) {
             // add button to join the session
@@ -162,6 +144,27 @@ protected:
                     globed::warpToSession(m_sessionId, false, true);
                 })
                 .zOrder(10)
+                .scaleMult(1.1f)
+                .parent(m_rightMenu);
+        }
+
+        // if we are room host or a moderator, add a button that allows us kicking/banning the person or opening mod panel
+        if (isInRoom && (isMod || isOwner)) {
+            m_modBtn = Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+                .with([&](auto spr) { cue::rescaleToMatch(spr, BTN_SIZE); })
+                .intoMenuItem([this] {
+                    this->openUserControls();
+                })
+                .zOrder(9)
+                .scaleMult(1.1f)
+                .parent(m_rightMenu);
+        } else if (isMod) {
+            m_modBtn = Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+                .with([&](auto spr) { cue::rescaleToMatch(spr, BTN_SIZE); })
+                .intoMenuItem([this] {
+                    this->openModPanel();
+                })
+                .zOrder(9)
                 .scaleMult(1.1f)
                 .parent(m_rightMenu);
         }
@@ -457,9 +460,17 @@ bool GlobedMenuLayer::init() {
         return ListenerResult::Continue;
     });
 
+    // when our user data changes or we are authorized, refresh the buttons
     m_userChangedListener = nm.listen<msg::UserDataChangedMessage>([this](const auto& msg) {
         this->initSideButtons();
         this->softRefreshSelf();
+
+        return ListenerResult::Continue;
+    });
+
+    m_adminResultListener = nm.listen<msg::AdminPunishmentReasonsMessage>([this](const auto& msg) {
+        this->initSideButtons();
+        this->softRefreshAll();
 
         return ListenerResult::Continue;
     });
@@ -695,6 +706,12 @@ bool GlobedMenuLayer::trySoftRefresh(const std::vector<RoomPlayer>& players) {
     m_playerList->setScrollPos(scrollPos);
 
     return true;
+}
+
+void GlobedMenuLayer::softRefreshAll() {
+    for (auto cell : m_playerList->iterChecked<PlayerCell>()) {
+        cell->softRefresh();
+    }
 }
 
 void GlobedMenuLayer::softRefreshSelf() {
