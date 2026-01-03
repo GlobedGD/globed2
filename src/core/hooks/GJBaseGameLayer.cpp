@@ -843,15 +843,23 @@ void GlobedGJBGL::toggleSafeMode() {
 }
 
 void GlobedGJBGL::pausedUpdate(float dt) {
+    auto& fields = *m_fields.self();
+
     // unpause dash effects and death effects
-    for (auto* child : CCArrayExt<CCNode*>(m_objectLayer->getChildren())) {
-        int tag1 = SPIDER_DASH_CIRCLE_WAVE_TAG;
-        int tag2 = SPIDER_DASH_SPRITE_TAG;
-        int tag3 = DEATH_EFFECT_TAG;
+    int tag1 = SPIDER_DASH_CIRCLE_WAVE_TAG;
+    int tag2 = SPIDER_DASH_SPRITE_TAG;
+    int tag3 = DEATH_EFFECT_TAG;
 
+    for (auto* child : m_objectLayer->getChildrenExt()) {
         int ctag = child->getTag();
-
         if (ctag == tag1 || ctag == tag2 || ctag == tag3) {
+            child->resumeSchedulerAndActions();
+        }
+    }
+
+    for (auto* child : fields.m_playerNode->getChildrenExt()) {
+        int ctag = child->getTag();
+        if (ctag == tag1 || ctag == tag2 || ctag == tag3 || typeinfo_cast<ExplodeItemNode*>(child)) {
             child->resumeSchedulerAndActions();
         }
     }

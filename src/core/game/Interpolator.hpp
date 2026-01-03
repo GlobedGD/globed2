@@ -46,7 +46,6 @@ public:
 
     void setPlatformer(bool enable);
 
-private:
     struct LerpState {
         VectorSpeedTracker p1speedTracker;
         VectorSpeedTracker p2speedTracker;
@@ -55,7 +54,7 @@ private:
         size_t totalFrames = 0;
         std::optional<PlayerDeath> lastDeath;
         std::optional<SpiderTeleportData> lastSpiderTp1, lastSpiderTp2;
-        bool lastJumpp1 = false, lastJumpp2 = false;
+        uint8_t lastDeathCount = 0;
         float timeCounter = -100.0f;
         float lastDriftCorrection = -100.0f;
         float updatedAt = 0.0f;
@@ -68,6 +67,7 @@ private:
         PlayerState& newestFrame();
     };
 
+private:
     std::unordered_map<int, LerpState> m_players;
     size_t m_stationaryFrames = 0;
     bool m_realtime = false;

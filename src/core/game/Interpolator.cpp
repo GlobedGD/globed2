@@ -76,25 +76,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
             return;
         }
 
-        // detect death
-        if (player.deathCount != prevFrame.deathCount) {
-            state.lastDeath = PlayerDeath { player.isLastDeathReal };
-        }
-
         if (!culled) {
-            // detect spider tp and jump
-            if (auto sptp1 = detectSpiderTp(*player.player1, *prevFrame.player1)) {
-                state.lastSpiderTp1 = sptp1;
-            }
-            state.lastJumpp1 = player.player1->didJustJump;
-
-            if (player.player2 && prevFrame.player2) {
-                if (auto sptp2 = detectSpiderTp(*player.player2, *prevFrame.player2)) {
-                    state.lastSpiderTp2 = sptp2;
-                }
-                state.lastJumpp2 = player.player2->didJustJump;
-            }
-
             LERP_LOG("[Interpolator] new frame for {}, X progression: {} ({}) ... {} ({}) -> {} ({})",
                 player.accountId,
                 state.oldestFrame().player1->position.x,
@@ -185,20 +167,22 @@ struct LerpContext {
 };
 
 static inline void lerpSpecific(
-    const PlayerObjectData& older,
-    const PlayerObjectData& newer,
+    PlayerObjectData& older,
+    PlayerObjectData& newer,
     float olderTime,
     float newerTime,
     PlayerObjectData& out,
     LerpContext& ctx,
-    VectorSpeedTracker& speedTracker
+    VectorSpeedTracker& speedTracker,
+    std::optional<SpiderTeleportData>& sptp
 ) {
     out.copyFlagsFrom(older);
 
     CCPoint newGuessed = out.position + ctx.cameraDelta;
 
-    // i hate spider
-    auto sptp = detectSpiderTp(older, newer);
+    sptp = detectSpiderTp(older, newer);
+    out.didJustJump = out.didJustJump || older.didJustJump;
+    older.didJustJump = false; // so that it doesn't fire again until next frame
 
     if (sptp) {
         out.position.x = std::lerp(older.position.x, newer.position.x, ctx.t);
@@ -280,13 +264,15 @@ static inline void lerpSpecific(
 }
 
 static inline void lerpPlayer(
-    const PlayerState& older,
-    const PlayerState& newer,
-    PlayerState& out,
+    PlayerState& older,
+    PlayerState& newer,
     LerpContext& ctx,
-    VectorSpeedTracker& p1spt,
-    VectorSpeedTracker& p2spt
+    Interpolator::LerpState& state
 ) {
+    auto& out = state.interpolatedState;
+    auto& p1spt = state.p1speedTracker;
+    auto& p2spt = state.p2speedTracker;
+
     out.accountId = older.accountId;
     out.timestamp = std::lerp(older.timestamp, newer.timestamp, ctx.t);
     out.frameNumber = older.frameNumber;
@@ -315,16 +301,40 @@ static inline void lerpPlayer(
 
     if (newer.player1 && older.player1) {
         if (!out.player1) out.player1 = PlayerObjectData{};
-        lerpSpecific(*older.player1, *newer.player1, older.timestamp, newer.timestamp, *out.player1, ctx, p1spt);
+        lerpSpecific(
+            *older.player1,
+            *newer.player1,
+            older.timestamp,
+            newer.timestamp,
+            *out.player1,
+            ctx,
+            p1spt,
+            state.lastSpiderTp1
+        );
     } else {
         out.player1.reset();
     }
 
     if (newer.player2 && older.player2) {
         if (!out.player2) out.player2 = PlayerObjectData{};
-        lerpSpecific(*older.player2, *newer.player2, older.timestamp, newer.timestamp, *out.player2, ctx, p2spt);
+        lerpSpecific(
+            *older.player2,
+            *newer.player2,
+            older.timestamp,
+            newer.timestamp,
+            *out.player2,
+            ctx,
+            p2spt,
+            state.lastSpiderTp2
+        );
     } else {
         out.player2.reset();
+    }
+
+    // detect death
+    if (state.lastDeathCount != older.deathCount) {
+        state.lastDeathCount = older.deathCount;
+        state.lastDeath = PlayerDeath { older.isLastDeathReal };
     }
 }
 
@@ -396,7 +406,7 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
             m_platformer,
             m_cameraCorrections,
         };
-        lerpPlayer(*older, *newer, player.interpolatedState, ctx, player.p1speedTracker, player.p2speedTracker);
+        lerpPlayer(*older, *newer, ctx, player);
 
         LERP_LOG("[Interpolator] Lerp for {}: t = {}, timeCounter = {}, older ts = {}, newer ts = {}",
             playerId, t, player.timeCounter, older->timestamp, newer->timestamp
@@ -478,10 +488,15 @@ std::optional<SpiderTeleportData> Interpolator::LerpState::takeSpiderTp(bool p1)
 }
 
 bool Interpolator::LerpState::takeJump(bool p1) {
-    auto& in = p1 ? lastJumpp1 : lastJumpp2;
-    bool out = in;
-    in = false;
-    return out;
+    auto& s = interpolatedState;
+    auto& player = p1 ? s.player1 : s.player2;
+    if (!player) {
+        return false;
+    }
+
+    bool didJump = player->didJustJump;
+    player->didJustJump = false;
+    return didJump;
 }
 
 PlayerState& Interpolator::LerpState::oldestFrame() {

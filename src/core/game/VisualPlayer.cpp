@@ -128,6 +128,10 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
     // calculate visibility n stuff
 
+    if (!m_isDead) {
+        m_playingDeathEffect = false;
+    }
+
     bool isNearby = this->isPlayerNearby(data, camState);
 
     bool cameNearby = isNearby && !m_prevNearby;
@@ -141,7 +145,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     } else if (state.isPracticing && setting<bool>("core.player.hide-practicing")) {
         shouldBeVisible = false;
     } else {
-        shouldBeVisible = (data.isVisible || setting<bool>("core.player.force-visibility")) && isNearby;
+        shouldBeVisible = ((data.isVisible && !m_playingDeathEffect) || setting<bool>("core.player.force-visibility")) && isNearby;
     }
 
     this->setVisible(shouldBeVisible);
@@ -606,6 +610,11 @@ void VisualPlayer::updateTeam(uint16_t teamId) {
 }
 
 void VisualPlayer::playDeathEffect() {
+    // do nothing if the player is not nearby or in editor
+    if (!m_prevNearby || m_isEditor) return;
+
+    this->hideRobotFire();
+
     auto* gm = globed::cachedSingleton<GameManager>();
 
     int oldEffect = gm->getPlayerDeathEffect();
@@ -616,9 +625,25 @@ void VisualPlayer::playDeathEffect() {
         gm->setPlayerDeathEffect(1);
     }
 
-    PlayerObject::playDeathEffect();
+    // find all children in the object layer so we can later compare and see what nodes were added by playerDestroyed
+    auto children = m_gameLayer->m_objectLayer->getChildrenExt();
+    std::unordered_set<CCNode*> prevChildren{children.begin(), children.end()};
+
+    // cause the actual death
+    m_playEffects = true;
+    m_isHidden = false;
+    this->playerDestroyed(false);
+
+    // set the death effect tag to every new child
+    for (auto child : children) {
+        if (!prevChildren.contains(child)) {
+            child->setTag(DEATH_EFFECT_TAG);
+        }
+    }
 
     gm->setPlayerDeathEffect(oldEffect);
+
+    m_playingDeathEffect = true;
 }
 
 void VisualPlayer::handleSpiderTp(const SpiderTeleportData& tp) {
