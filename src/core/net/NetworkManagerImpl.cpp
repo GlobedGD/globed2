@@ -268,9 +268,14 @@ NetworkManagerImpl::NetworkManagerImpl() : m_runtime(Runtime::create(2)), m_work
 }
 
 NetworkManagerImpl::~NetworkManagerImpl() {
+    // m_centralConn->destroy();
+    // m_gameConn->destroy();
+    m_destructing = true;
+}
+
+void NetworkManagerImpl::shutdown() {
     m_centralConn->destroy();
     m_gameConn->destroy();
-    m_destructing = true;
 }
 
 NetworkManagerImpl& NetworkManagerImpl::get() {

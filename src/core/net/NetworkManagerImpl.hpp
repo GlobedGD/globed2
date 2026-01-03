@@ -156,6 +156,8 @@ public:
 
     static NetworkManagerImpl& get();
 
+    void shutdown();
+
     Result<> connectCentral(std::string_view url);
     void disconnectCentral();
 

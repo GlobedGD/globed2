@@ -11,6 +11,8 @@ public:
 
     void playEmote(uint32_t emoteId);
     void setOpacity(uint8_t op);
+    void flipBubble(bool flipped);
+    void update(float dt) override;
 
     bool isPlaying();
 
@@ -19,7 +21,7 @@ private:
     CCSprite* m_bubbleSpr = nullptr;
     float m_initialScale;
 
-    bool init();
+    bool init() override;
 
     // Needed because VisualPlayer calls setVisible when culled
     void customToggleVis(bool vis);

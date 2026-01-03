@@ -35,6 +35,7 @@ Added / reworked:
 * Voice chat overlay now doesn't show players unless actively speaking (or making other noise)
 * Featured levels now have a queue system and will be consistently featured
 * The level list now has a message that clarifies its purpose, due to people often finding it confusing
+* Players, names, emotes, etc. are now rendered in front of all level objects (experimental and may be reverted in the future)
 
 Fixed / removed:
 * Player list and room list menus now should be way less laggy

@@ -186,13 +186,32 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         m_nameLabel->setRotation(dir.angle);
 
         if (m_emoteBubble && m_emoteBubble->isPlaying()) {
-            float yoff = (m_nameLabel->isVisible() ? STATUS_ICONS_OFFSET : NAME_OFFSET) - 3.f;
-            float xoff = 25.f;
+            float yoffUp = (m_nameLabel->isVisible() ? STATUS_ICONS_OFFSET : NAME_OFFSET) - 4.f;
+            float yoffDown = NAME_OFFSET - 8.f;
+            float xoff = 22.f;
+
             CCPoint dirVecPerp{dir.vector.y, -dir.vector.x};
-            CCPoint fullOffset = dir.vector * yoff + dirVecPerp * xoff;
+            CCPoint fullOffset = dir.vector * yoffUp + dirVecPerp * xoff;
+            CCPoint anchor{0.f, 0.f};
+
+            // if the player is somewhere near the ceiling, the emote bubble should be rendered on the opposite side,
+            // so that it's not inside the ceiling
+            bool invertY = false;
+            if (auto ceiling = gjbgl->m_groundLayer2) {
+                float maxY = ceiling->getPositionY();
+                float bubbleTop = data.position.y + fullOffset.y + m_emoteBubble->getContentHeight() * std::abs(m_emoteBubble->getScaleY());
+                invertY = bubbleTop > maxY;
+            }
+
+            if (invertY) {
+                anchor.y = 1.f;
+                fullOffset = dir.vector * -yoffDown + dirVecPerp * xoff;
+            }
 
             m_emoteBubble->setPosition(data.position + fullOffset);
             m_emoteBubble->setRotation(dir.angle);
+            m_emoteBubble->setAnchorPoint(anchor);
+            m_emoteBubble->flipBubble(invertY);
         }
 
         if (m_statusIcons) {

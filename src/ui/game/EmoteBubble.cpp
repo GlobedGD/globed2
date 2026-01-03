@@ -27,7 +27,7 @@ bool EmoteBubble::init() {
     m_emoteSpr = CCSprite::createWithSpriteFrameName("emote_0.png"_spr);
 
     m_bubbleSpr = Build<CCSprite>::createSpriteName("bubble_emote_spr.png"_spr)
-        .anchorPoint(0.f, 0.f)
+        .anchorPoint(0.5f, 0.5f)
         .parent(this);
     cue::rescaleToMatch(m_bubbleSpr, 56.f);
     m_initialScale = m_bubbleSpr->getScale();
@@ -35,6 +35,7 @@ bool EmoteBubble::init() {
     m_bubbleSpr->addChild(m_emoteSpr);
 
     this->customToggleVis(false);
+    this->scheduleUpdate();
 
     return true;
 }
@@ -65,7 +66,7 @@ void EmoteBubble::playEmote(uint32_t emoteId) {
     m_bubbleSpr->runAction(
         CCSequence::create(
             CCEaseExponentialOut::create(CCScaleTo::create(0.4f, m_initialScale)),
-            CCDelayTime::create(1.7f),
+            CCDelayTime::create(1777777.7f),
             CCEaseExponentialIn::create(CCScaleTo::create(0.4f, m_initialScale * 0.05f)),
             nullptr
         )
@@ -83,11 +84,25 @@ void EmoteBubble::playEmote(uint32_t emoteId) {
 
     this->runAction(
         CCSequence::create(
-            CCDelayTime::create(2.5f),
+            CCDelayTime::create(25555.5f),
             CallFuncExt::create([this]() { this->customToggleVis(false); }),
             nullptr
         )
     );
+}
+
+void EmoteBubble::update(float dt) {
+    if (!m_bVisible) return;
+
+    this->setContentSize(m_bubbleSpr->getContentSize() * std::abs(m_bubbleSpr->getScale()));
+    m_bubbleSpr->setPosition(this->getContentSize() / 2.f);
+}
+
+void EmoteBubble::flipBubble(bool flipped) {
+    if (!m_bubbleSpr || !m_emoteSpr) return;
+
+    m_bubbleSpr->setScaleY(flipped ? -m_initialScale : m_initialScale);
+    m_emoteSpr->setFlipY(flipped); // so the emote itself isn't upside down
 }
 
 void EmoteBubble::setOpacity(uint8_t op) {

@@ -248,6 +248,7 @@ void GlobedGJBGL::setupUi() {
 
     Build<CCNode>::create()
         .id("player-node"_spr)
+        .zOrder(1500)
         .parent(m_objectLayer)
         .store(fields.m_playerNode);
 
@@ -853,14 +854,19 @@ void GlobedGJBGL::pausedUpdate(float dt) {
     for (auto* child : m_objectLayer->getChildrenExt()) {
         int ctag = child->getTag();
         if (ctag == tag1 || ctag == tag2 || ctag == tag3) {
-            child->resumeSchedulerAndActions();
+            child->onEnter();
         }
     }
 
     for (auto* child : fields.m_playerNode->getChildrenExt()) {
         int ctag = child->getTag();
-        if (ctag == tag1 || ctag == tag2 || ctag == tag3 || typeinfo_cast<ExplodeItemNode*>(child)) {
-            child->resumeSchedulerAndActions();
+        bool resume =
+            ctag == tag1 || ctag == tag2 || ctag == tag3
+            || typeinfo_cast<EmoteBubble*>(child)
+            || typeinfo_cast<ExplodeItemNode*>(child);
+
+        if (resume) {
+            child->onEnter();
         }
     }
 }

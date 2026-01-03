@@ -112,6 +112,10 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
     }
 
     state.frames.push_back(player);
+    // if this was the first frame, reset some counters
+    if (state.frames.size() == 1) {
+        state.lastDeathCount = player.deathCount;
+    }
 
     if (!culled) {
         // track the speed of the players
