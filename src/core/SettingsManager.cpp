@@ -116,20 +116,24 @@ SettingsManager::SettingsManager() {
 void SettingsManager::loadSaveSlots() {
     (void) Mod::get()->loadData();
 
-    m_slotDir = Mod::get()->getSaveDir() / "save-slots";
+    m_slotDir = Mod::get()->getSaveDir() / "save-slots-v2";
     auto oldDir = Mod::get()->getSaveDir() / "saveslots";
 
-    if (asp::fs::exists(oldDir)) {
-        this->migrateOldSettings();
-    }
-
+    bool createdNewDir = false;
     if (!asp::fs::exists(m_slotDir)) {
         auto res = asp::fs::createDirAll(m_slotDir);
         if (!res) {
             log::error("Failed to create save slots directory at {}: {}", m_slotDir, res.unwrapErr().message());
             log::warn("Will be using root of the save directory for storage");
             m_slotDir = Mod::get()->getSaveDir();
+        } else {
+            createdNewDir = true;
         }
+    }
+
+    // only run the migration on first run, if the new slot dir already exists then ignore
+    if (asp::fs::exists(oldDir) && createdNewDir) {
+        this->migrateOldSettings();
     }
 
     for (size_t i = 0;; i++) {
@@ -311,10 +315,10 @@ void SettingsManager::migrateOldSettings() {
             continue;
         }
 
-        if (auto err = asp::fs::remove(slotp).err()) {
-            log::error("Failed to delete old save slot {}: {}", i, err->message());
-            continue;
-        }
+        // if (auto err = asp::fs::remove(slotp).err()) {
+        //     log::error("Failed to delete old save slot {}: {}", i, err->message());
+        //     continue;
+        // }
 
         if (auto err = geode::utils::file::writeStringSafe(newp, migrated->dump()).err()) {
             log::error("Failed to write migrated save slot {}: {}", i, *err);
@@ -322,7 +326,14 @@ void SettingsManager::migrateOldSettings() {
         }
     }
 
-    (void) asp::fs::removeDir(oldDir);
+    // (void) asp::fs::removeDir(oldDir);
+    // add a small readme file that says this folder isnt used anymore
+    auto rmpath = oldDir / "README.txt";
+    auto content = "This folder was used by Globed v1.x.x and is no longer used since Globed v2.\n\n"
+        "You can safely delete this folder if you want, it is kept only so that users can switch between old and new releases without losing their settings,"
+        " while still automatically migrating old settings to the new format if necessary.";
+
+    (void) geode::utils::file::writeStringSafe(rmpath, content);
 }
 
 void SettingsManager::freeze() {
