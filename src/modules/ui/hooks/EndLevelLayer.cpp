@@ -1,4 +1,5 @@
-#include "GJBaseGameLayer.hpp"
+#include <core/hooks/GJBaseGameLayer.hpp>
+#include <modules/ui/UIModule.hpp>
 #include <Geode/modify/EndLevelLayer.hpp>
 
 using namespace geode::prelude;
@@ -6,6 +7,12 @@ using namespace geode::prelude;
 namespace globed {
 
 struct GLOBED_MODIFY_ATTR HookedEndLevelLayer : geode::Modify<HookedEndLevelLayer, EndLevelLayer> {
+    static void onModify(auto& self) {
+        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
+            "EndLevelLayer::customSetup",
+        );
+    }
+
     $override
     void customSetup() {
         EndLevelLayer::customSetup();

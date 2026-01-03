@@ -252,17 +252,17 @@ WorkerState createWorkerState() {
     return WorkerState{std::move(tx), std::move(rx)};
 }
 
-NetworkManagerImpl::NetworkManagerImpl() : m_workerState(createWorkerState()) {
+NetworkManagerImpl::NetworkManagerImpl() : m_runtime(Runtime::create(2)), m_workerState(createWorkerState()) {
     m_hasSecure = bb_init();
 
-    m_runtime.setTerminateHandler([](const std::exception& e) {
+    m_runtime->setTerminateHandler([](const std::exception& e) {
         utils::terminate(fmt::format(
             "arc runtime terminated due to unhandled exception: {}",
             e.what()
         ));
     });
 
-    m_runtime.spawn([](auto* self) -> arc::Future<> {
+    m_runtime->spawn([](auto* self) -> arc::Future<> {
         co_await self->asyncInit();
     }(this));
 }
@@ -364,13 +364,13 @@ Future<> NetworkManagerImpl::asyncInit() {
     });
 
     // Spawn the main worker tasks
-    m_runtime.spawn([](auto* self) -> arc::Future<> {
+    arc::spawn([](auto* self) -> arc::Future<> {
         while (true) {
             co_await self->threadWorkerLoop();
         }
     }(this));
 
-    m_runtime.spawn([](auto* self) -> arc::Future<> {
+    arc::spawn([](auto* self) -> arc::Future<> {
         while (true) {
             co_await self->threadGameWorkerLoop();
         }

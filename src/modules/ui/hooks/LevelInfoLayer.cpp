@@ -30,6 +30,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
             "LevelInfoLayer::init",
             "LevelInfoLayer::onBack",
             "LevelInfoLayer::onPlay",
+            "LevelInfoLayer::playStep3",
             "LevelInfoLayer::tryCloneLevel",
         );
     }

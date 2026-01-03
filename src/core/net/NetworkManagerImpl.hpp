@@ -328,7 +328,7 @@ private:
         Utoken, Argon, Plain
     };
 
-    arc::Runtime m_runtime{2};
+    std::shared_ptr<arc::Runtime> m_runtime;
     std::shared_ptr<qn::Connection> m_centralConn, m_gameConn;
     arc::Notify m_workerNotify, m_gameWorkerNotify;
     WorkerState m_workerState;

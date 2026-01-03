@@ -273,6 +273,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayerSpeedUpAnim : geode::Modify<HookedPlayL
 }
 
 class $modify(CurrencyRewardLayer) {
+    $override
     void update(float dt) {
         if (g_speedingUpRewards) {
             dt *= g_speedUpFactor;
