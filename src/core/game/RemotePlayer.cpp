@@ -1,6 +1,7 @@
 #include <globed/core/game/RemotePlayer.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/RoomManager.hpp>
+#include <globed/util/gd.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/CoreImpl.hpp>
@@ -15,13 +16,13 @@ namespace globed {
 RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode) : m_state(), m_parentNode(parentNode) {
     m_state.accountId = playerId;
 
-    Build<VisualPlayer>::create(gameLayer, this, m_parentNode, false)
+    Build<VisualPlayer>::create(gameLayer, this, m_parentNode, false, playerId == 0)
         .id(fmt::format("{}-player1", playerId).c_str())
         .parent(m_parentNode)
         .visible(false)
         .store(m_player1);
 
-    Build<VisualPlayer>::create(gameLayer, this, m_parentNode, true)
+    Build<VisualPlayer>::create(gameLayer, this, m_parentNode, true, playerId == 0)
         .id(fmt::format("{}-player2", playerId).c_str())
         .parent(m_parentNode)
         .visible(false)
@@ -52,6 +53,11 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
                 .zOrder(2)
                 .id(fmt::format("remote-player-progress-{}"_spr, playerId))
                 .parent(gjbgl->m_fields->m_progressBarContainer);
+
+            if (playerId == 0) {
+                m_progIcon->updateIcons(globed::getPlayerIcons());
+                m_progIcon->setForceOnTop(true);
+            }
         }
     }
 }

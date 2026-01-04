@@ -50,6 +50,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         Interpolator m_interpolator;
         VectorSpeedTracker m_cameraTracker;
         std::unordered_map<int, std::unique_ptr<RemotePlayer>> m_players;
+        std::unique_ptr<RemotePlayer> m_ghost; // player that always follows the local player
         std::vector<int> m_unknownPlayers;
         float m_lastDataRequest = 0.f;
         std::optional<MessageListener<msg::LevelDataMessage>> m_levelDataListener;
@@ -74,14 +75,9 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
 
         CCNode* m_playerNode = nullptr;
         Ref<CCNode> m_progressBarContainer;
-        Ref<ProgressIcon> m_selfProgressIcon;
-        Ref<PlayerStatusIcons> m_selfStatusIcons;
-        Ref<NameLabel> m_selfNameLabel;
         Ref<VoiceOverlay> m_voiceOverlay;
         Ref<PingOverlay> m_pingOverlay;
         Ref<CCSprite> m_noticeAlert;
-
-        Ref<EmoteBubble> m_selfEmoteBubble = nullptr;
     };
 
     // Setup functions
@@ -113,7 +109,6 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void selPeriodicalUpdate(float dt);
 
     void selPostInitActions(float dt);
-    void selSendPlayerData(float dt);
 
     // Misc
     PlayerState getPlayerState();
@@ -127,6 +122,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void handlePlayerLeave(int playerId);
     void handleLocalPlayerDeath(PlayerObject*);
     void setPermanentSafeMode();
+    void sendPlayerData(const PlayerState& state);
     /// Kills the local player, by default the death will not be counted as 'real'.
     /// If this is unwanted, pass `false`
     void killLocalPlayer(bool fake = true);

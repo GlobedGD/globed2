@@ -116,10 +116,9 @@ void GlobedGJBGL::setupPostInit() {
     this->setupUi();
     this->setupListeners();
 
-
-    if (g_settings.ghostFollower) {
-        this->handlePlayerJoin(myAccountId());
-    }
+    // add ghost player
+    fields.m_ghost = std::make_unique<RemotePlayer>(0, this, fields.m_playerNode);
+    fields.m_ghost->initData(PlayerDisplayData::getOwn(), false);
 
     CoreImpl::get().onJoinLevelPostInit(this);
 }
@@ -262,41 +261,6 @@ void GlobedGJBGL::setupUi() {
             pl->m_progressBar->addChild(fields.m_progressBarContainer);
         }
     }
-
-    fields.m_selfProgressIcon = Build<ProgressIcon>::create()
-        .parent(fields.m_progressBarContainer)
-        .id("self-player-progress"_spr);
-
-    auto gm = globed::cachedSingleton<GameManager>();
-
-    fields.m_selfProgressIcon->updateIcons(globed::getPlayerIcons());
-    fields.m_selfProgressIcon->setForceOnTop(true);
-
-    fields.m_selfStatusIcons = Build(PlayerStatusIcons::create(255))
-        .anchorPoint(0.5f, 0.f)
-        .parent(fields.m_playerNode)
-        .id("self-player-status-icons"_spr);
-
-    fields.m_selfNameLabel = Build(NameLabel::create(GJAccountManager::get()->m_username.c_str(), "chatFont.fnt"))
-        .opacity(globed::setting<float>("core.player.name-opacity") * 255.f)
-        .pos(0.f, NAME_OFFSET)
-        .parent(fields.m_playerNode)
-        .id("self-player-name"_spr);
-    fields.m_selfNameLabel->setShadowEnabled(true);
-
-    auto& nm = NetworkManagerImpl::get();
-    if (auto sud = nm.getOwnSpecialData()) {
-        fields.m_selfNameLabel->updateWithRoles(*sud);
-    }
-
-    auto& rm = RoomManager::get();
-    if (auto team = rm.getCurrentTeam()) {
-        fields.m_selfNameLabel->updateTeam(rm.getCurrentTeamId(), team->color);
-    }
-
-    fields.m_selfEmoteBubble = Build<EmoteBubble>::create()
-        .parent(fields.m_playerNode)
-        .id("emote-bubble-node"_spr);
 }
 
 void GlobedGJBGL::setupListeners() {
@@ -388,12 +352,6 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         CCPoint{(float) cameraVector.first, (float) cameraVector.second}
     );
 
-    // update progress indicator
-    if (!m_isEditor) {
-        float perc = static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(this))->getCurrentPercent() / 100.f;
-        fields.m_selfProgressIcon->updatePosition(perc, m_isPracticeMode);
-    }
-
     fields.m_unknownPlayers.clear();
 
     auto camState = this->getCameraState();
@@ -413,7 +371,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
             continue;
         }
 
-        OutFlags flags;
+        OutFlags flags{};
         auto& vstate = fields.m_interpolator.getPlayerState(playerId, flags);
         player->update(vstate, camState, flags, fields.m_playersHidden);
 
@@ -480,6 +438,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     }
 
     // send player data to the server
+    auto state = this->getPlayerState();
     if (fields.m_timeCounter >= fields.m_nextDataSend) {
         // update the next interval to be strictly in the future, dont want to repeat things
         float baseInterval = std::max(1.f / 240.f, fields.m_sendDataInterval);
@@ -488,46 +447,19 @@ void GlobedGJBGL::selUpdate(float tsdt) {
             fields.m_nextDataSend += sendInterval;
         }
 
-        this->selSendPlayerData(dt);
+        this->sendPlayerData(state);
     }
 
-    // update position for self icons / username
-    PlayerStatusFlags flags{};
-    flags.speaking = AudioManager::get().isPassiveRecording();
-    flags.speakingMuted = flags.speaking && fields.m_knownServerMuted;
-
-    bool showSelfName = g_settings.selfName;
-    bool showSelfIcons = flags.speaking && g_settings.selfStatusIcons;
-
-    if (showSelfIcons) {
-        fields.m_selfStatusIcons->setVisible(true);
-        fields.m_selfStatusIcons->updateStatus(flags);
-        fields.m_selfStatusIcons->setPosition({
-            m_player1->getPosition() + CCPoint{0.f, showSelfName ? STATUS_ICONS_OFFSET : NAME_OFFSET}
-        });
-    } else {
-        fields.m_selfStatusIcons->setVisible(false);
-    }
-
-    if (showSelfName) {
-        fields.m_selfNameLabel->setVisible(true);
-        fields.m_selfNameLabel->setPosition({
-            m_player1->getPosition() + CCPoint{0.f, NAME_OFFSET}
-        });
-    } else {
-        fields.m_selfNameLabel->setVisible(false);
-    }
+    // update ghost player
+    OutFlags ghostFlags{};
+    state.accountId = 0;
+    fields.m_ghost->update(state, camState, ghostFlags, !g_settings.ghostFollower);
 
     fields.m_periodicalDelta += dt;
     if (fields.m_periodicalDelta >= 0.25f) {
         this->selPeriodicalUpdate(fields.m_periodicalDelta);
         fields.m_periodicalDelta = 0.f;
     }
-
-    // update position of self emote bubble
-    fields.m_selfEmoteBubble->setPosition({
-        m_player1->getPosition() + CCPoint{25.f, 20.f + showSelfName * 15.f}
-    });
 }
 
 void GlobedGJBGL::selPeriodicalUpdate(float dt) {
@@ -576,7 +508,7 @@ void GlobedGJBGL::selPostInitActions(float dt) {
     }
 }
 
-void GlobedGJBGL::selSendPlayerData(float dt) {
+void GlobedGJBGL::sendPlayerData(const PlayerState& state) {
     auto& nm = NetworkManagerImpl::get();
     // do not do anything if we aren't connected
     if (!nm.isGameConnected()) return;
@@ -584,7 +516,6 @@ void GlobedGJBGL::selSendPlayerData(float dt) {
     auto& fields = *m_fields.self();
     fields.m_totalSentPackets++;
 
-    auto state = this->getPlayerState();
     std::vector<int> toRequest;
     float sinceRequest = fields.m_timeCounter - fields.m_lastDataRequest;
 
@@ -617,11 +548,6 @@ void GlobedGJBGL::selSendPlayerData(float dt) {
         : std::max(coverage.width, coverage.height) / 2.f * 2.75f;
 
     nm.sendPlayerState(state, toRequest, camCenter, camRadius);
-
-    // if the ghost player is enabled, update it
-    if (g_settings.ghostFollower) {
-        fields.m_interpolator.updatePlayer(state, fields.m_timeCounter);
-    }
 }
 
 PlayerState GlobedGJBGL::getPlayerState() {
@@ -785,8 +711,6 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
 }
 
 void GlobedGJBGL::handlePlayerLeave(int playerId) {
-    if (playerId == myAccountId()) return;
-
     auto& am = AudioManager::get();
     am.stopOutputStream(playerId);
 
@@ -1171,7 +1095,7 @@ void GlobedGJBGL::playSelfEmote(uint32_t id) {
     }
 
     auto& fields = *m_fields.self();
-    fields.m_selfEmoteBubble->playEmote(id);
+    fields.m_ghost->player1()->playEmote(id);
 
     NetworkManagerImpl::get().sendQuickChat(id);
 }

@@ -1,9 +1,11 @@
 #include <globed/core/game/VisualPlayer.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/RoomManager.hpp>
+#include <globed/audio/AudioManager.hpp>
 #include <globed/util/lazy.hpp>
 #include <core/PreloadManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/NameLabel.hpp>
 
 #include <UIBuilder.hpp>
@@ -31,7 +33,7 @@ static inline bool hideNearby(GJBaseGameLayer* gjbgl) {
     return setting<bool>(gjbgl->m_level->isPlatformer() ? "core.player.hide-nearby-plat" : "core.player.hide-nearby-classic");
 }
 
-bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {
+bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
     this->setTag(VISUAL_PLAYER_TAG);
 
     if (!PlayerObject::init(1, 1, gameLayer, gameLayer->m_objectLayer, !gameLayer->m_isEditor)) {
@@ -39,6 +41,7 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     }
 
     m_remotePlayer = rp;
+    m_isLocalPlayer = localPlayer;
     m_isSecond = isSecond;
     m_isEditor = gameLayer->m_isEditor;
     m_isPlatformer = gameLayer->m_level->isPlatformer();
@@ -48,7 +51,11 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     m_prevMode = PlayerIconType::Cube;
 
     // create the name label
-    bool showName = setting<bool>("core.player.show-names") && (!isSecond || setting<bool>("core.player.dual-name"));
+    bool showName = localPlayer ? setting<bool>("core.level.self-name") : setting<bool>("core.player.show-names");
+    if (isSecond) {
+        showName = showName && !localPlayer && setting<bool>("core.player.dual-name");
+    }
+
     m_forceHideName = !showName;
 
     m_nameLabel = Build<NameLabel>::create("", "chatFont.fnt")
@@ -59,7 +66,24 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
 
     m_nameLabel->setShadowEnabled(true);
 
-    if (!isSecond && setting<bool>("core.player.status-icons")) {
+    if (m_isLocalPlayer) {
+        auto& nm = NetworkManagerImpl::get();
+        if (auto sud = nm.getOwnSpecialData()) {
+            m_nameLabel->updateWithRoles(*sud);
+        }
+
+        auto& rm = RoomManager::get();
+        if (auto team = rm.getCurrentTeam()) {
+            m_nameLabel->updateTeam(rm.getCurrentTeamId(), team->color);
+        }
+    }
+
+    // create status icons
+    bool showStatus = !isSecond &&
+        (localPlayer ? setting<bool>("core.level.self-status-icons")
+        : setting<bool>("core.player.status-icons"));
+
+    if (showStatus) {
         float opacity = static_cast<unsigned char>(setting<float>("core.player.opacity") * 255.f);
         m_statusIcons = Build<PlayerStatusIcons>::create(opacity)
             .scale(0.8f)
@@ -87,7 +111,6 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     if (lerpDebug()) {
         this->updateLerpTrajectory(data);
     }
-
 
     bool changedGravity = m_prevUpsideDown != data.isUpsideDown;
 
@@ -155,6 +178,8 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         if (m_shipStreak) m_shipStreak->setVisible(false);
     }
 
+    bool extraProcessing = shouldBeVisible || m_isLocalPlayer;
+
     // XXX: sticky is pretty broken so not handled
 
     float innerRot = data.isSideways ? (data.isUpsideDown ? 90.f : -90.f) : 0.f;
@@ -170,7 +195,9 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         this->setPosition(data.position);
         this->setRotation(data.rotation);
         m_mainLayer->setRotation(innerRot);
+    }
 
+    if (extraProcessing) {
         // rotate the name label together with the camera
         bool rotateNames = setting<bool>("core.player.rotate-names");
         CameraDirection dir{};
@@ -197,7 +224,8 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
             // if the player is somewhere near the ceiling, the emote bubble should be rendered on the opposite side,
             // so that it's not inside the ceiling
             bool invertY = false;
-            if (auto ceiling = gjbgl->m_groundLayer2) {
+            auto ceiling = gjbgl->m_groundLayer2;
+            if (ceiling && ceiling->isVisible()) {
                 float maxY = ceiling->getPositionY();
                 float bubbleTop = data.position.y + fullOffset.y + m_emoteBubble->getContentHeight() * std::abs(m_emoteBubble->getScaleY());
                 invertY = bubbleTop > maxY;
@@ -264,13 +292,16 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         updatedOpacity = true;
     }
 
-    if (m_statusIcons && shouldBeVisible) {
+    if (m_statusIcons && extraProcessing) {
+        auto& am = AudioManager::get();
+        bool speaking = m_isLocalPlayer ? am.isPassiveRecording() : gjbgl->isSpeaking(state.accountId);
+
         PlayerStatusFlags flags = {};
         flags.paused = state.isPaused;
         flags.practicing = state.isPracticing;
-        flags.speakingMuted = false;
+        flags.speaking = speaking;
+        flags.speakingMuted = m_isLocalPlayer ? speaking && gjbgl->m_fields->m_knownServerMuted : false;
         flags.editing = state.isInEditor;
-        flags.speaking = gjbgl->isSpeaking(state.accountId);
         m_statusIcons->updateStatus(flags);
     }
 
@@ -758,6 +789,7 @@ void VisualPlayer::playEmote(uint32_t emoteId) {
     }
 
     m_emoteBubble->playEmote(emoteId);
+    log::debug("Playing {}", emoteId, m_emoteBubble);
 }
 
 void VisualPlayer::cancelPlatformerJumpAnim() {
@@ -836,17 +868,19 @@ float VisualPlayer::getLastRotation() {
 }
 
 void VisualPlayer::setVisible(bool vis) {
-    if (vis == m_bVisible) return;
+    bool showName = !m_forceHideName && (m_isLocalPlayer || vis);
+
+    if (vis == m_bVisible && m_nameLabel->m_bVisible == showName) return;
     PlayerObject::setVisible(vis);
 
-    m_nameLabel->setVisible(vis && !m_forceHideName);
-    if (m_statusIcons) m_statusIcons->setVisible(vis);
-    if (m_emoteBubble) m_emoteBubble->setVisible(vis);
+    m_nameLabel->setVisible(showName);
+    if (m_statusIcons) m_statusIcons->setVisible(m_isLocalPlayer || vis);
+    if (m_emoteBubble) m_emoteBubble->setVisible(m_isLocalPlayer || vis);
 }
 
-VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond) {
+VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
     auto ret = new VisualPlayer();
-    if (ret->init(gameLayer, rp, playerNode, isSecond)) {
+    if (ret->init(gameLayer, rp, playerNode, isSecond, localPlayer)) {
         ret->autorelease();
         return ret;
     }

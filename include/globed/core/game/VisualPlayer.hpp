@@ -28,7 +28,7 @@ public:
     GLOBED_NOCOPY(VisualPlayer);
     GLOBED_NOMOVE(VisualPlayer);
 
-    static VisualPlayer* create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond);
+    static VisualPlayer* create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer);
     void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState, bool forceHide);
     void cleanupObjectLayer();
 
@@ -60,7 +60,7 @@ private:
     Ref<cocos2d::CCDrawNode> m_playerTrajectory;
     Ref<EmoteBubble> m_emoteBubble;
 
-
+    bool m_isLocalPlayer = false;
     bool m_isSecond = false;
     bool m_isEditor = false;
     bool m_forceHideName = false;
@@ -97,7 +97,7 @@ private:
     bool m_p1Sticky = false;
     bool m_p2Sticky = false;
 
-    bool init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond);
+    bool init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer);
     void updateOpacity();
     void updateIconType(PlayerIconType iconType);
     void updateRobotAnimation();

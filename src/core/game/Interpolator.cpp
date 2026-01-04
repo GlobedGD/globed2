@@ -55,7 +55,13 @@ static std::optional<SpiderTeleportData> detectSpiderTp(const PlayerObjectData& 
 }
 
 void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
-    auto& state = m_players.at(player.accountId);
+    auto it = m_players.find(player.accountId);
+    if (it == m_players.end()) {
+        log::warn("[Interpolator] Received update for unknown player {}", player.accountId);
+        return;
+    }
+
+    auto& state = it->second;
     state.updatedAt = curTimestamp;
 
     bool culled = !player.player1;
