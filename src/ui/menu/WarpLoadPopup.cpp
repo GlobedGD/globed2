@@ -27,56 +27,58 @@ bool WarpLoadPopup::setup(int levelId, bool openLevel, bool replaceScene) {
         .scale(0.35f)
         .parent(m_mainLayer);
 
-    auto glm = GameLevelManager::get();
-    glm->m_levelManagerDelegate = this;
-    glm->getOnlineLevels(GJSearchObject::create(SearchType::Type26, fmt::to_string(levelId)));
+    globed::getOnlineLevel(levelId, [this](auto level) {
+        if (!level) {
+            this->onClose(nullptr);
+            globed::alertFormat("Error", "Failed to join the level. It is likely unlisted or deleted.");
+            return;
+        }
 
-    return true;
+        this->onLoadedMeta(level);
+    });
+
+    // it's possible that a cached level was used and everything loaded instantly,
+    // in this case don't even open the popup
+    return !m_finished;
 }
 
 void WarpLoadPopup::onClose(cocos2d::CCObject* obj) {
     BasePopup::onClose(obj);
 }
 
-void WarpLoadPopup::loadLevelsFinished(cocos2d::CCArray* levels, char const* p1, int p2) {
-    if (levels->count() == 0) {
-        this->onClose(nullptr);
-        globed::alertFormat("Error", "Failed to join the level. It is likely unlisted or deleted.", m_levelId);
+void WarpLoadPopup::onLoadedMeta(GJGameLevel* level) {
+    if (!level->m_levelString.empty()) {
+        // assume the level is already downloaded
+        this->onLoadedData(level);
         return;
     }
 
-    auto level = static_cast<GJGameLevel*>(levels->objectAtIndex(0));
+    // download the level
     auto glm = GameLevelManager::get();
 
-    glm->m_levelManagerDelegate = nullptr;
     glm->m_levelDownloadDelegate = this;
     glm->downloadLevel(level->m_levelID, false);
 
     m_statusLabel->setString("Downloading level data..");
 }
 
-void WarpLoadPopup::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) {
-    this->loadLevelsFinished(p0, p1, -1);
-}
-
-void WarpLoadPopup::loadLevelsFailed(char const* p0, int p1) {
-    this->onClose(nullptr);
-    globed::alertFormat("Error", "Failed to join the level. It is likely unlisted or deleted.", m_levelId, p1);
-}
-
-void WarpLoadPopup::loadLevelsFailed(char const* p0) {
-    this->loadLevelsFailed(p0, -1);
-}
-
 // Stage 2, level download
 
 void WarpLoadPopup::levelDownloadFinished(GJGameLevel* level) {
+    globed::reorderDownloadedLevel(level);
+    this->onLoadedData(level);
+}
+
+void WarpLoadPopup::levelDownloadFailed(int p0) {
+    this->onClose(this);
+    globed::alertFormat("Error", "Failed to download the level (error code {})", p0);
+    m_finished = true;
+}
+
+void WarpLoadPopup::onLoadedData(GJGameLevel* level) {
     this->onClose(this);
 
-    globed::reorderDownloadedLevel(level);
-
     // depending on whether open level is true or not, we should either open `LevelInfoLayer` or create a `PlayLayer`
-
     if (m_openLevel) {
         auto scene = PlayLayer::scene(level, false, false);
         m_replaceScene ? globed::replaceScene(scene) : globed::pushScene(scene);
@@ -84,11 +86,8 @@ void WarpLoadPopup::levelDownloadFinished(GJGameLevel* level) {
         auto layer = LevelInfoLayer::create(level, false);
         m_replaceScene ? globed::replaceScene(layer) : globed::pushScene(layer);
     }
-}
 
-void WarpLoadPopup::levelDownloadFailed(int p0) {
-    this->onClose(this);
-    globed::alertFormat("Error", "Failed to download the level (error code {})", p0);
+    m_finished = true;
 }
 
 }

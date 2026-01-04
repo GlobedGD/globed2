@@ -79,7 +79,8 @@ cue::Icons convertPlayerIcons(const PlayerIconData& data);
 
 #ifdef GLOBED_API_EXT_FUNCTIONS
 
-/// Gets a saved level from cache if available, otherwise downloads it.
+/// Gets a saved level from cache if available, otherwise fetches it.
+/// The level data might not be downloaded, only the metadata.
 GLOBED_DLL void getOnlineLevel(int id, std23::move_only_function<void(geode::Ref<GJGameLevel>)> cb);
 
 #endif

@@ -86,7 +86,8 @@ void warpToSession(SessionId session, bool openLevel, bool force) {
     } else {
         // custom levels, show a loading popup
         // replace scene if openLevel is true, push scene otherwise
-        WarpLoadPopup::create(levelId, openLevel, openLevel)->show();
+        auto popup = WarpLoadPopup::create(levelId, openLevel, openLevel);
+        if (popup) popup->show();
     }
 }
 

@@ -41,6 +41,7 @@ Fixed / removed:
 * Player list and room list menus now should be way less laggy
 * Certain <cy>rarely used</c> settings were removed, however they might get added in the future: DNS over HTTPS, Force TCP, Packet limit, Server relays
 * Discord RPC setting was removed, the <cb>Discord Rich Presence</c> mod is planning on adding Globed support entirely in that mod
+* Levels are redownloaded less, e.g. when joining someone Globed will try to see if the level is saved already
 * Various small bugs have been fixed, of which I cannot remember any :D
 
 ## v1.8.5
