@@ -51,12 +51,12 @@ public:
 
 protected:
     cocos2d::enumKeyCodes m_kVoice, m_kDeafen, m_kHidePlayers;
-    cocos2d::enumKeyCodes m_kEmote1, m_kEmote2, m_kEmote3, m_kEmote4;
+    std::array<cocos2d::enumKeyCodes, 8> m_emoteBinds;
 
     friend class SingletonBase;
     KeybindsManager();
 
-    cocos2d::enumKeyCodes getBind(const char* key);
+    cocos2d::enumKeyCodes getBind(std::string_view key);
 };
 
 }

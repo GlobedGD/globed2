@@ -3,6 +3,8 @@
 #include <globed/util/lazy.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 
+#include <asp/iter.hpp>
+
 using namespace geode::prelude;
 
 namespace globed {
@@ -165,24 +167,24 @@ bool KeybindsManager::isKeyUsed(cocos2d::enumKeyCodes key) {
     if (key == KEY_None || key == KEY_Unknown) return false;
 
     return key == m_kVoice || key == m_kDeafen || key == m_kHidePlayers ||
-           key == m_kEmote1 || key == m_kEmote2 || key == m_kEmote3 || key == m_kEmote4;
+        asp::iter::from(m_emoteBinds).any([key](auto k) { return k == key; });
 }
 
 bool KeybindsManager::isAnyEmoteKeyBound() {
-    return m_kEmote1 != KEY_None || m_kEmote2 != KEY_None || m_kEmote3 != KEY_None || m_kEmote4 != KEY_None;
+    return asp::iter::from(m_emoteBinds).any([](auto k) { return k != KEY_None; });
 }
 
 void KeybindsManager::refreshBinds() {
     m_kVoice = this->getBind("core.keybinds.voice-chat");
     m_kDeafen = this->getBind("core.keybinds.deafen");
     m_kHidePlayers = this->getBind("core.keybinds.hide-players");
-    m_kEmote1 = this->getBind("core.keybinds.emote-1");
-    m_kEmote2 = this->getBind("core.keybinds.emote-2");
-    m_kEmote3 = this->getBind("core.keybinds.emote-3");
-    m_kEmote4 = this->getBind("core.keybinds.emote-4");
+
+    for (size_t i = 0; i < m_emoteBinds.size(); i++) {
+        m_emoteBinds[i] = this->getBind(fmt::format("core.keybinds.emote-{}", i));
+    }
 }
 
-enumKeyCodes KeybindsManager::getBind(const char* key) {
+enumKeyCodes KeybindsManager::getBind(std::string_view key) {
     return (cocos2d::enumKeyCodes)(int)globed::setting<int>(key);
 }
 
@@ -208,14 +210,11 @@ void KeybindsManager::handleKeyDown(cocos2d::enumKeyCodes key) {
         gjbgl->toggleHidePlayers();
     }
 
-    if (key == m_kEmote1) {
-        gjbgl->playSelfFavoriteEmote(0);
-    } else if (key == m_kEmote2) {
-        gjbgl->playSelfFavoriteEmote(1);
-    } else if (key == m_kEmote3) {
-        gjbgl->playSelfFavoriteEmote(2);
-    } else if (key == m_kEmote4) {
-        gjbgl->playSelfFavoriteEmote(3);
+    for (auto [idx, bind] : asp::iter::from(m_emoteBinds).enumerate()) {
+        if (key == bind) {
+            gjbgl->playSelfFavoriteEmote(idx);
+            return;
+        }
     }
 }
 

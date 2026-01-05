@@ -13,8 +13,8 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize EmoteListPopup::POPUP_SIZE {340.f, 280.f};
-static constexpr CCSize LIST_SIZE = {260.f, 130.f};
+const CCSize EmoteListPopup::POPUP_SIZE {360.f, 280.f};
+static constexpr CCSize LIST_SIZE = {280.f, 130.f};
 static constexpr float CELL_HEIGHT = 40.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
 const int EMOTES_PER_PAGE = 18;
@@ -28,7 +28,7 @@ bool EmoteListPopup::setup() {
     auto& allEmotes = EmoteManager::get().getEmotes();
     m_maxPages = (allEmotes.size() + EMOTES_PER_PAGE - 1) / EMOTES_PER_PAGE;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 8; i++) {
         auto emote = globed::value<uint32_t>(fmt::format("core.ui.emote-slot-{}", i)).value_or(0);
         m_favoriteEmoteIds.push_back(emote);
     }
@@ -159,14 +159,11 @@ bool EmoteListPopup::setup() {
 
     m_favoriteEmotesMenu = Build<CCMenu>::create()
         .pos(this->fromBottom(70.f))
-        .contentSize({LIST_SIZE.width + 25.f, 0})
+        .contentSize({(LIST_SIZE.width + 0.f) / 0.7f, 0})
         .anchorPoint(0.5f, 0.5f)
         .scale(0.7f)
-        .layout(AxisLayout::create()
-            ->setAxis(Axis::Row)
-            ->setAxisAlignment(AxisAlignment::Center)
-            ->setAutoScale(false)
-            ->setGap(50.f)
+        .layout(SimpleRowLayout::create()
+            ->setMainAxisAlignment(MainAxisAlignment::Even)
         )
         .parent(m_mainLayer);
 

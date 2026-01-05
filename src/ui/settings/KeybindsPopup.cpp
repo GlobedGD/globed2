@@ -148,30 +148,21 @@ bool KeybindsPopup::setup() {
         "Hide / unhide all players while in a level"
     ));
 
-
-    m_list->addCell(KeybindCell::create(
-        "core.keybinds.emote-1",
-        "Emote 1",
-        "Send the emote assigned to favorite slot 1"
+#define EMOTE_CELL(n, human) \
+    m_list->addCell(KeybindCell::create( \
+        "core.keybinds.emote-" n, \
+        "Emote " human, \
+        "Send the emote assigned to favorite slot " human \
     ));
 
-    m_list->addCell(KeybindCell::create(
-        "core.keybinds.emote-2",
-        "Emote 2",
-        "Send the emote assigned to favorite slot 2"
-    ));
-
-    m_list->addCell(KeybindCell::create(
-        "core.keybinds.emote-3",
-        "Emote 3",
-        "Send the emote assigned to favorite slot 3"
-    ));
-
-    m_list->addCell(KeybindCell::create(
-        "core.keybinds.emote-4",
-        "Emote 4",
-        "Send the emote assigned to favorite slot 4"
-    ));
+    EMOTE_CELL("0", "1")
+    EMOTE_CELL("1", "2")
+    EMOTE_CELL("2", "3")
+    EMOTE_CELL("3", "4")
+    EMOTE_CELL("4", "5")
+    EMOTE_CELL("5", "6")
+    EMOTE_CELL("6", "7")
+    EMOTE_CELL("7", "8")
 
     return true;
 }
