@@ -82,7 +82,7 @@ public:
     void stopAllOutputSources();
 
     // Updates all playback sources, removing finished ones and updating volumes of proximity sources
-    void updatePlayback(CCPoint playerPos);
+    void updatePlayback(CCPoint playerPos, bool voiceProximity);
     void registerPlaybackSource(std::shared_ptr<AudioSource> source);
 
     void setDeafen(bool deafen);
@@ -145,7 +145,7 @@ private:
     void internalStopRecording(bool ignoreErrors = false);
     void recordInvokeCallback();
     void recordInvokeRawCallback(const float* pcm, size_t samples);
-    float calculateVolume(AudioSource& src, const CCPoint& playerPos);
+    float calculateVolume(AudioSource& src, const CCPoint& playerPos, bool voiceProximity);
 
     /* playback */
     std::unordered_set<std::shared_ptr<AudioSource>> m_playbackSources;

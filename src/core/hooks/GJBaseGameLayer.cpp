@@ -399,7 +399,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
 
     // update audio
     if (fields.m_audioInterval.tick()) {
-        AudioManager::get().updatePlayback(camState.cameraCenter());
+        AudioManager::get().updatePlayback(camState.cameraCenter(), fields.m_isVoiceProximity);
     }
 
     // the server might not send any updates if there are no players on the level,

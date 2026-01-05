@@ -160,6 +160,18 @@ public:
         });
     }
 
+    /// This will throw if the setting is not found or of the wrong type
+    template <typename T>
+    T getAndListenForChanges(
+        std::string_view key,
+        std23::move_only_function<void(const T&)> callback
+    ) {
+        if (this->listenForChanges<T>(key, std::move(callback))) {
+            return this->setting<T>(key);
+        }
+        throw std::runtime_error(fmt::format("setting not found with key {}", key));
+    }
+
     void commitSlotsToDisk();
 
     void reloadSetting(std::string_view fullKey);

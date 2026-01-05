@@ -56,14 +56,12 @@ AudioManager::AudioManager()
     m_thread.start(this);
 
     m_recordDevice = AudioRecordingDevice{.id = -1};
-    m_vcVolume = globed::setting<float>("core.audio.playback-volume");
-    m_sfxVolume = globed::setting<float>("core.player.quick-chat-sfx-volume");
 
-    SettingsManager::get().listenForChanges<float>("core.audio.playback-volume", [this](float value) {
+    m_vcVolume = SettingsManager::get().getAndListenForChanges<float>("core.audio.playback-volume", [this](float value) {
         m_vcVolume = value;
     });
 
-    SettingsManager::get().listenForChanges<float>("core.player.quick-chat-sfx-volume", [this](float value) {
+    m_sfxVolume = SettingsManager::get().getAndListenForChanges<float>("core.player.quick-chat-sfx-volume", [this](float value) {
         m_sfxVolume = value;
     });
 }
@@ -368,25 +366,32 @@ void AudioManager::stopAllOutputSources() {
     m_playbackSources.clear();
 }
 
-float AudioManager::calculateVolume(AudioSource& src, const CCPoint& playerPos) {
+float AudioManager::calculateVolume(AudioSource& src, const CCPoint& playerPos, bool voiceProximity) {
     if (m_deafen) return 0.f;
 
     float targetVolume = src.getVolume();
     auto kind = src.kind();
-    auto pos = src.getPosition();
 
     // proximity
-    if (pos) {
-        auto distance = playerPos.getDistance(*pos);
-        float mult = 1.25f - std::clamp(distance, 0.01f, PROXIMITY_AUDIO_LIMIT) / PROXIMITY_AUDIO_LIMIT;
-        targetVolume *= mult;
+    bool applyProximity = kind == AudioKind::VoiceChat
+        ? voiceProximity
+        : true;
+
+    if (applyProximity) {
+        auto pos = src.getPosition();
+        if (pos) {
+            auto distance = playerPos.getDistance(*pos);
+            float mult = 1.25f - std::clamp(distance, 0.01f, PROXIMITY_AUDIO_LIMIT) / PROXIMITY_AUDIO_LIMIT;
+            targetVolume *= mult;
+        }
     }
 
-    // kind multiplier
+    // kind multipliers
     switch (kind) {
         case AudioKind::EmoteSfx: {
             targetVolume *= m_sfxVolume;
         } break;
+
         case AudioKind::VoiceChat: {
             targetVolume *= m_vcVolume;
         } break;
@@ -412,7 +417,7 @@ float AudioManager::calculateVolume(AudioSource& src, const CCPoint& playerPos) 
     return targetVolume;
 }
 
-void AudioManager::updatePlayback(CCPoint playerPos) {
+void AudioManager::updatePlayback(CCPoint playerPos, bool voiceProximity) {
     for (auto it = m_playbackSources.begin(); it != m_playbackSources.end(); ) {
         auto& src = *it;
         if (!src->isPlaying()) {
@@ -421,7 +426,7 @@ void AudioManager::updatePlayback(CCPoint playerPos) {
             continue;
         }
 
-        float tvol = this->calculateVolume(*src, playerPos);
+        float tvol = this->calculateVolume(*src, playerPos, voiceProximity);
         src->rawSetVolume(tvol);
         src->onUpdate();
 
