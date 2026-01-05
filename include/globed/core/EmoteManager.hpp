@@ -1,6 +1,8 @@
 #pragma once
 
 #include <globed/util/singleton.hpp>
+#include <globed/core/game/RemotePlayer.hpp>
+#include <globed/audio/sound/PlayerSound.hpp>
 
 namespace globed {
 
@@ -13,7 +15,7 @@ public:
     std::unordered_map<uint32_t, std::string>& getEmotes();
     std::vector<uint32_t>& getSortedEmoteIds();
 
-    FMOD::Channel* playEmoteSfx(uint32_t id);
+    std::shared_ptr<PlayerSound> playEmoteSfx(uint32_t id, std::shared_ptr<RemotePlayer> player);
 
 protected:
     std::unordered_map<uint32_t, std::string> m_emoteNames;

@@ -1,5 +1,7 @@
 #include <globed/audio/AudioManager.hpp>
+#include <globed/audio/sound/PlayerSound.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <globed/core/game/RemotePlayer.hpp>
 #include <globed/util/format.hpp>
 
 #ifdef GEODE_IS_WINDOWS
@@ -23,6 +25,9 @@ static std::string formatFmodError(FMOD_RESULT result, const char* whatFailed) {
         auto _res = (res); \
         if (_res != FMOD_OK) return Err(formatFmodError(_res, msg)); \
     } while (0) \
+
+// how many units before the audio disappears
+constexpr float PROXIMITY_AUDIO_LIMIT = 1200.f;
 
 namespace globed {
 
@@ -51,20 +56,20 @@ AudioManager::AudioManager()
     m_thread.start(this);
 
     m_recordDevice = AudioRecordingDevice{.id = -1};
-    this->setGlobalPlaybackVolume(globed::setting<float>("core.audio.playback-volume"));
+    m_vcVolume = globed::setting<float>("core.audio.playback-volume");
+    m_sfxVolume = globed::setting<float>("core.player.quick-chat-sfx-volume");
 
     SettingsManager::get().listenForChanges<float>("core.audio.playback-volume", [this](float value) {
-        this->setGlobalPlaybackVolume(value);
+        m_vcVolume = value;
+    });
+
+    SettingsManager::get().listenForChanges<float>("core.player.quick-chat-sfx-volume", [this](float value) {
+        m_sfxVolume = value;
     });
 }
 
 AudioManager::~AudioManager() {
     m_thread.stopAndWait();
-
-    for (auto& [_, stream] : m_playbackStreams) {
-        // crash fix :p
-        std::ignore = stream.release();
-    }
 }
 
 void AudioManager::preInitialize() {
@@ -321,53 +326,6 @@ Result<FMOD::Channel*> AudioManager::playSound(FMOD::Sound* sound) {
     return Ok(ch);
 }
 
-Result<FMOD::Sound*> AudioManager::createSound(const float* pcm, size_t samples, int sampleRate) {
-    FMOD_CREATESOUNDEXINFO exinfo = {};
-
-    exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
-    exinfo.numchannels = 1;
-    exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
-    exinfo.defaultfrequency = sampleRate;
-    exinfo.length = sizeof(float) * samples;
-
-    FMOD::Sound* sound;
-
-    FMOD_ERRC(this->getSystem()->createSound(
-        nullptr, FMOD_2D | FMOD_OPENUSER | FMOD_CREATESAMPLE, &exinfo, &sound),
-        "System::createSound"
-    );
-
-    float* data;
-    FMOD_ERRC(
-        sound->lock(0, exinfo.length, (void**)&data, nullptr, nullptr, nullptr),
-        "Sound::lock"
-    );
-
-    std::memcpy(data, pcm, exinfo.length);
-
-    FMOD_ERRC(
-        sound->unlock(data, nullptr, exinfo.length, 0),
-        "Sound::unlock"
-    );
-
-    return Ok(sound);
-}
-
-Result<FMOD::Sound*> AudioManager::createSound(const std::filesystem::path& path) {
-    FMOD::Sound* sound = nullptr;
-    FMOD_ERRC(
-        this->getSystem()->createSound(
-            utils::string::pathToString(path).c_str(),
-            FMOD_DEFAULT,
-            nullptr,
-            &sound
-        ),
-        "System::createSound"
-    );
-
-    return Ok(sound);
-}
-
 void AudioManager::setActiveRecordingDevice(int deviceId) {
     auto dev = this->getRecordingDevice(deviceId);
 
@@ -397,100 +355,86 @@ FMOD::System* AudioManager::getSystem() {
     return m_system;
 }
 
-void AudioManager::forEachStream(std23::function_ref<void(int, AudioStream&)> func) {
-    for (auto& [id, stream] : m_playbackStreams) {
-        func(id, *stream);
+Result<> AudioManager::mapError(FMOD_RESULT result) {
+    if (result == FMOD_OK) return Ok();
+
+    return Err("[FMOD error {}] {}", (int)result, FMOD_ErrorString(result));
+}
+
+void AudioManager::stopAllOutputSources() {
+    for (auto& src : m_playbackSources) {
+        src->stop();
+    }
+    m_playbackSources.clear();
+}
+
+float AudioManager::calculateVolume(AudioSource& src, const CCPoint& playerPos) {
+    if (m_deafen) return 0.f;
+
+    float targetVolume = src.getVolume();
+    auto kind = src.kind();
+    auto pos = src.getPosition();
+
+    // proximity
+    if (pos) {
+        auto distance = playerPos.getDistance(*pos);
+        float mult = 1.25f - std::clamp(distance, 0.01f, PROXIMITY_AUDIO_LIMIT) / PROXIMITY_AUDIO_LIMIT;
+        targetVolume *= mult;
+    }
+
+    // kind multiplier
+    switch (kind) {
+        case AudioKind::EmoteSfx: {
+            targetVolume *= m_sfxVolume;
+        } break;
+        case AudioKind::VoiceChat: {
+            targetVolume *= m_vcVolume;
+        } break;
+
+        default: break;
+    }
+
+    // focused player
+    if (m_focusedPlayer != -1) {
+        int id = -1;
+
+        if (auto ps = dynamic_cast<PlayerSound*>(&src)) {
+            if (auto pl = ps->getPlayer()) {
+                id = pl->id();
+            }
+        }
+
+        if (m_focusedPlayer != id) {
+            targetVolume *= 0.2f;
+        }
+    }
+
+    return targetVolume;
+}
+
+void AudioManager::updatePlayback(CCPoint playerPos) {
+    for (auto it = m_playbackSources.begin(); it != m_playbackSources.end(); ) {
+        auto& src = *it;
+        if (!src->isPlaying()) {
+            src->stop();
+            it = m_playbackSources.erase(it);
+            continue;
+        }
+
+        float tvol = this->calculateVolume(*src, playerPos);
+        src->rawSetVolume(tvol);
+        src->onUpdate();
+
+        ++it;
     }
 }
 
-AudioStream* AudioManager::getStream(int streamId) {
-    auto it = m_playbackStreams.find(streamId);
-    if (it == m_playbackStreams.end()) {
-        return nullptr;
-    }
-
-    return it->second.get();
-}
-
-Result<> AudioManager::playFrameStreamed(int streamId, const EncodedAudioFrame& frame) {
-    auto stream = this->preparePlaybackStream(streamId);
-
-    return stream->writeData(frame);
-}
-
-void AudioManager::playFrameStreamedRaw(int streamId, const float* pcm, size_t samples) {
-    auto stream = this->preparePlaybackStream(streamId);
-
-    stream->writeData(pcm, samples);
-}
-
-AudioStream* AudioManager::preparePlaybackStream(int id) {
-    auto it = m_playbackStreams.find(id);
-
-    if (it != m_playbackStreams.end()) {
-        return it->second.get();
-    }
-
-    auto stream = std::make_unique<AudioStream>(AudioDecoder{
-        VOICE_TARGET_SAMPLERATE,
-        VOICE_TARGET_FRAMESIZE,
-        VOICE_CHANNELS,
-    });
-    stream->start();
-
-    auto ptr = stream.get();
-    m_playbackStreams[id] = std::move(stream);
-
-    return ptr;
-}
-
-void AudioManager::stopAllOutputStreams() {
-    m_playbackStreams.clear();
-}
-
-void AudioManager::stopOutputStream(int streamId) {
-    m_playbackStreams.erase(streamId);
-}
-
-float AudioManager::getStreamVolume(int streamId) {
-    auto it = m_playbackStreams.find(streamId);
-    if (it == m_playbackStreams.end()) {
-        return 0.0f;
-    }
-
-    return it->second->getUserVolume();
-}
-
-float AudioManager::getStreamLoudness(int streamId) {
-    auto it = m_playbackStreams.find(streamId);
-    if (it == m_playbackStreams.end()) {
-        return 0.0f;
-    }
-    return it->second->getLoudness();
-}
-
-void AudioManager::setStreamVolume(int streamId, float volume) {
-    auto it = m_playbackStreams.find(streamId);
-
-    if (it != m_playbackStreams.end()) {
-        float vol = this->mapStreamVolume(streamId, volume);
-        it->second->setUserVolume(vol, m_globalPlaybackLayer);
-    }
-}
-
-void AudioManager::setGlobalPlaybackVolume(float volume) {
-    m_playbackLayer = volume;
-    this->updatePlaybackVolume();
-}
-
-bool AudioManager::isStreamActive(int streamId) {
-    auto it = m_playbackStreams.find(streamId);
-    return it != m_playbackStreams.end() && !it->second->isStarving();
+void AudioManager::registerPlaybackSource(std::shared_ptr<AudioSource> source) {
+    m_playbackSources.insert(source);
 }
 
 void AudioManager::setDeafen(bool deafen) {
     m_deafen = deafen;
-    this->updatePlaybackVolume();
 }
 
 bool AudioManager::getDeafen() {
@@ -499,7 +443,6 @@ bool AudioManager::getDeafen() {
 
 void AudioManager::setFocusedPlayer(int playerId) {
     m_focusedPlayer = playerId;
-    this->updatePlaybackVolume();
 }
 
 void AudioManager::clearFocusedPlayer() {
@@ -508,25 +451,6 @@ void AudioManager::clearFocusedPlayer() {
 
 int AudioManager::getFocusedPlayer() {
     return m_focusedPlayer;
-}
-
-float AudioManager::mapStreamVolume(int playerId, float vol) {
-    if (m_focusedPlayer == -1) {
-        return vol;
-    } else if (m_focusedPlayer == playerId) {
-        return vol;
-    } else {
-        return vol * 0.2f;
-    }
-}
-
-void AudioManager::updatePlaybackVolume() {
-    m_globalPlaybackLayer = m_playbackLayer * (m_deafen ? 0.f : 1.f);
-
-    for (auto& [id, stream] : m_playbackStreams) {
-        float vol = this->mapStreamVolume(id, stream->getUserVolume());
-        stream->setUserVolume(vol, m_globalPlaybackLayer);
-    }
 }
 
 // Thread stuff

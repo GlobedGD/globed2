@@ -105,14 +105,20 @@ bool AudioDeviceSetupPopup::setup() {
 
             am.setActiveRecordingDevice(globed::setting<int>("core.audio.input-device"));
             am.setRecordBufferCapacity(1);
-            auto result = am.startRecordingRaw([](const float* pcm, size_t samples) {
+
+            m_stream = VoiceStream::create({}).unwrap();
+            m_stream->setGlobal(true);
+
+            auto result = am.startRecordingRaw([stream = m_stream](const float* pcm, size_t samples) {
                 // play back the audio
-                AudioManager::get().playFrameStreamedRaw(-1, pcm, samples);
+                stream->writeData(pcm, samples);
             });
 
             if (result.isErr()) {
                 log::warn("failed to start recording: {}", result.unwrapErr());
                 Notification::create(result.unwrapErr(), NotificationIcon::Error)->show();
+                am.stopAllOutputSources();
+                m_stream.reset();
                 return;
             }
 
@@ -126,11 +132,7 @@ bool AudioDeviceSetupPopup::setup() {
     // stop recording button
     m_stopButton = Build<CCSprite>::createSpriteName("GJ_stopEditorBtn_001.png")
         .intoMenuItem([this](auto) {
-            this->toggleButtons(false);
-
-            auto& am = AudioManager::get();
-            am.haltRecording();
-            am.stopAllOutputStreams();
+            this->stopRecording();
         })
         .parent(m_visualizerContainer)
         .id("stop-recording-button"_spr)
@@ -163,11 +165,21 @@ bool AudioDeviceSetupPopup::setup() {
     return true;
 }
 
+void AudioDeviceSetupPopup::stopRecording() {
+    this->toggleButtons(false);
+
+    auto& am = AudioManager::get();
+    am.haltRecording();
+    am.stopAllOutputSources();
+    m_stream.reset();
+}
+
 void AudioDeviceSetupPopup::update(float dt) {
-    auto stream = AudioManager::get().getStream(-1);
-    if (stream) {
-        stream->updateEstimator(dt);
-        m_visualizer->setVolume(stream->getLoudness());
+    if (m_stream) {
+        m_stream->updateEstimator(dt);
+        m_visualizer->setVolume(m_stream->getAudibility());
+    } else {
+        m_visualizer->setVolume(0.f);
     }
 }
 
@@ -179,6 +191,7 @@ void AudioDeviceSetupPopup::refreshList() {
         activeId = dev->id;
     }
 
+    m_list->clear();
     auto devices = am.getRecordingDevices();
     for (const auto& device : devices) {
         m_list->addCell(AudioDeviceCell::create(device, this, activeId));
@@ -222,8 +235,7 @@ void AudioDeviceSetupPopup::weakRefreshList() {
 
 void AudioDeviceSetupPopup::onClose(cocos2d::CCObject* sender) {
     Popup::onClose(sender);
-    auto& am = AudioManager::get();
-    am.haltRecording();
+    this->stopRecording();
 }
 
 void AudioDeviceSetupPopup::toggleButtons(bool recording) {

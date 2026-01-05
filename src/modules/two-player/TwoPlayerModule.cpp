@@ -59,7 +59,7 @@ void TwoPlayerModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool e
 void TwoPlayerModule::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) {
     auto& mod = TwoPlayerModule::get();
 
-    if (death.isReal && player && player->displayData().accountId == m_linkedPlayer) {
+    if (death.isReal && player && player->id() == m_linkedPlayer) {
         this->causeLocalDeath(gjbgl);
     }
 }

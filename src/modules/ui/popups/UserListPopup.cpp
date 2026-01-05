@@ -70,10 +70,13 @@ public:
 
 protected:
     AudioVisualizer* m_visualizer = nullptr;
+    std::weak_ptr<RemotePlayer> m_player;
     Ref<CCArray> m_popupButtons = nullptr;
 
     bool customSetup() override {
         auto gjbgl = GlobedGJBGL::get();
+
+        m_player = gjbgl->getPlayer(m_accountId);
 
         // add buttons
         bool self = m_accountId == cachedSingleton<GJAccountManager>()->m_accountID;
@@ -125,19 +128,20 @@ protected:
             auto muteButton = CCMenuItemExt::createToggler(
                 muteOn,
                 muteOff,
-                [accountId = m_accountId, gjbgl](CCMenuItemToggler* btn) {
+                [this, accountId = m_accountId](CCMenuItemToggler* btn) {
                     bool muted = btn->isOn();
                     auto& sm = SettingsManager::get();
 
                     muted ? (sm.blacklistPlayer(accountId)) : (sm.whitelistPlayer(accountId));
 
-                    auto& am = AudioManager::get();
-                    if (muted) {
-                        am.setStreamVolume(accountId, 0.f);
-                    } else {
-                        am.setStreamVolume(accountId, gjbgl->calculateVolumeFor(accountId));
+                    auto player = m_player.lock();
+                    auto stream = player ? player->getVoiceStream() : nullptr;
+
+                    if (stream) {
+                        stream->setMuted(muted);
                     }
-            });
+                }
+            );
 
             muteButton->setID("mute-btn"_spr);
             muteButton->m_onButton->m_scaleMultiplier = 1.2f;
@@ -315,8 +319,9 @@ protected:
 
     void updateVisualizer(float dt) {
         if (!m_visualizer) return;
-        auto& am = AudioManager::get();
-        float ld = am.getStreamLoudness(m_accountId);
+        auto player = m_player.lock();
+        auto stream = player ? player->getVoiceStream() : nullptr;
+        float ld = stream ? stream->getAudibility() : 0.f;
         m_visualizer->setVolume(ld);
     }
 };

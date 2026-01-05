@@ -1,6 +1,7 @@
 #include <globed/core/game/RemotePlayer.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/RoomManager.hpp>
+#include <globed/audio/AudioManager.hpp>
 #include <globed/util/gd.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/game/Interpolator.hpp>
@@ -207,6 +208,43 @@ VisualPlayer* RemotePlayer::player2() {
 
 PlayerDisplayData& RemotePlayer::displayData() {
     return m_data;
+}
+
+int RemotePlayer::id() {
+    return m_data.accountId ?: m_state.accountId;
+}
+
+void RemotePlayer::stopVoiceStream() {
+    if (m_voiceStream) {
+        m_voiceStream->stop();
+    }
+}
+
+VoiceStream* RemotePlayer::getVoiceStream() {
+    return m_voiceStream.get();
+}
+
+void RemotePlayer::playVoiceData(const EncodedAudioFrame& frame) {
+    if (!m_voiceStream) {
+        auto res = VoiceStream::create(weak_from_this());
+        if (!res) {
+            log::error("Failed to create voice stream for player {}: {}", m_state.accountId, res.unwrapErr());
+            return;
+        }
+
+        m_voiceStream = *res;
+        m_voiceStream->setKind(AudioKind::VoiceChat);
+
+        // if the player is in editor, voice should be non-proximity
+        if (m_player1->m_isEditor) {
+            m_voiceStream->setGlobal(true);
+        }
+    }
+
+    auto res = m_voiceStream->writeData(frame);
+    if (!res) {
+        log::warn("Failed to play voice data for player {}: {}", m_state.accountId, res.unwrapErr());
+    }
 }
 
 }

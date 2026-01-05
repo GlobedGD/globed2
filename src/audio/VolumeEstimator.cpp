@@ -1,5 +1,5 @@
 #include <globed/audio/VolumeEstimator.hpp>
-#include <globed/audio/AudioStream.hpp>
+#include <globed/audio/sound/VoiceStream.hpp>
 
 #include <asp/iter.hpp>
 #include <qunet/util/algo.hpp>

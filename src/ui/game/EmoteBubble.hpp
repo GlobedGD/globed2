@@ -9,7 +9,7 @@ class EmoteBubble : public CCNode {
 public:
     static EmoteBubble* create();
 
-    void playEmote(uint32_t emoteId);
+    void playEmote(uint32_t emoteId, std::shared_ptr<RemotePlayer> player);
     void setOpacity(uint8_t op);
     void flipBubble(bool flipped);
     void update(float dt) override;

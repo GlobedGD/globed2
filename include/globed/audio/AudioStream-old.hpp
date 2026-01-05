@@ -12,21 +12,18 @@
 
 namespace globed {
 
-// This is how long it takes for audio to start playing after pcmreadcallback gets invoked
-// By default, FMOD uses 400ms, we decrease it to 200ms
-constexpr float AUDIO_PLAYBACK_DELAY = 0.2f;
 
-class GLOBED_DLL AudioStream {
+class GLOBED_DLL VoiceStream {
 public:
-    AudioStream(AudioDecoder&& decoder);
-    ~AudioStream();
+    VoiceStream(AudioDecoder&& decoder);
+    ~VoiceStream();
 
-    AudioStream(const AudioStream&) = delete;
-    AudioStream operator=(const AudioStream& other) = delete;
+    VoiceStream(const VoiceStream&) = delete;
+    VoiceStream operator=(const VoiceStream& other) = delete;
 
     // allow moving
-    AudioStream(AudioStream&& other) noexcept;
-    AudioStream& operator=(AudioStream&& other) noexcept;
+    VoiceStream(VoiceStream&& other) noexcept;
+    VoiceStream& operator=(VoiceStream&& other) noexcept;
 
     // start playing this stream
     void start();

@@ -40,7 +40,7 @@ bool EmoteBubble::init() {
     return true;
 }
 
-void EmoteBubble::playEmote(uint32_t emoteId) {
+void EmoteBubble::playEmote(uint32_t emoteId, std::shared_ptr<RemotePlayer> player) {
     auto& em = EmoteManager::get();
     auto sprite = em.createEmote(emoteId);
 
@@ -80,7 +80,7 @@ void EmoteBubble::playEmote(uint32_t emoteId) {
         )
     );
 
-    em.playEmoteSfx(emoteId);
+    em.playEmoteSfx(emoteId, player);
 
     this->runAction(
         CCSequence::create(

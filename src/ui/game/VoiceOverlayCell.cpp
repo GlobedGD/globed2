@@ -69,6 +69,9 @@ bool VoiceOverlayCell::init(const PlayerDisplayData& data) {
 
 void VoiceOverlayCell::updateLoudness(float loudness) {
     m_visualizer->setVolume(loudness);
+}
+
+void VoiceOverlayCell::updateLastSpoken() {
     m_lastSpoken = Instant::now();
 }
 

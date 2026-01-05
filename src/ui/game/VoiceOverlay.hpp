@@ -20,7 +20,8 @@ private:
 
     bool init() override;
 
-    void updateStream(int id, bool starving, float volume, float loudness);
+    void updateStream(RemotePlayer& player, bool local);
+    void updateStream(int id, bool starving, float loudness);
 };
 
 }

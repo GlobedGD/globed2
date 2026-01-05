@@ -6,6 +6,7 @@
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/util/BoolExt.hpp>
+#include <globed/util/Interval.hpp>
 #include <ui/game/VoiceOverlay.hpp>
 #include <ui/game/PingOverlay.hpp>
 #include <ui/misc/NameLabel.hpp>
@@ -29,6 +30,10 @@ struct GameCameraState {
     inline cocos2d::CCSize cameraCoverage() const {
         return visibleCoverage / std::abs(zoom);
     }
+
+    inline cocos2d::CCPoint cameraCenter() const {
+        return cameraOrigin + this->cameraCoverage() / 2.f;
+    }
 };
 
 struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
@@ -38,19 +43,20 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_didSchedule = false;
         bool m_quitting = false;
         bool m_throttleUpdates = false;
-        float m_sendDataInterval = 0.0f;
         float m_periodicalDelta = 0.f;
         std::vector<std::string> m_customSchedules;
 
         float m_timeCounter = 0.0f;
         float m_lastServerUpdate = 0.0f;
         float m_lastTeamRefresh = 0.0f;
-        float m_nextDataSend = 0.0f;
+        Interval m_sendInterval;
+        Interval m_sendThrottledInterval;
+        Interval m_audioInterval;
         uint32_t m_totalSentPackets = 0;
         Interpolator m_interpolator;
         VectorSpeedTracker m_cameraTracker;
-        std::unordered_map<int, std::unique_ptr<RemotePlayer>> m_players;
-        std::unique_ptr<RemotePlayer> m_ghost; // player that always follows the local player
+        std::unordered_map<int, std::shared_ptr<RemotePlayer>> m_players;
+        std::shared_ptr<RemotePlayer> m_ghost; // player that always follows the local player
         std::vector<int> m_unknownPlayers;
         float m_lastDataRequest = 0.f;
         std::optional<MessageListener<msg::LevelDataMessage>> m_levelDataListener;
@@ -139,9 +145,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     bool active();
     CameraDirection getCameraDirection();
     GameCameraState getCameraState();
-    RemotePlayer* getPlayer(int playerId);
+    std::shared_ptr<RemotePlayer> getPlayer(int playerId);
     void recordPlayerJump(bool p1);
-    float calculateVolumeFor(int playerId);
     bool shouldLetMessageThrough(int playerId);
     void reloadCachedSettings();
     bool isSpeaking(int playerId);
@@ -167,7 +172,6 @@ private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);
     void onVoiceDataReceived(const msg::VoiceBroadcastMessage& message);
     void onQuickChatReceived(int accountId, uint32_t quickChatId);
-    void updateProximityVolume(int playerId);
 };
 
 }

@@ -788,8 +788,7 @@ void VisualPlayer::playEmote(uint32_t emoteId) {
             .parent(m_remotePlayer->m_parentNode);
     }
 
-    m_emoteBubble->playEmote(emoteId);
-    log::debug("Playing {}", emoteId, m_emoteBubble);
+    m_emoteBubble->playEmote(emoteId, m_remotePlayer->shared_from_this());
 }
 
 void VisualPlayer::cancelPlatformerJumpAnim() {

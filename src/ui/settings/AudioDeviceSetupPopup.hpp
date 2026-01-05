@@ -2,6 +2,7 @@
 
 #include <globed/prelude.hpp>
 #include <globed/audio/VolumeEstimator.hpp>
+#include <globed/audio/sound/VoiceStream.hpp>
 #include <ui/misc/AudioVisualizer.hpp>
 #include <ui/BasePopup.hpp>
 
@@ -23,6 +24,7 @@ private:
     AudioVisualizer* m_visualizer;
     CCMenu* m_visualizerContainer;
     VolumeEstimator m_estimator;
+    std::shared_ptr<VoiceStream> m_stream;
 
     bool setup() override;
     void update(float) override;
@@ -30,6 +32,7 @@ private:
     void toggleButtons(bool recording);
     void refreshList();
     void weakRefreshList();
+    void stopRecording();
 };
 
 }

@@ -2,7 +2,7 @@
 
 #include "EncodedAudioFrame.hpp"
 #include "AudioSampleQueue.hpp"
-#include "AudioStream.hpp"
+#include "sound/AudioSource.hpp"
 #include <globed/prelude.hpp>
 
 #include <asp/sync.hpp>
@@ -79,27 +79,18 @@ public:
 
     /* Playback API */
 
-    void forEachStream(std23::function_ref<void(int, AudioStream&)> func);
-    AudioStream* getStream(int streamId);
+    void stopAllOutputSources();
 
-    Result<> playFrameStreamed(int streamId, const EncodedAudioFrame& frame);
-    void playFrameStreamedRaw(int streamId, const float* pcm, size_t samples);
-    void stopAllOutputStreams();
-    void stopOutputStream(int streamId);
+    // Updates all playback sources, removing finished ones and updating volumes of proximity sources
+    void updatePlayback(CCPoint playerPos);
+    void registerPlaybackSource(std::shared_ptr<AudioSource> source);
 
-    bool isStreamActive(int streamId);
-    float getStreamVolume(int streamId);
-    float getStreamLoudness(int streamId);
-    void setStreamVolume(int streamId, float volume);
-
-    void setGlobalPlaybackVolume(float volume);
     void setDeafen(bool deafen);
     bool getDeafen();
 
     void setFocusedPlayer(int playerId);
     void clearFocusedPlayer();
     int getFocusedPlayer();
-    float mapStreamVolume(int playerId, float vol);
 
     /* Misc */
 
@@ -118,6 +109,8 @@ public:
 
     // get the cached system
     FMOD::System* getSystem();
+
+    Result<> mapError(FMOD_RESULT result);
 
 private:
     /* devices */
@@ -152,16 +145,14 @@ private:
     void internalStopRecording(bool ignoreErrors = false);
     void recordInvokeCallback();
     void recordInvokeRawCallback(const float* pcm, size_t samples);
+    float calculateVolume(AudioSource& src, const CCPoint& playerPos);
 
     /* playback */
-    std::unordered_map<int, std::unique_ptr<AudioStream>> m_playbackStreams;
-    VolumeLayer m_playbackLayer;
-    VolumeLayer m_globalPlaybackLayer;
+    std::unordered_set<std::shared_ptr<AudioSource>> m_playbackSources;
+    float m_vcVolume = 1.f;
+    float m_sfxVolume = 1.f;
     int m_focusedPlayer = -1;
     bool m_deafen = false;
-
-    AudioStream* preparePlaybackStream(int id);
-    void updatePlaybackVolume();
 };
 
 }

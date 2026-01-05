@@ -1,5 +1,6 @@
 #include <globed/core/EmoteManager.hpp>
 #include <globed/audio/AudioManager.hpp>
+#include <globed/audio/sound/PlayerSound.hpp>
 #include <asp/time.hpp>
 #include <asp/format.hpp>
 #include <asp/fs.hpp>
@@ -50,7 +51,7 @@ std::vector<uint32_t>& EmoteManager::getSortedEmoteIds() {
     return m_sortedEmoteIds;
 }
 
-FMOD::Channel* EmoteManager::playEmoteSfx(uint32_t id) {
+std::shared_ptr<PlayerSound> EmoteManager::playEmoteSfx(uint32_t id, std::shared_ptr<RemotePlayer> player) {
     if (!globed::setting<bool>("core.player.quick-chat-sfx")) return nullptr;
 
     auto it = m_sfxPaths.find(id);
@@ -58,20 +59,17 @@ FMOD::Channel* EmoteManager::playEmoteSfx(uint32_t id) {
         return nullptr;
     }
 
-    auto& am = AudioManager::get();
-    auto res = am.createSound(it->second);
+    // TODO: player sound
+    auto res = PlayerSound::create(it->second.c_str(), player);
     if (!res) {
         log::warn("Failed to create emote sfx {}: {}", id, res.unwrapErr());
         return nullptr;
     }
 
-    auto res2 = am.playSound(*res);
-    if (!res2) {
-        log::warn("Failed to play emote sfx {}: {}", id, res2.unwrapErr());
-        return nullptr;
-    }
+    auto sound = std::move(res).unwrap();
+    sound->setKind(AudioKind::EmoteSfx);
 
-    return *res2;
+    return sound;
 }
 
 $on_game(Loaded) {

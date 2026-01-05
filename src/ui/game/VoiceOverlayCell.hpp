@@ -12,6 +12,7 @@ public:
     static VoiceOverlayCell* create(const PlayerDisplayData& data);
 
     void updateLoudness(float loudness);
+    void updateLastSpoken();
     asp::time::Duration sinceLastSpoken();
 
     inline int getAccountId() {

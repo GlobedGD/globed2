@@ -117,7 +117,7 @@ void GlobedGJBGL::setupPostInit() {
     this->setupListeners();
 
     // add ghost player
-    fields.m_ghost = std::make_unique<RemotePlayer>(0, this, fields.m_playerNode);
+    fields.m_ghost = std::make_shared<RemotePlayer>(0, this, fields.m_playerNode);
     fields.m_ghost->initData(PlayerDisplayData::getOwn(), false);
 
     CoreImpl::get().onJoinLevelPostInit(this);
@@ -164,21 +164,18 @@ void GlobedGJBGL::setupAudio() {
     if (!globed::setting<bool>("core.audio.voice-chat-enabled")) return;
 
     auto& am = AudioManager::get();
+    am.stopAllOutputSources(); // preemptively
+    m_fields->m_audioInterval.setInterval(Duration::fromSecsF32(1.f / 30.f).value());
 
 #ifdef GLOBED_VOICE_CAN_TALK
     // set audio device
     am.refreshDevices();
     am.setRecordBufferCapacity(globed::setting<int>("core.audio.buffer-size"));
-    auto result = am.startRecordingEncoded([](const auto& frame) {
+    auto result = am.startRecordingEncoded([this](const auto& frame) {
         NetworkManagerImpl::get().sendVoiceData(frame);
 
         if (g_settings.voiceLoopback) {
-            log::debug("Playing loopback voice frame");
-            auto& am = AudioManager::get();
-
-            if (auto err = am.playFrameStreamed(-1, frame).err()) {
-                log::warn("Failed to play loopback voice frame: {}", err);
-            }
+            m_fields->m_ghost->playVoiceData(frame);
         }
     });
     am.setPassiveMode(true);
@@ -195,13 +192,6 @@ void GlobedGJBGL::setupAudio() {
     m_fields->m_isVoiceProximity = m_level->isPlatformer()
         ? globed::setting<bool>("core.audio.voice-proximity")
         : globed::setting<bool>("core.audio.classic-proximity");
-
-    this->customSchedule("update-audio-estimators", 1.f / 30.f, [](GlobedGJBGL* gjbgl, float dt) {
-        auto& am = AudioManager::get();
-        am.forEachStream([dt](int, AudioStream& stream) {
-            stream.updateEstimator(dt);
-        });
-    });
 
     // schedule voice overlay 1 frame later, when we have a scene
     FunctionQueue::get().queue([self = Ref(this), winSize] {
@@ -311,7 +301,7 @@ void GlobedGJBGL::onEnterHook() {
 void GlobedGJBGL::onQuit() {
     auto& am = AudioManager::get();
     am.haltRecording();
-    am.stopAllOutputStreams();
+    am.stopAllOutputSources();
 
     auto& fields = *m_fields.self();
     fields.m_quitting = true;
@@ -402,11 +392,11 @@ void GlobedGJBGL::selUpdate(float tsdt) {
                 log::debug("player {} has unknown team", playerId);
             }
         }
+    }
 
-        // update voice proximity
-        if (fields.m_isVoiceProximity) {
-            this->updateProximityVolume(playerId);
-        }
+    // update audio
+    if (fields.m_audioInterval.tick()) {
+        AudioManager::get().updatePlayback(camState.cameraCenter());
     }
 
     // the server might not send any updates if there are no players on the level,
@@ -427,26 +417,25 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     }
 
     // readjust send interval if needed
-    if (fields.m_sendDataInterval == 0.f) {
+    if (fields.m_sendInterval.interval().isZero()) {
         auto& nm = NetworkManagerImpl::get();
         auto tr = nm.getGameTickrate();
 
         if (tr != 0) {
-            float interval = 1.f / (float)tr;
-            fields.m_sendDataInterval = interval;
+            float val = 1.f / std::min<float>(240.f, tr);
+            auto interval = Duration::fromSecsF32(val).value();
+            fields.m_sendInterval.setInterval(interval);
+            fields.m_sendThrottledInterval.setInterval(interval * 8.f);
         }
     }
 
     // send player data to the server
     auto state = this->getPlayerState();
-    if (fields.m_timeCounter >= fields.m_nextDataSend) {
-        // update the next interval to be strictly in the future, dont want to repeat things
-        float baseInterval = std::max(1.f / 240.f, fields.m_sendDataInterval);
-        float sendInterval = baseInterval * (fields.m_throttleUpdates ? 10.f : 1.f);
-        while (fields.m_nextDataSend <= fields.m_timeCounter) {
-            fields.m_nextDataSend += sendInterval;
-        }
+    auto& sendInterval = fields.m_throttleUpdates
+        ? fields.m_sendThrottledInterval
+        : fields.m_sendInterval;
 
+    if (sendInterval.tick()) {
         this->sendPlayerData(state);
     }
 
@@ -702,7 +691,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
         return;
     }
 
-    auto rp = std::make_unique<RemotePlayer>(playerId, this, fields.m_playerNode);
+    auto rp = std::make_shared<RemotePlayer>(playerId, this, fields.m_playerNode);
     rp->setForceHide(sm.isPlayerHidden(playerId));
     fields.m_players.emplace(playerId, std::move(rp));
     fields.m_interpolator.addPlayer(playerId);
@@ -712,7 +701,6 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
 
 void GlobedGJBGL::handlePlayerLeave(int playerId) {
     auto& am = AudioManager::get();
-    am.stopOutputStream(playerId);
 
     auto& fields = *m_fields.self();
 
@@ -725,6 +713,7 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     }
 
     auto& player = fields.m_players.at(playerId);
+    player->stopVoiceStream();
     CoreImpl::get().onPlayerLeave(this, playerId);
 
     fields.m_players.erase(playerId);
@@ -837,12 +826,12 @@ GameCameraState GlobedGJBGL::getCameraState() {
     return state;
 }
 
-RemotePlayer* GlobedGJBGL::getPlayer(int playerId) {
+std::shared_ptr<RemotePlayer> GlobedGJBGL::getPlayer(int playerId) {
     auto& players = m_fields->m_players;
 
     auto it = players.find(playerId);
 
-    return it == players.end() ? nullptr : it->second.get();
+    return it == players.end() ? nullptr : it->second;
 }
 
 void GlobedGJBGL::recordPlayerJump(bool p1) {
@@ -865,8 +854,13 @@ bool GlobedGJBGL::shouldLetMessageThrough(int playerId) {
 bool GlobedGJBGL::isSpeaking(int playerId) {
     if (!g_settings.voiceChat) return false;
 
-    auto& am = AudioManager::get();
-    return am.isStreamActive(playerId);
+    auto it = m_fields->m_players.find(playerId);
+    if (it == m_fields->m_players.end()) {
+        return false;
+    }
+
+    auto stream = it->second->getVoiceStream();
+    return stream && !stream->isStarving();
 }
 
 void GlobedGJBGL::setNoticeAlertActive(bool active) {
@@ -1030,14 +1024,9 @@ void GlobedGJBGL::onVoiceDataReceived(const msg::VoiceBroadcastMessage& message)
         return;
     }
 
-    auto res = am.playFrameStreamed(message.accountId, message.frame);
-    if (!res) {
-        log::warn("Failed to play voice data from {}: {}", message.accountId, res.unwrapErr());
-        return;
+    if (auto player = this->getPlayer(message.accountId)) {
+        player->playVoiceData(message.frame);
     }
-
-    float vol = this->calculateVolumeFor(message.accountId);
-    am.setStreamVolume(message.accountId, vol);
 }
 
 void GlobedGJBGL::onQuickChatReceived(int accountId, uint32_t quickChatId) {
@@ -1057,36 +1046,6 @@ void GlobedGJBGL::onQuickChatReceived(int accountId, uint32_t quickChatId) {
     }
 
     it->second->player1()->playEmote(quickChatId);
-}
-
-float GlobedGJBGL::calculateVolumeFor(int playerId) {
-    // how many units before the voice disappears
-    constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
-
-    auto& fields = *m_fields.self();
-    auto& am = AudioManager::get();
-
-    if (am.getDeafen() || !fields.m_isVoiceProximity) {
-        return 1.f;
-    }
-
-    if (!fields.m_interpolator.hasPlayer(playerId)) {
-        return 0.f;
-    }
-
-    OutFlags flags;
-    auto& vstate = fields.m_interpolator.getPlayerState(playerId, flags);
-    if (vstate.isInEditor) {
-        return 1.f;
-    }
-
-    float distance = ccpDistance(m_player1->getPosition(), vstate.player1->position);
-    return 1.25f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
-}
-
-void GlobedGJBGL::updateProximityVolume(int playerId) {
-    float vol = this->calculateVolumeFor(playerId);
-    AudioManager::get().setStreamVolume(playerId, vol);
 }
 
 void GlobedGJBGL::playSelfEmote(uint32_t id) {

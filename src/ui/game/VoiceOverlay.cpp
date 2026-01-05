@@ -30,11 +30,11 @@ bool VoiceOverlay::init() {
 }
 
 void VoiceOverlay::update(float dt) {
-    auto& am = AudioManager::get();
-    am.forEachStream([&](int id, AudioStream& stream) {
-        if (id <= 0 && id != -1) return;
-        this->updateStream(id, stream.isStarving(), stream.getUserVolume(), stream.getLoudness());
-    });
+    auto gjbgl = GlobedGJBGL::get();
+    for (auto& [id, player] : gjbgl->m_fields->m_players) {
+        this->updateStream(*player, false);
+    }
+    this->updateStream(*gjbgl->m_fields->m_ghost, true);
 
     this->updateLayout();
 }
@@ -42,7 +42,18 @@ void VoiceOverlay::update(float dt) {
 void VoiceOverlay::updateSoft() {
 }
 
-void VoiceOverlay::updateStream(int id, bool starving, float volume, float loudness) {
+void VoiceOverlay::updateStream(RemotePlayer& player, bool local) {
+    auto stream = player.getVoiceStream();
+    if (!stream) return;
+
+    this->updateStream(
+        local ? -1 : player.id(),
+        stream->isStarving(),
+        stream->getAudibility()
+    );
+}
+
+void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
     bool shouldShow = loudness >= m_threshold && !starving;
     auto it = m_cells.find(id);
 
@@ -53,6 +64,8 @@ void VoiceOverlay::updateStream(int id, bool starving, float volume, float loudn
             if (cell->sinceLastSpoken() > Duration::fromSecs(1)) {
                 cell->removeFromParent();
                 m_cells.erase(it);
+            } else {
+                cell->updateLoudness(loudness);
             }
         }
 
@@ -84,6 +97,7 @@ void VoiceOverlay::updateStream(int id, bool starving, float volume, float loudn
     }
 
     it->second->updateLoudness(loudness);
+    it->second->updateLastSpoken();
 }
 
 VoiceOverlay* VoiceOverlay::create() {

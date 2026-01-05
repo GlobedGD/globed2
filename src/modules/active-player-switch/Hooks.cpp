@@ -155,7 +155,7 @@ void APSPlayLayer::showEffect(bool presw) {
 }
 
 void APSPlayLayer::handlePlayerDeath(const PlayerDeath& death, RemotePlayer* player) {
-    if (player->displayData().accountId == m_fields->m_activePlayer) {
+    if (player->id() == m_fields->m_activePlayer) {
         log::info("Handling death from {}", player->displayData().username);
         g_ignoreNoclip = true;
         GlobedGJBGL::get(this)->killLocalPlayer();
@@ -254,8 +254,8 @@ void APSPlayLayer::handleUpdate() {
     if (!fields.m_meActive && fields.m_activePlayer != 0) {
         auto rp = self->getPlayer(fields.m_activePlayer);
         if (rp) {
-            this->handleUpdateFromRp(m_player1, rp, false);
-            this->handleUpdateFromRp(m_player2, rp, true);
+            this->handleUpdateFromRp(m_player1, rp.get(), false);
+            this->handleUpdateFromRp(m_player2, rp.get(), true);
         } else {
             log::warn("active player {} not found!", fields.m_activePlayer);
             fields.m_activePlayer = 0;

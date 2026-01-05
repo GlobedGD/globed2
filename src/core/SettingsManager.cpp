@@ -44,6 +44,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.player.opacity", 1.0f);
     this->registerSetting("core.player.quick-chat-enabled", true);
     this->registerSetting("core.player.quick-chat-sfx", true);
+    this->registerSetting("core.player.quick-chat-sfx-volume", 0.8f);
     this->registerSetting("core.player.show-names", true);
     this->registerSetting("core.player.dual-name", true);
     this->registerSetting("core.player.name-opacity", 1.0f);

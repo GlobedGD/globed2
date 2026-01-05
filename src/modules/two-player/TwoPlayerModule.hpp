@@ -50,7 +50,7 @@ private:
     bool m_ignoreNoclip = false;
     std::optional<int> m_linkAttempt;
     std::optional<MessageListenerImpl<msg::LevelDataMessage>*> m_listener;
-    RemotePlayer* m_linkedRp = nullptr;
+    std::shared_ptr<RemotePlayer> m_linkedRp;
 
     geode::Result<> onDisabled() override;
 
