@@ -45,6 +45,7 @@ public:
     float getVolume() const override;
     void stop() override;
     void onUpdate() override;
+    void rawSetVolume(float volume) override;
 
 private:
     AudioDecoder m_decoder;
@@ -53,6 +54,7 @@ private:
     asp::Mutex<VolumeEstimator> m_estimator;
     asp::time::Instant m_lastPlaybackTime;
     asp::time::Instant m_lastUpdate;
+    float m_rawVolume = 1.0f;
     bool m_muted = false;
 
     void readCallback(float* data, unsigned int len);

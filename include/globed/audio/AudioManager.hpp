@@ -16,6 +16,9 @@ constexpr float VOICE_CHUNK_RECORD_TIME = 0.06f; // the audio buffer that is rec
 constexpr size_t VOICE_TARGET_FRAMESIZE = VOICE_TARGET_SAMPLERATE * VOICE_CHUNK_RECORD_TIME; // opus framesize
 constexpr size_t VOICE_CHANNELS = 1;
 
+// how many units before the audio disappears
+constexpr float PROXIMITY_AUDIO_LIMIT = 1200.f;
+
 struct AudioRecordingDevice {
     int id = -1;
     std::string name;

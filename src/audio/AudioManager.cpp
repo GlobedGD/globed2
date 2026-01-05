@@ -24,12 +24,15 @@ static std::string formatFmodError(FMOD_RESULT result, const char* whatFailed) {
     do { \
         auto _res = (res); \
         if (_res != FMOD_OK) return Err(formatFmodError(_res, msg)); \
-    } while (0) \
-
-// how many units before the audio disappears
-constexpr float PROXIMITY_AUDIO_LIMIT = 1200.f;
+    } while (0)
 
 namespace globed {
+
+static float proximityVolumeMult(float distance) {
+    distance = std::clamp(distance, 0.0f, PROXIMITY_AUDIO_LIMIT);
+    float t = distance / PROXIMITY_AUDIO_LIMIT;
+    return 1.0f - t * t;
+}
 
 AudioManager::AudioManager()
     : m_encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
@@ -381,8 +384,7 @@ float AudioManager::calculateVolume(AudioSource& src, const CCPoint& playerPos, 
         auto pos = src.getPosition();
         if (pos) {
             auto distance = playerPos.getDistance(*pos);
-            float mult = 1.25f - std::clamp(distance, 0.01f, PROXIMITY_AUDIO_LIMIT) / PROXIMITY_AUDIO_LIMIT;
-            targetVolume *= mult;
+            targetVolume *= proximityVolumeMult(distance);
         }
     }
 

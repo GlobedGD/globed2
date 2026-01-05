@@ -119,8 +119,13 @@ void VoiceStream::updateEstimator(float dt) {
     m_estimator.lock()->update(dt);
 }
 
+void VoiceStream::rawSetVolume(float volume) {
+    PlayerSound::rawSetVolume(volume);
+    m_rawVolume = volume;
+}
+
 float VoiceStream::getAudibility() const {
-    return m_estimator.lock()->getVolume();
+    return m_estimator.lock()->getVolume() * m_rawVolume;
 }
 
 Duration VoiceStream::sinceLastPlayback() {
