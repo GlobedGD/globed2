@@ -66,7 +66,7 @@ void EmoteBubble::playEmote(uint32_t emoteId, std::shared_ptr<RemotePlayer> play
     m_bubbleSpr->runAction(
         CCSequence::create(
             CCEaseExponentialOut::create(CCScaleTo::create(0.4f, m_initialScale)),
-            CCDelayTime::create(1777777.7f),
+            CCDelayTime::create(1.7f),
             CCEaseExponentialIn::create(CCScaleTo::create(0.4f, m_initialScale * 0.05f)),
             nullptr
         )
@@ -84,7 +84,7 @@ void EmoteBubble::playEmote(uint32_t emoteId, std::shared_ptr<RemotePlayer> play
 
     this->runAction(
         CCSequence::create(
-            CCDelayTime::create(25555.5f),
+            CCDelayTime::create(2.5f),
             CallFuncExt::create([this]() { this->customToggleVis(false); }),
             nullptr
         )
@@ -101,7 +101,8 @@ void EmoteBubble::update(float dt) {
 void EmoteBubble::flipBubble(bool flipped) {
     if (!m_bubbleSpr || !m_emoteSpr) return;
 
-    m_bubbleSpr->setScaleY(flipped ? -m_initialScale : m_initialScale);
+    float sx = m_bubbleSpr->getScaleX();
+    m_bubbleSpr->setScaleY(flipped ? -sx : sx);
     m_emoteSpr->setFlipY(flipped); // so the emote itself isn't upside down
 }
 

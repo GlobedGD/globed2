@@ -25,6 +25,7 @@ using namespace asp::time;
 
 constexpr float VOICE_OVERLAY_PAD_X = 5.f;
 constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
+constexpr auto EMOTE_COOLDOWN = Duration::fromMillis(2500);
 
 namespace {
 
@@ -70,6 +71,8 @@ struct CachedSettings {
         *this = CachedSettings{};
     }
 } g_settings;
+
+static std::optional<Instant> g_lastEmoteTime;
 
 static int myAccountId() {
     return cachedSingleton<GJAccountManager>()->m_accountID;
@@ -1048,27 +1051,33 @@ void GlobedGJBGL::onQuickChatReceived(int accountId, uint32_t quickChatId) {
     it->second->player1()->playEmote(quickChatId);
 }
 
-void GlobedGJBGL::playSelfEmote(uint32_t id) {
+bool GlobedGJBGL::playSelfEmote(uint32_t id) {
     if (!g_settings.quickChat) {
-        return;
+        return false;
     }
+
+    // check if we are on cooldown
+    auto now = Instant::now();
+    if (g_lastEmoteTime && now.durationSince(*g_lastEmoteTime) < EMOTE_COOLDOWN) {
+        return false;
+    }
+    g_lastEmoteTime = now;
 
     auto& fields = *m_fields.self();
     fields.m_ghost->player1()->playEmote(id);
 
     NetworkManagerImpl::get().sendQuickChat(id);
+
+    return true;
 }
 
-void GlobedGJBGL::playSelfFavoriteEmote(uint32_t which) {
-    if (!g_settings.quickChat) {
-        return;
-    }
-
+bool GlobedGJBGL::playSelfFavoriteEmote(uint32_t which) {
     auto emote = globed::value<uint32_t>(fmt::format("core.ui.emote-slot-{}", which)).value_or(0);
 
     if (emote != 0) {
-        this->playSelfEmote(emote);
+        return this->playSelfEmote(emote);
     }
+    return false;
 }
 
 }

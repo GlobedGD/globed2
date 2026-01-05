@@ -19,8 +19,6 @@ static constexpr float CELL_HEIGHT = 40.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
 const int EMOTES_PER_PAGE = 18;
 
-static std::optional<Instant> g_lastEmoteTime;
-
 bool EmoteListPopup::setup() {
     this->setTitle("Emotes");
     m_title->setPosition(this->fromTop(15.f));
@@ -226,10 +224,10 @@ void EmoteListPopup::onSubmitBtn() {
         return;
     }
 
+    auto gjbgl = GlobedGJBGL::get();
+
     // check cooldown
-    if (!g_lastEmoteTime || g_lastEmoteTime->elapsed().seconds<float>() > 2.5f) {
-        g_lastEmoteTime = Instant::now();
-    } else {
+    if (!gjbgl || !gjbgl->playSelfEmote(m_selectedEmoteId)) {
         // idk how to do this better
         m_submitBtnSpr->runAction(CCSequence::create(
             CCTintTo::create(0.05f, 255, 0, 0),
@@ -239,9 +237,6 @@ void EmoteListPopup::onSubmitBtn() {
 
         return;
     }
-
-    auto gjbgl = globed::GlobedGJBGL::get();
-    gjbgl->playSelfEmote(m_selectedEmoteId);
 
     this->onClose(this);
 
