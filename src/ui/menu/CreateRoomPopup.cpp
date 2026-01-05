@@ -148,7 +148,7 @@ bool CreateRoomPopup::setup() {
             Build<ButtonSprite>::create("Create", "goldFont.fnt", "GJ_button_04.png", 0.8f)
                 .intoMenuItem([this](auto) {
                     std::string roomName = m_nameInput->getString();
-                    if (roomName.empty()) {
+                    if (roomName.empty() || roomName.size() > 32) {
                         roomName = fmt::format("{}'s room", GJAccountManager::get()->m_username);
                     }
 

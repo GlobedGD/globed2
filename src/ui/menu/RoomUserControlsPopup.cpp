@@ -12,12 +12,12 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize RoomUserControlsPopup::POPUP_SIZE{ 170.f, 90.f };
+const CCSize RoomUserControlsPopup::POPUP_SIZE{ 185.f, 90.f };
 
 bool RoomUserControlsPopup::setup(int id, std::string_view username) {
     m_username = username;
     m_accountId = id;
-    this->setTitle("User actions");
+    this->setTitle("User room actions");
 
     m_menu = Build<CCMenu>::create()
         .contentSize(160.f, 60.f)
