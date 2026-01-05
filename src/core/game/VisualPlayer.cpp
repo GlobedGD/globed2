@@ -226,8 +226,12 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
             bool invertY = false;
             auto ceiling = gjbgl->m_groundLayer2;
             if (ceiling && ceiling->isVisible()) {
-                float maxY = ceiling->getPositionY();
-                float bubbleTop = data.position.y + fullOffset.y + m_emoteBubble->getContentHeight() * std::abs(m_emoteBubble->getScaleY());
+                float maxY = ceiling->getPositionY() - m_parentLayer->getPositionY();
+
+                // invert if 30% of the bubble is inside the ceiling
+                float bubbleTop = data.position.y + fullOffset.y +
+                    m_emoteBubble->getContentHeight() * std::abs(m_emoteBubble->getScaleY()) * 0.7f;
+
                 invertY = bubbleTop > maxY;
             }
 
