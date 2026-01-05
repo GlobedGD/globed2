@@ -51,6 +51,11 @@ std::optional<CCPoint> PlayerSound::getPosition() const {
     if (m_static) return m_position;
 
     if (auto player = m_player.lock()) {
+        // if the player is too far and culled, return a position far away so the sound isn't played
+        if (player->isPlayer1Culled()) {
+            return CCPoint{-99999.f, -99999.f};
+        }
+
         return player->player1()->getLastPosition();
     }
 

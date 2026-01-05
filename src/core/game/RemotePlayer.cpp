@@ -78,6 +78,9 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
 
     m_state = state;
 
+    m_player1Culled = !m_state.player1;
+    m_player2Culled = !m_state.player2;
+
     if (m_state.player1) {
         m_player1->updateFromData(*m_state.player1, m_state, camState, forceHide);
     } else {
@@ -212,6 +215,14 @@ PlayerDisplayData& RemotePlayer::displayData() {
 
 int RemotePlayer::id() {
     return m_data.accountId ?: m_state.accountId;
+}
+
+bool RemotePlayer::isPlayer1Culled() {
+    return m_player1Culled;
+}
+
+bool RemotePlayer::isPlayer2Culled() {
+    return m_player2Culled;
 }
 
 void RemotePlayer::stopVoiceStream() {

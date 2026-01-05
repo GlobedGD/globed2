@@ -36,6 +36,9 @@ public:
     PlayerDisplayData& displayData();
     int id();
 
+    bool isPlayer1Culled();
+    bool isPlayer2Culled();
+
     void stopVoiceStream();
     void playVoiceData(const EncodedAudioFrame& frame);
     VoiceStream* getVoiceStream();
@@ -48,6 +51,8 @@ private:
     bool m_dataInitialized = false;
     bool m_dataOutdated = false;
     bool m_forceHide = false;
+    bool m_player1Culled = false;
+    bool m_player2Culled = false;
     cocos2d::CCNode* m_parentNode = nullptr;
     VisualPlayer* m_player1 = nullptr;
     VisualPlayer* m_player2 = nullptr;
