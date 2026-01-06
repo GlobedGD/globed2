@@ -41,3 +41,5 @@ Result<bool> res = globed::api()->net.isConnected();
 ```
 
 You can take a look at other available functions in your intellisense.
+
+This API is currently **very incomplete**, and only a small subset of functions are available. If you want to use something not exposed here, use the Link API or make a PR or an issue asking what should be added.

@@ -106,3 +106,4 @@ struct GlobedApiTable : public FunctionTable {
 #undef API_TABLE_FN_8
 #undef API_TABLE_FN_9
 #undef API_TABLE_FN_10
+#undef API_TABLE_FN
