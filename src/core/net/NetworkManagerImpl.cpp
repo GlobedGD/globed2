@@ -2128,6 +2128,13 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             this->invokeListeners(msg::WarpPlayerMessage{sessionId});
         } break;
 
+        case CentralMessage::ROOM_WARP: {
+            auto roomWarp = msg.getRoomWarp();
+            auto sessionId = SessionId{roomWarp.getSession()};
+
+            this->invokeListeners(msg::RoomWarpMessage{sessionId});
+        } break;
+
         case CentralMessage::KICKED: {
             // TODO
         } break;

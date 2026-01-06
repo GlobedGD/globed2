@@ -136,7 +136,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
         }
 
         // don't allow joining when in a follower room
-        if (disallowLevelJoin()) {
+        if (disallowLevelJoin(m_level->m_levelID)) {
             return;
         }
 

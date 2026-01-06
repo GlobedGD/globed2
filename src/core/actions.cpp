@@ -25,6 +25,7 @@ static std::optional<SessionId> g_awaitingWarp;
 
 void warpToSession(SessionId session, bool openLevel, bool force) {
     auto& rm = RoomManager::get();
+
     // ignore if we are the room host or not a follower room
     if (!force && (rm.isOwner() || !rm.isInFollowerRoom())) {
         g_awaitingWarp.reset();
@@ -164,7 +165,7 @@ $on_mod(Loaded) {
     auto& nm = NetworkManagerImpl::get();
 
     nm.listenGlobal<msg::WarpPlayerMessage>([](const auto& msg) {
-        globed::warpToSession(msg.sessionId, true);
+        globed::warpToSession(msg.sessionId, true, true);
         return ListenerResult::Stop;
     });
 

@@ -143,6 +143,10 @@ struct WarpPlayerMessage {
     SessionId sessionId;
 };
 
+struct RoomWarpMessage {
+    SessionId sessionId;
+};
+
 struct NoticeMessage {
     int senderId;
     std::string senderName;

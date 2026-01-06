@@ -7,10 +7,16 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool disallowLevelJoin() {
+bool disallowLevelJoin(int levelId) {
     // don't allow joining when in a follower room
     auto& rm = RoomManager::get();
     if (!rm.isInFollowerRoom() || rm.isOwner()) return false;
+
+    // allow if it's the same level
+    auto curr = rm.getCurrentWarpLevel();
+    if (curr.levelId() == levelId) {
+        return false;
+    }
 
     globed::alert(
         "Warning",

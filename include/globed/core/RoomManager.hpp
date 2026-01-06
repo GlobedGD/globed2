@@ -33,6 +33,7 @@ public:
     void setAttemptedPasscode(uint32_t code);
     uint32_t getPasscode();
     SessionId getPinnedLevel();
+    SessionId getCurrentWarpLevel();
 
     uint16_t getCurrentTeamId();
     std::optional<RoomTeam> getCurrentTeam();
@@ -48,6 +49,7 @@ private:
     uint32_t m_passcode = 0;
     int m_roomOwner = 0;
     SessionId m_pinnedLevel{};
+    SessionId m_currentWarpLevel{};
     std::string m_roomName;
     RoomSettings m_settings{};
 

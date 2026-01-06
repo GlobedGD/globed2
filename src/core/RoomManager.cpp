@@ -150,6 +150,10 @@ SessionId RoomManager::getPinnedLevel() {
     return m_pinnedLevel;
 }
 
+SessionId RoomManager::getCurrentWarpLevel() {
+    return m_currentWarpLevel;
+}
+
 RoomManager::RoomManager() {
     m_roomId = 0;
     m_roomName = "Global Room";
@@ -182,6 +186,11 @@ RoomManager::RoomManager() {
 
             for (const RoomPlayer& player : msg.players) {
                 m_teamMembers[player.teamId].push_back(player.accountData.accountId);
+
+                // update the current warp level to the owner's level
+                if (player.accountData.accountId == m_roomOwner) {
+                    m_currentWarpLevel = player.session;
+                }
             }
         }
 
@@ -225,6 +234,13 @@ RoomManager::RoomManager() {
 
         return ListenerResult::Continue;
     })->setPriority(-10000);
+
+    nm.listenGlobal<msg::RoomWarpMessage>([this](const auto& msg) {
+        m_currentWarpLevel = msg.sessionId;
+        log::debug("Current warp level {}", msg.sessionId.levelId());
+        globed::warpToSession(msg.sessionId, true);
+        return ListenerResult::Continue;
+    })->setPriority(-10000);
 }
 
 void RoomManager::resetValues() {
@@ -232,6 +248,7 @@ void RoomManager::resetValues() {
     m_roomName = "";
     m_roomOwner = 0;
     m_pinnedLevel = SessionId{};
+    m_currentWarpLevel = SessionId{};
     m_teamId = 0;
     m_passcode = 0;
     m_teamMembers.clear();

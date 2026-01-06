@@ -2,6 +2,6 @@
 
 namespace globed {
 
-bool disallowLevelJoin();
+bool disallowLevelJoin(int levelId = 0);
 
 }

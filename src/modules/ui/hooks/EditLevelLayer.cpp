@@ -15,10 +15,13 @@ struct GLOBED_MODIFY_ATTR HookedEditLevelLayer : geode::Modify<HookedEditLevelLa
             "EditLevelLayer::onEdit",
             "EditLevelLayer::onPlay",
         );
+
+        (void) self.setHookPriority("EditLevelLayer::onEdit", -100);
+        (void) self.setHookPriority("EditLevelLayer::onPlay", -100);
     }
 
     void onEdit(CCObject* p) {
-        if (disallowLevelJoin()) {
+        if (disallowLevelJoin(-1)) {
             return;
         }
 
@@ -26,7 +29,7 @@ struct GLOBED_MODIFY_ATTR HookedEditLevelLayer : geode::Modify<HookedEditLevelLa
     }
 
     void onPlay(CCObject* p) {
-        if (disallowLevelJoin()) {
+        if (disallowLevelJoin(-1)) {
             return;
         }
 
