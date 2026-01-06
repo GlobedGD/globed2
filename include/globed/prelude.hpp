@@ -40,11 +40,11 @@ using cocos2d::extension::CCScale9Sprite;
 
 namespace log = geode::log;
 
-}
-
 template <typename T>
 T* get() {
     return globed::cachedSingleton<T>();
+}
+
 }
 
 #define GLOBED_NOCOPY(cls) \

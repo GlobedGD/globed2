@@ -88,7 +88,7 @@ void APSPlayLayer::handleEvent(const ActivePlayerSwitchEvent& event) {
     }
 
     if (event.type == 0) { // pre-switch
-        if (event.playerId == ::get<GJAccountManager>()->m_accountID) {
+        if (event.playerId == globed::get<GJAccountManager>()->m_accountID) {
             this->showPreSwitchEffect();
         }
 
@@ -97,7 +97,7 @@ void APSPlayLayer::handleEvent(const ActivePlayerSwitchEvent& event) {
 
     auto& fields = *m_fields.self();
     fields.m_activePlayer = event.playerId;
-    fields.m_meActive = event.playerId == ::get<GJAccountManager>()->m_accountID;
+    fields.m_meActive = event.playerId == globed::get<GJAccountManager>()->m_accountID;
 
     for (auto& [id, player] : self->m_fields->m_players) {
         if (id == fields.m_activePlayer) {
@@ -291,7 +291,7 @@ void APSPlayLayer::handleUpdateFromRp(PlayerObject* local, RemotePlayer* rp, boo
 
 APSPlayLayer* APSPlayLayer::get(GJBaseGameLayer* gjbgl) {
     if (!gjbgl || gjbgl->m_isEditor) {
-        gjbgl = ::get<GameManager>()->m_playLayer;
+        gjbgl = globed::get<GameManager>()->m_playLayer;
     }
 
     return static_cast<APSPlayLayer*>(gjbgl);
@@ -327,7 +327,7 @@ void APSPauseLayer::customSetup() {
         return;
     }
 
-    auto winSize = ::get<CCDirector>()->getWinSize();
+    auto winSize = globed::get<CCDirector>()->getWinSize();
 
     auto menu = this->getChildByID("playerlist-menu"_spr);
     if (!menu) {
@@ -335,14 +335,26 @@ void APSPauseLayer::customSetup() {
         return;
     }
 
-    Build<ButtonSprite>::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.7f)
-        .scale(0.7f)
-        .intoMenuItem([] {
+    Build<CCSprite>::create("icon-switcheroo.png"_spr)
+        .scale(0.9f)
+        .intoMenuItem(+[] {
+            if (!globed::swapFlag("core.flags.seen-switcheroo-note")) {
+                globed::alert(
+                    "Switcheroo",
+                    "This button starts (or restarts) the <cj>Switcheroo</c> mode. You do <cr>not</c> need to press it multiple times (e.g. every switch or when someone joins), players are going to be switched <cg>automatically</c> once started, this button only serves to <cy>start or restart</c> the mode.\n\n"
+                    "Press the button again once all your friends join, to <cg>start</c> the game!"
+                );
+
+                return;
+            }
+
             NetworkManagerImpl::get().queueGameEvent(ActivePlayerSwitchEvent {
                 .playerId = GJAccountManager::get()->m_accountID,
                 .type = 2,
             });
         })
+        .scaleMult(1.2f)
+        .id("btn-switcheroo"_spr)
         .parent(menu);
 
     menu->updateLayout();

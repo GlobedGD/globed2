@@ -22,7 +22,6 @@ Globed is made by:
 
 * [dank_meme](user:9735891) - owner and main developer
 * [ItzKiba](user:4569963) - artist, developer
-* [LimeGradient](user:7214334) - developer
 * [Dasshu](user:1975253) - artist
 * [TechStudent10](user:20284359) - developer
 * [ninXout](user:7479054) - developer
@@ -36,6 +35,7 @@ Special thanks:
 * [HJfod](user:104257) - for making [our website](https://globed.dev)
 * [alk1m123](user:11535118) - for working together for EditorCollab interoperability
 * [Alphalaneous](user:1139015) - for making the DeathLink mod and allowing us to take their idea and implement it in Globed
+* [Rifct](user:8927557) - for helping with some assets
 * [ConfiG](user:807756) - for hosting a relay server in Russia
 * [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - for making Geode
 * Server staff and supporters - for helping in shaping this mod to be what it is today :)
