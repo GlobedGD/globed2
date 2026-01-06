@@ -19,6 +19,9 @@ public:
     void leaveLevel();
     SessionId makeSessionId(int levelId);
 
+    /// Resets various state, called on disconnect
+    void reset();
+
     bool isInGlobal();
     bool isInRoom();
     bool isInFollowerRoom();

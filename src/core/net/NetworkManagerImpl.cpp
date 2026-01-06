@@ -1213,6 +1213,11 @@ void NetworkManagerImpl::setLastFeaturedLevelId(int32_t id) {
 void NetworkManagerImpl::onCentralStateChanged(qn::ConnectionState state) {
     log::info("central connection state: {}", connectionStateToStr(state));
     m_workerNotify.notifyOne();
+
+    if (state == qn::ConnectionState::Disconnected) {
+        // reset some other singletons
+        RoomManager::get().reset();
+    }
 }
 
 void NetworkManagerImpl::onGameStateChanged(qn::ConnectionState state) {

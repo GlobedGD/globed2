@@ -58,6 +58,10 @@ SessionId RoomManager::makeSessionId(int levelId) {
     return SessionId::fromParts(this->pickServerId().value_or(0), m_roomId, levelId);
 }
 
+void RoomManager::reset() {
+    this->resetValues();
+}
+
 bool RoomManager::isInGlobal() {
     return m_roomId == 0;
 }

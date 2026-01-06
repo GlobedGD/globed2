@@ -9,6 +9,7 @@
 #include <ui/menu/FeatureCommon.hpp>
 #include <modules/ui/UIModule.hpp>
 #include <globed/util/gd.hpp>
+#include "Common.hpp"
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
@@ -134,7 +135,12 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
             return;
         }
 
-        // if we are already in a playlayer, don't allow sillyness
+        // don't allow joining when in a follower room
+        if (disallowLevelJoin()) {
+            return;
+        }
+
+        // don't allow joining if already in a level
         if (NetworkManagerImpl::get().isConnected() && GJBaseGameLayer::get() != nullptr) {
             globed::confirmPopup(
                 "Warning",

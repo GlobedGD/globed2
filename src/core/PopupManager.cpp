@@ -179,7 +179,7 @@ CustomFLAlert* CustomFLAlert::create(
     float rWidth
 ) {
     auto label = Label::createWrapped("", "chatFont.fnt", BMFontAlignment::Center, rWidth - 20.f);
-    label->setExtraLineSpacing(1.f);
+    label->setExtraLineSpacing(3.f);
 
     if (globed::containsEmoji(content)) {
         std::string cont = std::string(content);

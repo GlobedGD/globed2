@@ -1344,16 +1344,7 @@ void GlobedMenuLayer::handleDebugKey(cocos2d::enumKeyCodes key) {
 }
 
 void GlobedMenuLayer::keyBackClicked() {
-    auto& rm = RoomManager::get();
-    if (!rm.isInFollowerRoom() || rm.isOwner()) {
-        // only the owner of a follower room can leave to the main menu
-        BaseLayer::keyBackClicked();
-    } else {
-        globed::alert(
-            "Error",
-            "You are in a follower room, you <cr>cannot</c> leave to the main menu. Only the room owner can choose which levels to play."
-        );
-    }
+    BaseLayer::keyBackClicked();
 }
 
 void GlobedMenuLayer::onEnter() {
