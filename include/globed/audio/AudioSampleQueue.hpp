@@ -1,10 +1,13 @@
 #pragma once
 
+#include <globed/config.hpp>
+#include <optional>
+#include <cstddef>
 #include <deque>
 
 namespace globed {
 
-class AudioSampleQueue {
+class GLOBED_DLL AudioSampleQueue {
 public:
     AudioSampleQueue() = default;
 

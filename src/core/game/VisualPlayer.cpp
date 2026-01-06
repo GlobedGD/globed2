@@ -7,6 +7,7 @@
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/NameLabel.hpp>
+#include <ui/game/EmoteBubble.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>

@@ -6,7 +6,7 @@
 
 namespace globed {
 
-class VolumeEstimator {
+class GLOBED_DLL VolumeEstimator {
 public:
     VolumeEstimator(size_t sampleRate = 0);
 

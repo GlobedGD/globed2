@@ -4,7 +4,6 @@
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/core/game/PlayerStatusIcons.hpp>
-#include <ui/game/EmoteBubble.hpp>
 #include <Geode/Geode.hpp>
 
 namespace globed {
@@ -20,6 +19,7 @@ static constexpr float STATUS_ICONS_OFFSET = NAME_OFFSET + 15.f;
 
 class RemotePlayer;
 class NameLabel;
+class EmoteBubble;
 struct GameCameraState;
 
 class GLOBED_DLL VisualPlayer : public PlayerObject {
@@ -58,7 +58,7 @@ private:
     NameLabel* m_nameLabel;
     Ref<PlayerStatusIcons> m_statusIcons;
     Ref<cocos2d::CCDrawNode> m_playerTrajectory;
-    Ref<EmoteBubble> m_emoteBubble;
+    EmoteBubble* m_emoteBubble = nullptr;
 
     bool m_isLocalPlayer = false;
     bool m_isSecond = false;
