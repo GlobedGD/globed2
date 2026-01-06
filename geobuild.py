@@ -246,11 +246,13 @@ def main(build: Build):
 
     # Add geode dependencies
     build.enable_mod_json_generation("mod.json.template")
+    assert build.mod_json is not None # for type checkers
 
     build.add_geode_dep("geode.node-ids", ">=v1.10.0")
 
     if 'scripting-ui' in gc.modules:
         build.add_geode_dep("alphalaneous.editortab_api", ">=1.0.17")
+        build.mod_json["resources"]["sprites"].append("resources/editor/*.png")
 
     # fixup mod.json version in debug builds, be more strict for release builds
     if gc.debug:
