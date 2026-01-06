@@ -43,6 +43,15 @@ CCSprite* EmoteManager::createEmote(uint32_t id) {
     return isValid(spr) ? spr : nullptr;
 }
 
+CCSprite* EmoteManager::createFavoriteEmote(uint32_t id) {
+    id = this->getFavoriteEmote(id);
+    return id == 0 ? nullptr : this->createEmote(id);
+}
+
+uint32_t EmoteManager::getFavoriteEmote(uint32_t idx) {
+    return globed::value<uint32_t>(fmt::format("core.ui.emote-slot-{}", idx)).value_or(0);
+}
+
 std::unordered_map<uint32_t, std::string>& EmoteManager::getEmotes() {
     return m_emoteNames;
 }

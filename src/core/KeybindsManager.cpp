@@ -174,6 +174,13 @@ bool KeybindsManager::isAnyEmoteKeyBound() {
     return asp::iter::from(m_emoteBinds).any([](auto k) { return k != KEY_None; });
 }
 
+bool KeybindsManager::isEmoteKeyBound(size_t idx) {
+    if (idx >= m_emoteBinds.size()) {
+        return false;
+    }
+    return m_emoteBinds[idx] != KEY_None;
+}
+
 void KeybindsManager::refreshBinds() {
     m_kVoice = this->getBind("core.keybinds.voice-chat");
     m_kDeafen = this->getBind("core.keybinds.deafen");

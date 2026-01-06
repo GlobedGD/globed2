@@ -5,6 +5,7 @@
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/KeybindsManager.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <globed/core/EmoteManager.hpp>
 #include <globed/core/FriendListManager.hpp>
 #include <globed/util/algo.hpp>
 #include <globed/util/gd.hpp>
@@ -1075,7 +1076,7 @@ bool GlobedGJBGL::playSelfEmote(uint32_t id) {
 }
 
 bool GlobedGJBGL::playSelfFavoriteEmote(uint32_t which) {
-    auto emote = globed::value<uint32_t>(fmt::format("core.ui.emote-slot-{}", which)).value_or(0);
+    auto emote = EmoteManager::get().getFavoriteEmote(which);
 
     if (emote != 0) {
         return this->playSelfEmote(emote);

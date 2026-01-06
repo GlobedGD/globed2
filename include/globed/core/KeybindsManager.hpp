@@ -48,6 +48,8 @@ public:
     void releaseAll();
     bool isKeyUsed(cocos2d::enumKeyCodes key);
     bool isAnyEmoteKeyBound();
+    /// Check if keybind for favorite emote N is bound, 0-indexed
+    bool isEmoteKeyBound(size_t idx);
 
 protected:
     cocos2d::enumKeyCodes m_kVoice, m_kDeafen, m_kHidePlayers;
