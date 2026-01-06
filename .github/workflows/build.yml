@@ -3,6 +3,12 @@ name: Build Globed
 on:
   workflow_dispatch:
   push:
+    paths-ignore:
+      - 'docs/*.md'
+      - 'previews/**'
+      - 'README.md'
+      - 'rescale.py'
+
   # pull_request:
 
 jobs:
