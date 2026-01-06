@@ -149,6 +149,8 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
                     auto& em = EmoteManager::get();
                     auto emoteId = em.getFavoriteEmote(i);
 
+                    if (emoteId == 0) return; // no emote assigned
+
                     if (GlobedGJBGL::get()->playSelfEmote(emoteId)) {
                         this->onResume(this);
                     } else {
