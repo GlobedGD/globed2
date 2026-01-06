@@ -185,7 +185,7 @@ CustomFLAlert* CustomFLAlert::create(
         std::string cont = std::string(content);
         globed::translateEmojiString(cont);
 
-        label->enableEmojis("emojis.png"_spr, getEmojiMap());
+        label->enableEmojis("twemojis.png"_spr, getEmojiMap());
         label->setString(cont);
     } else {
         // no emojis!
