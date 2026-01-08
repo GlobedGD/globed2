@@ -10,6 +10,9 @@ NetworkManager::NetworkManager() : m_impl(std::make_unique<NetworkManagerImpl>()
 
 NetworkManager::~NetworkManager() {
     log::info("goodbye from networkmanager!");
+
+    // leak because cleanup causes more trouble than it's worth
+    std::ignore = m_impl.release();
 }
 
 Result<> NetworkManager::connectCentral(std::string_view url) {

@@ -274,8 +274,49 @@ NetworkManagerImpl::~NetworkManagerImpl() {
 }
 
 void NetworkManagerImpl::shutdown() {
+    log::debug("shutting down networking...");
+
+    // set up a notify so we know when both connections are fully disconnected
+    arc::Notify notify;
+    m_centralConn->setConnectionStateCallback([&](qn::ConnectionState state) {
+        notify.notifyOne();
+    });
+    m_gameConn->setConnectionStateCallback([&](qn::ConnectionState state) {
+        notify.notifyOne();
+    });
+
+    m_centralConn->disconnect();
+    m_gameConn->disconnect();
+
+    // allow some short cleanup
+    (void) m_runtime->blockOn(
+        arc::timeout(
+            Duration::fromMillis(100),
+            [&](this auto self) -> arc::Future<> {
+                while (true) {
+                    auto cs = m_centralConn->state();
+                    auto gs = m_gameConn->state();
+
+                    if (cs == gs && cs == qn::ConnectionState::Disconnected) {
+                        break;
+                    }
+
+                    co_await notify.notified();
+                }
+            }()
+        )
+    );
+
     m_centralConn->destroy();
     m_gameConn->destroy();
+    m_centralConn.reset();
+    m_gameConn.reset();
+
+    m_centralLogger.reset();
+    m_gameLogger.reset();
+    m_gameServerJoinTx.reset();
+
+    log::debug("network cleanup finished!");
 }
 
 NetworkManagerImpl& NetworkManagerImpl::get() {
