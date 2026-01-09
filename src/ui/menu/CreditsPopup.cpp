@@ -205,6 +205,10 @@ void CreditsPopup::onLoaded(const std::vector<CreditsCategory>& categories) {
     m_list->clear();
 
     for (auto& cat : categories) {
+        if (cat.users.empty()) {
+            continue;
+        }
+
         m_list->addCell(CategoryCell::create(cat));
     }
 

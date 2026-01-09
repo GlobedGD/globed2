@@ -228,7 +228,7 @@ bool GlobedMenuLayer::init() {
         .opacity(127)
         .scale(0.55f)
         .anchorPoint(1.f, 1.f)
-        .pos(winSize - CCSize{1.f, 1.f})
+        .pos(winSize - CCSize{4.f, 2.f})
         .zOrder(111)
         .parent(this);
 
