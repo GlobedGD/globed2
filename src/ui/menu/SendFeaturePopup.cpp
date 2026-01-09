@@ -51,7 +51,7 @@ bool SendFeaturePopup::setup(GJGameLevel* level) {
         })
         .parent(buttonMenu);
 
-    if (NetworkManagerImpl::get().getModPermissions().canRateFeatures) {
+    if (NetworkManagerImpl::get().getUserPermissions().canRateFeatures) {
         Build<ButtonSprite>::create("Queue", "bigFont.fnt", "GJ_button_01.png", 0.9f)
             .scale(0.75f)
             .intoMenuItem([this] {

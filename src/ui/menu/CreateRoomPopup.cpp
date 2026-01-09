@@ -27,7 +27,7 @@ bool CreateRoomPopup::setup() {
     this->setID("create-room-popup"_spr);
     this->setTitle("Create Room", "goldFont.fnt", 1.0f);
 
-    bool canName = NetworkManagerImpl::get().canNameRooms();
+    bool canName = NetworkManagerImpl::get().getUserPermissions().canNameRooms;
 
     m_inputsWrapper = Build<CCNode>::create()
         .id("inputs-wrapper")

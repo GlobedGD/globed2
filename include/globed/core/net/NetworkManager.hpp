@@ -4,7 +4,7 @@
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/UserRole.hpp>
 #include <globed/core/data/Event.hpp>
-#include <globed/core/data/ModPermissions.hpp>
+#include <globed/core/data/UserPermissions.hpp>
 #include <globed/core/data/SpecialUserData.hpp>
 #include <globed/core/data/FeaturedLevel.hpp>
 #include "ConnectionState.hpp"
@@ -44,7 +44,7 @@ public:
     std::optional<UserRole> findRole(std::string_view roleId);
     bool isModerator();
     bool isAuthorizedModerator();
-    ModPermissions getModPermissions();
+    UserPermissions getUserPermissions();
     std::optional<SpecialUserData> getOwnSpecialData();
 
     /// Force the client to resend user icons to the connected server. Does nothing if not connected.

@@ -90,8 +90,8 @@ bool NetworkManager::isAuthorizedModerator() {
     return m_impl->isAuthorizedModerator();
 }
 
-ModPermissions NetworkManager::getModPermissions() {
-    return m_impl->getModPermissions();
+UserPermissions NetworkManager::getUserPermissions() {
+    return m_impl->getUserPermissions();
 }
 
 std::optional<SpecialUserData> NetworkManager::getOwnSpecialData() {

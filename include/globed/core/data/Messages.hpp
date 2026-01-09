@@ -12,7 +12,7 @@
 #include "UserPunishment.hpp"
 #include "FetchedMod.hpp"
 #include "Credits.hpp"
-#include "ModPermissions.hpp"
+#include "ExtendedUserData.hpp"
 #include "PunishReasons.hpp"
 #include <globed/audio/EncodedAudioFrame.hpp>
 
@@ -21,13 +21,9 @@ namespace globed::msg {
 // Login
 
 struct CentralLoginOkMessage {
-    std::string newToken;
     std::vector<UserRole> allRoles;
-    std::vector<UserRole> userRoles;
-    std::optional<MultiColor> nameColor;
-    ModPermissions perms;
-    bool canNameRooms;
     std::optional<FeaturedLevelMeta> featuredLevel;
+    ExtendedUserData userData;
 };
 
 // Banned
@@ -242,10 +238,7 @@ struct FeaturedListMessage {
 // User data changed
 
 struct UserDataChangedMessage {
-    std::vector<uint8_t> roles;
-    std::optional<MultiColor> nameColor;
-    ModPermissions perms;
-    std::string newToken;
+    ExtendedUserData userData;
 };
 
 // Chat not permitted

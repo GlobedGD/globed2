@@ -615,12 +615,37 @@ static FeatureTier decodeFeatureTier(uint8_t tier) {
     return (FeatureTier)std::clamp<uint8_t>(tier, 0, 2);
 }
 
-$implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
-    msg::CentralLoginOkMessage msg{};
+inline std::optional<ExtendedUserData> decodeExtendedUserData(const schema::main::ExtendedUserData::Reader& reader) {
+    ExtendedUserData out{};
 
     if (reader.hasNewToken()) {
-        msg.newToken = reader.getNewToken();
+        out.newToken = reader.getNewToken();
     }
+
+    if (reader.hasRoles()) {
+        auto r = reader.getRoles();
+        out.roleIds = {r.begin(), r.end()};
+    }
+
+    if (reader.hasNameColor()) {
+        out.nameColor = decodeMultiColor(reader.getNameColor());
+    }
+
+
+    out.permissions.isModerator = reader.getIsModerator();
+    out.permissions.canMute = reader.getCanMute();
+    out.permissions.canBan = reader.getCanBan();
+    out.permissions.canSetPassword = reader.getCanSetPassword();
+    out.permissions.canEditRoles = reader.getCanEditRoles();
+    out.permissions.canSendFeatures = reader.getCanSendFeatures();
+    out.permissions.canRateFeatures = reader.getCanRateFeatures();
+    out.permissions.canNameRooms = reader.getCanNameRooms();
+
+    return out;
+}
+
+$implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
+    msg::CentralLoginOkMessage msg{};
 
     if (reader.hasAllRoles()) {
         auto roles = reader.getAllRoles();
@@ -638,31 +663,6 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
         }
     }
 
-    if (reader.hasUserRoles()) {
-        auto userRoles = reader.getUserRoles();
-        msg.userRoles.reserve(userRoles.size());
-        for (uint8_t id : userRoles) {
-            if (id < msg.allRoles.size()) {
-                msg.userRoles.push_back(msg.allRoles[id]);
-            } else {
-                geode::log::warn("Received invalid user role ID: {}", id);
-            }
-        }
-    }
-
-    if (reader.hasNameColor()) {
-        msg.nameColor = decodeMultiColor(reader.getNameColor());
-    }
-
-    msg.perms.isModerator = reader.getIsModerator();
-    msg.perms.canMute = reader.getCanMute();
-    msg.perms.canBan = reader.getCanBan();
-    msg.perms.canSetPassword = reader.getCanSetPassword();
-    msg.perms.canEditRoles = reader.getCanEditRoles();
-    msg.perms.canSendFeatures = reader.getCanSendFeatures();
-    msg.perms.canRateFeatures = reader.getCanRateFeatures();
-    msg.canNameRooms = reader.getCanNameRooms();
-
     FeaturedLevelMeta flm{};
     flm.levelId = reader.getFeaturedLevel();
     flm.rateTier = decodeFeatureTier(reader.getFeaturedLevelTier());
@@ -670,6 +670,17 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
 
     if (flm.levelId != 0) {
         msg.featuredLevel = flm;
+    }
+
+    if (reader.hasUserData()) {
+        auto ud = reader.getUserData();
+        auto ext = decodeExtendedUserData(ud);
+        if (!ext) {
+            geode::log::warn("Failed to decode extended user data sent by central server");
+            return std::nullopt;
+        }
+
+        msg.userData = std::move(*ext);
     }
 
     return msg;
@@ -763,20 +774,8 @@ $implDecode(msg::TeamsUpdatedMessage, main::TeamsUpdatedMessage::Reader& reader)
 /// UserDataChangedMessage
 
 $implDecode(msg::UserDataChangedMessage, main::UserDataChangedMessage::Reader& reader) {
-    msg::UserDataChangedMessage out{};
-
-    out.roles = {reader.getRoles().begin(), reader.getRoles().end()};
-    out.nameColor = decodeMultiColor(reader.getNameColor());
-    out.perms.isModerator = reader.getIsModerator();
-    out.perms.canMute = reader.getCanMute();
-    out.perms.canBan = reader.getCanBan();
-    out.perms.canSetPassword = reader.getCanSetPassword();
-    out.perms.canEditRoles = reader.getCanEditRoles();
-    out.perms.canSendFeatures = reader.getCanSendFeatures();
-    out.perms.canRateFeatures = reader.getCanRateFeatures();
-    if (reader.hasNewToken()) out.newToken = reader.getNewToken();
-
-    return out;
+    auto ud = decodeExtendedUserData(reader.getUserData());
+    return ud ? std::optional{msg::UserDataChangedMessage{std::move(*ud)}} : std::nullopt;
 }
 
 /// Player counts message

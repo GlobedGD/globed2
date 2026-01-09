@@ -1142,7 +1142,7 @@ std::optional<UserRole> NetworkManagerImpl::findRole(std::string_view roleId) {
 }
 
 bool NetworkManagerImpl::isModerator() {
-    return this->getModPermissions().isModerator;
+    return this->getUserPermissions().isModerator;
 }
 
 bool NetworkManagerImpl::isAuthorizedModerator() {
@@ -1150,9 +1150,9 @@ bool NetworkManagerImpl::isAuthorizedModerator() {
     return info && info->m_authorizedModerator;
 }
 
-ModPermissions NetworkManagerImpl::getModPermissions() {
+UserPermissions NetworkManagerImpl::getUserPermissions() {
     auto info = this->connInfo();
-    return info ? info->m_perms : ModPermissions{};
+    return info ? info->m_perms : UserPermissions{};
 }
 
 PunishReasons NetworkManagerImpl::getModPunishReasons() {
@@ -1170,11 +1170,6 @@ std::optional<SpecialUserData> NetworkManagerImpl::getOwnSpecialData() {
     }
 
     return std::nullopt;
-}
-
-bool NetworkManagerImpl::canNameRooms() {
-    auto info = this->connInfo();
-    return info && info->m_canNameRooms;
 }
 
 void NetworkManagerImpl::invalidateIcons() {
@@ -1979,26 +1974,30 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             }
 
             auto msg = std::move(res).value();
+
             info->m_allRoles = msg.allRoles;
-            info->m_userRoles = msg.userRoles;
+            info->m_userRoleIds = msg.userData.roleIds;
             info->m_established = true;
-            info->m_perms = msg.perms;
-            info->m_canNameRooms = msg.canNameRooms;
-            info->m_nameColor = msg.nameColor;
+            info->m_perms = msg.userData.permissions;
+            info->m_nameColor = msg.userData.nameColor;
             info->m_featuredLevel = msg.featuredLevel;
 
-            for (auto& role : info->m_userRoles) {
-                info->m_userRoleIds.push_back(role.id);
+            for (auto id : info->m_userRoleIds) {
+                if (id < msg.allRoles.size()) {
+                    info->m_userRoles.push_back(msg.allRoles[id]);
+                } else {
+                    log::warn("Unknown role ID in CentralLoginOkMessage: {}", id);
+                }
             }
 
             this->handleSuccessfulLogin(info);
             info.unlock();
 
-            this->invokeListeners(msg);
-
-            if (!msg.newToken.empty()) {
-                this->setUToken(msg.newToken);
+            if (!msg.userData.newToken.empty()) {
+                this->setUToken(msg.userData.newToken);
             }
+
+            this->invokeListeners(std::move(msg));
         } break;
 
         case CentralMessage::LOGIN_FAILED: {
@@ -2044,15 +2043,22 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::USER_DATA_CHANGED: {
-            auto outp = data::decodeUnchecked<msg::UserDataChangedMessage>(msg.getUserDataChanged());
+            auto res = data::decodeOpt<msg::UserDataChangedMessage>(msg.getUserDataChanged());
+            if (!res) {
+                log::warn("Server sent invalid UserDataChangedMessage");
+                break;
+            }
+
+            auto msg = std::move(*res);
+            auto& ud = msg.userData;
             auto info = this->connInfo();
 
-            info->m_perms = outp.perms;
-            info->m_nameColor = outp.nameColor;
-            info->m_userRoleIds = outp.roles;
+            info->m_perms = ud.permissions;
+            info->m_nameColor = ud.nameColor;
+            info->m_userRoleIds = ud.roleIds;
 
             info->m_userRoles.clear();
-            for (auto id : outp.roles) {
+            for (auto id : ud.roleIds) {
                 if (id < info->m_allRoles.size()) {
                     info->m_userRoles.push_back(info->m_allRoles[id]);
                 } else {
@@ -2061,11 +2067,11 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             }
             info.unlock();
 
-            if (!outp.newToken.empty()) {
-                this->setUToken(outp.newToken);
+            if (!ud.newToken.empty()) {
+                this->setUToken(ud.newToken);
             }
 
-            this->invokeListeners(std::move(outp));
+            this->invokeListeners(std::move(msg));
         } break;
 
         case CentralMessage::PLAYER_COUNTS: {

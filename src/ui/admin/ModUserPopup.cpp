@@ -175,7 +175,7 @@ void ModUserPopup::initUi() {
     auto& nm = NetworkManagerImpl::get();
     auto role = nm.getUserHighestRole();
 
-    if (nm.getModPermissions().canSetPassword) {
+    if (nm.getUserPermissions().canSetPassword) {
         // Password button
         Build<CCSprite>::create("button-admin-password.png"_spr)
             .scale(btnScale)
@@ -256,7 +256,7 @@ void ModUserPopup::recreateRoleButton() {
 
     m_roleModifyButton = Build(badgeIcon)
         .intoMenuItem([this] {
-            if (!NetworkManagerImpl::get().getModPermissions().canEditRoles) return;
+            if (!NetworkManagerImpl::get().getUserPermissions().canEditRoles) return;
 
             auto popup = ModRoleModifyPopup::create(m_data->accountId, m_data->roles);
             popup->setCallback([this] {

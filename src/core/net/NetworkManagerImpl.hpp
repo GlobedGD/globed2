@@ -9,7 +9,7 @@
 #include <globed/core/data/Event.hpp>
 #include <globed/core/data/PunishReasons.hpp>
 #include <globed/core/data/FeaturedLevel.hpp>
-#include <globed/core/data/ModPermissions.hpp>
+#include <globed/core/data/UserPermissions.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/util/FunctionQueue.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
@@ -100,8 +100,7 @@ struct ConnectionInfo {
     std::optional<FeaturedLevelMeta> m_featuredLevel;
     std::vector<uint8_t> m_userRoleIds;
     std::optional<MultiColor> m_nameColor;
-    ModPermissions m_perms{};
-    bool m_canNameRooms = false;
+    UserPermissions m_perms{};
     PunishReasons m_punishReasons{};
     bool m_authorizedModerator;
 
@@ -201,11 +200,9 @@ public:
     std::optional<UserRole> findRole(std::string_view roleId);
     bool isModerator();
     bool isAuthorizedModerator();
-    ModPermissions getModPermissions();
+    UserPermissions getUserPermissions();
     PunishReasons getModPunishReasons();
     std::optional<SpecialUserData> getOwnSpecialData();
-
-    bool canNameRooms();
 
     /// Force the client to resend user icons to the connected server. Does nothing if not connected.
     void invalidateIcons();

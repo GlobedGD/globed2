@@ -2,7 +2,7 @@
 
 namespace globed {
 
-struct ModPermissions {
+struct UserPermissions {
     bool isModerator;
     bool canMute;
     bool canBan;
@@ -10,6 +10,7 @@ struct ModPermissions {
     bool canEditRoles;
     bool canSendFeatures;
     bool canRateFeatures;
+    bool canNameRooms;
 };
 
 }
