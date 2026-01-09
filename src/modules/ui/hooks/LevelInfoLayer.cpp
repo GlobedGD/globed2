@@ -45,7 +45,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
         auto& nm = NetworkManagerImpl::get();
         auto& rm = RoomManager::get();
 
-        if (nm.getModPermissions().canSendFeatures) {
+        if (nm.isAuthorizedModerator() && nm.getModPermissions().canSendFeatures) {
             this->addLevelSendButton();
         }
 
