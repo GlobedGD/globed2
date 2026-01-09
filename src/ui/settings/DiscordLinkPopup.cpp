@@ -15,12 +15,6 @@ namespace globed {
 const CCSize DiscordLinkPopup::POPUP_SIZE{280.f, 160.f};
 static constexpr CCSize ICON_SIZE {40.f, 40.f};
 
-void superUpdateLayout(CCNode* node) {
-    if (!node) return;
-    node->updateLayout();
-    superUpdateLayout(node->getParent());
-}
-
 bool DiscordLinkPopup::setup() {
     this->setTitle("Link Discord Account");
 
@@ -35,6 +29,7 @@ bool DiscordLinkPopup::setup() {
             utils::web::openLinkInBrowser(globed::constant<"discord">());
         })
         .pos(this->fromBottomLeft(22.f, 22.f))
+        .id("discord-btn")
         .scaleMult(1.1f)
         .parent(m_buttonMenu);
 
@@ -49,6 +44,7 @@ bool DiscordLinkPopup::setup() {
             );
         })
         .pos(this->fromBottomRight(18.f, 18.f))
+        .id("info-btn")
         .scaleMult(1.1f)
         .parent(m_buttonMenu);
 
@@ -57,6 +53,7 @@ bool DiscordLinkPopup::setup() {
         .contentSize(POPUP_SIZE.width * 0.85f, POPUP_SIZE.height * 0.55f)
         .layout(RowLayout::create()->setAutoScale(false))
         .pos(this->fromCenter(0.f, 8.f))
+        .id("player-card")
         .parent(m_mainLayer)
         .collect();
 
@@ -64,7 +61,7 @@ bool DiscordLinkPopup::setup() {
         .with([&](auto spr) { cue::rescaleToMatch(spr, ICON_SIZE); })
         .parent(m_playerCard);
 
-    auto dataContainer = Build<CCNode>::create()
+    m_dataContainer = Build<CCNode>::create()
         .layout(ColumnLayout::create()
             ->setAxisReverse(true)
             ->setAutoScale(false)
@@ -72,13 +69,15 @@ bool DiscordLinkPopup::setup() {
             ->setGap(0.f)
         )
         .zOrder(10)
+        .id("data-container")
         .parent(m_playerCard)
         .contentSize(0.f, 52.f)
         .collect();
 
     m_nameLabel = Build<CCLabelBMFont>::create(uname.c_str(), "goldFont.fnt")
         .limitLabelWidth(POPUP_SIZE.width * 0.85f, 0.6f, 0.1f)
-        .parent(dataContainer);
+        .id("name-label")
+        .parent(m_dataContainer);
 
     // m_idLabel = Build<CCLabelBMFont>::create(fmt::format("{}", id).c_str(), "goldFont.fnt")
     //     .scale(0.5f)
@@ -89,7 +88,7 @@ bool DiscordLinkPopup::setup() {
         .layout(RowLayout::create()->setAutoScale(false)->setGap(3.f)->setAxisAlignment(AxisAlignment::Start))
         .contentSize(140.f, 0.f)
         .id("status-container")
-        .parent(dataContainer);
+        .parent(m_dataContainer);
 
     Build<CCLabelBMFont>::create("Status:", "bigFont.fnt")
         .scale(0.5f)
@@ -100,7 +99,7 @@ bool DiscordLinkPopup::setup() {
         .parent(m_statusContainer);
 
     m_statusContainer->updateLayout();
-    dataContainer->updateLayout();
+    m_dataContainer->updateLayout();
     m_playerCard->updateLayout();
 
     m_background = cue::attachBackground(m_playerCard);
@@ -167,14 +166,15 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
     cue::resetNode(m_background);
     cue::resetNode(m_waitingLabel1);
     cue::resetNode(m_waitingLabel2);
+    cue::resetNode(m_avatar);
 
-    superUpdateLayout(m_nameLabel);
+    m_dataContainer->updateLayout();
 
     m_avatar = Build(LazySprite::create(ICON_SIZE))
         .parent(m_playerCard);
     m_avatar->setAutoResize(true);
     m_avatar->loadFromUrl(convertAvatarUrl(avatarUrl));
-    superUpdateLayout(m_avatar);
+    m_playerCard->updateLayout();
 
     m_background = cue::attachBackground(m_playerCard);
 }

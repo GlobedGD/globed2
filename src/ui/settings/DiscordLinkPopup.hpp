@@ -18,13 +18,14 @@ protected:
     CCMenuItemSpriteExtra* m_discordBtn = nullptr;
     CCMenuItemSpriteExtra* m_startBtn = nullptr;
     cocos2d::CCNode* m_statusContainer = nullptr;
+    cocos2d::CCNode* m_dataContainer = nullptr;
     cocos2d::CCLabelBMFont* m_statusLabel = nullptr;
     cocos2d::CCLabelBMFont* m_nameLabel = nullptr;
     cocos2d::CCLabelBMFont* m_idLabel = nullptr;
     cocos2d::CCLabelBMFont* m_waitingLabel1 = nullptr;
     cocos2d::CCLabelBMFont* m_waitingLabel2 = nullptr;
     cue::PlayerIcon* m_playerIcon;
-    geode::LazySprite* m_avatar;
+    geode::LazySprite* m_avatar = nullptr;
     bool m_activelyWaiting = false;
 
     std::optional<MessageListener<msg::DiscordLinkStateMessage>> m_stateListener;
