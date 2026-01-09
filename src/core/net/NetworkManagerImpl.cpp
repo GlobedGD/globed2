@@ -316,6 +316,8 @@ void NetworkManagerImpl::shutdown() {
     m_gameLogger.reset();
     m_gameServerJoinTx.reset();
 
+    m_runtime.reset();
+
     log::debug("network cleanup finished!");
 }
 
