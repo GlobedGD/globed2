@@ -228,6 +228,33 @@ bool EmoteListPopup::setup() {
     m_clearFavoriteBtn->setEnabled(false);
     m_clearFavoriteBtn->setVisible(false);
 
+    // volume slider and label
+
+    m_volumeSlider = Build(createSlider())
+        .scale(0.85f)
+        .id("volume-slider");
+
+    m_volumeSlider->setContentWidth(80.f);
+    m_volumeSlider->setRange(0.0, 1.0);
+    m_volumeSlider->setValue(globed::setting<float>("core.player.quick-chat-sfx-volume"));
+    m_volumeSlider->setCallback([](cue::Slider* slider, double value) {
+        globed::setting<float>("core.player.quick-chat-sfx-volume") = value;
+    });
+
+    Build<CCLabelBMFont>::create("Emote Volume", "bigFont.fnt")
+        .scale(0.45f * 0.7f)
+        .intoNewParent(CCNode::create())
+        .id("volume-wrapper")
+        .child(m_volumeSlider)
+        .layout(ColumnLayout::create()
+            ->setAutoScale(false)
+            ->setAxisReverse(true))
+        .contentSize(80.f, 30.f)
+        .anchorPoint(0.5f, 0.5f)
+        .pos(this->fromTopLeft(74.f, 22.f))
+        .parent(m_mainLayer)
+        .updateLayout();
+
     return true;
 }
 

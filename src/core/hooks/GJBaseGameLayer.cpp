@@ -329,6 +329,14 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     auto& fields = *m_fields.self();
     if (!fields.m_active) return;
 
+    // if we are disconnected from the game server, and no (re)connection is being attempted,
+    // set active to false
+    auto& nm = NetworkManagerImpl::get();
+    if (nm.getConnState(true) == qn::ConnectionState::Disconnected) {
+        fields.m_active = false;
+        return;
+    }
+
     auto& pcm = PlayerCacheManager::get();
     auto& rm = RoomManager::get();
 

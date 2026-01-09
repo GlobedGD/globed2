@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ui/misc/Sliders.hpp>
 #include <ui/BasePopup.hpp>
 #include <cue/ListNode.hpp>
 #include <vector>
@@ -38,6 +39,8 @@ private:
 
     cocos2d::extension::CCScale9Sprite* m_favoriteHighlight;
     cocos2d::CCLabelBMFont* m_favoriteInfoLabel;
+
+    cue::Slider* m_volumeSlider;
 
     bool setup() override;
     void onSubmitBtn();
