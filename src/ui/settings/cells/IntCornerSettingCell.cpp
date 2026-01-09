@@ -1,6 +1,7 @@
 #include "IntCornerSettingCell.hpp"
 
 #include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
@@ -18,8 +19,10 @@ void IntCornerSettingCell::setup() {
         .child(m_innerSquare)
         .collect();
 
+    float btnh = m_size.height * 0.8f;
+
     auto btn = Build(EditorButtonSprite::create(container, EditorBaseColor::Gray))
-        .scale(0.85f)
+        .with([&](auto spr) { cue::rescaleToMatch(spr, btnh); })
         .intoMenuItem([this](auto) {
             int newVal = this->get<int>() + 1;
             if (newVal > 3 || newVal < 0) {
@@ -29,6 +32,7 @@ void IntCornerSettingCell::setup() {
 
             this->reload();
         })
+        .scaleMult(1.15f)
         .parent(this)
         .posY(m_size.height / 2.f)
         .collect();

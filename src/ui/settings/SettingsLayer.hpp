@@ -11,7 +11,7 @@ namespace globed {
 class SettingsLayer : public BaseLayer {
 public:
     static SettingsLayer* create();
-    static constexpr cocos2d::CCSize CELL_SIZE = {356.f, 32.f};
+    static constexpr cocos2d::CCSize CELL_SIZE = {356.f,28.f};
 
 private:
     Ref<cue::ListNode> m_globedTab;

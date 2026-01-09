@@ -15,7 +15,7 @@ void ButtonSettingCell::createButton(CStr text) {
     cue::resetNode(m_button);
 
     m_button = Build<ButtonSprite>::create(m_btnText, "goldFont.fnt", "GJ_button_04.png", 0.8f)
-        .scale(0.8f)
+        .scale(0.7f)
         .intoMenuItem([this] {
             m_callback();
         })

@@ -8,8 +8,9 @@ namespace globed {
 
 void FloatSettingCell::setup() {
     m_slider = Build(createSlider())
+        .scale(0.9f)
         .contentSize(80.f, 18.f)
-        .pos(m_size.width - 48.f, m_size.height / 2.f)
+        .pos(m_size.width - 48.f, m_size.height / 2.f - 1.f)
         .parent(this)
         .collect();
 
@@ -26,7 +27,7 @@ void FloatSettingCell::setup() {
 
     m_label = Build<CCLabelBMFont>::create("", "bigFont.fnt")
         .scale(0.3f)
-        .pos(m_size.width - 48.f, m_size.height / 2.f + 10.f)
+        .pos(m_size.width - 48.f, m_size.height / 2.f + 9.f)
         .parent(this)
         .collect();
 

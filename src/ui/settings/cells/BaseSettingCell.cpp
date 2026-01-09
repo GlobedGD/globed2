@@ -30,7 +30,7 @@ bool BaseSettingCellBase::initNoSetting(CStr name, CStr desc, cocos2d::CCSize si
     this->setContentSize(m_size);
 
     auto label = Build<CCLabelBMFont>::create(name, "bigFont.fnt")
-        .limitLabelWidth(size.width * 0.65f, 0.55f, 0.3f)
+        .limitLabelWidth(size.width * 0.65f, 0.5f, 0.25f)
         .anchorPoint(0.f, 0.5f)
         .pos(8.f, size.height / 2.f)
         .parent(this)
@@ -38,11 +38,11 @@ bool BaseSettingCellBase::initNoSetting(CStr name, CStr desc, cocos2d::CCSize si
 
     if (!desc.empty()) {
         Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-            .scale(0.5f)
+            .scale(0.45f)
             .intoMenuItem([this] {
                 globed::alert(m_name, std::string(m_desc));
             })
-            .pos(8.f + label->getScaledContentWidth() + 6.f, size.height / 2.f + label->getScaledContentHeight() / 2.f - 3.5f)
+            .pos(8.f + label->getScaledContentWidth() + 6.f, size.height / 2.f + label->getScaledContentHeight() / 2.f - 4.f)
             .parent(this);
     }
 
