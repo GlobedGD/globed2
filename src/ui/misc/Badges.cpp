@@ -7,13 +7,17 @@ using namespace geode::prelude;
 
 namespace globed {
 
+static bool isValid(CCSprite* spr) {
+    return spr && !spr->getUserObject("geode.texture-loader/fallback");
+}
+
 static CCSprite* createAny(const char* name) {
     auto sprite = CCSprite::create(name);
-    if (!sprite) {
+    if (!isValid(sprite)) {
         sprite = CCSprite::createWithSpriteFrameName(name);
     }
 
-    return sprite;
+    return isValid(sprite) ? sprite : nullptr;
 }
 
 CCSprite* createBadge(CStr spriteName) {

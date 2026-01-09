@@ -246,7 +246,9 @@ void ModUserPopup::recreateRoleButton() {
     // assume roles are sorted by priority
     if (!m_data->roles.empty()) {
         badgeIcon = createBadge(m_data->roles[0]);
-    } else {
+    }
+
+    if (!badgeIcon) {
         badgeIcon = CCSprite::create("role-user.png"_spr);
     }
 
