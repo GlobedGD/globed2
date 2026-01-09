@@ -187,6 +187,9 @@ void SettingsLayer::addSettings() {
         {"Friends", InvitesFrom::Friends},
         {"Nobody", InvitesFrom::Nobody},
     });
+    this->addSetting<BoolSettingCell>("core.ui.disable-notices", "Disable Notices",
+        "Entirely disables <cy>Notices</c>, which are a way for <cj>Globed staff</c> to communicate important information to users."
+    );
 
     // Preload
     this->addHeader("core.player", "Preloading", m_globedTab);
@@ -381,13 +384,13 @@ void SettingsLayer::addSettings() {
     // Menus
     this->addHeader("core.ui", "Menus", m_menusTab);
     this->addSetting<BoolSettingCell>("core.streamer-mode", "Streamer Mode",
-        "Hides some sensitive information (room ID, password)."
+        "Hides some <cy>sensitive</c> information (room ID, password)."
     );
     this->addSetting<BoolSettingCell>("core.ui.increase-level-list", "Increase Level List",
         "Shows more levels per page in the level list."
     );
     this->addSetting<BoolSettingCell>("core.ui.compressed-player-count", "Simple Player Count",
-        "Shows a simplified player count (number + icon rather than 'x players') in all places instead of just Tower/Gauntlets."
+        "Shows a simplified player count (number + icon rather than 'x players') in <cg>all places</c> instead of just <cy>Tower/Gauntlets</c>."
     );
 
     for (auto tab : m_tabs) {

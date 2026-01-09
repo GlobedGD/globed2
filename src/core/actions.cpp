@@ -180,6 +180,11 @@ $on_mod(Loaded) {
     });
 
     nm.listenGlobal<msg::NoticeMessage>([](const msg::NoticeMessage& msg) {
+        if (globed::setting<bool>("core.ui.disable-notices")) {
+            log::info("Notice received but notices are disabled, ignoring");
+            return ListenerResult::Continue;
+        }
+
         std::string title;
 
         if (msg.isReply) {

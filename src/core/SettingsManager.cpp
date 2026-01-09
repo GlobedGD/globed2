@@ -43,6 +43,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.ui.increase-level-list", false);
     this->registerSetting("core.ui.compressed-player-count", true);
     this->registerSetting("core.ui.colorblind-mode", false);
+    this->registerSetting("core.ui.disable-notices", false);
 
     // Player settings
     this->registerSetting("core.player.opacity", 1.0f);
