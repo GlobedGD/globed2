@@ -46,6 +46,7 @@ static void gatherUserSettings(auto&& out) {
     out.setHideInLevel(globed::setting<bool>("core.user.hide-in-levels"));
     out.setHideInMenus(globed::setting<bool>("core.user.hide-in-menus"));
     out.setHideRoles(globed::setting<bool>("core.user.hide-roles"));
+    out.setDisableNotices(globed::setting<bool>("core.ui.disable-notices"));
 }
 
 static Duration getPingInterval(uint32_t sentPings) {
