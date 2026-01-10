@@ -20,11 +20,10 @@ void ButtonSettingCell::createButton(CStr text) {
             m_callback();
         })
         .scaleMult(1.15f)
-        .parent(this)
-        .posY(m_size.height / 2.f)
+        .parent(m_rightMenu)
         .collect();
+    m_rightMenu->updateLayout();
 
-    m_button->setPositionX(m_size.width - 8.f - m_button->getContentWidth() / 2.f);
 }
 
 ButtonSettingCell* ButtonSettingCell::create(

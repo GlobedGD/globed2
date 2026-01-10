@@ -20,7 +20,9 @@ public:
     std::unordered_map<uint32_t, std::string>& getEmotes();
     std::vector<uint32_t>& getSortedEmoteIds();
 
-    std::shared_ptr<PlayerSound> playEmoteSfx(uint32_t id, std::shared_ptr<RemotePlayer> player);
+    /// Plays the emote SFX, returning a PlayerSound if player is non null
+    /// otherwise returns a Sound and plays it globally
+    std::shared_ptr<Sound> playEmoteSfx(uint32_t id, std::shared_ptr<RemotePlayer> player);
 
 protected:
     std::unordered_map<uint32_t, std::string> m_emoteNames;

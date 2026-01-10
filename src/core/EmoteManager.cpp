@@ -60,7 +60,7 @@ std::vector<uint32_t>& EmoteManager::getSortedEmoteIds() {
     return m_sortedEmoteIds;
 }
 
-std::shared_ptr<PlayerSound> EmoteManager::playEmoteSfx(uint32_t id, std::shared_ptr<RemotePlayer> player) {
+std::shared_ptr<Sound> EmoteManager::playEmoteSfx(uint32_t id, std::shared_ptr<RemotePlayer> player) {
     if (!globed::setting<bool>("core.player.quick-chat-sfx")) return nullptr;
 
     auto it = m_sfxPaths.find(id);
@@ -68,8 +68,10 @@ std::shared_ptr<PlayerSound> EmoteManager::playEmoteSfx(uint32_t id, std::shared
         return nullptr;
     }
 
-    // TODO: player sound
-    auto res = PlayerSound::create(it->second.c_str(), player);
+    auto res = player
+        ? PlayerSound::create(it->second.c_str(), player).map([] (auto s) -> std::shared_ptr<Sound> { return s; })
+        : Sound::create(it->second.c_str());
+
     if (!res) {
         log::warn("Failed to create emote sfx {}: {}", id, res.unwrapErr());
         return nullptr;

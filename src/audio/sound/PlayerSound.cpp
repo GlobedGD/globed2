@@ -24,7 +24,7 @@ Result<std::shared_ptr<PlayerSound>> PlayerSound::create(
     auto s = std::make_shared<PlayerSound>(
         GEODE_UNWRAP(createRaw(path)),
         player,
-        player->player1()->getLastPosition()
+        player ? player->player1()->getLastPosition() : CCPoint{}
     );
 
     // pre emptively register the sound so stop() gets called

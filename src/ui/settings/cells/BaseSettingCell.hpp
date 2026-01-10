@@ -16,6 +16,7 @@ protected:
     CStr m_name;
     CStr m_desc;
     cocos2d::CCSize m_size;
+    cocos2d::CCMenu* m_rightMenu;
     CCMenuItemSpriteExtra* m_infoButton = nullptr;
 
     bool init(CStr key, CStr name, CStr desc, cocos2d::CCSize cellSize);

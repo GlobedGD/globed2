@@ -2,6 +2,7 @@
 #include "AudioDeviceSetupPopup.hpp"
 #include "cells/BoolSettingCell.hpp"
 #include "cells/EnumSettingCell.hpp"
+#include "cells/EmoteVolumeCell.hpp"
 #include "cells/FloatSettingCell.hpp"
 #include "cells/TitleSettingCell.hpp"
 #include "cells/ButtonSettingCell.hpp"
@@ -252,7 +253,7 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.player.quick-chat-sfx", "Emote Sound Effects",
         "Plays sound effects when you or other players use certain <cy>emotes</c> in levels."
     );
-    this->addSetting<FloatSettingCell>("core.player.quick-chat-sfx-volume", "Emote SFX Volume",
+    this->addSetting<EmoteVolumeCell>("core.player.quick-chat-sfx-volume", "Emote SFX Volume",
         "Sets the volume of sound effects played when certain <cy>emotes</c> are used in levels."
     );
     this->addSetting<BoolSettingCell>("core.player.show-names", "Player Names",

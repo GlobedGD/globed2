@@ -12,10 +12,9 @@ void BoolSettingCell::setup() {
         this->set(on);
     }))
         .posY(m_size.height / 2.f)
-        .parent(this)
+        .parent(m_rightMenu)
         .collect();
-
-    m_toggler->setPositionX(m_size.width - 8.f - m_toggler->getContentWidth() / 2.f);
+    m_rightMenu->updateLayout();
 
     m_toggler->m_offButton->m_scaleMultiplier = 1.15f;
     m_toggler->m_onButton->m_scaleMultiplier = 1.15f;
