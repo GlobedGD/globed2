@@ -21,6 +21,7 @@ Added / reworked:
 * Discord linking is now <cg>more interactive</c> and simpler to do
 * Defer Preloading is now enabled by default, which means Globed won't increase load times and instead will load all icons when joining a level while connected
 * Credits menu is now automatically updated server-side
+* Community Figures now have their own role in-game (if you have it in <cb>Discord</c>, get it by linking your account)
 * UI has been touched up in many places for better looks and clarity
 * <cj>Streamer Mode</c> setting was added, which will hide room password and ID
 * <cj>Ping overlay</c> is now hidden by default when not connected to Globed
@@ -31,6 +32,7 @@ Added / reworked:
 * Added <cj>Contributor</c> role and badge for people that contributed to the mod
 * Added player counts inside level lists
 * Added an improved consent popup when first launching the mod
+* Added a setting that allows you to disable receiving <cy>notices from moderators</c>
 * Automatically lower the used bandwidth when the game is minimized or user is AFK for a while
 * Voice chat overlay now doesn't show players unless actively speaking (or making other noise)
 * Featured levels now have a queue system and will be consistently featured

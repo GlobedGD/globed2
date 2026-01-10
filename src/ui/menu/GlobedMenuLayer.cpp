@@ -230,6 +230,7 @@ bool GlobedMenuLayer::init() {
         .anchorPoint(1.f, 1.f)
         .pos(winSize - CCSize{4.f, 2.f})
         .zOrder(111)
+        .id("version-label")
         .parent(this);
 
     // create the connection menu
@@ -310,7 +311,7 @@ bool GlobedMenuLayer::init() {
     // connection state label
     m_connStateLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
         .scale(0.6f)
-        .id("conn-state-lbl")
+        .id("conn-state-label")
         .parent(m_connStateContainer);
 
     // cancel connection button
