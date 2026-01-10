@@ -62,6 +62,11 @@ void sortCandidates(auto& candidates) {
 }
 
 struct GLOBED_NOVTABLE CCMouseDispatcherH : Modify<CCMouseDispatcherH, CCMouseDispatcher> {
+    static void onModify(auto& self) {
+        // to fix devtools
+        (void) self.setHookPriority("cocos2d::CCMouseDispatcher::dispatchScrollMSG", 100).unwrap();
+    }
+
 	bool dispatchScrollMSG(float x, float y) {
         auto start = Instant::now();
 
