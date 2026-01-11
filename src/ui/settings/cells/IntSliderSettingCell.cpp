@@ -18,6 +18,9 @@ void IntSliderSettingCell::reload() {
     int value = this->get<int>();
     m_slider->setValue(value);
     m_label->setString(fmt::to_string(value).c_str());
+
+    m_slider->getParent()->updateLayout();
+    m_rightMenu->updateLayout();
 }
 
 IntSliderSettingCell* IntSliderSettingCell::create(

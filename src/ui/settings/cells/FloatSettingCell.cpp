@@ -17,7 +17,7 @@ void FloatSettingCell::setup() {
         .parent(m_rightMenu)
         .collect();
 
-    Build<AxisGap>::create(1.f)
+    Build<AxisGap>::create(3.f)
         .parent(container);
 
     m_slider = Build(createSlider())
