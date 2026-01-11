@@ -2,6 +2,10 @@
 
 Globed is an open-source, highly customizable multiplayer mod for Geometry Dash.
 
+This version of Globed supports Geode v4.10 and GD 2.2074. For older versions, see:
+* Globed v1 (GD 2.200 to 2.2074) -> [legacy-v1 branch](https://github.com/GlobedGD/globed2/tree/legacy-v1), [releases](https://github.com/GlobedGD/globed2/releases) before v2.0.0
+* Globed v0 (GD 2.113) -> [dankmeme01/globed](https://github.com/dankmeme01/globed) repository
+
 ## Installation
 
 Globed is a [Geode](https://geode-sdk.org/) mod, so it requires you to install Geode first. Once that's done, simply open the mods page in-game and download it from the Geode Index.
