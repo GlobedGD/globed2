@@ -429,6 +429,12 @@ Future<> NetworkManagerImpl::asyncInit() {
 Future<> NetworkManagerImpl::threadWorkerLoop() {
     using enum qn::ConnectionState;
 
+    // might happen when exiting, just wait and return (to not busy loop)
+    if (!m_centralConn) {
+        co_await arc::sleep(Duration::fromMillis(100));
+        co_return;
+    }
+
     // Worker task has the following duties:
     // - Watch the connection state
     // - When connected, periodically ping game servers and decide to resend own data
@@ -544,6 +550,12 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
 
 Future<> NetworkManagerImpl::threadGameWorkerLoop() {
     using enum qn::ConnectionState;
+
+    // might happen when exiting, just wait and return (to not busy loop)
+    if (!m_gameConn) {
+        co_await arc::sleep(Duration::fromMillis(100));
+        co_return;
+    }
 
     auto connState = m_gameConn->state();
     auto prevState = m_gameWorkerState.prevGameState;
