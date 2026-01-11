@@ -28,7 +28,7 @@ See the [Server Hosting](./docs/server-hosting.md) page for more information abo
 
 ## Building
 
-For the most part building is the same as any other mod, see the [Geode documentation](https://docs.geode-sdk.org/getting-started/cpp-stuff). Additional constraints are:
+For the most part building is the same as any other mod, see the [Geode documentation](https://docs.geode-sdk.org/getting-started/cpp-stuff). Additionally:
 * Python 3.12 is required (Globed uses [geobuild](https://github.com/dankmeme01/geobuild/))
 * Clang is required, other compilers are unsupported
 
