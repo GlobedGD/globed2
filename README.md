@@ -9,20 +9,24 @@ Globed is a [Geode](https://geode-sdk.org/) mod, so it requires you to install G
 ## Features
 
 * Real-time multiplayer
-* Completely free and open-source, easy to host your own server
-* Available for Windows, Android and MacOS
-* In-game voice & text chat
+* Available for all platforms supported by Geode: Windows, Android, MacOS and iOS
+* 2-player mode for beating 2P levels together over the internet
+* Other fun modes, such as Death Link, Collision, Switcheroo
+* In-game communication via voice chat and emotes
 * Public & private rooms
+* Completely free and open-source, with ability to host your own server
+
+![preview.png](./previews/preview-1.png)
 
 ## Hosting a server
 
-See the [server readme](./server/readme.md) for more information about hosting a server. If you have any troubles or suggestions, you can join our [Discord server](https://discord.gg/d56q5Dkdm3) or make an issue.
+See the [Server Hosting](./docs/server-hosting.md) page for more information about hosting a server. If you have any troubles or suggestions, you can join our [Discord server](https://discord.gg/d56q5Dkdm3) or make an issue.
 
 ## Building
 
-Build like any other mod, see [Geode documentation](https://docs.geode-sdk.org/getting-started/cpp-stuff).
-
-Only compiler supported is Clang, MSVC is unsupported since release v1.7.0 (for Geode v4). If compiling on linux, clang-cl is required instead of regular clang.
+For the most part building is the same as any other mod, see the [Geode documentation](https://docs.geode-sdk.org/getting-started/cpp-stuff). Additional constraints are:
+* Python 3.12 is required (Globed uses [geobuild](https://github.com/dankmeme01/geobuild/))
+* Clang is required, other compilers are unsupported
 
 ## Credit
 
@@ -48,12 +52,27 @@ Special thanks:
 * [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - for making Geode
 * Server staff and supporters - for helping in shaping this mod to be what it is today :)
 
-### Licenses
+### Used libraries
 
-Globed is licensed under the MIT license. All of the following libraries used in Globed have their own licenses you may want to read:
+These are the libraries used by Globed, either directly or indirectly by one of dependencies made by us. Without them, Globed wouldn't exist ❤️
 
-* Geode - [website](https://geode-sdk.org) - [repository](https://github.com/geode-sdk/geode) - [license](https://github.com/geode-sdk/geode/blob/main/LICENSE.txt)
-* Boost - [website](https://boost.org) - [repository](https://github.com/boostorg/boost) - [license](https://github.com/boostorg/boost/blob/master/LICENSE_1_0.txt)
-* UIBuilder - [repository](https://github.com/camila314/uibuilder) - [license](https://github.com/camila314/uibuilder/blob/main/LICENSE)
-* Opus - [website](https://opus-codec.org/) - [repository](https://github.com/xiph/opus) - [license](https://github.com/xiph/opus/blob/master/COPYING)
-* libsodium - [website](https://libsodium.gitbook.io/doc/) - [repository](https://github.com/jedisct1/libsodium) - [license](https://github.com/jedisct1/libsodium/blob/master/LICENSE)
+* [Geode](https://github.com/geode-sdk/geode)
+* [Cap'n Proto](https://capnproto.org/)
+* [opus](https://github.com/xiph/opus)
+* [{fmt}](https://github.com/fmtlib/fmt)
+* [zstd](https://github.com/facebook/zstd)
+* [lz4](https://github.com/lz4/lz4)
+* [BLAKE3](https://github.com/BLAKE3-team/BLAKE3)
+* [nontype_functional](https://github.com/zhihaoy/nontype_functional)
+* [c-ares](https://github.com/c-ares/c-ares)
+* [wolfSSL](https://github.com/wolfSSL/wolfssl)
+* [ngtcp2](https://github.com/ngtcp2/ngtcp2)
+* [Qunet](https://github.com/dankmeme01/qunet-cpp) (by dankmeme01)
+* [asp2](https://github.com/dankmeme01/asp2) (by dankmeme01)
+* [arc](https://github.com/dankmeme01/arc) (by dankmeme01)
+* [qsox](https://github.com/dankmeme01/qsox) (by dankmeme01)
+* [UIBuilder](https://github.com/camila314/uibuilder) (by camila314)
+* [cue](https://github.com/dankmeme01/cue) (by dankmeme01)
+* [Argon](https://github.com/GlobedGD/argon) (by dankmeme01)
+* [sinaps](https://github.com/Prevter/sinaps) (by Prevter)
+* [AdvancedLabel](https://github.com/Prevter/AdvancedLabel) (by Prevter)

@@ -16,6 +16,20 @@ But if you want to support the developer and help us pay for server expansions, 
 
 As a sign of appreciation, you will get a nice <ca>purple</c> name and a badge in-game, and a role on our discord server :)
 
+## Features
+
+* Real-time multiplayer
+* Available for all platforms supported by Geode: Windows, Android, MacOS and iOS
+* 2-player mode for beating 2P levels together over the internet
+* Other fun modes, such as Death Link, Collision, Switcheroo
+* In-game communication via voice chat and emotes
+* Public & private rooms
+* Completely free and open-source, with ability to host your own server
+
+## Hosting a server
+
+See the [Server Hosting](https://github.com/GlobedGD/globed2/blob/main/docs/server-hosting.md) page for more information about hosting a server. If you have any troubles or suggestions, you can join our [Discord server](https://discord.gg/d56q5Dkdm3) or make an issue.
+
 ## Credit
 
 Globed is made by:
