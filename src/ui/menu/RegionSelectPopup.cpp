@@ -59,17 +59,22 @@ public:
     }
 
     void softRefreshFrom(const GameServer& server) {
+        m_ping = server.avgLatency;
         m_nameLabel->setString(server.name.c_str());
         m_regionLabel->setString(fmt::format("Region: {}", server.region).c_str());
         m_pingLabel->setPosition(m_nameLabel->getPosition() + m_nameLabel->getScaledContentSize() + CCPoint{2.f, -27.f});
 
-        if (server.avgLatency == (uint32_t)-1) {
+        if (m_ping == (uint32_t)-1) {
             m_pingLabel->setString("? ms");
             m_pingLabel->setColor(ccColor3B{150, 150, 150});
         } else {
-            m_pingLabel->setString(fmt::format("{} ms", server.avgLatency).c_str());
-            m_pingLabel->setColor(latencyToColor(server.avgLatency));
+            m_pingLabel->setString(fmt::format("{} ms", m_ping).c_str());
+            m_pingLabel->setColor(latencyToColor(m_ping));
         }
+    }
+
+    uint32_t getPing() {
+        return m_ping;
     }
 
 private:
@@ -80,6 +85,7 @@ private:
     CCLabelBMFont* m_pingLabel;
     CCNode* m_button = nullptr;
     CCMenu* m_menu;
+    uint32_t m_ping;
 
     void init(const GameServer& server) {
         m_stringId = server.stringId;
@@ -173,6 +179,10 @@ bool RegionSelectPopup::reloadList() {
         m_list->addCell(ListCell::create(server, this));
     }
 
+    m_list->sortAs<ListCell>([](auto a, auto b) {
+        return a->getPing() < b->getPing();
+    });
+
     return m_list->size() > 0;
 }
 
@@ -212,17 +222,6 @@ void RegionSelectPopup::softRefresh(float) {
 }
 
 void RegionSelectPopup::showInfo() {
-    // FLAlertLayer::create(
-    //     nullptr,
-    //     "Note",
-    //     "Multiple <cj>game servers</c> can be located in different regions, to ensure everyone in the world can have a great experience. "
-    //     "By default, Globed will try to use the server with the <cg>lowest ping</c>, but you can manually choose your <cy>preferred server</c> if you prefer playing with different people.\n\n"
-    //     "Note: you will still be able to join people in <cy>other servers</c>. This setting impacts which <cp>Global Room</c> you play in, and which server <cj>rooms created by you</c> will be in.",
-    //     "Ok",
-    //     nullptr,
-    //     410.f
-    // )->show();
-
     globed::alert(
         "Note",
         "Multiple <cj>game servers</c> can be located in different regions, to ensure everyone in the world can have a great experience. "
