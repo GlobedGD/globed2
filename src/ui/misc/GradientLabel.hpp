@@ -24,6 +24,7 @@ public:
     void setGradientSpeed(float mod);
     void setGlobalTime(bool global);
     void setColor(const Color3& color) override;
+    void setOpacity(uint8_t op) override;
     void setString(std::string_view text);
 
 private:

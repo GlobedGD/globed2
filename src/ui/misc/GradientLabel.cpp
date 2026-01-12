@@ -147,8 +147,8 @@ bool GradientLabel::init(std::string_view text, const std::string& font) {
 
     m_startTime = Instant::now();
 
-    this->setCascadeColorEnabled(true);
-    this->setCascadeOpacityEnabled(true);
+    this->setCascadeColorEnabled(false);
+    this->setCascadeOpacityEnabled(false);
     this->setContentSize(m_label->getContentSize());
     this->initShader();
 
@@ -173,6 +173,11 @@ void GradientLabel::setColor(const Color3& color) {
     CCNodeRGBA::setColor(color);
     m_label->setColor(_displayedColor);
     m_shaderEnabled = false;
+}
+
+void GradientLabel::setOpacity(uint8_t op) {
+    CCNodeRGBA::setOpacity(op);
+    m_label->setOpacity(_displayedOpacity);
 }
 
 void GradientLabel::setString(std::string_view text) {
