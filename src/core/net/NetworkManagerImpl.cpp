@@ -238,7 +238,7 @@ static void updateServers(ConnectionInfo& info, auto& newServers) {
     info.m_gameServersUpdated = true;
 }
 
-void GameServer::updateLatency(uint32_t latency) {
+bool GameServer::updateLatency(uint32_t latency) {
     if (avgLatency == (uint32_t)-1) {
         avgLatency = latency;
     } else {
@@ -246,6 +246,9 @@ void GameServer::updateLatency(uint32_t latency) {
     }
 
     lastLatency = latency;
+
+    // consider unstable if the jitter is significant enough
+    return std::abs((int32_t)lastLatency - (int32_t)avgLatency) > (int32_t)(avgLatency * 0.5f);
 }
 
 WorkerState createWorkerState() {
@@ -500,13 +503,23 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                         auto it = servers.find(srvkey);
                         if (it != servers.end()) {
                             auto lat = (uint32_t)res.responseTime.millis();
-                            it->second.updateLatency(lat);
+                            bool unstable = it->second.updateLatency(lat);
                             log::debug(
-                                "Ping to server {} arrived, latency: {}ms avg, {}ms last",
+                                "Ping to server {} arrived, latency: {}ms avg, {}ms last, stable: {}",
                                 srvkey,
                                 it->second.avgLatency,
-                                it->second.lastLatency
+                                it->second.lastLatency,
+                                unstable ? "no" : "yes"
                             );
+
+                            // if at least one server is unstable, ping all servers again soon
+                            if (unstable) {
+                                log::debug("Scheduling a ping soon due to unstable results!");
+                                m_workerState.nextGSPing = std::min(
+                                    Instant::now() + Duration::fromSecs(5),
+                                    m_workerState.nextGSPing
+                                );
+                            }
                         }
                     }
                 ),
