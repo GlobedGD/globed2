@@ -41,7 +41,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build the mod
         uses: geode-sdk/build-geode-mod@main
@@ -68,7 +68,7 @@ jobs:
         id: build
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Globed Build Output
           path: ${{ steps.build.outputs.build-output }}
