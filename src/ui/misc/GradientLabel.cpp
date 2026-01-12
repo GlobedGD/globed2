@@ -54,7 +54,7 @@ void main() {
     }
 
     // keep t in [0,1)
-    float t = fract(v_texCoord.x + customTime * 0.2); // customTime/5.0 == customTime*0.2
+    float t = fract(v_texCoord.x + customTime * 0.2);
 
     // default color
     vec3 col = colors[0];
@@ -208,9 +208,13 @@ void GradientLabel::draw() {
     GLint colorsLoc = m_shader->getUniformLocationForName("colors");
     m_shader->setUniformLocationWith3fv(colorsLoc, (GLfloat*)m_colors.data(), m_colors.size());
 
-    float time = (m_globalTime ? g_globalTimer : m_startTime).elapsed().seconds<float>();
+    float time = (m_globalTime ? g_globalTimer : m_startTime).elapsed().seconds<float>() * m_speedMod;
+    // on mobile, floats in shaders are 16-bit so we should make sure this value doesn't grow large
+    // after even a few minutes, the gradient is noticably sluggish without this
+    time = std::fmod(time, 10.f);
+
     GLint timeLoc = m_shader->getUniformLocationForName("customTime");
-    m_shader->setUniformLocationWith1f(timeLoc, time * m_speedMod);
+    m_shader->setUniformLocationWith1f(timeLoc, time);
 
     CCNode::draw();
 }
