@@ -34,12 +34,9 @@ static inline bool hideNearby(GJBaseGameLayer* gjbgl) {
     return setting<bool>(gjbgl->m_level->isPlatformer() ? "core.player.hide-nearby-plat" : "core.player.hide-nearby-classic");
 }
 
-VisualPlayer::VisualPlayer()
-    : PlayerObject(geode::ZeroConstructor)
+VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
 {
-    // TODO: bring this to geode bindings, temporary fix
-    new (this) CCSprite();
-
+    // TODO: this is a very temp fix, complete this and bring this to geode bindings
     // gobj incomplete
     m_boxOffsetCalculated = true;
     m_scaleX = 1.0f;
@@ -922,7 +919,16 @@ void VisualPlayer::setVisible(bool vis) {
 }
 
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
-    auto ret = new VisualPlayer();
+    auto data = operator new(sizeof(VisualPlayer));
+    std::memset(data, 0, sizeof(VisualPlayer));
+
+    // PlayerObject members are initialized in the ctor
+    // GameObject members are initialized in the ctor
+    // CCSpritePlus members are zero-initialized
+    // CCSprite members need initialization
+    auto spr = new (data) CCSprite();
+    auto ret = std::launder<VisualPlayer>(new (data) VisualPlayer());
+
     if (ret->init(gameLayer, rp, playerNode, isSecond, localPlayer)) {
         ret->autorelease();
         return ret;
