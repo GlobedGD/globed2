@@ -17,6 +17,7 @@ namespace globed {
 
 RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode) : m_state(), m_parentNode(parentNode) {
     m_state.accountId = playerId;
+    m_localPlayer = playerId == 0;
 
     Build<VisualPlayer>::create(gameLayer, this, m_parentNode, false, playerId == 0)
         .id(fmt::format("{}-player1", playerId).c_str())
@@ -227,7 +228,7 @@ int RemotePlayer::id() const {
 }
 
 bool RemotePlayer::isLocal() const {
-    return this->id() == 0;
+    return m_localPlayer;
 }
 
 bool RemotePlayer::isPlayer1Culled() {
