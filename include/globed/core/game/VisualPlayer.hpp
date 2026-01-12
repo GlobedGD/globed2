@@ -107,6 +107,8 @@ private:
     void hideRobotFire();
     void showRobotFire();
 
+    bool hideNearby(GJBaseGameLayer* gjbgl);
+
     void updatePlayerObjectIcons(bool skipFrames);
     bool isPlayerNearby(const PlayerObjectData& data, const GameCameraState& camState);
     void spiderTeleportUpdateColor();

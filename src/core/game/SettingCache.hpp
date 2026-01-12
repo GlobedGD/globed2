@@ -16,6 +16,8 @@ struct CachedSettings {
     bool friendsOnlyAudio = globed::setting<bool>("core.audio.only-friends");
     bool editorEnabled = globed::setting<bool>("core.editor.enabled");
     bool ghostFollower = globed::setting<bool>("core.dev.ghost-follower");
+    bool hideNearbyClassic = globed::setting<bool>("core.player.hide-nearby-classic");
+    bool hideNearbyPlat = globed::setting<bool>("core.player.hide-nearby-plat");
 
     void reload() {
         *this = CachedSettings{};

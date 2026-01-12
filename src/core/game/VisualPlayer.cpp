@@ -5,6 +5,7 @@
 #include <globed/util/lazy.hpp>
 #include <core/PreloadManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <core/game/SettingCache.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/NameLabel.hpp>
 #include <ui/game/EmoteBubble.hpp>
@@ -19,6 +20,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+static auto& g_settings = CachedSettings::get();
+
 #ifdef GLOBED_DEBUG
 static inline bool lerpDebug() {
     static bool val = Loader::get()->getLaunchFlag("globed/core.dev.lerp-debug");
@@ -29,10 +32,6 @@ static inline bool lerpDebug() {
     return false;
 }
 #endif
-
-static inline bool hideNearby(GJBaseGameLayer* gjbgl) {
-    return setting<bool>(gjbgl->m_level->isPlatformer() ? "core.player.hide-nearby-plat" : "core.player.hide-nearby-classic");
-}
 
 VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
 {
@@ -328,7 +327,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         m_prevMode = data.iconType;
     }
 
-    if ((switchedMode || (isNearby && hideNearby(*gjbgl))) && !updatedOpacity) {
+    if ((switchedMode || (isNearby && this->hideNearby(*gjbgl))) && !updatedOpacity) {
         this->updateOpacity();
         updatedOpacity = true;
     }
@@ -438,6 +437,17 @@ void VisualPlayer::updateLerpTrajectory(const PlayerObjectData& data) {
     }
 }
 
+bool VisualPlayer::hideNearby(GJBaseGameLayer* gjbgl) {
+    // if this is the local player, do nothing
+    if (m_isLocalPlayer) {
+        return false;
+    }
+
+    return gjbgl->m_level->isPlatformer()
+        ? g_settings.hideNearbyPlat
+        : g_settings.hideNearbyClassic;
+}
+
 PlayerIconData& VisualPlayer::icons() {
     return m_remotePlayer->m_data.icons;
 }
@@ -457,7 +467,7 @@ void VisualPlayer::setStickyState(bool p1, bool sticky) {
 void VisualPlayer::updateOpacity() {
     float mult = 1.f;
 
-    bool hideNearby_ = hideNearby(GlobedGJBGL::get(m_gameLayer));
+    bool hideNearby_ = this->hideNearby(GlobedGJBGL::get(m_gameLayer));
 
     if (hideNearby_) {
         // calculate distance
