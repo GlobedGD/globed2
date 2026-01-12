@@ -418,9 +418,10 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     // the server might not send any updates if there are no players on the level,
     // if we receive no response for a while, assume all players have left
     if (fields.m_timeCounter - fields.m_lastServerUpdate > 1.5f && fields.m_players.size() <= 2) {
-        for (auto& it : fields.m_players) {
-            int playerId = it.first;
-            this->handlePlayerLeave(playerId);
+        for (auto it = fields.m_players.begin(); it != fields.m_players.end(); ) {
+            int playerId = it->first;
+            this->handlePlayerLeave(playerId, false);
+            it = fields.m_players.erase(it);
         }
     }
 
