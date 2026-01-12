@@ -87,9 +87,9 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     m_prevMode = PlayerIconType::Cube;
 
     // create the name label
-    bool showName = localPlayer ? setting<bool>("core.level.self-name") : setting<bool>("core.player.show-names");
+    bool showName = localPlayer ? g_settings.selfName : g_settings.showNames;
     if (isSecond) {
-        showName = showName && !localPlayer && setting<bool>("core.player.dual-name");
+        showName = showName && !localPlayer && g_settings.dualName;
     }
 
     m_forceHideName = !showName;
@@ -116,11 +116,10 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
 
     // create status icons
     bool showStatus = !isSecond &&
-        (localPlayer ? setting<bool>("core.level.self-status-icons")
-        : setting<bool>("core.player.status-icons"));
+        (localPlayer ? g_settings.selfStatusIcons : g_settings.showStatusIcons);
 
     if (showStatus) {
-        float opacity = static_cast<unsigned char>(setting<float>("core.player.opacity") * 255.f);
+        float opacity = static_cast<unsigned char>(g_settings.playerOpacity * 255.f);
         m_statusIcons = Build<PlayerStatusIcons>::create(opacity)
             .scale(0.8f)
             .anchorPoint(0.5f, 0.f)
@@ -201,10 +200,10 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
     if (forceHide) {
         shouldBeVisible = false;
-    } else if (state.isPracticing && setting<bool>("core.player.hide-practicing")) {
+    } else if (state.isPracticing && g_settings.hidePracticing) {
         shouldBeVisible = false;
     } else {
-        shouldBeVisible = ((data.isVisible && !m_playingDeathEffect) || setting<bool>("core.player.force-visibility")) && isNearby;
+        shouldBeVisible = ((data.isVisible && !m_playingDeathEffect) || g_settings.forceVisibility) && isNearby;
     }
 
     this->setVisible(shouldBeVisible);
@@ -235,7 +234,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
     if (extraProcessing) {
         // rotate the name label together with the camera
-        bool rotateNames = setting<bool>("core.player.rotate-names");
+        bool rotateNames = g_settings.rotateNames;
         CameraDirection dir{};
 
         if (rotateNames && *gjbgl) {
@@ -485,7 +484,7 @@ void VisualPlayer::updateOpacity() {
         mult = distance / 150.f;
     }
 
-    uint8_t opacity = static_cast<uint8_t>(setting<float>("core.player.opacity") * mult * 255.f);
+    uint8_t opacity = static_cast<uint8_t>(g_settings.playerOpacity * mult * 255.f);
 
     this->setOpacity(opacity);
     m_spiderSprite->GJRobotSprite::setOpacity(opacity);
@@ -690,12 +689,12 @@ void VisualPlayer::updateDisplayData() {
     }
 
     m_nameLabel->updateName(ddata.username);
-    m_nameLabel->updateOpacity(globed::setting<float>("core.player.name-opacity"));
+    m_nameLabel->updateOpacity(g_settings.nameOpacity);
     if (ddata.specialUserData) {
         m_nameLabel->updateWithRoles(*ddata.specialUserData);
     }
 
-    if (globed::setting<bool>("core.player.default-death-effects")) {
+    if (g_settings.defaultDeathEffects) {
         ddata.icons.deathEffect = DEFAULT_DEATH;
     }
 
