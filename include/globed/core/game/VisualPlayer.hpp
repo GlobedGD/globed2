@@ -24,7 +24,7 @@ struct GameCameraState;
 
 class GLOBED_DLL VisualPlayer : public PlayerObject {
 public:
-    VisualPlayer() = default;
+    VisualPlayer();
     GLOBED_NOCOPY(VisualPlayer);
     GLOBED_NOMOVE(VisualPlayer);
 

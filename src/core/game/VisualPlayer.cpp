@@ -34,6 +34,45 @@ static inline bool hideNearby(GJBaseGameLayer* gjbgl) {
     return setting<bool>(gjbgl->m_level->isPlatformer() ? "core.player.hide-nearby-plat" : "core.player.hide-nearby-classic");
 }
 
+VisualPlayer::VisualPlayer()
+    : PlayerObject(geode::ZeroConstructor)
+{
+    // TODO: bring this to geode bindings, temporary fix
+    new (this) CCSprite();
+
+    // gobj incomplete
+    m_boxOffsetCalculated = true;
+    m_scaleX = 1.0f;
+    m_scaleY = 1.0f;
+    m_unk4C0 = -1;
+    m_unk4C4 = -1;
+    m_unk4C8 = -1;
+    m_unk4CC = -1;
+    m_unk50C = 1.0f;
+    m_defaultZLayer= ZLayer::T1;
+    m_pixelScaleX = 1.0f;
+    m_areaOpacityValue = 1.0f;
+
+    // pobj
+    m_lastCollisionBottom = -1;
+    m_lastCollisionTop = -1;
+    m_lastCollisionLeft = -1;
+    m_lastCollisionRight = -1;
+    m_unk50C = -1;
+    m_unk510 = -1;
+    new (&m_rotateObjectsRelated) decltype(m_rotateObjectsRelated)();
+    new (&m_potentialSlopeMap) decltype(m_potentialSlopeMap)();
+    m_rotateSpeed = 1.0f;
+    new (&m_ringRelatedSet) decltype(m_ringRelatedSet)();
+    m_playerSpeed = 0.9f;
+    m_platformerVelocityRelated = 1.0f;
+    new (&m_touchedRings) decltype(m_touchedRings)();
+    m_gravityMod = 1.0f;
+    new (&m_jumpPadRelated) decltype(m_jumpPadRelated)();
+    new (&m_holdingButtons) decltype(m_holdingButtons)();
+    new (&m_currentRobotAnimation) gd::string("run");
+}
+
 bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
     this->setTag(VISUAL_PLAYER_TAG);
 
