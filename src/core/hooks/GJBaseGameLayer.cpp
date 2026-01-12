@@ -358,18 +358,20 @@ void GlobedGJBGL::selUpdate(float tsdt) {
 
     auto camState = this->getCameraState();
 
-    for (auto& it : fields.m_players) {
-        int playerId = it.first;
-        auto& player = it.second;
+    for (auto it = fields.m_players.begin(); it != fields.m_players.end();) {
+        int playerId = it->first;
+        auto& player = it->second;
 
         if (!fields.m_interpolator.hasPlayer(playerId)) {
             log::error("Interpolator is missing a player: {}", playerId);
+            ++it;
             continue;
         }
 
         // if the player has left the level, remove them
         if (fields.m_interpolator.isPlayerStale(playerId, fields.m_lastServerUpdate)) {
-            this->handlePlayerLeave(playerId);
+            this->handlePlayerLeave(playerId, false);
+            it = fields.m_players.erase(it);
             continue;
         }
 
@@ -404,6 +406,8 @@ void GlobedGJBGL::selUpdate(float tsdt) {
                 log::debug("player {} has unknown team", playerId);
             }
         }
+
+        ++it;
     }
 
     // update audio
@@ -714,7 +718,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     CoreImpl::get().onPlayerJoin(this, playerId);
 }
 
-void GlobedGJBGL::handlePlayerLeave(int playerId) {
+void GlobedGJBGL::handlePlayerLeave(int playerId, bool removeFromMap) {
     auto& am = AudioManager::get();
 
     auto& fields = *m_fields.self();
@@ -731,7 +735,10 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     player->stopVoiceStream();
     CoreImpl::get().onPlayerLeave(this, playerId);
 
-    fields.m_players.erase(playerId);
+    if (removeFromMap) {
+        fields.m_players.erase(playerId);
+    }
+
     fields.m_interpolator.removePlayer(playerId);
     PlayerCacheManager::get().evictToLayer2(playerId);
 }

@@ -125,7 +125,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     bool isSafeMode();
     bool isQuitting();
     void handlePlayerJoin(int playerId);
-    void handlePlayerLeave(int playerId);
+    void handlePlayerLeave(int playerId, bool removeFromMap = true);
     void handleLocalPlayerDeath(PlayerObject*);
     void setPermanentSafeMode();
     void sendPlayerData(const PlayerState& state);
