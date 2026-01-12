@@ -152,28 +152,28 @@ void GlobedGJBGL::setupAssetLoading() {
 }
 
 void GlobedGJBGL::setupAudio() {
-    if (!globed::setting<bool>("core.audio.voice-chat-enabled")) return;
-
     auto& am = AudioManager::get();
     am.stopAllOutputSources(); // preemptively
     m_fields->m_audioInterval.setInterval(Duration::fromSecsF32(1.f / 30.f).value());
 
 #ifdef GLOBED_VOICE_CAN_TALK
-    // set audio device
-    am.refreshDevices();
-    am.setRecordBufferCapacity(globed::setting<int>("core.audio.buffer-size"));
-    auto result = am.startRecordingEncoded([this](const auto& frame) {
-        NetworkManagerImpl::get().sendVoiceData(frame);
+    if (g_settings.voiceChat) {
+        // set audio device
+        am.refreshDevices();
+        am.setRecordBufferCapacity(globed::setting<int>("core.audio.buffer-size"));
+        auto result = am.startRecordingEncoded([this](const auto& frame) {
+            NetworkManagerImpl::get().sendVoiceData(frame);
 
-        if (g_settings.voiceLoopback) {
-            m_fields->m_ghost->playVoiceData(frame);
+            if (g_settings.voiceLoopback) {
+                m_fields->m_ghost->playVoiceData(frame);
+            }
+        });
+        am.setPassiveMode(true);
+
+        if (!result) {
+            log::warn("[Globed] Failed to start recording audio: {}", result.unwrapErr());
+            globed::toastError("[Globed] Failed to start recording audio");
         }
-    });
-    am.setPassiveMode(true);
-
-    if (!result) {
-        log::warn("[Globed] Failed to start recording audio: {}", result.unwrapErr());
-        globed::toastError("[Globed] Failed to start recording audio");
     }
 #endif
 
@@ -185,19 +185,21 @@ void GlobedGJBGL::setupAudio() {
         : globed::setting<bool>("core.audio.classic-proximity");
 
     // schedule voice overlay 1 frame later, when we have a scene
-    FunctionQueue::get().queue([self = Ref(this), winSize] {
-        bool onTop = globed::setting<bool>("core.audio.overlaying-overlay");
-        CCNode* scene = self->getParent();
-        CCNode* parent = onTop && scene ? scene : self->m_uiLayer;
+    if (g_settings.voiceChat) {
+        FunctionQueue::get().queue([self = Ref(this), winSize] {
+            bool onTop = globed::setting<bool>("core.audio.overlaying-overlay");
+            CCNode* scene = self->getParent();
+            CCNode* parent = onTop && scene ? scene : self->m_uiLayer;
 
-        self->m_fields->m_voiceOverlay = Build<VoiceOverlay>::create()
-            .parent(parent)
-            .visible(globed::setting<bool>("core.level.voice-overlay"))
-            .zOrder(onTop ? 20 : 1)
-            .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
-            .anchorPoint(1.f, 0.f)
-            .collect();
-    });
+            self->m_fields->m_voiceOverlay = Build<VoiceOverlay>::create()
+                .parent(parent)
+                .visible(globed::setting<bool>("core.level.voice-overlay"))
+                .zOrder(onTop ? 20 : 1)
+                .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
+                .anchorPoint(1.f, 0.f)
+                .collect();
+        });
+    }
 }
 
 void GlobedGJBGL::setupUpdateLoop() {
