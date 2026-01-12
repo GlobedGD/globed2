@@ -5,6 +5,7 @@
 #include <globed/util/gd.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/game/Interpolator.hpp>
+#include <core/game/SettingCache.hpp>
 #include <core/CoreImpl.hpp>
 
 #include <UIBuilder.hpp>
@@ -76,19 +77,27 @@ RemotePlayer::~RemotePlayer() {
 void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState, const OutFlags& flags, bool forceHide) {
     forceHide = forceHide || m_forceHide;
 
+    bool hideIcon = forceHide;
+    bool hideMisc = forceHide;
+
+    // if it's the local player, only show the actual icon if the setting is enabled
+    if (this->isLocal() && !forceHide) {
+        hideIcon = !CachedSettings::get().ghostFollower;
+    }
+
     m_state = state;
 
     m_player1Culled = !m_state.player1;
     m_player2Culled = !m_state.player2;
 
     if (m_state.player1) {
-        m_player1->updateFromData(*m_state.player1, m_state, camState, forceHide);
+        m_player1->updateFromData(*m_state.player1, m_state, camState, hideIcon);
     } else {
         m_player1->setVisible(false);
     }
 
     if (m_state.player2) {
-        m_player2->updateFromData(*m_state.player2, m_state, camState, forceHide);
+        m_player2->updateFromData(*m_state.player2, m_state, camState, hideIcon);
     } else {
         m_player2->setVisible(false);
     }
@@ -97,7 +106,7 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
 
     auto shownOrHide = [&](auto* node, auto&& onShown) {
         if (!node) return;
-        if (forceHide) {
+        if (hideMisc) {
             node->setVisible(false);
         } else {
             node->setVisible(true);
@@ -115,14 +124,14 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
 
     // if the player just died, handle death
     if (flags.death) {
-        if (!forceHide) {
+        if (!hideIcon) {
             this->handleDeath(*flags.death);
         }
         CoreImpl::get().onPlayerDeath(GlobedGJBGL::get(), this, *flags.death);
     }
 
     // if the player teleported, play a spider dash animation
-    if (!forceHide) {
+    if (!hideIcon) {
         if (flags.spiderP1) {
             m_player1->handleSpiderTp(*flags.spiderP1);
         }
@@ -213,8 +222,12 @@ PlayerDisplayData& RemotePlayer::displayData() {
     return m_data;
 }
 
-int RemotePlayer::id() {
+int RemotePlayer::id() const {
     return m_data.accountId ?: m_state.accountId;
+}
+
+bool RemotePlayer::isLocal() const {
+    return this->id() == 0;
 }
 
 bool RemotePlayer::isPlayer1Culled() {

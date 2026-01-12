@@ -14,6 +14,7 @@
 #include <core/CoreImpl.hpp>
 #include <core/PreloadManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <core/game/SettingCache.hpp>
 
 #include <Geode/utils/VMTHookManager.hpp>
 #include <UIBuilder.hpp>
@@ -57,21 +58,7 @@ private:
 
 namespace globed {
 
-/// Cache for some settings that are often accessed
-struct CachedSettings {
-    bool selfName = globed::setting<bool>("core.level.self-name");
-    bool selfStatusIcons = globed::setting<bool>("core.level.self-status-icons");
-    bool quickChat = globed::setting<bool>("core.player.quick-chat-enabled");
-    bool voiceChat = globed::setting<bool>("core.audio.voice-chat-enabled");
-    bool voiceLoopback = globed::setting<bool>("core.audio.voice-loopback");
-    bool friendsOnlyAudio = globed::setting<bool>("core.audio.only-friends");
-    bool editorEnabled = globed::setting<bool>("core.editor.enabled");
-    bool ghostFollower = globed::setting<bool>("core.dev.ghost-follower");
-
-    void reload() {
-        *this = CachedSettings{};
-    }
-} g_settings;
+static auto& g_settings = CachedSettings::get();
 
 static std::optional<Instant> g_lastEmoteTime;
 
@@ -84,7 +71,7 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     auto& nm = NetworkManagerImpl::get();
     fields.m_editor = editor;
 
-    this->reloadCachedSettings();
+    g_settings.reload();
 
     // determine if mulitplayer should be active
 
@@ -459,7 +446,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     // update ghost player
     OutFlags ghostFlags{};
     state.accountId = 0;
-    fields.m_ghost->update(state, camState, ghostFlags, !g_settings.ghostFollower);
+    fields.m_ghost->update(state, camState, ghostFlags, false);
 
     fields.m_periodicalDelta += dt;
     if (fields.m_periodicalDelta >= 0.25f) {
@@ -924,10 +911,6 @@ void GlobedGJBGL::setNoticeAlertActive(bool active) {
     if (fields.m_noticeAlert) {
         fields.m_noticeAlert->setVisible(active);
     }
-}
-
-void GlobedGJBGL::reloadCachedSettings() {
-    g_settings.reload();
 }
 
 void GlobedGJBGL::toggleCullingEnabled(bool culling) {

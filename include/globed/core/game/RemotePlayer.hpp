@@ -34,7 +34,8 @@ public:
     VisualPlayer* player2();
 
     PlayerDisplayData& displayData();
-    int id();
+    int id() const;
+    bool isLocal() const;
 
     bool isPlayer1Culled();
     bool isPlayer2Culled();

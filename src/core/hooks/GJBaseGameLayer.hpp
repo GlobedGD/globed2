@@ -148,7 +148,6 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     std::shared_ptr<RemotePlayer> getPlayer(int playerId);
     void recordPlayerJump(bool p1);
     bool shouldLetMessageThrough(int playerId);
-    void reloadCachedSettings();
     bool isSpeaking(int playerId);
     void setNoticeAlertActive(bool active);
 
