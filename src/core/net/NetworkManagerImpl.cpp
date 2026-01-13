@@ -1072,11 +1072,11 @@ bool NetworkManagerImpl::isGameConnected() const {
 }
 
 Duration NetworkManagerImpl::getGamePing() {
-    return m_gameConn->getLatency();
+    return m_gameConn ? m_gameConn->getLatency() : Duration::zero();
 }
 
 Duration NetworkManagerImpl::getCentralPing() {
-    return m_centralConn->getLatency();
+    return m_centralConn ? m_centralConn->getLatency() : Duration::zero();
 }
 
 std::string NetworkManagerImpl::getCentralIdent() {
