@@ -78,8 +78,20 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
         cvoltonID->setVisible(false);
     }
 
+    bool hasCompactListsMod = false;
+    if (auto mod = Loader::get()->getLoadedMod("cvolton.compact_lists")) {
+        // the mod seems to apply to levelcells unconditionally, doesnt check a setting
+        hasCompactListsMod = true;
+    } else {
+        auto lplace = m_levelCell->m_mainLayer->getChildByID("level-place");
+        if (lplace) {
+            auto xpos = lplace->getPositionX();
+            hasCompactListsMod = xpos < 0.f;
+        }
+    }
+
     // we are about to do .. mischievous things
-    if (useCompact) {
+    if (useCompact && !hasCompactListsMod) {
         float shift = 20.f;
 
         std::array toHide = {
