@@ -31,7 +31,8 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
         );
     }
 
-    static std::optional<GJGameLevel*> levelMapper(GJGameLevel* level) {
+    static std::optional<GJGameLevel*> levelMapper(CCObject* obj) {
+        auto level = typeinfo_cast<GJGameLevel*>(obj);
         return level && isValidLevelType(level->m_levelType) ? std::optional{level} : std::nullopt;
     }
 
@@ -66,7 +67,6 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
                 .collect();
         } else {
             ids = asp::iter::from(CCArrayExt<CCObject*>(p0))
-                .mapCast<GJGameLevel*>()
                 .filterMap(levelMapper)
                 .map([](GJGameLevel* level) { return (uint64_t) level->m_levelID; })
                 .collect();
