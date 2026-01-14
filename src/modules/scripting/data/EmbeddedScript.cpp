@@ -45,11 +45,11 @@ Result<EmbeddedScript> EmbeddedScript::decode(std::span<const uint8_t> data) {
         return Err("not decoding a script over 512kib: {} bytes", decompressedLen);
     }
 
-    uint8_t* decompressedBuf = new uint8_t[decompressedLen];
-    MAP_UNWRAP(qn::decompressZstd(data.data(), data.size(), decompressedBuf, decompressedLen));
-    log::debug("Decompressed: {}", hexEncode(decompressedBuf, decompressedLen));
+    auto decompressedBuf = std::make_unique<uint8_t[]>(decompressedLen);
+    MAP_UNWRAP(qn::decompressZstd(data.data(), data.size(), decompressedBuf.get(), decompressedLen));
+    log::debug("Decompressed: {}", hexEncode(decompressedBuf.get(), decompressedLen));
 
-    reader = qn::ByteReader{decompressedBuf, decompressedLen};
+    reader = qn::ByteReader{decompressedBuf.get(), decompressedLen};
     script.main = MAP_UNWRAP(reader.readBool());
     script.filename = MAP_UNWRAP(reader.readStringU16());
     script.content = MAP_UNWRAP(reader.readStringU32());
