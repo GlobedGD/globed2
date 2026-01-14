@@ -318,8 +318,8 @@ void RoomListingPopup::doJoinRoom(uint32_t roomId, bool hasPassword) {
         popup->setCallback([this, roomId](auto outcome) {
             if (!outcome.cancelled) {
                 // parse the password
-                uint64_t pw = geode::utils::numFromString<uint64_t>(outcome.text).unwrapOr(0);
-                this->actuallyJoin(roomId, pw);
+                m_joinedRoomPasscode = geode::utils::numFromString<uint64_t>(outcome.text).unwrapOr(0);
+                this->actuallyJoin(roomId, m_joinedRoomPasscode);
             }
         });
         popup->show();
@@ -359,8 +359,15 @@ void RoomListingPopup::waitForResponse() {
         switch (msg.reason) {
             case NotFound: reason = "Room not found"; break;
             case InvalidPasscode: {
-                this->stopWaiting(std::nullopt);
+                this->stopWaiting(std::nullopt, true);
                 this->doJoinRoom(m_joinedRoomId, true);
+
+                if (m_joinedRoomPasscode != 0) {
+                    // means invalid passcode, rather than none entered
+                    globed::alert("Error", "Failed to join room: <cy>incorrect passcode</c>");
+                }
+
+                return ListenerResult::Stop;
             } break;
             case Full: reason = "Room is full"; break;
             case Banned: reason = "You are banned from this room"; break;
@@ -374,8 +381,7 @@ void RoomListingPopup::waitForResponse() {
     m_failListener.value()->setPriority(-1);
 }
 
-void RoomListingPopup::stopWaiting(std::optional<std::string> failReason) {
-    log::debug("Stop waiting!");
+void RoomListingPopup::stopWaiting(std::optional<std::string> failReason, bool dontClose) {
     if (m_loadingPopup) {
         m_loadingPopup->forceClose();
         m_loadingPopup = nullptr;
@@ -386,7 +392,7 @@ void RoomListingPopup::stopWaiting(std::optional<std::string> failReason) {
 
     if (failReason) {
         globed::alertFormat("Error", "Failed to join room: <cy>{}</c>", *failReason);
-    } else {
+    } else if (!dontClose) {
         this->onClose(nullptr);
     }
 }
