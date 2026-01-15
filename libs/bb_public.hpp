@@ -16,6 +16,8 @@ struct WorkData {
     size_t v3;
     const char* v4;
     size_t v5;
+    const char* v6;
+    size_t v7;
 };
 
 #ifdef GLOBED_OSS_BUILD
