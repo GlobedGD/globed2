@@ -10,12 +10,20 @@
 
 #define BB_VERSION "1.0.0"
 
+struct WorkData {
+    int v1;
+    char* v2;
+    size_t v3;
+    const char* v4;
+    size_t v5;
+};
+
 #ifdef GLOBED_OSS_BUILD
 inline bool bb_init(const char* v = BB_VERSION) {
     return false;
 }
 
-inline size_t bb_work(int s, char* o, size_t ol) {
+inline size_t bb_work(const WorkData& data) {
     return 0;
 }
 
@@ -28,15 +36,15 @@ inline void _bblogFunc(const uint8_t* ptr, size_t size) {
 
 extern "C" {
     bool _bb_init(const char* v, size_t base, void (*)(const uint8_t*, size_t));
-    size_t _bb_work(int s, char* o, size_t ol);
+    size_t _bb_work(const WorkData* data);
 }
 
 inline bool bb_init(const char* v = BB_VERSION) {
     return _bb_init(v, geode::base::get(), &_bblogFunc);
 }
 
-inline size_t bb_work(int s, char* o, size_t ol) {
-    return _bb_work(s, o, ol);
+inline size_t bb_work(const WorkData& data) {
+    return _bb_work(&data);
 }
 
 #endif

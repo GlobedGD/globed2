@@ -211,6 +211,8 @@ static argon::AccountData g_argonData{};
 
 namespace globed {
 
+const char* getIosTeamId();
+
 static Future<Result<std::string>> startArgonAuth() {
     auto task = argon::startAuthWithAccount(g_argonData);
     GeodeTaskAwaiter awaiter{task};
@@ -1253,7 +1255,19 @@ std::vector<uint8_t> NetworkManagerImpl::computeUident(int accountId) {
     }
 
     uint8_t buf[512];
-    size_t outLen = bb_work(accountId, (char*)buf, 512);
+    WorkData wd{};
+    wd.v1 = accountId;
+    wd.v2 = (char*)buf;
+    wd.v3 = sizeof(buf);
+
+#ifdef GEODE_IS_IOS
+    wd.v4 = getIosTeamId();
+#else
+    wd.v4 = "";
+#endif
+    wd.v5 = strlen(wd.v4);
+
+    size_t outLen = bb_work(wd);
 
     if (outLen == 0) {
         log::error("Failed to compute uident!");
