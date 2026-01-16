@@ -1,14 +1,16 @@
 #include <globed/core/game/PlayerStatusIcons.hpp>
 
-#include <cue/Util.hpp>
 #include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
-bool PlayerStatusIcons::init(unsigned char opacity) {
-    if (!CCNode::init()) return false;
+bool PlayerStatusIcons::init(unsigned char opacity)
+{
+    if (!CCNode::init())
+        return false;
 
     m_opacity = opacity;
 
@@ -17,7 +19,8 @@ bool PlayerStatusIcons::init(unsigned char opacity) {
     return true;
 }
 
-void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force) {
+void PlayerStatusIcons::updateStatus(const PlayerStatusFlags &flags, bool force)
+{
     if (!force && m_flags == flags) {
         return;
     }
@@ -31,25 +34,23 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
     }
 
     m_iconWrapper = Build<CCNode>::create()
-        .anchorPoint(0.f, 0.5f)
-        .layout(RowLayout::create()->setGap(6.5f)->setAutoScale(false))
-        .parent(this);
+                        .anchorPoint(0.f, 0.5f)
+                        .layout(RowLayout::create()->setGap(6.5f)->setAutoScale(false))
+                        .parent(this);
 
     CCSize iconSize{24.f, 24.f};
 
     float width = 20.f;
     size_t count = 0;
 
-    auto addButton = [&](CCSprite* spr, const std::string& id) {
+    auto addButton = [&](CCSprite *spr, const std::string &id) {
         auto btn = Build(spr)
-            .opacity(m_opacity)
-            .zOrder(1)
-            .with([&](CCSprite* spr) {
-                cue::rescaleToMatch(spr, iconSize);
-            })
-            .id(id)
-            .parent(m_iconWrapper)
-            .collect();
+                       .opacity(m_opacity)
+                       .zOrder(1)
+                       .with([&](CCSprite *spr) { cue::rescaleToMatch(spr, iconSize); })
+                       .id(id)
+                       .parent(m_iconWrapper)
+                       .collect();
 
         width += btn->getScaledContentWidth();
         count++;
@@ -65,7 +66,7 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
     }
 
     if (flags.speaking) {
-        const char* sprite;
+        const char *sprite;
 
         if (flags.speakingMuted) {
             sprite = "speaker-icon-mute.png"_spr;
@@ -80,16 +81,16 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
         addButton(CCSprite::createWithSpriteFrameName("GJ_hammerIcon_001.png"), "icon-editing");
     }
 
-    width += static_cast<RowLayout*>(m_iconWrapper->getLayout())->getGap() * (count - 1);
+    width += static_cast<RowLayout *>(m_iconWrapper->getLayout())->getGap() * (count - 1);
 
     auto cc9s = Build<CCScale9Sprite>::create("square02_001.png")
-        .contentSize({ width * 3.f, 40.f * 3.f })
-        .scale(1.f / 3.f)
-        .opacity(m_opacity / 3)
-        .zOrder(-1)
-        .anchorPoint(0.f, 0.f)
-        .parent(this)
-        .collect();
+                    .contentSize({width * 3.f, 40.f * 3.f})
+                    .scale(1.f / 3.f)
+                    .opacity(m_opacity / 3)
+                    .zOrder(-1)
+                    .anchorPoint(0.f, 0.f)
+                    .parent(this)
+                    .collect();
 
     this->setContentSize(cc9s->getScaledContentSize());
     m_iconWrapper->setContentSize(cc9s->getScaledContentSize());
@@ -97,11 +98,13 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
     m_iconWrapper->updateLayout();
 }
 
-void PlayerStatusIcons::setOpacity(unsigned char opacity) {
+void PlayerStatusIcons::setOpacity(unsigned char opacity)
+{
     m_opacity = opacity;
 }
 
-PlayerStatusIcons* PlayerStatusIcons::create(unsigned char opacity) {
+PlayerStatusIcons *PlayerStatusIcons::create(unsigned char opacity)
+{
     auto ret = new PlayerStatusIcons();
     if (ret->init(opacity)) {
         ret->autorelease();
@@ -112,4 +115,4 @@ PlayerStatusIcons* PlayerStatusIcons::create(unsigned char opacity) {
     return nullptr;
 }
 
-}
+} // namespace globed

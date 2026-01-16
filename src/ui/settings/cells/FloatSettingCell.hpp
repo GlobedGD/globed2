@@ -7,11 +7,11 @@ namespace globed {
 
 class FloatSettingCell : public BaseSettingCell<FloatSettingCell> {
 protected:
-    cocos2d::CCLabelBMFont* m_label;
-    cue::Slider* m_slider;
+    cocos2d::CCLabelBMFont *m_label;
+    cue::Slider *m_slider;
 
     void setup() override;
     void reload() override;
 };
 
-}
+} // namespace globed

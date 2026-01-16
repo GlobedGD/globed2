@@ -2,9 +2,9 @@
 
 #include <ui/BasePopup.hpp>
 
+#include <asp/time/Instant.hpp>
 #include <cue/ListNode.hpp>
 #include <cue/Slider.hpp>
-#include <asp/time/Instant.hpp>
 
 namespace globed {
 
@@ -15,8 +15,8 @@ public:
     void hardRefresh();
 
 private:
-    cue::ListNode* m_list;
-    cue::Slider* m_volumeSlider;
+    cue::ListNode *m_list;
+    cue::Slider *m_volumeSlider;
     std::string m_searchFilter;
     asp::time::Instant m_lastKeystroke;
     bool m_needsFilterUpdate = false;
@@ -26,4 +26,4 @@ private:
     void onVolumeChanged(double value);
 };
 
-}
+} // namespace globed

@@ -2,84 +2,76 @@
 #include <globed/util/gd.hpp>
 #include <ui/misc/NameLabel.hpp>
 
-#include <cue/Util.hpp>
 #include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
 
 namespace globed {
 
-bool VoiceOverlayCell::init(const PlayerDisplayData& data) {
+bool VoiceOverlayCell::init(const PlayerDisplayData &data)
+{
     CCNode::init();
 
     m_wrapper = Build<CCNode>::create()
-        .parent(this)
-        .layout(RowLayout::create()->setGap(5.f)->setAutoScale(false)->setAxisReverse(true))
-        .id("container");
+                    .parent(this)
+                    .layout(RowLayout::create()->setGap(5.f)->setAutoScale(false)->setAxisReverse(true))
+                    .id("container");
 
     m_accountId = data.accountId;
 
-    m_visualizer = Build<AudioVisualizer>::create()
-        .scale(0.5f)
-        .scaleX(0.4f)
-        .parent(m_wrapper)
-        .id("visualizer");
+    m_visualizer = Build<AudioVisualizer>::create().scale(0.5f).scaleX(0.4f).parent(m_wrapper).id("visualizer");
 
     auto nameLabel = Build(NameLabel::create(data.username, "bigFont.fnt"))
-        .with([&](NameLabel* lbl) {
-            lbl->setScale(0.525f);
-            if (data.specialUserData) {
-                lbl->updateWithRoles(*data.specialUserData);
-            }
-            lbl->makeClickable([acc = data.accountId, uid = data.userId, username = data.username](auto) {
-                globed::openUserProfile(acc, uid, username);
-            });
-        })
-        .parent(m_wrapper)
-        .collect();
+                         .with([&](NameLabel *lbl) {
+                             lbl->setScale(0.525f);
+                             if (data.specialUserData) {
+                                 lbl->updateWithRoles(*data.specialUserData);
+                             }
+                             lbl->makeClickable([acc = data.accountId, uid = data.userId, username = data.username](
+                                                    auto) { globed::openUserProfile(acc, uid, username); });
+                         })
+                         .parent(m_wrapper)
+                         .collect();
 
-    auto icon = Build<cue::PlayerIcon>::create(convertPlayerIcons(data.icons))
-        .scale(0.45f)
-        .parent(m_wrapper)
-        .collect();
+    auto icon = Build<cue::PlayerIcon>::create(convertPlayerIcons(data.icons)).scale(0.45f).parent(m_wrapper).collect();
 
     const float heightMult = 1.3f;
     const float widthMult = 1.1f;
 
-    m_wrapper->setContentWidth(icon->getScaledContentWidth() + 5.f + nameLabel->getScaledContentWidth() + 5.f + m_visualizer->getScaledContentWidth());
+    m_wrapper->setContentWidth(icon->getScaledContentWidth() + 5.f + nameLabel->getScaledContentWidth() + 5.f +
+                               m_visualizer->getScaledContentWidth());
     m_wrapper->setContentHeight(icon->getScaledContentHeight() * heightMult);
     m_wrapper->updateLayout();
 
     // background
-    auto bg = cue::attachBackground(m_wrapper, cue::BackgroundOptions {
-        .sidePadding = 5.f,
-        .verticalPadding = 3.f,
-        .cornerRoundness = 1.5f
-    });
+    auto bg = cue::attachBackground(
+        m_wrapper, cue::BackgroundOptions{.sidePadding = 5.f, .verticalPadding = 3.f, .cornerRoundness = 1.5f});
     this->setContentSize(bg->getScaledContentSize());
 
-    m_wrapper->setPosition({
-        this->getScaledContentWidth() - m_wrapper->getScaledContentWidth() - 5.f,
-        3.5f
-    });
+    m_wrapper->setPosition({this->getScaledContentWidth() - m_wrapper->getScaledContentWidth() - 5.f, 3.5f});
 
     return true;
 }
 
-void VoiceOverlayCell::updateLoudness(float loudness) {
+void VoiceOverlayCell::updateLoudness(float loudness)
+{
     m_visualizer->setVolume(loudness);
 }
 
-void VoiceOverlayCell::updateLastSpoken() {
+void VoiceOverlayCell::updateLastSpoken()
+{
     m_lastSpoken = Instant::now();
 }
 
-asp::time::Duration VoiceOverlayCell::sinceLastSpoken() {
+asp::time::Duration VoiceOverlayCell::sinceLastSpoken()
+{
     return m_lastSpoken.elapsed();
 }
 
-VoiceOverlayCell* VoiceOverlayCell::create(const PlayerDisplayData& data) {
+VoiceOverlayCell *VoiceOverlayCell::create(const PlayerDisplayData &data)
+{
     auto ret = new VoiceOverlayCell;
     if (ret->init(data)) {
         ret->autorelease();
@@ -89,4 +81,4 @@ VoiceOverlayCell* VoiceOverlayCell::create(const PlayerDisplayData& data) {
     return nullptr;
 }
 
-}
+} // namespace globed

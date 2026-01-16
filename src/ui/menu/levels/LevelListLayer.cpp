@@ -1,9 +1,9 @@
 #include "LevelListLayer.hpp"
 #include "LevelFiltersPopup.hpp"
-#include <globed/core/SettingsManager.hpp>
-#include <globed/core/RoomManager.hpp>
-#include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/LevelCell.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
+#include <globed/core/RoomManager.hpp>
+#include <globed/core/SettingsManager.hpp>
 #include <ui/menu/FeatureCommon.hpp>
 
 #include <UIBuilder.hpp>
@@ -17,56 +17,69 @@ using namespace geode::prelude;
 // at a time, request up to 100 levels from the server, then do client side filtering if any filters are enabled.
 // if not enough levels to fill a page, keep making requests.
 
-
-static std::string rateTierToString(globed::LevelListLayer::Filters::RateTier tier) {
+static std::string rateTierToString(globed::LevelListLayer::Filters::RateTier tier)
+{
     using enum globed::LevelListLayer::Filters::RateTier;
     switch (tier) {
-        case Unrated: return "Unrated";
-        case Rate: return "Rate";
-        case Feature: return "Feature";
-        case Epic: return "Epic";
-        case Legendary: return "Legendary";
-        case Mythic: return "Mythic";
+    case Unrated:
+        return "Unrated";
+    case Rate:
+        return "Rate";
+    case Feature:
+        return "Feature";
+    case Epic:
+        return "Epic";
+    case Legendary:
+        return "Legendary";
+    case Mythic:
+        return "Mythic";
     }
 }
 
-static std::optional<globed::LevelListLayer::Filters::RateTier> rateTierFromString(std::string_view str) {
+static std::optional<globed::LevelListLayer::Filters::RateTier> rateTierFromString(std::string_view str)
+{
     using enum globed::LevelListLayer::Filters::RateTier;
-    if (str == "Unrated") return Unrated;
-    if (str == "Rate") return Rate;
-    if (str == "Feature") return Feature;
-    if (str == "Epic") return Epic;
-    if (str == "Legendary") return Legendary;
-    if (str == "Mythic") return Mythic;
+    if (str == "Unrated")
+        return Unrated;
+    if (str == "Rate")
+        return Rate;
+    if (str == "Feature")
+        return Feature;
+    if (str == "Epic")
+        return Epic;
+    if (str == "Legendary")
+        return Legendary;
+    if (str == "Mythic")
+        return Mythic;
     return std::nullopt;
 }
 
-template <>
-struct matjson::Serialize<globed::LevelListLayer::Filters> {
-    static Result<globed::LevelListLayer::Filters> fromJson(const matjson::Value& value) {
+template <> struct matjson::Serialize<globed::LevelListLayer::Filters> {
+    static Result<globed::LevelListLayer::Filters> fromJson(const matjson::Value &value)
+    {
         globed::LevelListLayer::Filters filters{};
 
-        for (auto& diff : value["difficulty"]) {
+        for (auto &diff : value["difficulty"]) {
             auto diffe = globed::difficultyFromString(GEODE_UNWRAP(diff.asString()));
             if (diffe) {
                 filters.difficulty.insert(diffe.value());
             }
         }
 
-        for (auto& diff : value["demonDifficulty"]) {
+        for (auto &diff : value["demonDifficulty"]) {
             auto diffe = globed::difficultyFromString(GEODE_UNWRAP(diff.asString()));
             if (diffe) {
                 filters.demonDifficulty.insert(diffe.value());
             }
         }
 
-        for (auto& len : value["length"]) {
+        for (auto &len : value["length"]) {
             filters.length.insert(GEODE_UNWRAP(len.asInt()));
         }
 
         if (value["rateTier"].isArray()) {
             filters.rateTier = std::set<globed::LevelListLayer::Filters::RateTier>{};
-            for (auto& tier : value["rateTier"]) {
+            for (auto &tier : value["rateTier"]) {
                 auto rt = rateTierFromString(GEODE_UNWRAP(tier.asString()));
                 if (rt) {
                     filters.rateTier.value().insert(rt.value());
@@ -97,7 +110,8 @@ struct matjson::Serialize<globed::LevelListLayer::Filters> {
         return Ok(filters);
     }
 
-    static matjson::Value toJson(const globed::LevelListLayer::Filters& filters) {
+    static matjson::Value toJson(const globed::LevelListLayer::Filters &filters)
+    {
         matjson::Value obj;
         obj["difficulty"] = matjson::Value::array();
         for (auto diff : filters.difficulty) {
@@ -114,18 +128,18 @@ struct matjson::Serialize<globed::LevelListLayer::Filters> {
             obj["length"].push(len);
         }
 
-        if (auto& rt = filters.rateTier) {
+        if (auto &rt = filters.rateTier) {
             obj["rateTier"] = matjson::Value::array();
             for (auto tier : rt.value()) {
                 obj["rateTier"].push(rateTierToString(tier));
             }
         }
 
-        if (auto& c = filters.coins) {
+        if (auto &c = filters.coins) {
             obj["coins"] = *c;
         }
 
-        if (auto& c = filters.completed) {
+        if (auto &c = filters.completed) {
             obj["completed"] = *c;
         }
 
@@ -139,20 +153,23 @@ struct matjson::Serialize<globed::LevelListLayer::Filters> {
 
 static std::vector<std::pair<globed::SessionId, uint16_t>> getFakeLevels();
 
-static void showInfoPopup() {
+static void showInfoPopup()
+{
     bool globalRoom = globed::RoomManager::get().isInGlobal();
 
-    globed::PopupManager::get().alert(
-        "Level List",
-        "The <cy>Level List</c> allows you to view the <cg>most popular</c> levels being played in <cj>your room</c>.\n\n"
-        "To make other people see <cy>your level</c> here, simply <cg>play the level!</c>"
-    ).showQueue();
+    globed::PopupManager::get()
+        .alert("Level List", "The <cy>Level List</c> allows you to view the <cg>most popular</c> levels being played "
+                             "in <cj>your room</c>.\n\n"
+                             "To make other people see <cy>your level</c> here, simply <cg>play the level!</c>")
+        .showQueue();
 }
 
 namespace globed {
 
-bool LevelListLayer::init() {
-    if (!BaseLayer::init()) return false;
+bool LevelListLayer::init()
+{
+    if (!BaseLayer::init())
+        return false;
 
     m_pageSize = globed::setting<bool>("core.ui.increase-level-list") ? 100 : 30;
 
@@ -161,62 +178,48 @@ bool LevelListLayer::init() {
     geode::addSideArt(this, SideArt::Bottom);
 
     m_list = Build(cue::ListNode::createLevels({358.f, 220.f}))
-        .zOrder(2)
-        .anchorPoint(0.5f, 0.5f)
-        .pos(winSize / 2.f)
-        .parent(this)
-        .id("level-list"_spr);
+                 .zOrder(2)
+                 .anchorPoint(0.5f, 0.5f)
+                 .pos(winSize / 2.f)
+                 .parent(this)
+                 .id("level-list"_spr);
     m_list->setAutoUpdate(false);
 
-    auto menu = Build<CCMenu>::create()
-        .pos(0.f, 0.f)
-        .zOrder(2)
-        .parent(this)
-        .collect();
+    auto menu = Build<CCMenu>::create().pos(0.f, 0.f).zOrder(2).parent(this).collect();
 
     // info button
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-        .intoMenuItem([](auto) {
-            showInfoPopup();
-        })
+        .intoMenuItem([](auto) { showInfoPopup(); })
         .pos(32.f, 32.f)
         .parent(menu);
 
     // refresh button
     m_btnRefresh = Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
-        .intoMenuItem([this](auto) {
-            this->onRefresh();
-        })
-        .pos(winSize.width - 32.f, 32.f)
-        .parent(menu);
+                       .intoMenuItem([this](auto) { this->onRefresh(); })
+                       .pos(winSize.width - 32.f, 32.f)
+                       .parent(menu);
 
     // filter button
     m_btnFilters = Build<CCSprite>::createSpriteName("GJ_plusBtn_001.png")
-        .scale(0.7f)
-        .intoMenuItem([this](auto) {
-            this->onOpenFilters();
-        })
-        .pos(25.f, winSize.height - 70.f)
-        .parent(menu);
+                       .scale(0.7f)
+                       .intoMenuItem([this](auto) { this->onOpenFilters(); })
+                       .pos(25.f, winSize.height - 70.f)
+                       .parent(menu);
 
     // buttons to switch pages
 
     constexpr float pageBtnPadding = 20.f;
 
     m_btnPagePrev = Build<CCSprite>::createSpriteName("GJ_arrow_03_001.png")
-        .intoMenuItem([this](auto) {
-            this->onPrevPage();
-        })
-        .pos(pageBtnPadding, winSize.height / 2)
-        .parent(menu);
+                        .intoMenuItem([this](auto) { this->onPrevPage(); })
+                        .pos(pageBtnPadding, winSize.height / 2)
+                        .parent(menu);
 
     m_btnPageNext = Build<CCSprite>::createSpriteName("GJ_arrow_03_001.png")
-        .with([&](auto spr) { spr->setFlipX(true); })
-        .intoMenuItem([this](auto) {
-            this->onNextPage();
-        })
-        .pos(winSize.width - pageBtnPadding, winSize.height / 2)
-        .parent(menu);
+                        .with([&](auto spr) { spr->setFlipX(true); })
+                        .intoMenuItem([this](auto) { this->onNextPage(); })
+                        .pos(winSize.width - pageBtnPadding, winSize.height / 2)
+                        .parent(menu);
 
     // loading circle
     m_loadingCircle = cue::LoadingCircle::create(true);
@@ -227,7 +230,7 @@ bool LevelListLayer::init() {
         m_filters = *filtersJson;
     }
 
-    m_levelListener = NetworkManagerImpl::get().listen<msg::LevelListMessage>([this](const auto& msg) {
+    m_levelListener = NetworkManagerImpl::get().listen<msg::LevelListMessage>([this](const auto &msg) {
         this->onLoaded(msg.levels);
         return ListenerResult::Continue;
     });
@@ -242,12 +245,15 @@ bool LevelListLayer::init() {
     return true;
 }
 
-LevelListLayer::~LevelListLayer() {
+LevelListLayer::~LevelListLayer()
+{
     GameLevelManager::get()->m_levelManagerDelegate = nullptr;
 }
 
-void LevelListLayer::onRefresh() {
-    if (m_loading) return;
+void LevelListLayer::onRefresh()
+{
+    if (m_loading)
+        return;
 
     m_loading = true;
 
@@ -260,13 +266,15 @@ void LevelListLayer::onRefresh() {
     }
 }
 
-void LevelListLayer::onLoaded(const std::vector<std::pair<SessionId, uint16_t>>& levels) {
+void LevelListLayer::onLoaded(const std::vector<std::pair<SessionId, uint16_t>> &levels)
+{
     m_playerCounts.clear();
     m_allLevelIds.clear();
     m_currentQuery.clear();
 
-    for (const auto& level : levels) {
-        if (level.first == 0) continue;
+    for (const auto &level : levels) {
+        if (level.first == 0)
+            continue;
 
         m_playerCounts.emplace(level.first, level.second);
         m_allLevelIds.push_back(level.first);
@@ -288,7 +296,8 @@ void LevelListLayer::onLoaded(const std::vector<std::pair<SessionId, uint16_t>>&
     this->startLoadingForPage();
 }
 
-void LevelListLayer::onOpenFilters() {
+void LevelListLayer::onOpenFilters()
+{
     auto popup = LevelFiltersPopup::create(this);
     popup->setCallback([this](auto filters) {
         if (filters != m_filters) {
@@ -302,17 +311,21 @@ void LevelListLayer::onOpenFilters() {
     popup->show();
 }
 
-void LevelListLayer::onNextPage() {
-    m_currentPage = std::min<size_t>(m_currentPage + 1, m_allLevelIds.size() / m_pageSize); // TODO idk if this is correcto
+void LevelListLayer::onNextPage()
+{
+    m_currentPage =
+        std::min<size_t>(m_currentPage + 1, m_allLevelIds.size() / m_pageSize); // TODO idk if this is correcto
     this->startLoadingForPage();
 }
 
-void LevelListLayer::onPrevPage() {
+void LevelListLayer::onPrevPage()
+{
     m_currentPage = std::max<size_t>(m_currentPage - 1, 0);
     this->startLoadingForPage();
 }
 
-void LevelListLayer::startLoadingForPage() {
+void LevelListLayer::startLoadingForPage()
+{
     m_loading = true;
 
     log::debug("Start loading for page {}", m_currentPage);
@@ -328,11 +341,13 @@ void LevelListLayer::startLoadingForPage() {
     this->continueLoading();
 }
 
-void LevelListLayer::continueLoading() {
+void LevelListLayer::continueLoading()
+{
     // ok so we have a vector of all level ids
     // a level can be
     // * cached - present in levelCache, no need to fetch, does count as a level IF matches filters
-    // * ignored - present in failedQueries, one of the previous queries did not return this level, no need to fetch, does not count as a level
+    // * ignored - present in failedQueries, one of the previous queries did not return this level, no need to fetch,
+    // does not count as a level
     // * unknown - not present anywhere, does count as a level
 
     // first check if we have enough levels to display.
@@ -356,7 +371,8 @@ void LevelListLayer::continueLoading() {
     }
 }
 
-void LevelListLayer::finishLoading() {
+void LevelListLayer::finishLoading()
+{
     std::vector<Ref<GJGameLevel>> page;
 
     size_t counter = 0;
@@ -379,12 +395,13 @@ void LevelListLayer::finishLoading() {
         }
     }
 
-    log::debug("Finished loading, page size = {}, counter = {}, unloaded = {}, reqm = {}, failed = {}", page.size(), counter, unloadedLevels, reqMin, m_failedQueries.size());
+    log::debug("Finished loading, page size = {}, counter = {}, unloaded = {}, reqm = {}, failed = {}", page.size(),
+               counter, unloadedLevels, reqMin, m_failedQueries.size());
 
     bool showNextPage = counter > (reqMin + m_pageSize) || unloadedLevels;
 
     // sort by player count descending
-    std::sort(page.begin(), page.end(), [&](GJGameLevel* a, GJGameLevel* b) {
+    std::sort(page.begin(), page.end(), [&](GJGameLevel *a, GJGameLevel *b) {
         auto aCount = this->findPlayerCountForLevel(a->m_levelID);
         auto bCount = this->findPlayerCountForLevel(b->m_levelID);
 
@@ -404,7 +421,7 @@ void LevelListLayer::finishLoading() {
     auto flevel = NetworkManagerImpl::get().getFeaturedLevel();
 
     for (auto level : page) {
-        auto cell = static_cast<HookedLevelCell*>(new LevelCell("", 356.f, 90.f));
+        auto cell = static_cast<HookedLevelCell *>(new LevelCell("", 356.f, 90.f));
         cell->autorelease();
         cell->loadFromLevel(level);
         cell->setContentSize({356.f, 90.f});
@@ -432,13 +449,15 @@ void LevelListLayer::finishLoading() {
     m_loading = false;
 }
 
-bool LevelListLayer::loadNextBatch() {
+bool LevelListLayer::loadNextBatch()
+{
     m_currentQuery.clear();
 
     for (auto id : m_allLevelIds) {
         int lid = id.levelId();
 
-        if (m_levelCache.contains(lid) || m_failedQueries.contains(lid)) continue;
+        if (m_levelCache.contains(lid) || m_failedQueries.contains(lid))
+            continue;
 
         m_currentQuery.push_back(lid);
 
@@ -462,46 +481,54 @@ bool LevelListLayer::loadNextBatch() {
     return true;
 }
 
-std::optional<size_t> LevelListLayer::findPlayerCountForLevel(int levelId) {
+std::optional<size_t> LevelListLayer::findPlayerCountForLevel(int levelId)
+{
     return asp::iter::from(m_playerCounts)
         .copied()
-        .find([&](const auto& pair) { return pair.first.levelId() == levelId; })
-        .transform([](const auto& pair) { return pair.second; });
+        .find([&](const auto &pair) { return pair.first.levelId() == levelId; })
+        .transform([](const auto &pair) { return pair.second; });
 }
 
-bool LevelListLayer::isMatchingFilters(GJGameLevel* level) {
+bool LevelListLayer::isMatchingFilters(GJGameLevel *level)
+{
     using Difficulty = globed::Difficulty;
     using enum Difficulty;
     using enum Filters::RateTier;
 
-    if (!level) return false;
+    if (!level)
+        return false;
 
     auto difficulty = globed::calcLevelDifficulty(level);
 
-    // log::debug("Name = {}, diff = {}, demon diff = {}, is demon = {}, length = {}, epic = {}, featured = {}, stars = {}, coins = {}", level->m_levelName, (int) difficulty, (int)level->m_demonDifficulty, (int)level->m_demon, (int)level->m_levelLength, level->m_isEpic, level->m_featured, (int)level->m_stars, level->m_coins);
-    // return true;
+    // log::debug("Name = {}, diff = {}, demon diff = {}, is demon = {}, length = {}, epic = {}, featured = {}, stars =
+    // {}, coins = {}", level->m_levelName, (int) difficulty, (int)level->m_demonDifficulty, (int)level->m_demon,
+    // (int)level->m_levelLength, level->m_isEpic, level->m_featured, (int)level->m_stars, level->m_coins); return true;
 
     // Difficulty
     if (!m_filters.difficulty.empty()) {
         auto difficulty2 = difficulty;
 
         // convert to HardDemon for this check
-        if (difficulty == EasyDemon || difficulty == MediumDemon || difficulty == InsaneDemon || difficulty == ExtremeDemon) {
+        if (difficulty == EasyDemon || difficulty == MediumDemon || difficulty == InsaneDemon ||
+            difficulty == ExtremeDemon) {
             difficulty2 = HardDemon;
         }
 
         // non demon filtering
-        if (std::find(m_filters.difficulty.begin(), m_filters.difficulty.end(), difficulty2) == m_filters.difficulty.end()) {
+        if (std::find(m_filters.difficulty.begin(), m_filters.difficulty.end(), difficulty2) ==
+            m_filters.difficulty.end()) {
             return false;
         }
 
         // demon filtering
         if (difficulty2 == HardDemon) {
-            if (!level->m_demon) return false;
+            if (!level->m_demon)
+                return false;
 
             if (!m_filters.demonDifficulty.empty()) {
                 // check for specific demon difficulty
-                if (std::find(m_filters.demonDifficulty.begin(), m_filters.demonDifficulty.end(), difficulty) == m_filters.demonDifficulty.end()) {
+                if (std::find(m_filters.demonDifficulty.begin(), m_filters.demonDifficulty.end(), difficulty) ==
+                    m_filters.demonDifficulty.end()) {
                     return false;
                 }
             }
@@ -509,13 +536,14 @@ bool LevelListLayer::isMatchingFilters(GJGameLevel* level) {
     }
 
     if (!m_filters.length.empty()) {
-        if (std::find(m_filters.length.begin(), m_filters.length.end(), level->m_levelLength) == m_filters.length.end()) {
+        if (std::find(m_filters.length.begin(), m_filters.length.end(), level->m_levelLength) ==
+            m_filters.length.end()) {
             return false;
         }
     }
 
     if (m_filters.rateTier) {
-        auto& tiers = m_filters.rateTier.value();
+        auto &tiers = m_filters.rateTier.value();
 
         Filters::RateTier rateTier;
 
@@ -545,7 +573,8 @@ bool LevelListLayer::isMatchingFilters(GJGameLevel* level) {
     }
 
     if (m_filters.completed) {
-        bool hasCompleted = level->m_dailyID > 0 ? level->m_orbCompletion > 99 : GameStatsManager::sharedState()->hasCompletedLevel(level);
+        bool hasCompleted = level->m_dailyID > 0 ? level->m_orbCompletion > 99
+                                                 : GameStatsManager::sharedState()->hasCompletedLevel(level);
 
         if (*m_filters.completed != hasCompleted) {
             return false;
@@ -575,7 +604,8 @@ bool LevelListLayer::isMatchingFilters(GJGameLevel* level) {
     return true;
 }
 
-void LevelListLayer::toggleLoadingUi(bool loading) {
+void LevelListLayer::toggleLoadingUi(bool loading)
+{
     m_btnPagePrev->setVisible(!loading);
     m_btnPageNext->setVisible(!loading);
     m_btnRefresh->setVisible(!loading);
@@ -593,12 +623,14 @@ void LevelListLayer::toggleLoadingUi(bool loading) {
     }
 }
 
-void LevelListLayer::loadLevelsFinished(CCArray* arr, char const* q) {
+void LevelListLayer::loadLevelsFinished(CCArray *arr, char const *q)
+{
     this->loadLevelsFinished(arr, q, -1);
 }
 
-void LevelListLayer::loadLevelsFinished(CCArray* arr, char const*, int) {
-    for (GJGameLevel* level : CCArrayExt<GJGameLevel*>(arr)) {
+void LevelListLayer::loadLevelsFinished(CCArray *arr, char const *, int)
+{
+    for (GJGameLevel *level : CCArrayExt<GJGameLevel *>(arr)) {
         m_levelCache[level->m_levelID] = level;
     }
 
@@ -613,18 +645,21 @@ void LevelListLayer::loadLevelsFinished(CCArray* arr, char const*, int) {
     this->continueLoading();
 }
 
-void LevelListLayer::loadLevelsFailed(char const* q) {
+void LevelListLayer::loadLevelsFailed(char const *q)
+{
     this->loadLevelsFailed(q, -1);
 }
 
-void LevelListLayer::loadLevelsFailed(char const* q, int p) {
+void LevelListLayer::loadLevelsFailed(char const *q, int p)
+{
     log::warn("query failed ({}): {}", p, q);
     // ErrorQueues::get().warn(fmt::format("Failed to load levels: error {}", p));
 
     this->finishLoading();
 }
 
-LevelListLayer* LevelListLayer::create() {
+LevelListLayer *LevelListLayer::create()
+{
     auto ret = new LevelListLayer;
     if (ret->init()) {
         ret->autorelease();
@@ -635,44 +670,21 @@ LevelListLayer* LevelListLayer::create() {
     return nullptr;
 }
 
-}
+} // namespace globed
 
-static std::vector<std::pair<globed::SessionId, uint16_t>> getFakeLevels() {
+static std::vector<std::pair<globed::SessionId, uint16_t>> getFakeLevels()
+{
     std::initializer_list<std::pair<uint64_t, uint16_t>> levels = {
-        {110715909, 23},
-        {110681124, 52},
-        {27732941, 2},
-        {110774330, 12},
-        {110774310, 15},
-        {110638716, 44},
-        {110772605, 1},
-        {110705309, 58},
-        {110517732, 7},
-        {110418122, 9},
-        {99923697, 10},
-        {110774148, 85},
-        {110290111, 23},
-        {110719349, 15},
-        {110714865, 81},
-        {110625662, 92},
-        {110610038, 3},
-        {110594994, 9},
-        {110512795, 1},
-        {110500920, 97},
-        {110452453, 1},
-        {110428166, 443},
-        {110430434, 23},
-        {110873135, 12412},
-        {110873134, 291},
-        {110873130, 12},
-        {108789649, 151},
-        {103632860, 59},
-        {100496253, 1958},
-        {108447741, 12},
+        {110715909, 23},  {110681124, 52}, {27732941, 2},    {110774330, 12},  {110774310, 15},   {110638716, 44},
+        {110772605, 1},   {110705309, 58}, {110517732, 7},   {110418122, 9},   {99923697, 10},    {110774148, 85},
+        {110290111, 23},  {110719349, 15}, {110714865, 81},  {110625662, 92},  {110610038, 3},    {110594994, 9},
+        {110512795, 1},   {110500920, 97}, {110452453, 1},   {110428166, 443}, {110430434, 23},   {110873135, 12412},
+        {110873134, 291}, {110873130, 12}, {108789649, 151}, {103632860, 59},  {100496253, 1958}, {108447741, 12},
         {123, 45},
     };
 
-    return asp::iter::from(levels).copied().map([](auto pair) {
-        return std::make_pair(globed::SessionId{pair.first}, pair.second);
-    }).collect<std::vector<std::pair<globed::SessionId, uint16_t>>>();
+    return asp::iter::from(levels)
+        .copied()
+        .map([](auto pair) { return std::make_pair(globed::SessionId{pair.first}, pair.second); })
+        .collect<std::vector<std::pair<globed::SessionId, uint16_t>>>();
 }

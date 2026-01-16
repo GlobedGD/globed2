@@ -1,7 +1,7 @@
 #pragma once
 
-#include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
+#include <globed/core/net/MessageListener.hpp>
 #include <ui/BasePopup.hpp>
 
 #include <cue/ListNode.hpp>
@@ -15,18 +15,18 @@ public:
 
 protected:
     friend class TeamCell;
-    cue::ListNode* m_list;
-    cue::LoadingCircle* m_loadingCircle = nullptr;
+    cue::ListNode *m_list;
+    cue::LoadingCircle *m_loadingCircle = nullptr;
     std::optional<MessageListener<msg::RoomStateMessage>> m_stateListener;
     std::optional<MessageListener<msg::TeamCreationResultMessage>> m_creationListener;
     std::optional<MessageListener<msg::RoomSettingsUpdatedMessage>> m_settingsListener;
-    CCNode* m_bottomContainer;
+    CCNode *m_bottomContainer;
     int m_assigningFor = 0;
     bool m_showPlus = false;
 
     bool setup(int assigningFor);
     void startLoading();
-    void onLoaded(const std::vector<RoomTeam>& teams);
+    void onLoaded(const std::vector<RoomTeam> &teams);
     void onTeamCreated(bool success, uint16_t teamCount);
 
     void stopLoad();
@@ -39,4 +39,4 @@ protected:
     void setLockedTeams(bool locked);
 };
 
-}
+} // namespace globed

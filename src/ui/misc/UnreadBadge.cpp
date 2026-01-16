@@ -7,8 +7,10 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool UnreadBadge::init(int count) {
-    if (!CCNode::init()) return false;
+bool UnreadBadge::init(int count)
+{
+    if (!CCNode::init())
+        return false;
 
     this->setAnchorPoint({0.5f, 0.5f});
 
@@ -17,9 +19,7 @@ bool UnreadBadge::init(int count) {
 
     Build<CCSprite>::createSpriteName("geode.loader/updates-failed.png")
         .pos(targetSize / 2)
-        .with([&](auto spr) {
-            cue::rescaleToMatch(spr, targetSize);
-        })
+        .with([&](auto spr) { cue::rescaleToMatch(spr, targetSize); })
         .parent(this);
 
     Build<CCLabelBMFont>::create(std::to_string(count).c_str(), "bigFont.fnt")
@@ -30,7 +30,8 @@ bool UnreadBadge::init(int count) {
     return true;
 }
 
-UnreadBadge* UnreadBadge::create(int count) {
+UnreadBadge *UnreadBadge::create(int count)
+{
     auto ret = new UnreadBadge;
     if (ret->init(count)) {
         ret->autorelease();
@@ -41,4 +42,4 @@ UnreadBadge* UnreadBadge::create(int count) {
     return nullptr;
 }
 
-}
+} // namespace globed

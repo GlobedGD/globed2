@@ -3,14 +3,14 @@
 
 #include <Geode/Geode.hpp>
 #ifdef GLOBED_BUILD
-# include <cue/PlayerIcon.hpp>
+#include <cue/PlayerIcon.hpp>
 #else
 namespace cue {
 
 struct Icons;
 class PlayerIcon;
 
-}
+} // namespace cue
 #endif
 
 namespace globed {
@@ -23,15 +23,15 @@ public:
     GLOBED_NOCOPY(ProgressArrow);
     GLOBED_NOMOVE(ProgressArrow);
 
-    static ProgressArrow* create();
+    static ProgressArrow *create();
 
-    void updateIcons(const cue::Icons& data);
-    void updatePosition(const GameCameraState& cam, CCPoint playerPos, double angle);
+    void updateIcons(const cue::Icons &data);
+    void updatePosition(const GameCameraState &cam, CCPoint playerPos, double angle);
 
 private:
-    cue::PlayerIcon* m_icon = nullptr;
+    cue::PlayerIcon *m_icon = nullptr;
 
     bool init();
 };
 
-}
+} // namespace globed

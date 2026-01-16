@@ -28,4 +28,4 @@ struct PlayerIconData {
     static PlayerIconData getOwn();
 };
 
-}
+} // namespace globed

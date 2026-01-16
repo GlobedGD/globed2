@@ -7,32 +7,27 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void ButtonSettingCell::setup() {
+void ButtonSettingCell::setup()
+{
     this->createButton(m_btnText);
 }
 
-void ButtonSettingCell::createButton(CStr text) {
+void ButtonSettingCell::createButton(CStr text)
+{
     cue::resetNode(m_button);
 
     m_button = Build<ButtonSprite>::create(m_btnText, "goldFont.fnt", "GJ_button_04.png", 0.8f)
-        .scale(0.7f)
-        .intoMenuItem([this] {
-            m_callback();
-        })
-        .scaleMult(1.15f)
-        .parent(m_rightMenu)
-        .collect();
+                   .scale(0.7f)
+                   .intoMenuItem([this] { m_callback(); })
+                   .scaleMult(1.15f)
+                   .parent(m_rightMenu)
+                   .collect();
     m_rightMenu->updateLayout();
-
 }
 
-ButtonSettingCell* ButtonSettingCell::create(
-    CStr name,
-    CStr desc,
-    CStr btnText,
-    Callback&& cb,
-    cocos2d::CCSize cellSize
-) {
+ButtonSettingCell *ButtonSettingCell::create(CStr name, CStr desc, CStr btnText, Callback &&cb,
+                                             cocos2d::CCSize cellSize)
+{
     auto ret = new ButtonSettingCell;
     ret->m_callback = std::move(cb);
     ret->m_btnText = btnText;
@@ -46,4 +41,4 @@ ButtonSettingCell* ButtonSettingCell::create(
     return nullptr;
 }
 
-}
+} // namespace globed

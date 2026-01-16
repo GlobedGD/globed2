@@ -15,4 +15,4 @@ struct FeaturedLevelMeta {
     FeatureTier rateTier;
 };
 
-}
+} // namespace globed

@@ -2,25 +2,24 @@
 #include <Geode/modify/EditLevelLayer.hpp>
 #include <modules/ui/UIModule.hpp>
 
-#include <globed/config.hpp>
 #include <Geode/Geode.hpp>
+#include <globed/config.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
 struct GLOBED_MODIFY_ATTR HookedEditLevelLayer : geode::Modify<HookedEditLevelLayer, EditLevelLayer> {
-    static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "EditLevelLayer::onEdit",
-            "EditLevelLayer::onPlay",
-        );
+    static void onModify(auto &self)
+    {
+        GLOBED_CLAIM_HOOKS(UIModule::get(), self, "EditLevelLayer::onEdit", "EditLevelLayer::onPlay", );
 
-        (void) self.setHookPriority("EditLevelLayer::onEdit", -100);
-        (void) self.setHookPriority("EditLevelLayer::onPlay", -100);
+        (void)self.setHookPriority("EditLevelLayer::onEdit", -100);
+        (void)self.setHookPriority("EditLevelLayer::onPlay", -100);
     }
 
-    void onEdit(CCObject* p) {
+    void onEdit(CCObject *p)
+    {
         if (disallowLevelJoin(-1)) {
             return;
         }
@@ -28,7 +27,8 @@ struct GLOBED_MODIFY_ATTR HookedEditLevelLayer : geode::Modify<HookedEditLevelLa
         EditLevelLayer::onEdit(p);
     }
 
-    void onPlay(CCObject* p) {
+    void onPlay(CCObject *p)
+    {
         if (disallowLevelJoin(-1)) {
             return;
         }
@@ -37,4 +37,4 @@ struct GLOBED_MODIFY_ATTR HookedEditLevelLayer : geode::Modify<HookedEditLevelLa
     }
 };
 
-}
+} // namespace globed

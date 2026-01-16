@@ -4,11 +4,10 @@ on:
   workflow_dispatch:
   push:
     paths-ignore:
-      - 'docs/*.md'
-      - 'previews/**'
-      - 'README.md'
-      - 'rescale.py'
-
+      - "docs/*.md"
+      - "previews/**"
+      - "README.md"
+      - "rescale.py"
   # pull_request:
 
 jobs:
@@ -47,9 +46,9 @@ jobs:
         uses: geode-sdk/build-geode-mod@main
         with:
           # sdk: 'latest'
-          sdk: 'nightly'
+          sdk: "nightly"
           build-config: ${{ matrix.config.build-config || 'Release' }}
-          configure-args: '-DGLOBED_RELEASE=ON'
+          configure-args: "-DGLOBED_RELEASE=ON"
           export-pdb: true
           export-symbols: true
           combine: true

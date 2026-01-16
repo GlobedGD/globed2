@@ -8,8 +8,10 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool BaseLayer::init(bool background) {
-    if (!CCLayer::init()) return false;
+bool BaseLayer::init(bool background)
+{
+    if (!CCLayer::init())
+        return false;
 
     this->setKeyboardEnabled(true);
     this->setKeypadEnabled(true);
@@ -17,19 +19,17 @@ bool BaseLayer::init(bool background) {
     auto winSize = CCDirector::get()->getWinSize();
 
     m_backButton = Build<CCSprite>::createSpriteName("GJ_arrow_01_001.png")
-        .intoMenuItem([this](auto) {
-            this->keyBackClicked();
-        })
-        .id("back-button");
+                       .intoMenuItem([this](auto) { this->keyBackClicked(); })
+                       .id("back-button");
 
     m_backMenu = Build<CCMenu>::create()
-        .id("back-menu")
-        .child(m_backButton)
-        .contentSize(m_backButton->getScaledContentSize())
-        .anchorPoint(0.f, 1.f)
-        .pos(25.f, winSize.height - 25.f)
-        .parent(this)
-        .collect();
+                     .id("back-menu")
+                     .child(m_backButton)
+                     .contentSize(m_backButton->getScaledContentSize())
+                     .anchorPoint(0.f, 1.f)
+                     .pos(25.f, winSize.height - 25.f)
+                     .parent(this)
+                     .collect();
 
     if (background) {
         this->initBackground();
@@ -38,7 +38,8 @@ bool BaseLayer::init(bool background) {
     return true;
 }
 
-void BaseLayer::initBackground(ccColor3B color) {
+void BaseLayer::initBackground(ccColor3B color)
+{
     cue::resetNode(m_background);
 
     auto winSize = CCDirector::get()->getWinSize();
@@ -57,12 +58,14 @@ void BaseLayer::initBackground(ccColor3B color) {
         .store(m_background);
 }
 
-void BaseLayer::keyBackClicked() {
+void BaseLayer::keyBackClicked()
+{
     globed::popScene();
 }
 
-void BaseLayer::switchTo() {
+void BaseLayer::switchTo()
+{
     globed::pushScene(this);
 }
 
-}
+} // namespace globed

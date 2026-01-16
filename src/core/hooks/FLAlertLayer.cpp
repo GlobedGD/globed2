@@ -1,5 +1,5 @@
-#include <globed/core/PopupManager.hpp>
 #include <globed/config.hpp>
+#include <globed/core/PopupManager.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/FLAlertLayer.hpp>
@@ -9,8 +9,9 @@ using namespace geode::prelude;
 namespace globed {
 
 struct GLOBED_MODIFY_ATTR FLAlertLayerHook : geode::Modify<FLAlertLayerHook, FLAlertLayer> {
-    void keyBackClicked() {
-        auto& pm = PopupManager::get();
+    void keyBackClicked()
+    {
+        auto &pm = PopupManager::get();
         if (!pm.isManaged(this)) {
             return FLAlertLayer::keyBackClicked();
         }
@@ -22,4 +23,4 @@ struct GLOBED_MODIFY_ATTR FLAlertLayerHook : geode::Modify<FLAlertLayerHook, FLA
     }
 };
 
-}
+} // namespace globed

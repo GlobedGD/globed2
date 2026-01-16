@@ -1,9 +1,9 @@
 #include "EmoteListPopup.hpp"
-#include <globed/core/PopupManager.hpp>
-#include <globed/core/EmoteManager.hpp>
-#include <globed/util/FunctionQueue.hpp>
-#include <globed/core/KeybindsManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <globed/core/EmoteManager.hpp>
+#include <globed/core/KeybindsManager.hpp>
+#include <globed/core/PopupManager.hpp>
+#include <globed/util/FunctionQueue.hpp>
 #include <ui/settings/KeybindsPopup.hpp>
 
 #include <UIBuilder.hpp>
@@ -14,19 +14,20 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize EmoteListPopup::POPUP_SIZE {360.f, 280.f};
+const CCSize EmoteListPopup::POPUP_SIZE{360.f, 280.f};
 static constexpr CCSize LIST_SIZE = {280.f, 130.f};
 static constexpr float CELL_HEIGHT = 40.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
 const int EMOTES_PER_PAGE = 18;
 
-bool EmoteListPopup::setup() {
+bool EmoteListPopup::setup()
+{
     this->setTitle("Emotes");
     m_title->setPosition(this->fromTop(15.f));
 
     m_noElasticity = true;
 
-    auto& allEmotes = EmoteManager::get().getEmotes();
+    auto &allEmotes = EmoteManager::get().getEmotes();
     m_maxPages = (allEmotes.size() + EMOTES_PER_PAGE - 1) / EMOTES_PER_PAGE;
 
     for (int i = 0; i < 8; i++) {
@@ -34,114 +35,99 @@ bool EmoteListPopup::setup() {
         m_favoriteEmoteIds.push_back(emote);
     }
 
-    m_pageLabel = Build<CCLabelBMFont>::create(fmt::format("Page {} of {}", m_selectedPage + 1, m_maxPages).c_str(), "bigFont.fnt")
-        .anchorPoint(0.5f, 0.5f)
-        .pos(this->fromTop(30.f))
-        .scale(0.3f)
-        .zOrder(30)
-        .parent(m_mainLayer);
+    m_pageLabel = Build<CCLabelBMFont>::create(fmt::format("Page {} of {}", m_selectedPage + 1, m_maxPages).c_str(),
+                                               "bigFont.fnt")
+                      .anchorPoint(0.5f, 0.5f)
+                      .pos(this->fromTop(30.f))
+                      .scale(0.3f)
+                      .zOrder(30)
+                      .parent(m_mainLayer);
 
     m_list = Build(cue::ListNode::create(LIST_SIZE, cue::Brown, cue::ListBorderStyle::Comments))
-        .anchorPoint(0.5f, 1.f)
-        .pos(this->fromTop(40.f))
-        .parent(m_mainLayer);
+                 .anchorPoint(0.5f, 1.f)
+                 .pos(this->fromTop(40.f))
+                 .parent(m_mainLayer);
 
     m_list->updateLayout();
 
     m_emoteMenu = Build<CCMenu>::create()
-        .pos(this->fromTop(45.f))
-        .contentSize({245.f, LIST_SIZE.height - 10.f})
-        .anchorPoint(0.5f, 1.f)
-        .layout(AxisLayout::create()
-            ->setAxis(Axis::Row)
-            ->setAxisAlignment(AxisAlignment::Start)
-            ->setAutoScale(false)
-            ->setGrowCrossAxis(true)
-            ->setGap(7.f)
-        )
-        .parent(m_mainLayer);
+                      .pos(this->fromTop(45.f))
+                      .contentSize({245.f, LIST_SIZE.height - 10.f})
+                      .anchorPoint(0.5f, 1.f)
+                      .layout(AxisLayout::create()
+                                  ->setAxis(Axis::Row)
+                                  ->setAxisAlignment(AxisAlignment::Start)
+                                  ->setAutoScale(false)
+                                  ->setGrowCrossAxis(true)
+                                  ->setGap(7.f))
+                      .parent(m_mainLayer);
 
     this->loadEmoteListPage(0);
 
-    auto bottomMenu = Build<CCMenu>::create()
-        .pos(this->fromBottom(25.f))
-        .contentSize({0, 0})
-        .scale(0.66f)
-        .parent(m_mainLayer);
+    auto bottomMenu =
+        Build<CCMenu>::create().pos(this->fromBottom(25.f)).contentSize({0, 0}).scale(0.66f).parent(m_mainLayer);
     m_submitBtnSpr = ButtonSprite::create("Send Emote", "bigFont.fnt", "GJ_button_01.png");
     m_submitBtnSpr->setColor({100, 100, 100});
     m_submitBtnSpr->setCascadeColorEnabled(true);
     m_submitBtn = Build(m_submitBtnSpr)
-        .intoMenuItem([this] {
-            this->onSubmitBtn();
-        })
-        .id("emote-submit-btn"_spr)
-        .scaleMult(1.15f)
-        .parent(bottomMenu);
+                      .intoMenuItem([this] { this->onSubmitBtn(); })
+                      .id("emote-submit-btn"_spr)
+                      .scaleMult(1.15f)
+                      .parent(bottomMenu);
     m_submitBtn->setEnabled(false);
 
     auto infoMenu = Build<CCMenu>::create()
-        .scale(0.75f)
-        .pos(this->fromTopRight(16.f, 16.f))
-        .contentSize({0, 0})
-        .parent(m_mainLayer);
-    auto infoBtn = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-        .intoMenuItem(+[] {
-            globed::alert(
-                "Emotes Guide",
+                        .scale(0.75f)
+                        .pos(this->fromTopRight(16.f, 16.f))
+                        .contentSize({0, 0})
+                        .parent(m_mainLayer);
+    auto infoBtn =
+        Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+            .intoMenuItem(+[] {
+                globed::alert(
+                    "Emotes Guide",
 
-                "Show an <co>emote</c> above your icon for other players to see in-game. Some emotes have <cp>sound effects</c> when used.\n\n"
-                "PC users can set up to four <cy>favorite emotes</c> and quickly use them with <cg>hotkeys</c>.\n\n"
-                "There is a <cj>small cooldown</c> between sending emotes to prevent <cr>spam</c>."
-            );
-        })
-        .parent(infoMenu);
+                    "Show an <co>emote</c> above your icon for other players to see in-game. Some emotes have "
+                    "<cp>sound effects</c> when used.\n\n"
+                    "PC users can set up to four <cy>favorite emotes</c> and quickly use them with <cg>hotkeys</c>.\n\n"
+                    "There is a <cj>small cooldown</c> between sending emotes to prevent <cr>spam</c>.");
+            })
+            .parent(infoMenu);
 
-    auto pageBtnMenu = Build<CCMenu>::create()
-        .pos({0, 0})
-        .contentSize(m_mainLayer->getContentSize())
-        .parent(m_mainLayer);
+    auto pageBtnMenu =
+        Build<CCMenu>::create().pos({0, 0}).contentSize(m_mainLayer->getContentSize()).parent(m_mainLayer);
 
     auto leftSpr = CCSprite::createWithSpriteFrameName("GJ_chatBtn_01_001.png");
     m_leftPageBtn = Build(leftSpr)
-        .intoMenuItem([this] {
-            this->updatePage(false);
-        })
-        .rotation(90.f)
-        .pos(22.f, m_list->getPositionY() - LIST_SIZE.height / 2.f)
-        .parent(pageBtnMenu);
+                        .intoMenuItem([this] { this->updatePage(false); })
+                        .rotation(90.f)
+                        .pos(22.f, m_list->getPositionY() - LIST_SIZE.height / 2.f)
+                        .parent(pageBtnMenu);
 
     auto rightSpr = CCSprite::createWithSpriteFrameName("GJ_chatBtn_01_001.png");
     rightSpr->setFlipY(true);
     m_rightPageBtn = Build(rightSpr)
-        .intoMenuItem([this] {
-            this->updatePage(true);
-        })
-        .rotation(90.f)
-        .pos(m_mainLayer->getContentWidth() - 22.f, m_list->getPositionY() - LIST_SIZE.height / 2.f)
-        .parent(pageBtnMenu);
-
-
-
+                         .intoMenuItem([this] { this->updatePage(true); })
+                         .rotation(90.f)
+                         .pos(m_mainLayer->getContentWidth() - 22.f, m_list->getPositionY() - LIST_SIZE.height / 2.f)
+                         .parent(pageBtnMenu);
 
     m_bottomList = Build(cue::ListNode::create({LIST_SIZE.width, 35.f}, cue::Brown, cue::ListBorderStyle::Comments))
-        .pos(this->fromBottom(68.f))
-        .parent(m_mainLayer);
+                       .pos(this->fromBottom(68.f))
+                       .parent(m_mainLayer);
 
     auto favoriteLabelMenu = Build<CCMenu>::create()
-        .layout(RowLayout::create()->setAutoScale(false)->setGap(1.f))
-        .contentSize(100.f, 0.f)
-        .id("favorite-label-menu")
-        .pos(this->fromBottom(95.f))
-        .parent(m_mainLayer)
-        .collect();
+                                 .layout(RowLayout::create()->setAutoScale(false)->setGap(1.f))
+                                 .contentSize(100.f, 0.f)
+                                 .id("favorite-label-menu")
+                                 .pos(this->fromBottom(95.f))
+                                 .parent(m_mainLayer)
+                                 .collect();
 
-    auto favoriteLabel = Build<CCLabelBMFont>::create("Favorites", "goldFont.fnt")
-        .scale(0.4f)
-        .parent(favoriteLabelMenu)
-        .collect();
+    auto favoriteLabel =
+        Build<CCLabelBMFont>::create("Favorites", "goldFont.fnt").scale(0.4f).parent(favoriteLabelMenu).collect();
 
-    auto& km = KeybindsManager::get();
+    auto &km = KeybindsManager::get();
 
     // we may need to show a warning icon to make the usage clearer:
     // on desktop -> show if no keys are bound, explaining that it needs to be done
@@ -155,12 +141,9 @@ bool EmoteListPopup::setup() {
 #ifdef GEODE_IS_DESKTOP
                 globed::confirmPopup(
                     "No Keybinds",
-                    "To be able to use <cg>favorite emotes</c> without <cy>pausing</c>, you need to set up the <cj>emote keybinds</c> in Globed settings. Want to open <cg>Keybind Settings</c> right now?",
-                    "Cancel", "Ok",
-                    [](auto) {
-                        KeybindsPopup::create()->show();
-                    }
-                );
+                    "To be able to use <cg>favorite emotes</c> without <cy>pausing</c>, you need to set up the "
+                    "<cj>emote keybinds</c> in Globed settings. Want to open <cg>Keybind Settings</c> right now?",
+                    "Cancel", "Ok", [](auto) { KeybindsPopup::create()->show(); });
 #else
                 globed::alert(
                     "Favorite Emotes",
@@ -175,80 +158,65 @@ bool EmoteListPopup::setup() {
     favoriteLabelMenu->updateLayout();
 
     m_favoriteEmotesMenu = Build<CCMenu>::create()
-        .pos(this->fromBottom(70.f))
-        .contentSize({(LIST_SIZE.width + 0.f) / 0.7f, 0})
-        .anchorPoint(0.5f, 0.5f)
-        .scale(0.7f)
-        .layout(SimpleRowLayout::create()
-            ->setMainAxisAlignment(MainAxisAlignment::Even)
-        )
-        .parent(m_mainLayer);
+                               .pos(this->fromBottom(70.f))
+                               .contentSize({(LIST_SIZE.width + 0.f) / 0.7f, 0})
+                               .anchorPoint(0.5f, 0.5f)
+                               .scale(0.7f)
+                               .layout(SimpleRowLayout::create()->setMainAxisAlignment(MainAxisAlignment::Even))
+                               .parent(m_mainLayer);
 
     this->loadFavoriteEmotesList();
 
     m_favoriteHighlight = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
-        .contentSize({LIST_SIZE.width + 5.f, LIST_SIZE.height + 5.f})
-        .pos(m_list->getPosition() + ccp(0, 2.5f))
-        .anchorPoint(0.5f, 1.f)
-        .color(ccColor3B(255, 230, 0))
-        .opacity(30)
-        .visible(false)
-        .parent(m_mainLayer);
+                              .contentSize({LIST_SIZE.width + 5.f, LIST_SIZE.height + 5.f})
+                              .pos(m_list->getPosition() + ccp(0, 2.5f))
+                              .anchorPoint(0.5f, 1.f)
+                              .color(ccColor3B(255, 230, 0))
+                              .opacity(30)
+                              .visible(false)
+                              .parent(m_mainLayer);
     m_favoriteHighlight->runAction(
-        CCRepeatForever::create(
-            CCSequence::create(
-                CCFadeTo::create(0.8f, 150),
-                CCFadeTo::create(0.8f, 30),
-                nullptr
-            )
-        )
-    );
+        CCRepeatForever::create(CCSequence::create(CCFadeTo::create(0.8f, 150), CCFadeTo::create(0.8f, 30), nullptr)));
 
-    m_favoriteInfoLabel = Build<CCLabelBMFont>::create(fmt::format("Choose an emote to add to favorites (Slot X)").c_str(), "bigFont.fnt")
-        .scale(0.3f)
-        .color(255, 230, 0)
-        .pos(m_list->getPosition() + ccp(0, -LIST_SIZE.height - 2.f))
-        .anchorPoint(0.5f, 0.5f)
-        .zOrder(20)
-        .visible(false)
-        .parent(m_mainLayer);
+    m_favoriteInfoLabel =
+        Build<CCLabelBMFont>::create(fmt::format("Choose an emote to add to favorites (Slot X)").c_str(), "bigFont.fnt")
+            .scale(0.3f)
+            .color(255, 230, 0)
+            .pos(m_list->getPosition() + ccp(0, -LIST_SIZE.height - 2.f))
+            .anchorPoint(0.5f, 0.5f)
+            .zOrder(20)
+            .visible(false)
+            .parent(m_mainLayer);
 
     auto clearFavMenu = Build<CCMenu>::create()
-        .pos({m_mainLayer->getContentWidth() - 40.f, 20.f})
-        .contentSize({0, 0})
-        .scale(0.4f)
-        .parent(m_mainLayer);
+                            .pos({m_mainLayer->getContentWidth() - 40.f, 20.f})
+                            .contentSize({0, 0})
+                            .scale(0.4f)
+                            .parent(m_mainLayer);
     m_clearFavoriteBtn = Build(ButtonSprite::create("Remove", "goldFont.fnt", "GJ_button_05.png"))
-        .intoMenuItem([this] {
-            this->setFavorite(m_selectingFavoriteSlot, 0);
-        })
-        .id("emote-clear-btn"_spr)
-        .scaleMult(1.15f)
-        .parent(clearFavMenu);
+                             .intoMenuItem([this] { this->setFavorite(m_selectingFavoriteSlot, 0); })
+                             .id("emote-clear-btn"_spr)
+                             .scaleMult(1.15f)
+                             .parent(clearFavMenu);
     m_clearFavoriteBtn->setEnabled(false);
     m_clearFavoriteBtn->setVisible(false);
 
     // volume slider and label
 
-    m_volumeSlider = Build(createSlider())
-        .scale(0.85f)
-        .id("volume-slider");
+    m_volumeSlider = Build(createSlider()).scale(0.85f).id("volume-slider");
 
     m_volumeSlider->setContentWidth(80.f);
     m_volumeSlider->setRange(0.0, 1.0);
     m_volumeSlider->setValue(globed::setting<float>("core.player.quick-chat-sfx-volume"));
-    m_volumeSlider->setCallback([](cue::Slider* slider, double value) {
-        globed::setting<float>("core.player.quick-chat-sfx-volume") = value;
-    });
+    m_volumeSlider->setCallback(
+        [](cue::Slider *slider, double value) { globed::setting<float>("core.player.quick-chat-sfx-volume") = value; });
 
     Build<CCLabelBMFont>::create("Emote Volume", "bigFont.fnt")
         .scale(0.45f * 0.7f)
         .intoNewParent(CCNode::create())
         .id("volume-wrapper")
         .child(m_volumeSlider)
-        .layout(ColumnLayout::create()
-            ->setAutoScale(false)
-            ->setAxisReverse(true))
+        .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true))
         .contentSize(80.f, 30.f)
         .anchorPoint(0.5f, 0.5f)
         .pos(this->fromTopLeft(74.f, 22.f))
@@ -258,8 +226,8 @@ bool EmoteListPopup::setup() {
     return true;
 }
 
-
-void EmoteListPopup::onSubmitBtn() {
+void EmoteListPopup::onSubmitBtn()
+{
     if (m_selectedEmoteId == (uint32_t)-1) {
         // do nothing (this shouldn't happen)
         return;
@@ -270,11 +238,8 @@ void EmoteListPopup::onSubmitBtn() {
     // check cooldown
     if (!gjbgl || !gjbgl->playSelfEmote(m_selectedEmoteId)) {
         // idk how to do this better
-        m_submitBtnSpr->runAction(CCSequence::create(
-            CCTintTo::create(0.05f, 255, 0, 0),
-            CCTintTo::create(0.3f, 255, 255, 255),
-            nullptr
-        ));
+        m_submitBtnSpr->runAction(
+            CCSequence::create(CCTintTo::create(0.05f, 255, 0, 0), CCTintTo::create(0.3f, 255, 255, 255), nullptr));
 
         return;
     }
@@ -288,10 +253,11 @@ void EmoteListPopup::onSubmitBtn() {
     });
 }
 
-void EmoteListPopup::loadEmoteListPage(int page) {
+void EmoteListPopup::loadEmoteListPage(int page)
+{
     m_emoteMenu->removeAllChildrenWithCleanup(true);
-    auto& em = EmoteManager::get();
-    auto& emoteIds = em.getSortedEmoteIds();
+    auto &em = EmoteManager::get();
+    auto &emoteIds = em.getSortedEmoteIds();
 
     size_t start = page * EMOTES_PER_PAGE;
     size_t end = std::min(start + EMOTES_PER_PAGE, emoteIds.size());
@@ -306,16 +272,14 @@ void EmoteListPopup::loadEmoteListPage(int page) {
             continue;
         }
 
-        CCMenuItemSpriteExtra* emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
-            .contentSize(35.f, 35.f)
-            .color(selected ? ccColor3B(0, 255, 0) : ccColor3B(0, 0, 0))
-            .opacity(180)
-            .intoMenuItem([this, emoteId] {
-                this->onEmoteBtn(emoteId);
-            })
-            .id(fmt::format("emote-btn-{}"_spr, emoteId))
-            .scaleMult(1.1f)
-            .parent(m_emoteMenu);
+        CCMenuItemSpriteExtra *emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
+                                              .contentSize(35.f, 35.f)
+                                              .color(selected ? ccColor3B(0, 255, 0) : ccColor3B(0, 0, 0))
+                                              .opacity(180)
+                                              .intoMenuItem([this, emoteId] { this->onEmoteBtn(emoteId); })
+                                              .id(fmt::format("emote-btn-{}"_spr, emoteId))
+                                              .scaleMult(1.1f)
+                                              .parent(m_emoteMenu);
 
         sprite->setPosition(emoteBtn->getContentSize() / 2.f);
         emoteBtn->addChild(sprite, 5);
@@ -323,10 +287,10 @@ void EmoteListPopup::loadEmoteListPage(int page) {
 
         for (size_t i = 0; i < m_favoriteEmoteIds.size(); i++) {
             if (m_favoriteEmoteIds.at(i) == emoteId) {
-                CCSprite* star = Build<CCSprite>::createSpriteName("GJ_starsIcon_001.png")
-                    .scale(0.35f)
-                    .zOrder(5)
-                    .pos(emoteBtn->getContentWidth() - 6.f, 6.f);
+                CCSprite *star = Build<CCSprite>::createSpriteName("GJ_starsIcon_001.png")
+                                     .scale(0.35f)
+                                     .zOrder(5)
+                                     .pos(emoteBtn->getContentWidth() - 6.f, 6.f);
                 emoteBtn->addChild(star);
                 break;
             }
@@ -336,7 +300,8 @@ void EmoteListPopup::loadEmoteListPage(int page) {
     m_emoteMenu->updateLayout();
 }
 
-void EmoteListPopup::onEmoteBtn(uint32_t id) {
+void EmoteListPopup::onEmoteBtn(uint32_t id)
+{
     // Emote select mode
     if (!m_isFavoriteMode) {
         m_selectedEmoteId = id;
@@ -349,7 +314,8 @@ void EmoteListPopup::onEmoteBtn(uint32_t id) {
     }
 }
 
-void EmoteListPopup::setFavorite(uint32_t emoteSlot, uint32_t id) {
+void EmoteListPopup::setFavorite(uint32_t emoteSlot, uint32_t id)
+{
     m_isFavoriteMode = false;
     m_favoriteEmoteIds[m_selectingFavoriteSlot] = id;
     m_selectingFavoriteSlot = (uint32_t)-1;
@@ -364,7 +330,8 @@ void EmoteListPopup::setFavorite(uint32_t emoteSlot, uint32_t id) {
     globed::setValue(fmt::format("core.ui.emote-slot-{}", emoteSlot), id);
 }
 
-void EmoteListPopup::updatePage(bool increment) {
+void EmoteListPopup::updatePage(bool increment)
+{
     if (increment) {
         if (m_selectedPage < m_maxPages - 1) {
             m_selectedPage++;
@@ -382,19 +349,16 @@ void EmoteListPopup::updatePage(bool increment) {
     this->loadEmoteListPage(m_selectedPage);
 }
 
-void EmoteListPopup::enterFavoriteSelectMode(uint32_t emoteSlot) {
+void EmoteListPopup::enterFavoriteSelectMode(uint32_t emoteSlot)
+{
     // if the key for the slot isn't bound, do nothing on desktop, allow setting on mobile
-    auto& km = KeybindsManager::get();
+    auto &km = KeybindsManager::get();
     if (!km.isEmoteKeyBound(emoteSlot)) {
 #ifdef GEODE_IS_DESKTOP
-        globed::confirmPopup(
-            "Key Not Bound",
-            "This slot does not have a <cy>keybind</c> set up. To be able to quickly send emotes in levels, you need to set one up. Want to open <cg>Keybind Settings</c> now?",
-            "Cancel", "Ok",
-            [](auto) {
-                KeybindsPopup::create()->show();
-            }
-        );
+        globed::confirmPopup("Key Not Bound",
+                             "This slot does not have a <cy>keybind</c> set up. To be able to quickly send emotes in "
+                             "levels, you need to set one up. Want to open <cg>Keybind Settings</c> now?",
+                             "Cancel", "Ok", [](auto) { KeybindsPopup::create()->show(); });
         return;
 #endif
     }
@@ -410,7 +374,8 @@ void EmoteListPopup::enterFavoriteSelectMode(uint32_t emoteSlot) {
     m_clearFavoriteBtn->setVisible(true);
 }
 
-void EmoteListPopup::loadFavoriteEmotesList() {
+void EmoteListPopup::loadFavoriteEmotesList()
+{
     m_favoriteEmotesMenu->removeAllChildren();
 
     for (size_t i = 0; i < m_favoriteEmoteIds.size(); i++) {
@@ -423,29 +388,26 @@ void EmoteListPopup::loadFavoriteEmotesList() {
             continue;
         }
 
-        CCMenuItemSpriteExtra* emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
-            .contentSize(35.f, 35.f)
-            .color(selected ? ccColor3B{255, 230, 0} : ccColor3B{0, 0, 0})
-            .opacity(180)
-            .intoMenuItem([this, i] {
-                this->enterFavoriteSelectMode(i);
-            })
-            .id(fmt::format("emote-favorite-btn-{}"_spr, i))
-            .scaleMult(1.1f)
-            .parent(m_favoriteEmotesMenu);
-
+        CCMenuItemSpriteExtra *emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
+                                              .contentSize(35.f, 35.f)
+                                              .color(selected ? ccColor3B{255, 230, 0} : ccColor3B{0, 0, 0})
+                                              .opacity(180)
+                                              .intoMenuItem([this, i] { this->enterFavoriteSelectMode(i); })
+                                              .id(fmt::format("emote-favorite-btn-{}"_spr, i))
+                                              .scaleMult(1.1f)
+                                              .parent(m_favoriteEmotesMenu);
 
         sprite->setPosition(emoteBtn->getContentSize() / 2.f);
         emoteBtn->addChild(sprite, 1);
         cue::rescaleToMatch(sprite, 25.f);
 
-        CCLabelBMFont* slotLabel = Build<CCLabelBMFont>::create(fmt::format("{}", i + 1).c_str(), "goldFont.fnt")
-            .scale(0.66f)
-            .pos(emoteBtn->getContentSize().width / 2.f, -1.f);
+        CCLabelBMFont *slotLabel = Build<CCLabelBMFont>::create(fmt::format("{}", i + 1).c_str(), "goldFont.fnt")
+                                       .scale(0.66f)
+                                       .pos(emoteBtn->getContentSize().width / 2.f, -1.f);
         emoteBtn->addChild(slotLabel);
     }
 
     m_favoriteEmotesMenu->updateLayout();
 }
 
-}
+} // namespace globed

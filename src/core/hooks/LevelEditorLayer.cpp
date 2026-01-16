@@ -6,12 +6,13 @@ using namespace geode::prelude;
 namespace globed {
 
 struct GLOBED_MODIFY_ATTR HookedEditorLayer : geode::Modify<HookedEditorLayer, LevelEditorLayer> {
-    $override
-    bool init(GJGameLevel* level, bool a) {
+    $override bool init(GJGameLevel *level, bool a)
+    {
         auto gjbgl = GlobedGJBGL::get(this);
         gjbgl->setupPreInit(level, true);
 
-        if (!LevelEditorLayer::init(level, a)) return false;
+        if (!LevelEditorLayer::init(level, a))
+            return false;
 
         gjbgl->setupPostInit();
 
@@ -19,4 +20,4 @@ struct GLOBED_MODIFY_ATTR HookedEditorLayer : geode::Modify<HookedEditorLayer, L
     }
 };
 
-}
+} // namespace globed

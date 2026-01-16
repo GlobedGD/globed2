@@ -8,20 +8,18 @@ using namespace asp::time;
 
 namespace globed {
 
-bool VoiceOverlay::init() {
+bool VoiceOverlay::init()
+{
     CCNode::init();
 
     m_threshold = globed::setting<float>("core.level.voice-overlay-threshold");
-    SettingsManager::get().listenForChanges<double>("core.level.voice-overlay-threshold", [this](double value) {
-        m_threshold = value;
-    });
+    SettingsManager::get().listenForChanges<double>("core.level.voice-overlay-threshold",
+                                                    [this](double value) { m_threshold = value; });
 
-    this->setLayout(
-        ColumnLayout::create()
-            ->setGap(3.f)
-            ->setAxisAlignment(AxisAlignment::Start)
-            ->setCrossAxisLineAlignment(AxisAlignment::End)
-    );
+    this->setLayout(ColumnLayout::create()
+                        ->setGap(3.f)
+                        ->setAxisAlignment(AxisAlignment::Start)
+                        ->setCrossAxisLineAlignment(AxisAlignment::End));
 
     this->setContentHeight(CCDirector::get()->getWinSize().height);
     this->schedule(schedule_selector(VoiceOverlay::update), 1.f / 30.f);
@@ -29,9 +27,10 @@ bool VoiceOverlay::init() {
     return true;
 }
 
-void VoiceOverlay::update(float dt) {
+void VoiceOverlay::update(float dt)
+{
     auto gjbgl = GlobedGJBGL::get();
-    for (auto& [id, player] : gjbgl->m_fields->m_players) {
+    for (auto &[id, player] : gjbgl->m_fields->m_players) {
         this->updateStream(*player, false);
     }
     this->updateStream(*gjbgl->m_fields->m_ghost, true);
@@ -39,21 +38,19 @@ void VoiceOverlay::update(float dt) {
     this->updateLayout();
 }
 
-void VoiceOverlay::updateSoft() {
-}
+void VoiceOverlay::updateSoft() {}
 
-void VoiceOverlay::updateStream(RemotePlayer& player, bool local) {
+void VoiceOverlay::updateStream(RemotePlayer &player, bool local)
+{
     auto stream = player.getVoiceStream();
-    if (!stream) return;
+    if (!stream)
+        return;
 
-    this->updateStream(
-        local ? -1 : player.id(),
-        stream->isStarving(),
-        stream->getAudibility()
-    );
+    this->updateStream(local ? -1 : player.id(), stream->isStarving(), stream->getAudibility());
 }
 
-void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
+void VoiceOverlay::updateStream(int id, bool starving, float loudness)
+{
     bool shouldShow = loudness >= m_threshold && !starving;
     auto it = m_cells.find(id);
 
@@ -72,7 +69,7 @@ void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
         return;
     }
 
-    auto& pcm = PlayerCacheManager::get();
+    auto &pcm = PlayerCacheManager::get();
 
     // recreate if the cell either doesn't exist or if it's not initialized but data is available
     bool shouldRecreate = it == m_cells.end() || (id != -1 && it->second->getAccountId() == 0 && pcm.has(id));
@@ -100,7 +97,8 @@ void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
     it->second->updateLastSpoken();
 }
 
-VoiceOverlay* VoiceOverlay::create() {
+VoiceOverlay *VoiceOverlay::create()
+{
     auto ret = new VoiceOverlay;
     if (ret->init()) {
         ret->autorelease();
@@ -111,4 +109,4 @@ VoiceOverlay* VoiceOverlay::create() {
     return nullptr;
 }
 
-}
+} // namespace globed

@@ -1,19 +1,19 @@
-#include <globed/core/actions.hpp>
-#include <globed/core/data/Messages.hpp>
-#include <globed/core/RoomManager.hpp>
-#include <globed/core/PopupManager.hpp>
-#include <globed/util/gd.hpp>
-#include <globed/util/singleton.hpp>
-#include <globed/util/FunctionQueue.hpp>
-#include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/hooks/GameManager.hpp>
-#include <ui/menu/WarpLoadPopup.hpp>
-#include <ui/menu/GlobedMenuLayer.hpp>
-#include <ui/menu/UserPunishmentPopup.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
+#include <globed/core/PopupManager.hpp>
+#include <globed/core/RoomManager.hpp>
+#include <globed/core/actions.hpp>
+#include <globed/core/data/Messages.hpp>
+#include <globed/util/FunctionQueue.hpp>
+#include <globed/util/gd.hpp>
+#include <globed/util/singleton.hpp>
+#include <ui/admin/ModLoginPopup.hpp>
 #include <ui/admin/ModPanelPopup.hpp>
 #include <ui/admin/ModUserPopup.hpp>
-#include <ui/admin/ModLoginPopup.hpp>
+#include <ui/menu/GlobedMenuLayer.hpp>
+#include <ui/menu/UserPunishmentPopup.hpp>
+#include <ui/menu/WarpLoadPopup.hpp>
 #include <ui/misc/InputPopup.hpp>
 
 using namespace geode::prelude;
@@ -23,8 +23,9 @@ namespace globed {
 static SessionId g_warpctx;
 static std::optional<SessionId> g_awaitingWarp;
 
-void warpToSession(SessionId session, bool openLevel, bool force) {
-    auto& rm = RoomManager::get();
+void warpToSession(SessionId session, bool openLevel, bool force)
+{
+    auto &rm = RoomManager::get();
 
     // ignore if we are the room host or not a follower room
     if (!force && (rm.isOwner() || !rm.isInFollowerRoom())) {
@@ -44,7 +45,7 @@ void warpToSession(SessionId session, bool openLevel, bool force) {
 
     // delay in case it's a bad time to warp right now
     auto scene = CCScene::get();
-    if (typeinfo_cast<CCTransitionScene*>(scene)) {
+    if (typeinfo_cast<CCTransitionScene *>(scene)) {
         // put it on hold
         putOnHold();
         return;
@@ -52,7 +53,7 @@ void warpToSession(SessionId session, bool openLevel, bool force) {
 
     auto children = scene->getChildrenExt();
     if (children.size() > 0) {
-        if (auto pl = typeinfo_cast<PlayLayer*>(children[0])) {
+        if (auto pl = typeinfo_cast<PlayLayer *>(children[0])) {
             HookedGameManager::get().setNoopSceneEnum();
             pl->onQuit();
             globed::replaceScene(GlobedMenuLayer::create());
@@ -88,16 +89,16 @@ void warpToSession(SessionId session, bool openLevel, bool force) {
         // custom levels, show a loading popup
         // replace scene if openLevel is true, push scene otherwise
         auto popup = WarpLoadPopup::create(levelId, openLevel, openLevel);
-        if (popup) popup->show();
+        if (popup)
+            popup->show();
     }
 }
 
-void openModPanel(int accountId) {
+void openModPanel(int accountId)
+{
     if (!NetworkManagerImpl::get().isAuthorizedModerator()) {
         // show a login popup and upon successful login, call this function again
-        ModLoginPopup::create([accountId] {
-            openModPanel(accountId);
-        })->show();
+        ModLoginPopup::create([accountId] { openModPanel(accountId); })->show();
 
         return;
     }
@@ -109,67 +110,73 @@ void openModPanel(int accountId) {
     }
 }
 
-SessionId _getWarpContext() {
+SessionId _getWarpContext()
+{
     return g_warpctx;
 }
 
-void _clearWarpContext() {
+void _clearWarpContext()
+{
     g_warpctx = SessionId{};
 }
 
-void warpToLevel(int level, bool openLevel) {
-    auto& rm = RoomManager::get();
+void warpToLevel(int level, bool openLevel)
+{
+    auto &rm = RoomManager::get();
 
     if (auto srv = rm.pickServerId()) {
-        warpToSession(SessionId::fromParts(
-            *srv,
-            rm.getRoomId(),
-            level
-        ), openLevel);
+        warpToSession(SessionId::fromParts(*srv, rm.getRoomId(), level), openLevel);
     } else {
         globed::alert("Error", "Warp failed, no game servers available!");
     }
 }
 
-void openUserProfile(int accountId, int userId, std::string_view username) {
+void openUserProfile(int accountId, int userId, std::string_view username)
+{
     bool myself = accountId == cachedSingleton<GJAccountManager>()->m_accountID;
 
     if (!myself) {
-        cachedSingleton<GameLevelManager>()->storeUserName(userId, accountId, gd::string(username.data(), username.size()));
+        cachedSingleton<GameLevelManager>()->storeUserName(userId, accountId,
+                                                           gd::string(username.data(), username.size()));
     }
 
     ProfilePage::create(accountId, myself)->show();
 }
 
-void openUserProfile(const RoomPlayer& player) {
+void openUserProfile(const RoomPlayer &player)
+{
     openUserProfile(player.accountData);
 }
 
-void openUserProfile(const PlayerAccountData& player) {
+void openUserProfile(const PlayerAccountData &player)
+{
     openUserProfile(player.accountId, player.userId, player.username);
 }
 
-static void promptForNoticeReply(int senderId) {
+static void promptForNoticeReply(int senderId)
+{
     auto popup = InputPopup::create("chatFont.fnt");
     popup->setMaxCharCount(280);
     popup->setTitle("Enter Reply Text");
     popup->setPlaceholder("Message");
     popup->setCallback([senderId](auto outcome) {
-        if (outcome.cancelled) return;
+        if (outcome.cancelled)
+            return;
         NetworkManagerImpl::get().sendNoticeReply(senderId, outcome.text);
     });
     popup->show();
 }
 
-$on_mod(Loaded) {
-    auto& nm = NetworkManagerImpl::get();
+$on_mod(Loaded)
+{
+    auto &nm = NetworkManagerImpl::get();
 
-    nm.listenGlobal<msg::WarpPlayerMessage>([](const auto& msg) {
+    nm.listenGlobal<msg::WarpPlayerMessage>([](const auto &msg) {
         globed::warpToSession(msg.sessionId, true, true);
         return ListenerResult::Stop;
     });
 
-    nm.listenGlobal<msg::CentralLoginOkMessage>([&nm](const auto& msg) {
+    nm.listenGlobal<msg::CentralLoginOkMessage>([&nm](const auto &msg) {
         // admin login
         auto password = nm.getStoredModPassword();
         if (!password.empty()) {
@@ -179,7 +186,7 @@ $on_mod(Loaded) {
         return ListenerResult::Continue;
     });
 
-    nm.listenGlobal<msg::NoticeMessage>([](const msg::NoticeMessage& msg) {
+    nm.listenGlobal<msg::NoticeMessage>([](const msg::NoticeMessage &msg) {
         if (globed::setting<bool>("core.ui.disable-notices")) {
             log::info("Notice received but notices are disabled, ignoring");
             return ListenerResult::Continue;
@@ -199,10 +206,14 @@ $on_mod(Loaded) {
 
         if (msg.canReply) {
             // if we can reply, show an alert with 2 buttons
-            popup = PopupManager::get().quickPopup(title, msg.message, "Ok", "Reply", [sender = msg.senderId](auto, bool reply) {
-                if (!reply) return;
-                promptForNoticeReply(sender);
-            }, 400.f);
+            popup = PopupManager::get().quickPopup(
+                title, msg.message, "Ok", "Reply",
+                [sender = msg.senderId](auto, bool reply) {
+                    if (!reply)
+                        return;
+                    promptForNoticeReply(sender);
+                },
+                400.f);
         } else {
             // otherwise regular alert
             popup = PopupManager::get().alert(title, msg.message, "Ok", nullptr, 400.f);
@@ -217,20 +228,20 @@ $on_mod(Loaded) {
         return ListenerResult::Continue;
     });
 
-    nm.listenGlobal<msg::BannedMessage>([](const msg::BannedMessage& msg) {
+    nm.listenGlobal<msg::BannedMessage>([](const msg::BannedMessage &msg) {
         UserPunishmentPopup::create(msg.reason, msg.expiresAt, true)->show();
         return ListenerResult::Continue;
     });
 
-    nm.listenGlobal<msg::MutedMessage>([](const msg::MutedMessage& msg) {
+    nm.listenGlobal<msg::MutedMessage>([](const msg::MutedMessage &msg) {
         UserPunishmentPopup::create(msg.reason, msg.expiresAt, false)->show();
         return ListenerResult::Continue;
     });
 
-    nm.listenGlobal<msg::WarnMessage>([](const msg::WarnMessage& msg) {
+    nm.listenGlobal<msg::WarnMessage>([](const msg::WarnMessage &msg) {
         PopupManager::get().alert("Server Warning", msg.message, "Ok").showQueue();
         return ListenerResult::Continue;
     });
 }
 
-}
+} // namespace globed

@@ -8,17 +8,20 @@ using namespace geode::prelude;
 namespace globed {
 
 AudioDecoder::AudioDecoder(int sampleRate, int frameSize, int channels)
-    : m_decoder(nullptr), m_sampleRate(sampleRate), m_frameSize(frameSize), m_channels(channels) {
-    (void) this->remakeDecoder().unwrap();
+    : m_decoder(nullptr), m_sampleRate(sampleRate), m_frameSize(frameSize), m_channels(channels)
+{
+    (void)this->remakeDecoder().unwrap();
 }
 
-AudioDecoder::~AudioDecoder() {
+AudioDecoder::~AudioDecoder()
+{
     if (m_decoder) {
         opus_decoder_destroy(m_decoder);
     }
 }
 
-AudioDecoder::AudioDecoder(AudioDecoder&& other) noexcept {
+AudioDecoder::AudioDecoder(AudioDecoder &&other) noexcept
+{
     m_decoder = other.m_decoder;
     other.m_decoder = nullptr;
 
@@ -27,7 +30,8 @@ AudioDecoder::AudioDecoder(AudioDecoder&& other) noexcept {
     m_frameSize = other.m_frameSize;
 }
 
-AudioDecoder& AudioDecoder::operator=(AudioDecoder&& other) noexcept {
+AudioDecoder &AudioDecoder::operator=(AudioDecoder &&other) noexcept
+{
     if (this != &other) {
         if (m_decoder) {
             opus_decoder_destroy(m_decoder);
@@ -44,7 +48,8 @@ AudioDecoder& AudioDecoder::operator=(AudioDecoder&& other) noexcept {
     return *this;
 }
 
-Result<DecodedOpusData> AudioDecoder::decode(const uint8_t* data, size_t length) {
+Result<DecodedOpusData> AudioDecoder::decode(const uint8_t *data, size_t length)
+{
     DecodedOpusData out;
 
     out.size = m_frameSize * m_channels;
@@ -59,25 +64,30 @@ Result<DecodedOpusData> AudioDecoder::decode(const uint8_t* data, size_t length)
     return Ok(out);
 }
 
-Result<DecodedOpusData> AudioDecoder::decode(const EncodedOpusData& frame) {
+Result<DecodedOpusData> AudioDecoder::decode(const EncodedOpusData &frame)
+{
     return this->decode(frame.data.get(), frame.size);
 }
 
-Result<> AudioDecoder::setSampleRate(int sampleRate) {
+Result<> AudioDecoder::setSampleRate(int sampleRate)
+{
     m_sampleRate = sampleRate;
     return this->remakeDecoder();
 }
 
-void AudioDecoder::setFrameSize(int frameSize) {
+void AudioDecoder::setFrameSize(int frameSize)
+{
     m_frameSize = frameSize;
 }
 
-Result<> AudioDecoder::setChannels(int channels) {
+Result<> AudioDecoder::setChannels(int channels)
+{
     m_channels = channels;
     return this->remakeDecoder();
 }
 
-Result<> AudioDecoder::resetState() {
+Result<> AudioDecoder::resetState()
+{
     int res = opus_decoder_ctl(m_decoder, OPUS_RESET_STATE);
     if (res < 0) {
         return Err("opus_decoder_ctl(resetState) failed: {}", AudioDecoder::errorToString(res));
@@ -86,7 +96,8 @@ Result<> AudioDecoder::resetState() {
     return Ok();
 }
 
-Result<> AudioDecoder::remakeDecoder() {
+Result<> AudioDecoder::remakeDecoder()
+{
     // if we are reinitializing, free the previous decoder
     if (m_decoder) {
         opus_decoder_destroy(m_decoder);
@@ -108,8 +119,9 @@ Result<> AudioDecoder::remakeDecoder() {
     return Ok();
 }
 
-std::string_view AudioDecoder::errorToString(int code) {
+std::string_view AudioDecoder::errorToString(int code)
+{
     return opus_strerror(code);
 }
 
-}
+} // namespace globed

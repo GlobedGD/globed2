@@ -1,7 +1,7 @@
 #include "RegionSelectPopup.hpp"
-#include <globed/core/ValueManager.hpp>
-#include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <globed/core/PopupManager.hpp>
+#include <globed/core/ValueManager.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -9,26 +9,25 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize RegionSelectPopup::POPUP_SIZE { 370.f, 240.f };
-static constexpr CCSize LIST_SIZE { 330.f, 180.f };
+const CCSize RegionSelectPopup::POPUP_SIZE{370.f, 240.f};
+static constexpr CCSize LIST_SIZE{330.f, 180.f};
 
 namespace {
 constexpr float CELL_HEIGHT = 40.f;
 
-static ccColor3B latencyToColor(uint64_t ms) {
+static ccColor3B latencyToColor(uint64_t ms)
+{
     std::array breakpoints = {
-        std::make_pair(0, ccColor3B{0, 255, 0}),
-        std::make_pair(50, ccColor3B{144, 238, 144}),
-        std::make_pair(125, ccColor3B{255, 255, 0}),
-        std::make_pair(200, ccColor3B{255, 165, 0}),
+        std::make_pair(0, ccColor3B{0, 255, 0}),     std::make_pair(50, ccColor3B{144, 238, 144}),
+        std::make_pair(125, ccColor3B{255, 255, 0}), std::make_pair(200, ccColor3B{255, 165, 0}),
         std::make_pair(300, ccColor3B{255, 0, 0}),
     };
 
     ms = std::clamp<uint64_t>(ms, breakpoints.front().first, breakpoints.back().first);
 
     for (size_t i = 0; i < breakpoints.size() - 1; i++) {
-        auto& [lo_val, lo_color] = breakpoints[i];
-        auto& [hi_val, hi_color] = breakpoints[i + 1];
+        auto &[lo_val, lo_color] = breakpoints[i];
+        auto &[hi_val, hi_color] = breakpoints[i + 1];
 
         if (ms > (uint64_t)hi_val) {
             continue;
@@ -50,7 +49,8 @@ class ListCell : public CCNode {
 public:
     uint8_t m_serverId;
 
-    static ListCell* create(const GameServer& server, RegionSelectPopup* popup) {
+    static ListCell *create(const GameServer &server, RegionSelectPopup *popup)
+    {
         auto ret = new ListCell;
         ret->m_popup = popup;
         ret->autorelease();
@@ -58,11 +58,13 @@ public:
         return ret;
     }
 
-    void softRefreshFrom(const GameServer& server) {
+    void softRefreshFrom(const GameServer &server)
+    {
         m_ping = server.avgLatency;
         m_nameLabel->setString(server.name.c_str());
         m_regionLabel->setString(fmt::format("Region: {}", server.region).c_str());
-        m_pingLabel->setPosition(m_nameLabel->getPosition() + m_nameLabel->getScaledContentSize() + CCPoint{2.f, -27.f});
+        m_pingLabel->setPosition(m_nameLabel->getPosition() + m_nameLabel->getScaledContentSize() +
+                                 CCPoint{2.f, -27.f});
 
         if (m_ping == (uint32_t)-1) {
             m_pingLabel->setString("? ms");
@@ -73,67 +75,66 @@ public:
         }
     }
 
-    uint32_t getPing() {
+    uint32_t getPing()
+    {
         return m_ping;
     }
 
 private:
-    RegionSelectPopup* m_popup;
+    RegionSelectPopup *m_popup;
     std::string m_stringId;
-    CCLabelBMFont* m_nameLabel;
-    CCLabelBMFont* m_regionLabel;
-    CCLabelBMFont* m_pingLabel;
-    CCNode* m_button = nullptr;
-    CCMenu* m_menu;
+    CCLabelBMFont *m_nameLabel;
+    CCLabelBMFont *m_regionLabel;
+    CCLabelBMFont *m_pingLabel;
+    CCNode *m_button = nullptr;
+    CCMenu *m_menu;
     uint32_t m_ping;
 
-    void init(const GameServer& server) {
+    void init(const GameServer &server)
+    {
         m_stringId = server.stringId;
         m_serverId = server.id;
 
         this->setContentSize({LIST_SIZE.width, CELL_HEIGHT});
 
         m_nameLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
-            .limitLabelWidth(LIST_SIZE.width * 0.75f, 0.65f, 0.1f)
-            .anchorPoint(0.f, 0.5f)
-            .pos(8.f, CELL_HEIGHT / 2.f + 4.f)
-            .parent(this);
+                          .limitLabelWidth(LIST_SIZE.width * 0.75f, 0.65f, 0.1f)
+                          .anchorPoint(0.f, 0.5f)
+                          .pos(8.f, CELL_HEIGHT / 2.f + 4.f)
+                          .parent(this);
 
         m_regionLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
-            .limitLabelWidth(LIST_SIZE.width * 0.5f, 0.3f, 0.1f)
-            .anchorPoint(0.f, 0.5f)
-            .pos(10.f, CELL_HEIGHT / 2.f - 10.f)
-            .parent(this);
+                            .limitLabelWidth(LIST_SIZE.width * 0.5f, 0.3f, 0.1f)
+                            .anchorPoint(0.f, 0.5f)
+                            .pos(10.f, CELL_HEIGHT / 2.f - 10.f)
+                            .parent(this);
 
-        m_pingLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
-            .scale(0.35f)
-            .anchorPoint(0.f, 0.f)
-            .parent(this);
+        m_pingLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt").scale(0.35f).anchorPoint(0.f, 0.f).parent(this);
 
         m_menu = Build<CCMenu>::create()
-            .layout(RowLayout::create()->setAxisAlignment(AxisAlignment::End)->setAutoScale(false))
-            .contentSize(LIST_SIZE.width * 0.2f, CELL_HEIGHT * 0.7f)
-            .anchorPoint(1.f, 0.5f)
-            .pos(LIST_SIZE.width - 8.f, CELL_HEIGHT / 2.f)
-            .parent(this)
-            .collect();
+                     .layout(RowLayout::create()->setAxisAlignment(AxisAlignment::End)->setAutoScale(false))
+                     .contentSize(LIST_SIZE.width * 0.2f, CELL_HEIGHT * 0.7f)
+                     .anchorPoint(1.f, 0.5f)
+                     .pos(LIST_SIZE.width - 8.f, CELL_HEIGHT / 2.f)
+                     .parent(this)
+                     .collect();
 
         bool isPreferred = globed::value<std::string>("core.net.preferred-server") == m_stringId;
 
         m_button = Build<CCSprite>::createSpriteName(isPreferred ? "GJ_selectSongOnBtn_001.png" : "GJ_playBtn2_001.png")
-            .with([&](auto spr) { cue::rescaleToMatch(spr, CELL_HEIGHT * 0.7f); })
-            .intoMenuItem([this, isPreferred, id = m_stringId] {
-                if (isPreferred) {
-                    globed::setValue("core.net.preferred-server", "");
-                } else {
-                    globed::setValue("core.net.preferred-server", id);
-                }
+                       .with([&](auto spr) { cue::rescaleToMatch(spr, CELL_HEIGHT * 0.7f); })
+                       .intoMenuItem([this, isPreferred, id = m_stringId] {
+                           if (isPreferred) {
+                               globed::setValue("core.net.preferred-server", "");
+                           } else {
+                               globed::setValue("core.net.preferred-server", id);
+                           }
 
-                m_popup->reloadList();
-            })
-            .parent(m_menu)
-            .id("switch-btn")
-            .collect();
+                           m_popup->reloadList();
+                       })
+                       .parent(m_menu)
+                       .id("switch-btn")
+                       .collect();
 
         m_menu->updateLayout();
 
@@ -141,14 +142,13 @@ private:
     }
 };
 
-}
+} // namespace
 
-bool RegionSelectPopup::setup() {
+bool RegionSelectPopup::setup()
+{
     this->setTitle("Select Preferred Server");
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE))
-        .pos(this->fromCenter(0.f, -10.f))
-        .parent(m_mainLayer);
+    m_list = Build(cue::ListNode::create(LIST_SIZE)).pos(this->fromCenter(0.f, -10.f)).parent(m_mainLayer);
     m_list->setCellHeight(CELL_HEIGHT);
 
     if (!this->reloadList()) {
@@ -158,9 +158,7 @@ bool RegionSelectPopup::setup() {
 
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .scale(0.75f)
-        .intoMenuItem([this] {
-            this->showInfo();
-        })
+        .intoMenuItem([this] { this->showInfo(); })
         .pos(this->fromTopRight(16.f, 16.f))
         .scaleMult(1.2f)
         .parent(m_buttonMenu);
@@ -170,23 +168,23 @@ bool RegionSelectPopup::setup() {
     return true;
 }
 
-bool RegionSelectPopup::reloadList() {
+bool RegionSelectPopup::reloadList()
+{
     m_list->clear();
 
     auto servers = NetworkManagerImpl::get().getGameServers();
 
-    for (auto& server : servers) {
+    for (auto &server : servers) {
         m_list->addCell(ListCell::create(server, this));
     }
 
-    m_list->sortAs<ListCell>([](auto a, auto b) {
-        return a->getPing() < b->getPing();
-    });
+    m_list->sortAs<ListCell>([](auto a, auto b) { return a->getPing() < b->getPing(); });
 
     return m_list->size() > 0;
 }
 
-void RegionSelectPopup::softRefresh(float) {
+void RegionSelectPopup::softRefresh(float)
+{
     auto servers = NetworkManagerImpl::get().getGameServers();
 
     std::vector<size_t> toRemove;
@@ -195,7 +193,7 @@ void RegionSelectPopup::softRefresh(float) {
     for (auto cell : m_list->iter<ListCell>()) {
         bool refreshed = false;
 
-        for (auto& srv : servers) {
+        for (auto &srv : servers) {
             if (srv.id == cell->m_serverId) {
                 cell->softRefreshFrom(srv);
                 refreshed = true;
@@ -221,16 +219,16 @@ void RegionSelectPopup::softRefresh(float) {
     }
 }
 
-void RegionSelectPopup::showInfo() {
-    globed::alert(
-        "Note",
-        "Multiple <cj>game servers</c> can be located in different regions, to ensure everyone in the world can have a great experience. "
-        "By default, Globed will try to use the server with the <cg>lowest ping</c>, but you can manually choose your <cy>preferred server</c> if you prefer playing with different people.\n\n"
-        "Note: you will still be able to join people in <cy>other servers</c>. This setting impacts which <cp>Global Room</c> you play in, and which server <cj>rooms created by you</c> will be in.",
-        "Ok",
-        nullptr,
-        410.f
-    );
+void RegionSelectPopup::showInfo()
+{
+    globed::alert("Note",
+                  "Multiple <cj>game servers</c> can be located in different regions, to ensure everyone in the world "
+                  "can have a great experience. "
+                  "By default, Globed will try to use the server with the <cg>lowest ping</c>, but you can manually "
+                  "choose your <cy>preferred server</c> if you prefer playing with different people.\n\n"
+                  "Note: you will still be able to join people in <cy>other servers</c>. This setting impacts which "
+                  "<cp>Global Room</c> you play in, and which server <cj>rooms created by you</c> will be in.",
+                  "Ok", nullptr, 410.f);
 }
 
-}
+} // namespace globed

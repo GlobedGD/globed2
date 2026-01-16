@@ -18,14 +18,15 @@ public:
     ~AudioEncoder();
 
     // disable copying and enable moving
-    AudioEncoder(const AudioEncoder&) = delete;
-    AudioEncoder& operator=(const AudioEncoder&) = delete;
+    AudioEncoder(const AudioEncoder &) = delete;
+    AudioEncoder &operator=(const AudioEncoder &) = delete;
 
-    AudioEncoder(AudioEncoder&& other) noexcept;
-    AudioEncoder& operator=(AudioEncoder&& other) noexcept;
+    AudioEncoder(AudioEncoder &&other) noexcept;
+    AudioEncoder &operator=(AudioEncoder &&other) noexcept;
 
-    // Encode the given PCM samples with Opus. The amount of samples passed must be equal to `frameSize` passed in the constructor.
-    [[nodiscard]] Result<EncodedOpusData> encode(const float* data);
+    // Encode the given PCM samples with Opus. The amount of samples passed must be equal to `frameSize` passed in the
+    // constructor.
+    [[nodiscard]] Result<EncodedOpusData> encode(const float *data);
 
     // sets the sample rate that will be used and recreates the encoder
     Result<> setSampleRate(int sampleRate);
@@ -54,15 +55,15 @@ private:
     Result<> setVariableBitrate(bool variablebr = true);
 
 protected:
-    OpusEncoder* m_encoder = nullptr;
+    OpusEncoder *m_encoder = nullptr;
 
     int m_sampleRate, m_frameSize, m_channels;
 
     Result<> remakeEncoder();
     static std::string_view errorToString(int code);
 
-    template <typename... Args>
-    Result<> encoderCtl(const char* name, Args... args) {
+    template <typename... Args> Result<> encoderCtl(const char *name, Args... args)
+    {
         auto res = opus_encoder_ctl(m_encoder, args...);
         if (res < 0) {
             return Err("opus_encoder_ctl({}) failed: {}", name, AudioEncoder::errorToString(res));
@@ -72,4 +73,4 @@ protected:
     }
 };
 
-}
+} // namespace globed

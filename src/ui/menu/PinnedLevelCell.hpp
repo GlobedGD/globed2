@@ -11,32 +11,34 @@ class PinnedLevelCell : public CCNode {
 public:
     static constexpr float HEIGHT = 50.f;
 
-    static PinnedLevelCell* create(float width);
+    static PinnedLevelCell *create(float width);
 
     void loadLevel(int id);
 
-    inline void setUpdateCallback(std23::move_only_function<void()> callback) {
+    inline void setUpdateCallback(std23::move_only_function<void()> callback)
+    {
         m_updateCallback = std::move(callback);
     }
 
 private:
     Ref<GJGameLevel> m_level;
-    LevelCell* m_levelCell = nullptr;
-    cue::LoadingCircle* m_circle = nullptr;
+    LevelCell *m_levelCell = nullptr;
+    cue::LoadingCircle *m_circle = nullptr;
     std23::move_only_function<void()> m_updateCallback;
     int m_lastLoaded = -1;
     bool m_collapsed = false;
 
     bool init(float width);
 
-    inline void invokeCallback() {
+    inline void invokeCallback()
+    {
         if (m_updateCallback) {
             m_updateCallback();
         }
     }
 
-    void onLevelLoaded(GJGameLevel* level);
+    void onLevelLoaded(GJGameLevel *level);
     void hide();
 };
 
-}
+} // namespace globed

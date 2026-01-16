@@ -2,8 +2,8 @@
 
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <cocos2d.h>
-#include <globed/util/CStr.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <globed/util/CStr.hpp>
 
 namespace globed {
 
@@ -16,8 +16,8 @@ protected:
     CStr m_name;
     CStr m_desc;
     cocos2d::CCSize m_size;
-    cocos2d::CCMenu* m_rightMenu;
-    CCMenuItemSpriteExtra* m_infoButton = nullptr;
+    cocos2d::CCMenu *m_rightMenu;
+    CCMenuItemSpriteExtra *m_infoButton = nullptr;
 
     bool init(CStr key, CStr name, CStr desc, cocos2d::CCSize cellSize);
     bool initNoSetting(CStr name, CStr desc, cocos2d::CCSize cellSize);
@@ -25,15 +25,10 @@ protected:
     virtual void setup() = 0;
 };
 
-template <typename Derived>
-class BaseSettingCell : public BaseSettingCellBase {
+template <typename Derived> class BaseSettingCell : public BaseSettingCellBase {
 public:
-    static Derived* create(
-        CStr key,
-        CStr name,
-        CStr desc,
-        cocos2d::CCSize cellSize
-    ) {
+    static Derived *create(CStr key, CStr name, CStr desc, cocos2d::CCSize cellSize)
+    {
         auto ret = new Derived;
         if (ret->init(key, name, desc, cellSize)) {
             ret->autorelease();
@@ -45,15 +40,15 @@ public:
     }
 
 protected:
-    template <typename T>
-    void set(T&& value) {
+    template <typename T> void set(T &&value)
+    {
         globed::setting<std::decay_t<T>>(m_key) = std::forward<T>(value);
     }
 
-    template <typename T>
-    T get() {
+    template <typename T> T get()
+    {
         return globed::setting<T>(m_key);
     }
 };
 
-}
+} // namespace globed

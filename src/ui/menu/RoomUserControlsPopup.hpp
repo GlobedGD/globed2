@@ -10,7 +10,7 @@ public:
 
 private:
     bool m_banned = false;
-    cocos2d::CCMenu* m_menu;
+    cocos2d::CCMenu *m_menu;
     std::string m_username;
     int m_accountId;
 
@@ -18,4 +18,4 @@ private:
     void remakeButtons();
 };
 
-}
+} // namespace globed

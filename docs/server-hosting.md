@@ -40,8 +40,9 @@ After successfully getting a central server working, you likely want to set up a
 Going back to the central server, in the `config/core.toml` file you will need to find and copy the `gs_password`, as well as ensure that `gs_tcp_address` has an address that is reachable from your game servers. The default of `[::]:4342` will listen for IPv4 and IPv6 connections on port 4342.
 
 Open the `config.toml` file of the game server and set the following values:
-* `central_server_password` - to the password obtained earlier
-* `central_server_url` - to the URL of the central server. **Note: you cannot use `tcp_address` for this, you must use `gs_tcp_address`**. For example, if the default of `[::]:4342` or `0.0.0.0:4342` was used, this will be `tcp://localhost:4342`. If the game server is on another machine, replace `localhost` with the IP of the central server and ensure the port is reachable.
+
+- `central_server_password` - to the password obtained earlier
+- `central_server_url` - to the URL of the central server. **Note: you cannot use `tcp_address` for this, you must use `gs_tcp_address`**. For example, if the default of `[::]:4342` or `0.0.0.0:4342` was used, this will be `tcp://localhost:4342`. If the game server is on another machine, replace `localhost` with the IP of the central server and ensure the port is reachable.
 
 If done correctly, the server should now launch and display the following message:
 
@@ -56,6 +57,7 @@ For extended configuration, see [Game Server Configuration](#game-server-configu
 This section will describe (almost) all configuration options for every module. It's not complete, so if you have any doubts or questions, feel free to ask more on our [Discord server](https://discord.gg/d56q5Dkdm3).
 
 ### Core
+
 ```toml
 # core.toml
 
@@ -361,4 +363,3 @@ The goal of pinging is to find the fastest way to connect to the server, and whi
 3. Manual protocol specification
 
 To skip pinging entirely and connect via a specific protocol, to a specific address, you can manually specify the protocol in the URL. The default protocol is `qunet://` if unspecified, and it will make no assumptions, trying to ping the server and then trying every possible connection type. If you know the protocol you want to use ahead of time, manually specifying the protocol will skip the pinging process and try to connect directly. For example if the URL is `tcp://titan.globed.dev:5340`, Globed will resolve the IP address of the server and connect to port 5340 directly via a TCP connection.
-

@@ -28,14 +28,16 @@ struct CachedSettings {
     float playerOpacity = globed::setting<float>("core.player.opacity");
     float nameOpacity = globed::setting<float>("core.player.name-opacity");
 
-    void reload() {
+    void reload()
+    {
         *this = CachedSettings{};
     }
 
-    static CachedSettings& get() {
+    static CachedSettings &get()
+    {
         static CachedSettings instance;
         return instance;
     }
 };
 
-}
+} // namespace globed

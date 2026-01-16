@@ -1,8 +1,8 @@
 #include "ModLoginPopup.hpp"
+#include <core/net/NetworkManagerImpl.hpp>
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <globed/util/FunctionQueue.hpp>
-#include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -10,9 +10,10 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize ModLoginPopup::POPUP_SIZE { 280.f, 130.f };
+const CCSize ModLoginPopup::POPUP_SIZE{280.f, 130.f};
 
-bool ModLoginPopup::setup(std23::move_only_function<void()> callback) {
+bool ModLoginPopup::setup(std23::move_only_function<void()> callback)
+{
     m_callback = std::move(callback);
 
     this->setTitle("Mod Login");
@@ -27,45 +28,43 @@ bool ModLoginPopup::setup(std23::move_only_function<void()> callback) {
     m_passwordInput->setMaxCharCount(64);
 
     auto btnLayout = Build<CCMenu>::create()
-        .pos(this->fromCenter(0.f, -20.f))
-        .layout(RowLayout::create()->setAutoScale(false))
-        .parent(m_mainLayer)
-        .collect();
+                         .pos(this->fromCenter(0.f, -20.f))
+                         .layout(RowLayout::create()->setAutoScale(false))
+                         .parent(m_mainLayer)
+                         .collect();
 
+    auto *loginBtn = Build<ButtonSprite>::create("Login", "bigFont.fnt", "geode.loader/GE_button_04.png", 0.8f)
+                         .intoMenuItem([this](auto) {
+                             auto password = m_passwordInput->getString();
 
-    auto* loginBtn = Build<ButtonSprite>::create("Login", "bigFont.fnt", "geode.loader/GE_button_04.png", 0.8f)
-        .intoMenuItem([this](auto) {
-            auto password = m_passwordInput->getString();
+                             if (!password.empty()) {
+                                 auto &nm = NetworkManagerImpl::get();
+                                 if (!nm.isConnected()) {
+                                     globed::alert("Error", "Not connected to a server");
+                                     return;
+                                 }
 
-            if (!password.empty()) {
-                auto& nm = NetworkManagerImpl::get();
-                if (!nm.isConnected()) {
-                    globed::alert("Error", "Not connected to a server");
-                    return;
-                }
+                                 nm.storeModPassword(password);
 
-                nm.storeModPassword(password);
+                                 m_listener = nm.listen<msg::AdminResultMessage>([this](const auto &result) {
+                                     if (!result.success) {
+                                         globed::alertFormat("Error", "Failed to login: {}", result.error);
+                                     } else {
+                                         NetworkManagerImpl::get().markAuthorizedModerator();
+                                     }
 
-                m_listener = nm.listen<msg::AdminResultMessage>([this](const auto& result) {
-                    if (!result.success) {
-                        globed::alertFormat("Error", "Failed to login: {}", result.error);
-                    } else {
-                        NetworkManagerImpl::get().markAuthorizedModerator();
-                    }
+                                     this->stopWaiting(result.success);
+                                     return ListenerResult::Continue;
+                                 });
+                                 m_listener.value()->setPriority(-10000);
 
-                    this->stopWaiting(result.success);
-                    return ListenerResult::Continue;
-                });
-                m_listener.value()->setPriority(-10000);
+                                 nm.sendAdminLogin(password);
 
-                nm.sendAdminLogin(password);
-
-                this->wait();
-            }
-        })
-        .parent(btnLayout)
-        .collect();
-
+                                 this->wait();
+                             }
+                         })
+                         .parent(btnLayout)
+                         .collect();
 
     auto rememberPwd = CCMenuItemExt::createTogglerWithStandardSprites(0.75f, [](auto toggler) {
         bool on = !toggler->isOn();
@@ -75,22 +74,22 @@ bool ModLoginPopup::setup(std23::move_only_function<void()> callback) {
     rememberPwd->toggle(globed::setting<bool>("core.mod.remember-password"));
     btnLayout->addChild(rememberPwd);
 
-    Build<CCLabelBMFont>::create("Remember", "bigFont.fnt")
-        .scale(0.5f)
-        .parent(btnLayout);
+    Build<CCLabelBMFont>::create("Remember", "bigFont.fnt").scale(0.5f).parent(btnLayout);
 
     btnLayout->updateLayout();
 
     return true;
 }
 
-void ModLoginPopup::wait() {
+void ModLoginPopup::wait()
+{
     m_loadPopup = LoadingPopup::create();
     m_loadPopup->setTitle("Logging in...");
     m_loadPopup->show();
 }
 
-void ModLoginPopup::stopWaiting(bool success) {
+void ModLoginPopup::stopWaiting(bool success)
+{
     m_loadPopup->forceClose();
 
     if (success) {
@@ -100,4 +99,4 @@ void ModLoginPopup::stopWaiting(bool success) {
     this->onClose(nullptr);
 }
 
-}
+} // namespace globed

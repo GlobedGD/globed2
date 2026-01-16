@@ -10,10 +10,11 @@ namespace globed {
 
 static FunctionTable dummyTable;
 
-inline geode::Result<FunctionTable*> getFunctionTable() GEODE_EVENT_EXPORT(&getFunctionTable, ());
+inline geode::Result<FunctionTable *> getFunctionTable() GEODE_EVENT_EXPORT(&getFunctionTable, ());
 
-inline auto api() {
-    static FunctionTable* table = nullptr;
+inline auto api()
+{
+    static FunctionTable *table = nullptr;
     if (!table) {
         if (auto res = getFunctionTable()) {
             table = *res;
@@ -26,7 +27,7 @@ inline auto api() {
         }
     }
 
-    return static_cast<GlobedApiTable*>(table ? table : &dummyTable);
+    return static_cast<GlobedApiTable *>(table ? table : &dummyTable);
 }
 
-}
+} // namespace globed

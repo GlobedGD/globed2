@@ -9,4 +9,4 @@ struct SpecialUserData {
     std::optional<MultiColor> nameColor;
 };
 
-}
+} // namespace globed

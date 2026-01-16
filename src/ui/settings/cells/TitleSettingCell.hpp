@@ -9,4 +9,4 @@ protected:
     void setup();
 };
 
-}
+} // namespace globed

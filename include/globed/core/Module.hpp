@@ -2,18 +2,20 @@
 
 #include <Geode/Result.hpp>
 #include <Geode/utils/terminate.hpp>
+#include <globed/config.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/core/data/PlayerState.hpp>
-#include <globed/config.hpp>
 
-#define GLOBED_CLAIM_HOOKS(module, modify, ...) \
-    do { \
-        decltype(auto) __chmodule = (module);\
-        for (auto name : {__VA_ARGS__}) { \
-            if (auto h = self.getHook(name)) { \
-                __chmodule.claimHook(h.unwrap()); \
-            } else geode::log::error("Failed to claim hook '{}' for module {} ({}) ({}:{}): {}", name, __chmodule.name(), __chmodule.id(), __FILE__, __LINE__, h.unwrapErr()); \
-        } \
+#define GLOBED_CLAIM_HOOKS(module, modify, ...)                                                                        \
+    do {                                                                                                               \
+        decltype(auto) __chmodule = (module);                                                                          \
+        for (auto name : {__VA_ARGS__}) {                                                                              \
+            if (auto h = self.getHook(name)) {                                                                         \
+                __chmodule.claimHook(h.unwrap());                                                                      \
+            } else                                                                                                     \
+                geode::log::error("Failed to claim hook '{}' for module {} ({}) ({}:{}): {}", name, __chmodule.name(), \
+                                  __chmodule.id(), __FILE__, __LINE__, h.unwrapErr());                                 \
+        }                                                                                                              \
     } while (0)
 
 namespace globed {
@@ -31,7 +33,8 @@ enum class AutoEnableMode {
     /// The module will be enabled when the user connects to a server, and will be disabled when the user disconnects.
     /// This is the default mode.
     Server,
-    /// The module will be enabled when the user joins a level while connected to a server, and will be disabled when the user leaves the level or disconnects.
+    /// The module will be enabled when the user joins a level while connected to a server, and will be disabled when
+    /// the user leaves the level or disconnects.
     /// Useful for modules that only need to be active when in a level.
     Level,
 
@@ -41,15 +44,16 @@ enum class AutoEnableMode {
 
 class GLOBED_DLL Module {
 public:
-    inline Module() : m_core(nullptr), m_autoEnableMode(AutoEnableMode::Default), m_enabled(false) {
+    inline Module() : m_core(nullptr), m_autoEnableMode(AutoEnableMode::Default), m_enabled(false)
+    {
         std::fill(std::begin(_reserved), std::end(_reserved), 0);
     }
 
     inline virtual ~Module() {}
 
     // Disable copying to prevent accidents
-    Module(const Module&) = delete;
-    Module& operator=(const Module&) = delete;
+    Module(const Module &) = delete;
+    Module &operator=(const Module &) = delete;
 
     /// This should return the human readable name of the module.
     virtual std::string_view name() const = 0;
@@ -57,21 +61,24 @@ public:
     virtual std::string_view id() const = 0;
     /// This returns the name of the module's author(s).
     virtual std::string_view author() const = 0;
-    /// This may return a short description of the module if overriden.
-    virtual std::string_view description() const {
+    /// This may return a short description of the module if overridden.
+    virtual std::string_view description() const
+    {
         return "";
     }
 
     /// Sets the auto-enable mode of the module. See the `AutoEnableMode` enum for mode details.
     /// Inline function; can be called without linking.
-    inline void setAutoEnableMode(AutoEnableMode mode) {
+    inline void setAutoEnableMode(AutoEnableMode mode)
+    {
         m_autoEnableMode = mode;
     }
 
     /// Adds a hook to the module. The hook will be enabled/disabled together with the module.
     /// The module will be responsible for managing this hook, do not use it manually.
     /// Inline function; can be called without linking.
-    inline void claimHook(geode::Hook* hook) {
+    inline void claimHook(geode::Hook *hook)
+    {
         this->assertNotAdded(hook);
         hook->setAutoEnable(false);
         m_hooks.push_back(hook);
@@ -80,7 +87,8 @@ public:
     /// Adds a patch to the module. The patch will be enabled/disabled together with the module.
     /// The module will be responsible for managing this patch, do not use it manually.
     /// Inline function; can be called without linking.
-    inline void claimPatch(geode::Patch* patch) {
+    inline void claimPatch(geode::Patch *patch)
+    {
         this->assertNotAdded(patch);
         patch->setAutoEnable(false);
         m_patches.push_back(patch);
@@ -101,46 +109,51 @@ public:
     bool isEnabled() const;
 
 protected:
-    Module(Module&&) = default;
-    Module& operator=(Module&&) = default;
+    Module(Module &&) = default;
+    Module &operator=(Module &&) = default;
 
     /// Called when the module is enabled. Override this to perform any initialization logic.
-    virtual geode::Result<> onEnabled() {
+    virtual geode::Result<> onEnabled()
+    {
         return geode::Ok();
     }
 
     /// Called when the module is disabled. Override this to perform any cleanup logic.
-    virtual geode::Result<> onDisabled() {
+    virtual geode::Result<> onDisabled()
+    {
         return geode::Ok();
     }
 
     /// Called when the user joins a level while connected to a server.
-    virtual void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {}
+    virtual void onJoinLevel(GlobedGJBGL *gjbgl, GJGameLevel *level, bool editor) {}
     /// Called when the user joins a level while connected to a server, after the layer has been initialized.
-    virtual void onJoinLevelPostInit(GlobedGJBGL* gjbgl) {}
+    virtual void onJoinLevelPostInit(GlobedGJBGL *gjbgl) {}
     /// Called when the user leaves a level or gets disconnected from a server.
     /// Only called if `onJoinLevel` was called before.
-    virtual void onLeaveLevel(GlobedGJBGL* gjbgl, bool editor) {}
+    virtual void onLeaveLevel(GlobedGJBGL *gjbgl, bool editor) {}
     /// Called when another player joins the level. Only called if `onJoinLevel` was called before.
-    virtual void onPlayerJoin(GlobedGJBGL* gjbgl, int accountId) {}
+    virtual void onPlayerJoin(GlobedGJBGL *gjbgl, int accountId) {}
     /// Called when another player leaves the level. Only called if `onPlayerJoin` was called with this player before.
-    virtual void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {}
+    virtual void onPlayerLeave(GlobedGJBGL *gjbgl, int accountId) {}
     /// Called when another player dies on the level.
-    virtual void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) {}
+    virtual void onPlayerDeath(GlobedGJBGL *gjbgl, RemotePlayer *player, const PlayerDeath &death) {}
     /// Called on each player when reloading the player list in the pause menu. Use this to add buttons.
-    virtual void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {}
+    virtual void onUserlistSetup(cocos2d::CCNode *container, int accountId, bool myself, UserListPopup *popup) {}
     /// Called when a new best popup is shown to the user. Return `true` to make the popup not take extra time
-    virtual bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) { return false; }
+    virtual bool shouldSpeedUpNewBest(GlobedGJBGL *gjbgl)
+    {
+        return false;
+    }
 
 private:
     friend class Core;
     friend class CoreImpl;
 
-    Core* m_core;
+    Core *m_core;
     AutoEnableMode m_autoEnableMode;
     bool m_enabled;
-    std::vector<geode::Hook*> m_hooks;
-    std::vector<geode::Patch*> m_patches;
+    std::vector<geode::Hook *> m_hooks;
+    std::vector<geode::Patch *> m_patches;
 
     uint8_t _reserved[59];
 
@@ -148,28 +161,27 @@ private:
     geode::Result<> enableHooks();
     geode::Result<> disableHooks();
 
-    void assertNotAdded(geode::Hook* hook) const {
+    void assertNotAdded(geode::Hook *hook) const
+    {
         if (std::find(m_hooks.begin(), m_hooks.end(), hook) != m_hooks.end()) {
             geode::utils::terminate(
                 fmt::format("Globed module {} ({}) by {} tried to claim a hook that was already claimed ({})",
                             this->name(), this->id(), this->author(), hook->getDisplayName()),
-                geode::Mod::get()
-            );
+                geode::Mod::get());
         }
     }
 
-    void assertNotAdded(geode::Patch* patch) const {
+    void assertNotAdded(geode::Patch *patch) const
+    {
         if (std::find(m_patches.begin(), m_patches.end(), patch) != m_patches.end()) {
             geode::utils::terminate(
                 fmt::format("Globed module {} ({}) by {} tried to claim a patch that was already claimed ({:X})",
                             this->name(), this->id(), this->author(), patch->getAddress()),
-                geode::Mod::get()
-            );
+                geode::Mod::get());
         }
     }
 };
 
 // static_assert(sizeof(Module) == 80);
 
-
-}
+} // namespace globed

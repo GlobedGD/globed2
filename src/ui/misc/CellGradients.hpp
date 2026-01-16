@@ -4,15 +4,8 @@
 
 namespace globed {
 
-enum class CellGradientType {
-    White,
-    Friend,
-    FriendIngame,
-    Self,
-    SelfIngame,
-    RoomOwner
-};
+enum class CellGradientType { White, Friend, FriendIngame, Self, SelfIngame, RoomOwner };
 
-CCSprite* addCellGradient(CCNode* node, CellGradientType type, bool blend = false);
+CCSprite *addCellGradient(CCNode *node, CellGradientType type, bool blend = false);
 
-}
+} // namespace globed

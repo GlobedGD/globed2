@@ -3,13 +3,13 @@
 #include <globed/prelude.hpp>
 #include <globed/util/format.hpp>
 
-#include <qunet/buffers/ArrayByteWriter.hpp>
-#include <qunet/buffers/HeapByteWriter.hpp>
-#include <qunet/buffers/ByteReader.hpp>
 #include <Geode/Geode.hpp>
+#include <qunet/buffers/ArrayByteWriter.hpp>
+#include <qunet/buffers/ByteReader.hpp>
+#include <qunet/buffers/HeapByteWriter.hpp>
 #include <std23/function_ref.h>
 
-#define READER_UNWRAP(...) GEODE_UNWRAP((__VA_ARGS__).mapErr([&](auto&& err) { return err.message(); }));
+#define READER_UNWRAP(...) GEODE_UNWRAP((__VA_ARGS__).mapErr([&](auto &&err) { return err.message(); }));
 
 namespace globed {
 
@@ -18,9 +18,10 @@ public:
     ExtendedObjectBase();
 
 protected:
-    void encodePayload(std23::function_ref<bool(qn::HeapByteWriter&)>&& writefn);
+    void encodePayload(std23::function_ref<bool(qn::HeapByteWriter &)> &&writefn);
 
-    inline static uint8_t computeChecksum(std::span<const uint8_t> data) {
+    inline static uint8_t computeChecksum(std::span<const uint8_t> data)
+    {
         uint32_t sum = 0;
         for (auto byte : data) {
             sum += byte;
@@ -29,11 +30,13 @@ protected:
         return ~sum & 0xff;
     }
 
-    qn::ByteReader _decodePayloadPre(qn::ArrayByteWriter<64>& writer);
-    Result<> _decodePayloadPost(qn::ArrayByteWriter<64>& writer, qn::ByteReader& reader);
+    qn::ByteReader _decodePayloadPre(qn::ArrayByteWriter<64> &writer);
+    Result<> _decodePayloadPost(qn::ArrayByteWriter<64> &writer, qn::ByteReader &reader);
 
-    template <typename T, typename F> requires (std::is_convertible_v<std::invoke_result_t<F, qn::ByteReader&>, Result<T>>)
-    Result<T> decodePayload(F&& readfn) {
+    template <typename T, typename F>
+        requires(std::is_convertible_v<std::invoke_result_t<F, qn::ByteReader &>, Result<T>>)
+    Result<T> decodePayload(F &&readfn)
+    {
         qn::ArrayByteWriter<64> writer;
         qn::ByteReader reader = this->_decodePayloadPre(writer);
 
@@ -47,8 +50,10 @@ protected:
         return Ok(std::move(res).unwrap());
     }
 
-    template <typename T, typename F> requires (std::is_convertible_v<std::invoke_result_t<F, qn::ByteReader&>, Result<T>>)
-    std::optional<T> decodePayloadOpt(F&& readfn) {
+    template <typename T, typename F>
+        requires(std::is_convertible_v<std::invoke_result_t<F, qn::ByteReader &>, Result<T>>)
+    std::optional<T> decodePayloadOpt(F &&readfn)
+    {
         auto res = this->decodePayload<T>(std::forward<F>(readfn));
 
         if (!res) {
@@ -60,4 +65,4 @@ protected:
     }
 };
 
-}
+} // namespace globed

@@ -4,8 +4,9 @@ using namespace geode;
 
 namespace globed {
 
-std::string hexEncode(const void* data, size_t size) {
-    auto bytes = static_cast<const uint8_t*>(data);
+std::string hexEncode(const void *data, size_t size)
+{
+    auto bytes = static_cast<const uint8_t *>(data);
     std::string result;
     result.reserve(size * 2);
 
@@ -17,19 +18,23 @@ std::string hexEncode(const void* data, size_t size) {
     return result;
 }
 
-std::string hexEncode(std::span<const uint8_t> data) {
+std::string hexEncode(std::span<const uint8_t> data)
+{
     return hexEncode(data.data(), data.size());
 }
 
-std::string hexEncode(const std::vector<uint8_t>& data) {
+std::string hexEncode(const std::vector<uint8_t> &data)
+{
     return hexEncode(data.data(), data.size());
 }
 
-Result<std::vector<uint8_t>> hexDecode(std::string_view data) {
-    if (data.size() % 2 != 0) return Err("hex string length not even");
+Result<std::vector<uint8_t>> hexDecode(std::string_view data)
+{
+    if (data.size() % 2 != 0)
+        return Err("hex string length not even");
 
     std::vector<uint8_t> out;
-    out.reserve(data.size() / 2 );
+    out.reserve(data.size() / 2);
 
     auto dechb = [](char hexchar) -> std::optional<uint8_t> {
         if (hexchar >= '0' && hexchar <= '9') {
@@ -57,4 +62,4 @@ Result<std::vector<uint8_t>> hexDecode(std::string_view data) {
     return Ok(std::move(out));
 }
 
-}
+} // namespace globed

@@ -3,14 +3,15 @@
 
 using namespace geode::prelude;
 
-namespace globed { namespace {
+namespace globed {
+namespace {
 
 struct GLOBED_NOVTABLE HookedPlayerObject : public Modify<HookedPlayerObject, PlayerObject> {
-    $override
-    void incrementJumps() {
+    $override void incrementJumps()
+    {
         PlayerObject::incrementJumps();
 
-        if (auto* gpl = GlobedGJBGL::get(m_gameLayer)) {
+        if (auto *gpl = GlobedGJBGL::get(m_gameLayer)) {
             if (this == gpl->m_player1) {
                 gpl->recordPlayerJump(true);
             } else if (this == gpl->m_player2) {
@@ -20,4 +21,5 @@ struct GLOBED_NOVTABLE HookedPlayerObject : public Modify<HookedPlayerObject, Pl
     }
 };
 
-}}
+} // namespace
+} // namespace globed

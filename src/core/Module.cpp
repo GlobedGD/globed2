@@ -1,11 +1,12 @@
-#include <globed/core/Module.hpp>
 #include <Geode/utils/terminate.hpp>
+#include <globed/core/Module.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
-Result<> Module::enable() {
+Result<> Module::enable()
+{
     this->assertCore();
 
     if (this->m_enabled) {
@@ -19,7 +20,8 @@ Result<> Module::enable() {
     return Ok();
 }
 
-Result<> Module::disable() {
+Result<> Module::disable()
+{
     this->assertCore();
 
     if (!this->m_enabled) {
@@ -34,44 +36,48 @@ Result<> Module::disable() {
     return Ok();
 }
 
-bool Module::isEnabled() const {
+bool Module::isEnabled() const
+{
     return m_enabled;
 }
 
-Result<> Module::enableHooks() {
-    for (auto& hook : m_hooks) {
+Result<> Module::enableHooks()
+{
+    for (auto &hook : m_hooks) {
         // note that we dont have to check if the hook is already enabled, geode just returns Ok, unlike patches
         GEODE_UNWRAP(hook->enable());
     }
 
-    for (auto& patch : m_patches) {
-        if (!patch->isEnabled()) GEODE_UNWRAP(patch->enable());
+    for (auto &patch : m_patches) {
+        if (!patch->isEnabled())
+            GEODE_UNWRAP(patch->enable());
     }
 
     return Ok();
 }
 
-Result<> Module::disableHooks() {
-    for (auto& hook : m_hooks) {
+Result<> Module::disableHooks()
+{
+    for (auto &hook : m_hooks) {
         GEODE_UNWRAP(hook->disable());
     }
 
-    for (auto& patch : m_patches) {
-        if (patch->isEnabled()) GEODE_UNWRAP(patch->disable());
+    for (auto &patch : m_patches) {
+        if (patch->isEnabled())
+            GEODE_UNWRAP(patch->disable());
     }
 
     return Ok();
 }
 
-void Module::assertCore() const {
+void Module::assertCore() const
+{
     if (!m_core) {
         geode::utils::terminate(
             fmt::format("Globed module {} ({}) by {} called a module function before registering the mod with the core",
                         this->name(), this->id(), this->author()),
-            Mod::get()
-        );
+            Mod::get());
     }
 }
 
-
-}
+} // namespace globed

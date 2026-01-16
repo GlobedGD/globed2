@@ -1,8 +1,8 @@
 #pragma once
-#include <string>
+#include <Geode/Result.hpp>
 #include <span>
 #include <stdint.h>
-#include <Geode/Result.hpp>
+#include <string>
 
 namespace globed {
 
@@ -21,4 +21,4 @@ struct EmbeddedScript {
     geode::Result<std::vector<uint8_t>> encode(bool includePrefix = true, std::string_view prefixStr = "") const;
 };
 
-}
+} // namespace globed

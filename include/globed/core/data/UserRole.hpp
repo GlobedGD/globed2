@@ -1,8 +1,8 @@
 #pragma once
 #include "MultiColor.hpp"
 
-#include <string>
 #include <stdint.h>
+#include <string>
 
 namespace globed {
 
@@ -14,4 +14,4 @@ struct UserRole {
     bool hide;
 };
 
-}
+} // namespace globed

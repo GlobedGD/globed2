@@ -1,8 +1,8 @@
 #pragma once
 
-#include <arc/task/Task.hpp>
-#include <arc/sync/mpsc.hpp>
 #include <arc/runtime/Runtime.hpp>
+#include <arc/sync/mpsc.hpp>
+#include <arc/task/Task.hpp>
 #include <filesystem>
 
 namespace globed {
@@ -38,4 +38,4 @@ private:
     arc::Future<> doLog(PacketLog log);
 };
 
-}
+} // namespace globed

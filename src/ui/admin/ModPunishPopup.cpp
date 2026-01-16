@@ -1,7 +1,7 @@
 #include "ModPunishPopup.hpp"
 #include "ModPunishReasonsPopup.hpp"
-#include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <globed/core/PopupManager.hpp>
 
 #include <UIBuilder.hpp>
 #include <asp/time/SystemTime.hpp>
@@ -11,57 +11,54 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize ModPunishPopup::POPUP_SIZE { 350.f, 250.f };
+const CCSize ModPunishPopup::POPUP_SIZE{350.f, 250.f};
 
-bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun) {
+bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun)
+{
     switch (type) {
-        case UserPunishmentType::Ban: this->setTitle("Ban/Unban user"); break;
-        case UserPunishmentType::RoomBan: this->setTitle("Room ban/unban user"); break;
-        case UserPunishmentType::Mute: this->setTitle("Mute/Unmute user"); break;
+    case UserPunishmentType::Ban:
+        this->setTitle("Ban/Unban user");
+        break;
+    case UserPunishmentType::RoomBan:
+        this->setTitle("Room ban/unban user");
+        break;
+    case UserPunishmentType::Mute:
+        this->setTitle("Mute/Unmute user");
+        break;
     }
 
     m_punishment = std::move(pun);
     m_accountId = accountId;
     m_type = type;
 
-    auto* rootLayout = Build<CCNode>::create()
-        .contentSize(m_size.width * 0.9f, m_size.height * 0.7f)
-        .pos(this->fromCenter(0.f, -20.f))
-        .anchorPoint(0.5f, 0.5f)
-        .layout(
-            ColumnLayout::create()
-                ->setAutoScale(false)
-                ->setAxisReverse(true)
-            )
-        .parent(m_mainLayer)
-        .collect();
+    auto *rootLayout = Build<CCNode>::create()
+                           .contentSize(m_size.width * 0.9f, m_size.height * 0.7f)
+                           .pos(this->fromCenter(0.f, -20.f))
+                           .anchorPoint(0.5f, 0.5f)
+                           .layout(ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true))
+                           .parent(m_mainLayer)
+                           .collect();
 
-    auto* reasonLayout = Build<CCMenu>::create()
-        .contentSize(rootLayout->getScaledContentSize())
-        .layout(RowLayout::create()->setAutoScale(false))
-        .parent(rootLayout)
-        .collect();
+    auto *reasonLayout = Build<CCMenu>::create()
+                             .contentSize(rootLayout->getScaledContentSize())
+                             .layout(RowLayout::create()->setAutoScale(false))
+                             .parent(rootLayout)
+                             .collect();
 
     // text input
     m_reasonInput = Build<TextInput>::create(reasonLayout->getContentWidth() * 0.75f, "Reason", "chatFont.fnt")
-        .with([&](TextInput* input) {
-            input->setCommonFilter(CommonFilter::Any);
-        })
-        .parent(reasonLayout);
+                        .with([&](TextInput *input) { input->setCommonFilter(CommonFilter::Any); })
+                        .parent(reasonLayout);
 
     Build<CCSprite>::createSpriteName("GJ_closeBtn_001.png")
         .scale(0.68f)
-        .intoMenuItem([this] {
-            m_reasonInput->setString("");
-        })
+        .intoMenuItem([this] { m_reasonInput->setString(""); })
         .parent(reasonLayout);
 
     Build<CCSprite>::createSpriteName("btn_chatHistory_001.png")
         .intoMenuItem([this, type] {
             auto popup = ModPunishReasonsPopup::create(type);
-            popup->setCallback([this](const std::string& reason) {
-                this->setReason(reason);
-            });
+            popup->setCallback([this](const std::string &reason) { this->setReason(reason); });
             popup->show();
         })
         .parent(reasonLayout);
@@ -70,38 +67,27 @@ bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional
 
     Build<CCLabelBMFont>::create(type != UserPunishmentType::Mute ? "Ban Duration" : "Mute Duration", "bigFont.fnt")
         .scale(0.5f)
-        .parent(rootLayout)
-        ;
+        .parent(rootLayout);
 
     auto durRoot = Build<CCNode>::create()
-        .layout(RowLayout::create())
-        .contentSize(rootLayout->getScaledContentWidth(), 92.f)
-        .parent(rootLayout)
-        .collect();
+                       .layout(RowLayout::create())
+                       .contentSize(rootLayout->getScaledContentWidth(), 92.f)
+                       .parent(rootLayout)
+                       .collect();
 
     auto durGrid = Build<CCMenu>::create()
-        .layout(RowLayout::create()->setAutoScale(false)->setGap(3.f)->setGrowCrossAxis(true))
-        .parent(durRoot)
-        .contentSize(m_size.width * 0.5f, durRoot->getScaledContentHeight())
-        .collect();
+                       .layout(RowLayout::create()->setAutoScale(false)->setGap(3.f)->setGrowCrossAxis(true))
+                       .parent(durRoot)
+                       .contentSize(m_size.width * 0.5f, durRoot->getScaledContentHeight())
+                       .collect();
 
     constexpr static auto HOUR = Duration::fromHours(1);
     constexpr static auto DAY = Duration::fromDays(1);
     constexpr static auto MONTH = Duration::fromDays(30);
 
     // quick buttons for duration
-    for (Duration off : std::initializer_list<Duration>{
-        HOUR * 6,
-        DAY * 1,
-        DAY * 3,
-        DAY * 7,
-        DAY * 14,
-        DAY * 30,
-        MONTH * 3,
-        MONTH * 6,
-        MONTH * 12,
-        Duration{}
-    }) {
+    for (Duration off : std::initializer_list<Duration>{HOUR * 6, DAY * 1, DAY * 3, DAY * 7, DAY * 14, DAY * 30,
+                                                        MONTH * 3, MONTH * 6, MONTH * 12, Duration{}}) {
         std::string labeltext;
         float scale = 0.9f;
 
@@ -120,13 +106,13 @@ bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional
             labeltext = fmt::format("{}h", hrs);
         }
 
-        auto* offSprite = Build<ButtonSprite>::create(labeltext.c_str(), "bigFont.fnt", "GJ_button_04.png", scale)
-            .scale(0.55f)
-            .collect();
+        auto *offSprite = Build<ButtonSprite>::create(labeltext.c_str(), "bigFont.fnt", "GJ_button_04.png", scale)
+                              .scale(0.55f)
+                              .collect();
 
-        auto* onSprite = Build<ButtonSprite>::create(labeltext.c_str(), "bigFont.fnt", "GJ_button_02.png", scale)
-            .scale(0.55f)
-            .collect();
+        auto *onSprite = Build<ButtonSprite>::create(labeltext.c_str(), "bigFont.fnt", "GJ_button_02.png", scale)
+                             .scale(0.55f)
+                             .collect();
 
         auto toggler = CCMenuItemExt::createToggler(onSprite, offSprite, [this, off](auto btn) {
             bool clear = btn->isToggled();
@@ -141,7 +127,7 @@ bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional
         toggler->m_onButton->m_scaleMultiplier = 1.15f;
         toggler->m_offButton->m_scaleMultiplier = 1.15f;
 
-        toggler->setTag((int) off.seconds());
+        toggler->setTag((int)off.seconds());
         durGrid->addChild(toggler);
         m_durationButtons.try_emplace(off, toggler);
     }
@@ -150,93 +136,54 @@ bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional
 
     // inputs for custom duration
     Build<CCNode>::create()
-        .layout(
-            ColumnLayout::create()
-                ->setAxisReverse(true)
-                ->setAutoScale(false)
-                ->setGap(3.f)
-        )
+        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(3.f))
         .parent(durRoot)
         .contentSize(32.f, durRoot->getScaledContentHeight())
 
         // Days
-        .child(
-            Build<CCLabelBMFont>::create("Days", "bigFont.fnt")
-                .scale(0.4f)
-        )
-        .child(
-            Build<CCMenu>::create()
-                .contentSize(100.f, 0.f)
-                .layout(RowLayout::create()->setAutoScale(false))
-                .child(
-                    Build<CCSprite>::createSpriteName("edit_leftBtn_001.png")
-                        .scale(0.9f)
-                        .intoMenuItem([this] {
-                            auto newdu = m_currentDuration - Duration::fromDays(1);
+        .child(Build<CCLabelBMFont>::create("Days", "bigFont.fnt").scale(0.4f))
+        .child(Build<CCMenu>::create()
+                   .contentSize(100.f, 0.f)
+                   .layout(RowLayout::create()->setAutoScale(false))
+                   .child(Build<CCSprite>::createSpriteName("edit_leftBtn_001.png").scale(0.9f).intoMenuItem([this] {
+                       auto newdu = m_currentDuration - Duration::fromDays(1);
 
-                            this->setDuration(newdu);
-                        })
-                )
-                .child(
-                    Build<TextInput>::create(64.f, "0", "bigFont.fnt")
-                        .with([&](TextInput* inp) {
-                            inp->setCommonFilter(CommonFilter::Uint);
-                            inp->setCallback([this] (auto) {
-                                this->inputChanged();
-                            });
-                        })
-                        .scale(0.65f)
-                        .store(m_daysInput)
-                )
-                .child(
-                    Build<CCSprite>::createSpriteName("edit_rightBtn_001.png")
-                        .scale(0.9f)
-                        .intoMenuItem([this] {
-                            auto newdu = m_currentDuration + Duration::fromDays(1);
-                            this->setDuration(newdu);
-                        })
-                )
-                .updateLayout()
-        )
+                       this->setDuration(newdu);
+                   }))
+                   .child(Build<TextInput>::create(64.f, "0", "bigFont.fnt")
+                              .with([&](TextInput *inp) {
+                                  inp->setCommonFilter(CommonFilter::Uint);
+                                  inp->setCallback([this](auto) { this->inputChanged(); });
+                              })
+                              .scale(0.65f)
+                              .store(m_daysInput))
+                   .child(Build<CCSprite>::createSpriteName("edit_rightBtn_001.png").scale(0.9f).intoMenuItem([this] {
+                       auto newdu = m_currentDuration + Duration::fromDays(1);
+                       this->setDuration(newdu);
+                   }))
+                   .updateLayout())
 
         // Hours
-        .child(
-            Build<CCLabelBMFont>::create("Hours", "bigFont.fnt")
-                .scale(0.4f)
-        )
-        .child(
-            Build<CCMenu>::create()
-                .contentSize(100.f, 0.f)
-                .layout(RowLayout::create()->setAutoScale(false))
-                .child(
-                    Build<CCSprite>::createSpriteName("edit_leftBtn_001.png")
-                        .scale(0.9f)
-                        .intoMenuItem([this] {
-                            auto newdu = m_currentDuration - Duration::fromHours(1);
-                            this->setDuration(newdu);
-                        })
-                )
-                .child(
-                    Build<TextInput>::create(64.f, "0", "bigFont.fnt")
-                        .with([&](TextInput* inp) {
-                            inp->setCommonFilter(CommonFilter::Uint);
-                            inp->setCallback([this] (auto) {
-                                this->inputChanged();
-                            });
-                        })
-                        .scale(0.65f)
-                        .store(m_hoursInput)
-                )
-                .child(
-                    Build<CCSprite>::createSpriteName("edit_rightBtn_001.png")
-                        .scale(0.9f)
-                        .intoMenuItem([this] {
-                            auto newdu = m_currentDuration + Duration::fromHours(1);
-                            this->setDuration(newdu);
-                        })
-                )
-                .updateLayout()
-        )
+        .child(Build<CCLabelBMFont>::create("Hours", "bigFont.fnt").scale(0.4f))
+        .child(Build<CCMenu>::create()
+                   .contentSize(100.f, 0.f)
+                   .layout(RowLayout::create()->setAutoScale(false))
+                   .child(Build<CCSprite>::createSpriteName("edit_leftBtn_001.png").scale(0.9f).intoMenuItem([this] {
+                       auto newdu = m_currentDuration - Duration::fromHours(1);
+                       this->setDuration(newdu);
+                   }))
+                   .child(Build<TextInput>::create(64.f, "0", "bigFont.fnt")
+                              .with([&](TextInput *inp) {
+                                  inp->setCommonFilter(CommonFilter::Uint);
+                                  inp->setCallback([this](auto) { this->inputChanged(); });
+                              })
+                              .scale(0.65f)
+                              .store(m_hoursInput))
+                   .child(Build<CCSprite>::createSpriteName("edit_rightBtn_001.png").scale(0.9f).intoMenuItem([this] {
+                       auto newdu = m_currentDuration + Duration::fromHours(1);
+                       this->setDuration(newdu);
+                   }))
+                   .updateLayout())
         .updateLayout();
 
     durRoot->updateLayout();
@@ -253,25 +200,18 @@ bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional
 
     // Buttons for applying or removing punishment
 
-    auto* menu = Build<CCMenu>::create()
-        .layout(RowLayout::create()->setAutoScale(true))
-        .parent(rootLayout)
-        .collect();
-
+    auto *menu = Build<CCMenu>::create().layout(RowLayout::create()->setAutoScale(true)).parent(rootLayout).collect();
 
     Build<ButtonSprite>::create("Submit", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .scale(0.9f)
-        .intoMenuItem([this] {
-            this->submit();
-        })
+        .intoMenuItem([this] { this->submit(); })
         .parent(menu);
 
     if (m_punishment) {
-        Build<ButtonSprite>::create(type != UserPunishmentType::Mute ? "Unban" : "Unmute", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+        Build<ButtonSprite>::create(type != UserPunishmentType::Mute ? "Unban" : "Unmute", "bigFont.fnt",
+                                    "GJ_button_01.png", 0.8f)
             .scale(0.9f)
-            .intoMenuItem([this] {
-                this->submitRemoval();
-            })
+            .intoMenuItem([this] { this->submitRemoval(); })
             .parent(menu);
     }
 
@@ -298,14 +238,15 @@ bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional
     return true;
 }
 
-void ModPunishPopup::setDuration(asp::time::Duration dur, bool inCallback) {
+void ModPunishPopup::setDuration(asp::time::Duration dur, bool inCallback)
+{
     if (dur > Duration::fromYears(100)) {
         dur = Duration{};
     }
 
     m_currentDuration = dur;
 
-    for (const auto& [key, btn] : m_durationButtons) {
+    for (const auto &[key, btn] : m_durationButtons) {
         if (key != dur) {
             btn->toggle(false);
         }
@@ -324,15 +265,18 @@ void ModPunishPopup::setDuration(asp::time::Duration dur, bool inCallback) {
     m_hoursInput->setString(fmt::format("{}", chours));
 }
 
-void ModPunishPopup::setCallback(Callback&& cb) {
+void ModPunishPopup::setCallback(Callback &&cb)
+{
     m_callback = std::move(cb);
 }
 
-void ModPunishPopup::setReason(const std::string& reason) {
+void ModPunishPopup::setReason(const std::string &reason)
+{
     m_reasonInput->setString(reason);
 }
 
-void ModPunishPopup::inputChanged() {
+void ModPunishPopup::inputChanged()
+{
     auto cdays = utils::numFromString<uint32_t>(m_daysInput->getString()).unwrapOr(0);
     auto chours = utils::numFromString<uint32_t>(m_hoursInput->getString()).unwrapOr(0);
 
@@ -342,7 +286,8 @@ void ModPunishPopup::inputChanged() {
     this->setDuration(Duration::fromDays(cdays) + Duration::fromHours(chours));
 }
 
-void ModPunishPopup::submit() {
+void ModPunishPopup::submit()
+{
     this->startWaiting();
 
     auto expiresAtTime = SystemTime::now() + m_currentDuration;
@@ -357,45 +302,47 @@ void ModPunishPopup::submit() {
 
     auto reason = m_reasonInput->getString();
 
-    auto& nm = NetworkManagerImpl::get();
+    auto &nm = NetworkManagerImpl::get();
 
     switch (m_type) {
-        case UserPunishmentType::Ban: {
-            nm.sendAdminBan(m_accountId, reason, expiresAt);
-        } break;
+    case UserPunishmentType::Ban: {
+        nm.sendAdminBan(m_accountId, reason, expiresAt);
+    } break;
 
-        case UserPunishmentType::Mute: {
-            nm.sendAdminMute(m_accountId, reason, expiresAt);
-        } break;
+    case UserPunishmentType::Mute: {
+        nm.sendAdminMute(m_accountId, reason, expiresAt);
+    } break;
 
-        case UserPunishmentType::RoomBan: {
-            nm.sendAdminRoomBan(m_accountId, reason, expiresAt);
-        } break;
+    case UserPunishmentType::RoomBan: {
+        nm.sendAdminRoomBan(m_accountId, reason, expiresAt);
+    } break;
     }
 }
 
-void ModPunishPopup::submitRemoval() {
+void ModPunishPopup::submitRemoval()
+{
     this->startWaiting();
 
-    auto& nm = NetworkManagerImpl::get();
+    auto &nm = NetworkManagerImpl::get();
 
     switch (m_type) {
-        case UserPunishmentType::Ban: {
-            nm.sendAdminUnban(m_accountId);
-        } break;
+    case UserPunishmentType::Ban: {
+        nm.sendAdminUnban(m_accountId);
+    } break;
 
-        case UserPunishmentType::Mute: {
-            nm.sendAdminUnmute(m_accountId);
-        } break;
+    case UserPunishmentType::Mute: {
+        nm.sendAdminUnmute(m_accountId);
+    } break;
 
-        case UserPunishmentType::RoomBan: {
-            nm.sendAdminRoomUnban(m_accountId);
-        } break;
+    case UserPunishmentType::RoomBan: {
+        nm.sendAdminRoomUnban(m_accountId);
+    } break;
     }
 }
 
-void ModPunishPopup::startWaiting() {
-    m_listener = NetworkManagerImpl::get().listen<msg::AdminResultMessage>([this](const auto& msg) {
+void ModPunishPopup::startWaiting()
+{
+    m_listener = NetworkManagerImpl::get().listen<msg::AdminResultMessage>([this](const auto &msg) {
         this->stopWaiting(msg);
         return ListenerResult::Stop;
     });
@@ -409,7 +356,8 @@ void ModPunishPopup::startWaiting() {
     m_loadPopup->show();
 }
 
-void ModPunishPopup::stopWaiting(const msg::AdminResultMessage& msg) {
+void ModPunishPopup::stopWaiting(const msg::AdminResultMessage &msg)
+{
     m_listener.reset();
 
     if (m_loadPopup) {
@@ -421,9 +369,10 @@ void ModPunishPopup::stopWaiting(const msg::AdminResultMessage& msg) {
         globed::alertFormat("Error", "Failed to punish user: <cy>{}</c>", msg.error);
     }
 
-    if (m_callback) m_callback();
+    if (m_callback)
+        m_callback();
 
     this->onClose(nullptr);
 }
 
-}
+} // namespace globed

@@ -16,7 +16,8 @@ struct ObjectId {
 
     inline ObjectId(Id id) : id(id) {}
 
-    operator int() const {
+    operator int() const
+    {
         return (int)id;
     }
 };
@@ -32,4 +33,4 @@ enum class ScriptObjectType : uint32_t {
     EmbeddedScript = 0x100,
 };
 
-}
+} // namespace globed

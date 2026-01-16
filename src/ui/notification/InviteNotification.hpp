@@ -9,11 +9,11 @@ namespace globed {
 
 class InviteNotification : public cocos2d::CCLayer {
 public:
-    static InviteNotification* create(const msg::InvitedMessage& msg);
+    static InviteNotification *create(const msg::InvitedMessage &msg);
 
 private:
-    bool init(const msg::InvitedMessage& msg);
+    bool init(const msg::InvitedMessage &msg);
     void removeFromParent() override;
 };
 
-}
+} // namespace globed

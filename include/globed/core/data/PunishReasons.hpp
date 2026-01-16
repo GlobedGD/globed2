@@ -11,4 +11,4 @@ struct PunishReasons {
     std::vector<std::string> roomBanReasons;
 };
 
-}
+} // namespace globed

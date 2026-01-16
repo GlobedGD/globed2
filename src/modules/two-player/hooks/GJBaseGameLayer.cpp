@@ -1,6 +1,6 @@
-#include <modules/two-player/TwoPlayerModule.hpp>
-#include <globed/config.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <globed/config.hpp>
+#include <modules/two-player/TwoPlayerModule.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
@@ -10,17 +10,15 @@ using namespace geode::prelude;
 namespace globed {
 
 struct GLOBED_MODIFY_ATTR TPMBaseGameLayer : geode::Modify<TPMBaseGameLayer, GJBaseGameLayer> {
-    static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(TwoPlayerModule::get(), self,
-            "GJBaseGameLayer::updateCamera",
-            "GJBaseGameLayer::update",
-        );
+    static void onModify(auto &self)
+    {
+        GLOBED_CLAIM_HOOKS(TwoPlayerModule::get(), self, "GJBaseGameLayer::updateCamera", "GJBaseGameLayer::update", );
     }
 
-    $override
-    void updateCamera(float dt) {
-        auto& mod = TwoPlayerModule::get();
-        auto& lerper = GlobedGJBGL::get(this)->m_fields->m_interpolator;
+    $override void updateCamera(float dt)
+    {
+        auto &mod = TwoPlayerModule::get();
+        auto &lerper = GlobedGJBGL::get(this)->m_fields->m_interpolator;
 
         lerper.setCameraCorrections(!mod.isPlayer2());
 
@@ -36,11 +34,11 @@ struct GLOBED_MODIFY_ATTR TPMBaseGameLayer : geode::Modify<TPMBaseGameLayer, GJB
         m_player1->setPosition(origPos);
     }
 
-    $override
-    void update(float dt) {
+    $override void update(float dt)
+    {
         GJBaseGameLayer::update(dt);
 
-        auto& mod = TwoPlayerModule::get();
+        auto &mod = TwoPlayerModule::get();
         if (!mod.isLinked()) {
             auto pl = PlayLayer::get();
             if (pl && GlobedGJBGL::get(pl)->active() && !pl->m_isPaused) {
@@ -51,4 +49,4 @@ struct GLOBED_MODIFY_ATTR TPMBaseGameLayer : geode::Modify<TPMBaseGameLayer, GJB
     }
 };
 
-}
+} // namespace globed

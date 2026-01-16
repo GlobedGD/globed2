@@ -6,8 +6,9 @@ namespace kj {
 
 class MonotonicClock;
 
-const MonotonicClock& systemPreciseMonotonicClock() {
+const MonotonicClock &systemPreciseMonotonicClock()
+{
     throw std::runtime_error("must not be called");
 }
 
-}
+} // namespace kj

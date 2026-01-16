@@ -8,12 +8,12 @@ Add Globed as a dependency in your mod's `mod.json`:
 
 ```json
 {
-    "dependencies": {
-        "dankmeme.globed2": {
-            "importance": "suggested",
-            "version": ">=2.0.0"
-        }
+  "dependencies": {
+    "dankmeme.globed2": {
+      "importance": "suggested",
+      "version": ">=2.0.0"
     }
+  }
 }
 ```
 

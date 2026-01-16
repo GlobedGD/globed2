@@ -1,7 +1,7 @@
 #include "FeaturedLevelCell.hpp"
+#include <core/net/NetworkManagerImpl.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <globed/util/gd.hpp>
-#include <core/net/NetworkManagerImpl.hpp>
 #include <ui/menu/FeatureCommon.hpp>
 
 #include <UIBuilder.hpp>
@@ -13,7 +13,8 @@ namespace globed {
 
 class NewLevelCell : public LevelCell {
 public:
-    void draw() override {
+    void draw() override
+    {
         // balls
         // balls
         // balls
@@ -21,11 +22,13 @@ public:
 
     FeatureTier rateTier = FeatureTier::Normal;
 
-    NewLevelCell(char const* p0, float p1, float p2) : LevelCell(p0, p1, p2) {}
+    NewLevelCell(char const *p0, float p1, float p2) : LevelCell(p0, p1, p2) {}
 };
 
-bool FeaturedLevelCell::init() {
-    if (!CCLayer::init()) return false;
+bool FeaturedLevelCell::init()
+{
+    if (!CCLayer::init())
+        return false;
 
     this->ignoreAnchorPointForPosition(false);
     this->setContentSize({CELL_WIDTH, CELL_HEIGHT});
@@ -33,37 +36,37 @@ bool FeaturedLevelCell::init() {
     auto winSize = CCDirector::get()->getWinSize();
 
     m_bg = Build<CCScale9Sprite>::create("square02_001.png")
-        .anchorPoint(0.f, 0.f)
-        .contentSize({CELL_WIDTH, CELL_HEIGHT})
-        .opacity(75)
-        .zOrder(10)
-        .parent(this);
+               .anchorPoint(0.f, 0.f)
+               .contentSize({CELL_WIDTH, CELL_HEIGHT})
+               .opacity(75)
+               .zOrder(10)
+               .parent(this);
 
     m_loadedContainer = Build<CCNode>::create()
-        .anchorPoint(0.f, 0.f)
-        .contentSize(CELL_WIDTH, CELL_HEIGHT)
-        .zOrder(10)
-        .visible(false)
-        .parent(this);
+                            .anchorPoint(0.f, 0.f)
+                            .contentSize(CELL_WIDTH, CELL_HEIGHT)
+                            .zOrder(10)
+                            .visible(false)
+                            .parent(this);
 
     m_loadedBg = Build<CCScale9Sprite>::create("GJ_square02.png")
-        .anchorPoint(0.f, 0.f)
-        .contentSize({CELL_WIDTH, CELL_HEIGHT})
-        .zOrder(9)
-        .visible(false)
-        .parent(this);
+                     .anchorPoint(0.f, 0.f)
+                     .contentSize({CELL_WIDTH, CELL_HEIGHT})
+                     .zOrder(9)
+                     .visible(false)
+                     .parent(this);
 
     m_loadingCircle = Build<cue::LoadingCircle>::create(true)
-        .zOrder(15)
-        .opacity(100)
-        .pos(CELL_WIDTH / 2.f, CELL_HEIGHT / 2.f)
-        .parent(this);
+                          .zOrder(15)
+                          .opacity(100)
+                          .pos(CELL_WIDTH / 2.f, CELL_HEIGHT / 2.f)
+                          .parent(this);
 
     this->reload();
 
-    auto& nm = NetworkManagerImpl::get();
+    auto &nm = NetworkManagerImpl::get();
 
-    m_playerCountListener = nm.listen<msg::PlayerCountsMessage>([this](const auto& packet) {
+    m_playerCountListener = nm.listen<msg::PlayerCountsMessage>([this](const auto &packet) {
         if (!packet.counts.empty()) {
             auto count = packet.counts[0].second;
             this->updatePlayerCount(count);
@@ -74,7 +77,7 @@ bool FeaturedLevelCell::init() {
         return ListenerResult::Continue;
     });
 
-    m_levelListener = nm.listen<msg::FeaturedLevelMessage>([this](const auto& packet) {
+    m_levelListener = nm.listen<msg::FeaturedLevelMessage>([this](const auto &packet) {
         this->reload(true);
         return ListenerResult::Continue;
     });
@@ -85,27 +88,25 @@ bool FeaturedLevelCell::init() {
     return true;
 }
 
-FeaturedLevelCell::~FeaturedLevelCell() {
+FeaturedLevelCell::~FeaturedLevelCell()
+{
     GameLevelManager::get()->m_levelManagerDelegate = nullptr;
 }
 
-void FeaturedLevelCell::createCell() {
+void FeaturedLevelCell::createCell()
+{
     m_loadedContainer->setVisible(true);
     m_loadedBg->setVisible(true);
     m_bg->setVisible(false);
 
-    Build<CCMenu>::create()
-        .zOrder(6)
-        .pos({CELL_WIDTH - 75, CELL_HEIGHT / 2})
-        .parent(m_loadedContainer)
-        .collect();
+    Build<CCMenu>::create().zOrder(6).pos({CELL_WIDTH - 75, CELL_HEIGHT / 2}).parent(m_loadedContainer).collect();
 
     auto crown = Build<CCSprite>::create("icon-crown.png"_spr)
-        .pos({m_bg->getScaledContentWidth() / 2, CELL_HEIGHT + 9.f})
-        .scale(0.6f)
-        .zOrder(6)
-        .parent(m_loadedContainer)
-        .collect();
+                     .pos({m_bg->getScaledContentWidth() / 2, CELL_HEIGHT + 9.f})
+                     .scale(0.6f)
+                     .zOrder(6)
+                     .parent(m_loadedContainer)
+                     .collect();
 
     auto levelcell = new NewLevelCell("baller", CELL_WIDTH - 15, CELL_HEIGHT - 25);
     levelcell->autorelease();
@@ -115,7 +116,8 @@ void FeaturedLevelCell::createCell() {
     m_loadedContainer->addChild(levelcell);
 
     auto menu = levelcell->m_mainLayer->getChildByType<CCMenu>(0);
-    if (!menu) return;
+    if (!menu)
+        return;
 
     auto toggler = menu->getChildByType<CCMenuItemToggler>(0);
 
@@ -128,18 +130,18 @@ void FeaturedLevelCell::createCell() {
         cvoltonID->setVisible(false);
     }
 
-    auto playBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(levelcell->m_mainLayer->getChildByIDRecursive("view-button"));
+    auto playBtn = typeinfo_cast<CCMenuItemSpriteExtra *>(levelcell->m_mainLayer->getChildByIDRecursive("view-button"));
     auto playBtnParent = levelcell->getChildByIDRecursive("main-menu") ?: menu;
 
     if (playBtnParent && playBtn) {
         auto newPlayBtn = Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
-            .scale(0.75f)
-            .intoMenuItem([this](auto) {
-                auto layer = LevelInfoLayer::create(m_level, false);
-                globed::pushScene(layer);
-            })
-            .pos(playBtn->getPosition())
-            .parent(playBtnParent);
+                              .scale(0.75f)
+                              .intoMenuItem([this](auto) {
+                                  auto layer = LevelInfoLayer::create(m_level, false);
+                                  globed::pushScene(layer);
+                              })
+                              .pos(playBtn->getPosition())
+                              .parent(playBtnParent);
 
         playBtn->setVisible(false);
     }
@@ -150,90 +152,78 @@ void FeaturedLevelCell::createCell() {
     }
 
     // id
-    CCNode* editionNode = Build<CCNode>::create()
-        .pos({0, CELL_HEIGHT + 10.f})
-        .scale(0.6f)
-        .parent(m_loadedContainer);
+    CCNode *editionNode = Build<CCNode>::create().pos({0, CELL_HEIGHT + 10.f}).scale(0.6f).parent(m_loadedContainer);
 
-    CCSprite* editionBadge = Build<CCSprite>::create("icon-edition.png"_spr)
-        .pos({16.f, -0.5f})
-        .scale(0.45f)
-        .parent(editionNode);
+    CCSprite *editionBadge =
+        Build<CCSprite>::create("icon-edition.png"_spr).pos({16.f, -0.5f}).scale(0.45f).parent(editionNode);
 
     auto editionLabel = Build<GradientLabel>::create(fmt::format("#{}", m_levelMeta->edition), "bigFont.fnt")
-        .scale(0.60f)
-        .anchorPoint({0, 0.5})
-        .pos({10.f + editionBadge->getScaledContentWidth(), 0})
-        .parent(editionNode)
-        .collect();
+                            .scale(0.60f)
+                            .anchorPoint({0, 0.5})
+                            .pos({10.f + editionBadge->getScaledContentWidth(), 0})
+                            .parent(editionNode)
+                            .collect();
 
-    editionLabel->setGradientColors({
-        color3FromHex("#ffb566"),
-        color3FromHex("#fff38f")
-    });
+    editionLabel->setGradientColors({color3FromHex("#ffb566"), color3FromHex("#fff38f")});
     editionLabel->setGradientSpeed(3.f);
 
-    CCScale9Sprite* editionBG = Build<CCScale9Sprite>::create("square02_small.png")
-        .opacity(75)
-        .zOrder(-1)
-        .anchorPoint({0, 0.5})
-        .contentSize({editionBadge->getScaledContentWidth() + editionLabel->getScaledContentWidth() + 16.f, 30.f})
-        .parent(editionNode);
+    CCScale9Sprite *editionBG =
+        Build<CCScale9Sprite>::create("square02_small.png")
+            .opacity(75)
+            .zOrder(-1)
+            .anchorPoint({0, 0.5})
+            .contentSize({editionBadge->getScaledContentWidth() + editionLabel->getScaledContentWidth() + 16.f, 30.f})
+            .parent(editionNode);
 
     globed::findAndAttachRatingSprite(levelcell, m_levelMeta->rateTier);
 
     // player count label
     m_playerCountContainer = Build<CCNode>::create()
-        .layout(RowLayout::create()->setGap(2.f)->setAutoScale(false))
-        .pos({CELL_WIDTH - 2.f, CELL_HEIGHT + 3.f})
-        .contentSize(20.f, 0.f)
-        .anchorPoint(1.f, 0.f)
-        .scale(0.6f)
-        .parent(m_loadedContainer)
-        .collect();
+                                 .layout(RowLayout::create()->setGap(2.f)->setAutoScale(false))
+                                 .pos({CELL_WIDTH - 2.f, CELL_HEIGHT + 3.f})
+                                 .contentSize(20.f, 0.f)
+                                 .anchorPoint(1.f, 0.f)
+                                 .scale(0.6f)
+                                 .parent(m_loadedContainer)
+                                 .collect();
 
-    m_playerCountIcon = Build<CCSprite>::create("featured-player-icon.png"_spr)
-        .scale(0.45f)
-        .parent(m_playerCountContainer)
-        .collect();
+    m_playerCountIcon =
+        Build<CCSprite>::create("featured-player-icon.png"_spr).scale(0.45f).parent(m_playerCountContainer).collect();
 
-    m_playerCountLabel = Build<GradientLabel>::create("0", "bigFont.fnt")
-        .scale(0.60f)
-        .parent(m_playerCountContainer);
+    m_playerCountLabel = Build<GradientLabel>::create("0", "bigFont.fnt").scale(0.60f).parent(m_playerCountContainer);
 
-    m_playerCountLabel->setGradientColors({
-        color3FromHex("#ffb566"),
-        color3FromHex("#fff38f")
-    });
+    m_playerCountLabel->setGradientColors({color3FromHex("#ffb566"), color3FromHex("#fff38f")});
     m_playerCountLabel->setGradientSpeed(3.f);
 
     this->updatePlayerCount(0);
 }
 
-void FeaturedLevelCell::requestPlayerCount(float) {
-    if (!m_level || m_level->m_levelID <= 0) return;
+void FeaturedLevelCell::requestPlayerCount(float)
+{
+    if (!m_level || m_level->m_levelID <= 0)
+        return;
 
     NetworkManagerImpl::get().sendRequestPlayerCounts(RoomManager::get().makeSessionId(m_level->m_levelID));
 }
 
-void FeaturedLevelCell::updatePlayerCount(uint16_t count) {
+void FeaturedLevelCell::updatePlayerCount(uint16_t count)
+{
     m_playerCountLabel->setString(fmt::format("{}", count));
 
     cue::resetNode(m_playersBg);
 
-    m_playerCountContainer->setContentWidth(
-        m_playerCountLabel->getScaledContentWidth() +
-        2.f +
-        m_playerCountIcon->getScaledContentWidth()
-    );
+    m_playerCountContainer->setContentWidth(m_playerCountLabel->getScaledContentWidth() + 2.f +
+                                            m_playerCountIcon->getScaledContentWidth());
     m_playerCountContainer->updateLayout();
     m_playersBg = cue::attachBackground(m_playerCountContainer, cue::BackgroundOptions{
-        .sidePadding = 6.f,
-    });
+                                                                    .sidePadding = 6.f,
+                                                                });
 }
 
-void FeaturedLevelCell::reload(bool fromFullReload) {
-    if (!fromFullReload) this->showLoading();
+void FeaturedLevelCell::reload(bool fromFullReload)
+{
+    if (!fromFullReload)
+        this->showLoading();
     this->removeLoadedElements();
 
     auto flevel = NetworkManagerImpl::get().getFeaturedLevel();
@@ -246,7 +236,7 @@ void FeaturedLevelCell::reload(bool fromFullReload) {
 
     m_levelMeta = std::move(flevel);
 
-    globed::getOnlineLevel(m_levelMeta->levelId, [ref = WeakRef(this)](GJGameLevel* level) {
+    globed::getOnlineLevel(m_levelMeta->levelId, [ref = WeakRef(this)](GJGameLevel *level) {
         if (auto self = ref.lock()) {
             if (level) {
                 self->levelLoaded(Ok(level));
@@ -257,28 +247,33 @@ void FeaturedLevelCell::reload(bool fromFullReload) {
     });
 }
 
-void FeaturedLevelCell::reloadFull() {
+void FeaturedLevelCell::reloadFull()
+{
     this->removeLoadedElements();
     this->showLoading();
     NetworkManagerImpl::get().sendGetFeaturedLevel();
 }
 
-void FeaturedLevelCell::removeLoadedElements() {
+void FeaturedLevelCell::removeLoadedElements()
+{
     m_loadedContainer->removeAllChildren();
     m_loadedBg->setVisible(false);
     m_bg->setVisible(true);
 }
 
-void FeaturedLevelCell::showLoading() {
+void FeaturedLevelCell::showLoading()
+{
     m_loadingCircle->fadeIn();
     m_loadingCircle->setVisible(true);
 }
 
-void FeaturedLevelCell::hideLoading() {
+void FeaturedLevelCell::hideLoading()
+{
     m_loadingCircle->fadeOut();
 }
 
-void FeaturedLevelCell::levelLoaded(Result<GJGameLevel*, int> result) {
+void FeaturedLevelCell::levelLoaded(Result<GJGameLevel *, int> result)
+{
     this->hideLoading();
 
     if (result.isErr()) {
@@ -291,7 +286,8 @@ void FeaturedLevelCell::levelLoaded(Result<GJGameLevel*, int> result) {
     this->createCell();
 }
 
-FeaturedLevelCell* FeaturedLevelCell::create() {
+FeaturedLevelCell *FeaturedLevelCell::create()
+{
     auto ret = new FeaturedLevelCell();
     if (ret->init()) {
         ret->autorelease();
@@ -302,4 +298,4 @@ FeaturedLevelCell* FeaturedLevelCell::create() {
     return nullptr;
 }
 
-}
+} // namespace globed

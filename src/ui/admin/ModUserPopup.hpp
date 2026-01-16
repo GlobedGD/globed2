@@ -15,22 +15,22 @@ public:
 
     ~ModUserPopup();
 
-    void startLoadingProfile(const std::string& query, bool isId);
+    void startLoadingProfile(const std::string &query, bool isId);
     void startLoadingProfile(int id);
 
 protected:
-    cue::LoadingCircle* m_loadCircle = nullptr;
+    cue::LoadingCircle *m_loadCircle = nullptr;
     std::optional<MessageListener<msg::AdminFetchResponseMessage>> m_listener;
     std::optional<MessageListener<msg::AdminResultMessage>> m_resultListener;
     std::string m_query;
     bool m_queryIsId = false;
-    CCMenu* m_nameLayout = nullptr;
-    CCMenu* m_rootMenu = nullptr;
-    CCNode* m_rootLayout = nullptr;
-    CCMenuItemSpriteExtra* m_roleModifyButton = nullptr;
-    CCMenuItemSpriteExtra* m_banButton = nullptr;
-    CCMenuItemSpriteExtra* m_muteButton = nullptr;
-    CCMenuItemSpriteExtra* m_roomBanButton = nullptr;
+    CCMenu *m_nameLayout = nullptr;
+    CCMenu *m_rootMenu = nullptr;
+    CCNode *m_rootLayout = nullptr;
+    CCMenuItemSpriteExtra *m_roleModifyButton = nullptr;
+    CCMenuItemSpriteExtra *m_banButton = nullptr;
+    CCMenuItemSpriteExtra *m_muteButton = nullptr;
+    CCMenuItemSpriteExtra *m_roomBanButton = nullptr;
 
     struct Data {
         int accountId = 0;
@@ -43,7 +43,7 @@ protected:
     };
 
     std::optional<Data> m_data;
-    GJUserScore* m_score = nullptr;
+    GJUserScore *m_score = nullptr;
 
     bool setup(int accountId) override;
     void initUi();
@@ -53,14 +53,14 @@ protected:
     void showPunishmentPopup(UserPunishmentType type);
     void sendUpdateMessage();
 
-    void onLoaded(const msg::AdminFetchResponseMessage& msg);
-    void onUserInfoLoaded(geode::Result<GJUserScore*> res, bool sendUpdate = true);
+    void onLoaded(const msg::AdminFetchResponseMessage &msg);
+    void onUserInfoLoaded(geode::Result<GJUserScore *> res, bool sendUpdate = true);
 
-    void getUserInfoFinished(GJUserScore* p0) override;
+    void getUserInfoFinished(GJUserScore *p0) override;
     void getUserInfoFailed(int p0) override;
 
-    void loadLevelsFinished(cocos2d::CCArray* levels, char const* key, int p2) override;
-    void loadLevelsFailed(char const* key, int p1) override;
+    void loadLevelsFinished(cocos2d::CCArray *levels, char const *key, int p2) override;
+    void loadLevelsFailed(char const *key, int p1) override;
 };
 
-}
+} // namespace globed

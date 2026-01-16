@@ -4,15 +4,18 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void CancellableMenu::cancelTouch() {
+void CancellableMenu::cancelTouch()
+{
     m_state = State::HeldPendingCancel;
 }
 
-void CancellableMenu::setTouchCallback(std23::move_only_function<bool(bool within)> callback) {
+void CancellableMenu::setTouchCallback(std23::move_only_function<bool(bool within)> callback)
+{
     m_touchCallback = std::move(callback);
 }
 
-bool CancellableMenu::ccTouchBegan(CCTouch* touch, CCEvent* event) {
+bool CancellableMenu::ccTouchBegan(CCTouch *touch, CCEvent *event)
+{
     auto tpos = this->convertTouchToNodeSpace(touch);
     bool within = CCRect{CCPoint{}, this->getContentSize()}.containsPoint(tpos);
 
@@ -29,38 +32,45 @@ bool CancellableMenu::ccTouchBegan(CCTouch* touch, CCEvent* event) {
 
     m_state = ret ? State::Held : State::None;
 
-
     return ret;
 }
 
-void CancellableMenu::ccTouchEnded(CCTouch* touch, CCEvent* event) {
+void CancellableMenu::ccTouchEnded(CCTouch *touch, CCEvent *event)
+{
     m_state = State::None;
     CCMenu::ccTouchEnded(touch, event);
 }
 
-void CancellableMenu::ccTouchCancelled(CCTouch* touch, CCEvent* event) {
+void CancellableMenu::ccTouchCancelled(CCTouch *touch, CCEvent *event)
+{
     m_state = State::None;
     CCMenu::ccTouchCancelled(touch, event);
 }
 
-void CancellableMenu::ccTouchMoved(CCTouch* touch, CCEvent* event) {
+void CancellableMenu::ccTouchMoved(CCTouch *touch, CCEvent *event)
+{
     switch (m_state) {
-        case State::None: break;
-        case State::Held: CCMenu::ccTouchMoved(touch, event); break;
-        case State::HeldPendingCancel: {
-            m_state = State::HeldCancelled;
-            this->ccTouchCancelled(touch, event);
-            break;
-        };
-        case State::HeldCancelled: break;
+    case State::None:
+        break;
+    case State::Held:
+        CCMenu::ccTouchMoved(touch, event);
+        break;
+    case State::HeldPendingCancel: {
+        m_state = State::HeldCancelled;
+        this->ccTouchCancelled(touch, event);
+        break;
+    };
+    case State::HeldCancelled:
+        break;
     }
 }
 
-CancellableMenu* CancellableMenu::create() {
+CancellableMenu *CancellableMenu::create()
+{
     auto ret = new CancellableMenu();
     ret->init();
     ret->autorelease();
     return ret;
 }
 
-}
+} // namespace globed

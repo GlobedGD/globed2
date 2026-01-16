@@ -16,8 +16,8 @@ public:
 
     static cocos2d::CCSize POPUP_SIZE;
 
-    static ModRoleModifyPopup* create(int32_t accountId, std::vector<uint8_t> roleIds);
-    void setCallback(Callback&& cb);
+    static ModRoleModifyPopup *create(int32_t accountId, std::vector<uint8_t> roleIds);
+    void setCallback(Callback &&cb);
 
 private:
     int m_accountId = 0;
@@ -25,13 +25,13 @@ private:
     Callback m_callback;
 
     std::optional<MessageListener<msg::AdminResultMessage>> m_listener;
-    LoadingPopup* m_loadPopup = nullptr;
+    LoadingPopup *m_loadPopup = nullptr;
 
     bool setup(int32_t accountId, std::vector<uint8_t> roleIds) override;
     void submit();
 
     void startWaiting();
-    void stopWaiting(const msg::AdminResultMessage& msg);
+    void stopWaiting(const msg::AdminResultMessage &msg);
 };
 
-}
+} // namespace globed

@@ -8,9 +8,10 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize SetupFireServerPopup::POPUP_SIZE {400.f, 270.f};
+const CCSize SetupFireServerPopup::POPUP_SIZE{400.f, 270.f};
 
-bool SetupFireServerPopup::setup(FireServerObject* obj) {
+bool SetupFireServerPopup::setup(FireServerObject *obj)
+{
     m_object = obj;
     m_payload = this->getPayload();
 
@@ -21,13 +22,13 @@ bool SetupFireServerPopup::setup(FireServerObject* obj) {
     m_closeBtn->setVisible(false);
 
     auto rootNode = Build<CCNode>::create()
-        .anchorPoint(0.f, 0.5f)
-        .pos(this->fromLeft({2.f, 8.f}))
-        .layout(ColumnLayout::create()->setGap(-2.f)->setAxisReverse(true))
-        .contentSize(POPUP_SIZE.width * 0.8f, POPUP_SIZE.height * 0.75f)
-        .parent(m_mainLayer)
-        .id("root-node")
-        .collect();
+                        .anchorPoint(0.f, 0.5f)
+                        .pos(this->fromLeft({2.f, 8.f}))
+                        .layout(ColumnLayout::create()->setGap(-2.f)->setAxisReverse(true))
+                        .contentSize(POPUP_SIZE.width * 0.8f, POPUP_SIZE.height * 0.75f)
+                        .parent(m_mainLayer)
+                        .id("root-node")
+                        .collect();
 
     for (size_t i = 0; i < 5; i++) {
         // note that we on purpose set even values that are not covered by argcount
@@ -40,9 +41,7 @@ bool SetupFireServerPopup::setup(FireServerObject* obj) {
 
     rootNode->updateLayout();
 
-    Build(this->createInputBox(5, m_payload.eventId))
-        .pos(this->fromTopRight(66.f, 80.f))
-        .parent(m_mainLayer);
+    Build(this->createInputBox(5, m_payload.eventId)).pos(this->fromTopRight(66.f, 80.f)).parent(m_mainLayer);
 
     Build<CCLabelBMFont>::create("Event ID", "chatFont.fnt")
         .scale(0.8f)
@@ -52,9 +51,7 @@ bool SetupFireServerPopup::setup(FireServerObject* obj) {
     // add ok button
     Build(ButtonSprite::create("OK", "goldFont.fnt", "GJ_button_01.png", 1.0f))
         .scale(0.75f)
-        .intoMenuItem([this] {
-            this->onClose(nullptr);
-        })
+        .intoMenuItem([this] { this->onClose(nullptr); })
         .pos(this->fromBottom(21.f))
         .parent(m_buttonMenu);
 
@@ -97,31 +94,31 @@ bool SetupFireServerPopup::setup(FireServerObject* obj) {
     return true;
 }
 
-CCNode* SetupFireServerPopup::createParam(size_t idx, int value) {
-    auto radioMenu = Build<CCNode>::create()
-        .layout(RowLayout::create()->setGap(5.5f))
-        .contentSize(136.f, 64.f)
-        .collect();
+CCNode *SetupFireServerPopup::createParam(size_t idx, int value)
+{
+    auto radioMenu =
+        Build<CCNode>::create().layout(RowLayout::create()->setGap(5.5f)).contentSize(136.f, 64.f).collect();
 
-    auto makeToggler = [&](const char* name, FireServerArgType type) {
-        auto toggler = CCMenuItemExt::createTogglerWithStandardSprites(0.8f, [this, idx, type, radioMenu](auto toggler) {
-            bool on = !toggler->isOn();
+    auto makeToggler = [&](const char *name, FireServerArgType type) {
+        auto toggler =
+            CCMenuItemExt::createTogglerWithStandardSprites(0.8f, [this, idx, type, radioMenu](auto toggler) {
+                bool on = !toggler->isOn();
 
-            if (on) {
-                for (auto item : radioMenu->getChildrenExt<CCNode>()) {
-                    auto target = item->getChildByType<CCMenuItemToggler>(0);
+                if (on) {
+                    for (auto item : radioMenu->getChildrenExt<CCNode>()) {
+                        auto target = item->getChildByType<CCMenuItemToggler>(0);
 
-                    if (target != toggler) {
-                        log::debug("buh: {}", item);
-                        target->toggle(false);
+                        if (target != toggler) {
+                            log::debug("buh: {}", item);
+                            target->toggle(false);
+                        }
                     }
-                }
 
-                this->onArgTypeChange(idx, type);
-            } else {
-                this->onArgTypeChange(idx, FireServerArgType::None);
-            }
-        });
+                    this->onArgTypeChange(idx, type);
+                } else {
+                    this->onArgTypeChange(idx, FireServerArgType::None);
+                }
+            });
 
         if (m_payload.args[idx].type == type) {
             toggler->toggle(true);
@@ -142,15 +139,13 @@ CCNode* SetupFireServerPopup::createParam(size_t idx, int value) {
     radioMenu->updateLayout();
 
     return Build(this->createInputBox(idx, value))
-        .child(
-            Build<CCLabelBMFont>::create(fmt::format("Param {}", idx + 1).c_str(), "chatFont.fnt")
-                .scale(0.6f)
-        )
+        .child(Build<CCLabelBMFont>::create(fmt::format("Param {}", idx + 1).c_str(), "chatFont.fnt").scale(0.6f))
         .child(radioMenu)
         .updateLayout();
 }
 
-CCNode* SetupFireServerPopup::createInputBox(size_t idx, int value) {
+CCNode *SetupFireServerPopup::createInputBox(size_t idx, int value)
+{
     auto input = TextInput::create(60.f, "0");
     input->setCommonFilter(CommonFilter::Int);
 
@@ -160,7 +155,7 @@ CCNode* SetupFireServerPopup::createInputBox(size_t idx, int value) {
         input->setString(fmt::to_string(value));
     }
 
-    input->setCallback([this, input, idx](const std::string& str) {
+    input->setCallback([this, input, idx](const std::string &str) {
         if (str.empty()) {
             this->onPropChange(idx, 0);
             return;
@@ -176,46 +171,43 @@ CCNode* SetupFireServerPopup::createInputBox(size_t idx, int value) {
         this->onPropChange(idx, res.unwrap());
     });
 
-    auto menu = Build<CCMenu>::create()
-        .layout(RowLayout::create()->setGap(7.5f)->setAutoScale(false))
-        .contentSize(POPUP_SIZE.width * 0.8f, 50.f)
-        .child(
-            Build<CCSprite>::createSpriteName("edit_leftBtn_001.png")
-                .intoMenuItem([this, idx, input](auto) {
-                    auto res = geode::utils::numFromString<int>(input->getString());
+    auto menu =
+        Build<CCMenu>::create()
+            .layout(RowLayout::create()->setGap(7.5f)->setAutoScale(false))
+            .contentSize(POPUP_SIZE.width * 0.8f, 50.f)
+            .child(Build<CCSprite>::createSpriteName("edit_leftBtn_001.png").intoMenuItem([this, idx, input](auto) {
+                auto res = geode::utils::numFromString<int>(input->getString());
 
-                    if (!res) {
-                        input->setString("0");
-                        this->onPropChange(idx, 0);
-                        return;
-                    }
+                if (!res) {
+                    input->setString("0");
+                    this->onPropChange(idx, 0);
+                    return;
+                }
 
-                    input->setString(fmt::to_string(res.unwrap() - 1));
-                    this->onPropChange(idx, res.unwrap() - 1);
-                })
-        )
-        .child(input)
-        .child(
-            Build<CCSprite>::createSpriteName("edit_rightBtn_001.png")
-                .intoMenuItem([this, idx, input](auto) {
-                    auto res = geode::utils::numFromString<int>(input->getString());
+                input->setString(fmt::to_string(res.unwrap() - 1));
+                this->onPropChange(idx, res.unwrap() - 1);
+            }))
+            .child(input)
+            .child(Build<CCSprite>::createSpriteName("edit_rightBtn_001.png").intoMenuItem([this, idx, input](auto) {
+                auto res = geode::utils::numFromString<int>(input->getString());
 
-                    if (!res) {
-                        input->setString("0");
-                        this->onPropChange(idx, 0);
-                        return;
-                    }
+                if (!res) {
+                    input->setString("0");
+                    this->onPropChange(idx, 0);
+                    return;
+                }
 
-                    input->setString(fmt::to_string(res.unwrap() + 1));
-                    this->onPropChange(idx, res.unwrap() + 1);
-                })
-        )
-        .updateLayout();
+                input->setString(fmt::to_string(res.unwrap() + 1));
+                this->onPropChange(idx, res.unwrap() + 1);
+            }))
+            .updateLayout();
 
     return menu;
 }
 
-CCNode* SetupFireServerPopup::addBaseCheckbox(const char* label, CCMenuItemToggler** store, std::function<void(CCMenuItemToggler*)> callback) {
+CCNode *SetupFireServerPopup::addBaseCheckbox(const char *label, CCMenuItemToggler **store,
+                                              std::function<void(CCMenuItemToggler *)> callback)
+{
     auto toggler = CCMenuItemExt::createTogglerWithStandardSprites(0.8f, std::move(callback));
 
     *store = toggler;
@@ -228,7 +220,8 @@ CCNode* SetupFireServerPopup::addBaseCheckbox(const char* label, CCMenuItemToggl
         .updateLayout();
 }
 
-void SetupFireServerPopup::setTriggerState(bool spawn, bool touch) {
+void SetupFireServerPopup::setTriggerState(bool spawn, bool touch)
+{
     m_multiTriggerNode->setVisible(spawn || touch);
 
     m_object->m_isSpawnTriggered = false;
@@ -243,7 +236,8 @@ void SetupFireServerPopup::setTriggerState(bool spawn, bool touch) {
     }
 }
 
-void SetupFireServerPopup::onClose(CCObject*) {
+void SetupFireServerPopup::onClose(CCObject *)
+{
     // detect skips
     for (size_t i = m_payload.argCount; i < 5; i++) {
         if (m_payload.args[i].type != FireServerArgType::None) {
@@ -264,7 +258,8 @@ void SetupFireServerPopup::onClose(CCObject*) {
     m_object->encodePayload(m_payload);
 }
 
-void SetupFireServerPopup::onPropChange(size_t idx, int value) {
+void SetupFireServerPopup::onPropChange(size_t idx, int value)
+{
     if (idx == 5) {
         // event id
         if (value < 0 || value >= EVENT_GLOBED_BASE) {
@@ -284,7 +279,8 @@ void SetupFireServerPopup::onPropChange(size_t idx, int value) {
     }
 }
 
-void SetupFireServerPopup::onArgTypeChange(size_t idx, FireServerArgType type) {
+void SetupFireServerPopup::onArgTypeChange(size_t idx, FireServerArgType type)
+{
     if (idx < 5) {
         m_payload.args[idx].type = type;
     } else {
@@ -303,7 +299,8 @@ void SetupFireServerPopup::onArgTypeChange(size_t idx, FireServerArgType type) {
     }
 }
 
-FireServerPayload SetupFireServerPopup::getPayload() {
+FireServerPayload SetupFireServerPopup::getPayload()
+{
     auto payloadRes = m_object->decodePayload();
     if (!payloadRes) {
         return {};
@@ -312,4 +309,4 @@ FireServerPayload SetupFireServerPopup::getPayload() {
     return *payloadRes;
 }
 
-}
+} // namespace globed

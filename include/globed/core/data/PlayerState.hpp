@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdint.h>
 #include <cocos2d.h>
+#include <stdint.h>
 
 namespace globed {
 
@@ -50,7 +50,8 @@ struct PlayerObjectData {
     std::optional<ExtendedPlayerData> extData;
 
     /// Copies everything except position and rotation from another `PlayerObjectData`
-    void copyFlagsFrom(const PlayerObjectData& other) {
+    void copyFlagsFrom(const PlayerObjectData &other)
+    {
         iconType = other.iconType;
         isVisible = other.isVisible;
         isLookingLeft = other.isLookingLeft;
@@ -81,7 +82,8 @@ struct PlayerState {
     std::optional<PlayerObjectData> player1;
     std::optional<PlayerObjectData> player2;
 
-    double progress() const {
+    double progress() const
+    {
         return static_cast<double>(percentage) / 65535.0;
     }
 };
@@ -94,4 +96,4 @@ struct SpiderTeleportData {
     cocos2d::CCPoint from, to;
 };
 
-}
+} // namespace globed

@@ -5,12 +5,13 @@ using namespace geode::prelude;
 
 namespace globed::rng {
 
-std::array<uint64_t, 3>& _getState() {
-    static thread_local std::array<uint64_t, 3> state = []{
+std::array<uint64_t, 3> &_getState()
+{
+    static thread_local std::array<uint64_t, 3> state = [] {
         std::array<uint64_t, 3> seed;
         std::random_device rd;
 
-        for (auto& s : seed) {
+        for (auto &s : seed) {
             auto a = rd(), b = rd();
             s = (uint64_t(a) << 32) ^ uint64_t(b);
         }
@@ -20,11 +21,13 @@ std::array<uint64_t, 3>& _getState() {
     return state;
 }
 
-static char genHexChar() {
+static char genHexChar()
+{
     return "0123456789abcdef"[generate<size_t>(0, 16)];
 }
 
-std::string generateString(size_t length, std::string_view alphabet) {
+std::string generateString(size_t length, std::string_view alphabet)
+{
     std::string out;
     out.reserve(length);
     for (size_t i = 0; i < length; i++) {
@@ -33,21 +36,25 @@ std::string generateString(size_t length, std::string_view alphabet) {
     return out;
 }
 
-std::string generateHexString(size_t length) {
+std::string generateHexString(size_t length)
+{
     return generateString(length, "0123456789abcdef");
 }
 
-std::string generateAlphanumericString(size_t length) {
+std::string generateAlphanumericString(size_t length)
+{
     return generateString(length, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 }
 
-bool ratio(double ratio) {
+bool ratio(double ratio)
+{
     ratio = std::clamp(ratio, 0.0, 1.0);
     return generate<double>() < ratio;
 }
 
-void fillBytes(void* buffer, size_t size) {
-    uint8_t* buf = (uint8_t*)buffer;
+void fillBytes(void *buffer, size_t size)
+{
+    uint8_t *buf = (uint8_t *)buffer;
 
     // fill 8 bytes at a time for speed
     while (size >= 8) {
@@ -63,4 +70,4 @@ void fillBytes(void* buffer, size_t size) {
     }
 }
 
-}
+} // namespace globed::rng

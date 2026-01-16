@@ -1,14 +1,16 @@
+#include <cue/PlayerIcon.hpp>
 #include <globed/core/data/RoomPlayer.hpp>
 #include <globed/util/singleton.hpp>
-#include <cue/PlayerIcon.hpp>
 
 namespace globed {
 
-cue::PlayerIcon* MinimalRoomPlayer::createIcon() const {
+cue::PlayerIcon *MinimalRoomPlayer::createIcon() const
+{
     return cue::PlayerIcon::create(this->toIcons());
 }
 
-cue::Icons MinimalRoomPlayer::toIcons() const {
+cue::Icons MinimalRoomPlayer::toIcons() const
+{
     return cue::Icons{
         .type = IconType::Cube,
         .id = this->cube,
@@ -18,7 +20,8 @@ cue::Icons MinimalRoomPlayer::toIcons() const {
     };
 }
 
-MinimalRoomPlayer MinimalRoomPlayer::createMyself() {
+MinimalRoomPlayer MinimalRoomPlayer::createMyself()
+{
     auto gm = cachedSingleton<GameManager>();
     auto gam = cachedSingleton<GJAccountManager>();
 
@@ -38,11 +41,12 @@ MinimalRoomPlayer MinimalRoomPlayer::createMyself() {
     return out;
 }
 
-RoomPlayer RoomPlayer::createMyself() {
+RoomPlayer RoomPlayer::createMyself()
+{
     RoomPlayer self{MinimalRoomPlayer::createMyself()};
     self.session = SessionId{};
     self.teamId = 0;
     return self;
 }
 
-}
+} // namespace globed

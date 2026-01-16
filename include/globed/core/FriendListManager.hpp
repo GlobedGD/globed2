@@ -1,9 +1,9 @@
 #pragma once
 
-#include <globed/util/singleton.hpp>
-#include <asp/sync/Mutex.hpp>
-#include <asp/sync/Atomic.hpp>
 #include <Geode/Bindings.hpp>
+#include <asp/sync/Atomic.hpp>
+#include <asp/sync/Mutex.hpp>
+#include <globed/util/singleton.hpp>
 
 namespace globed {
 
@@ -32,9 +32,9 @@ private:
 
     FriendListManager();
 
-    void getUserListFinished(cocos2d::CCArray* p0, UserListType p1);
+    void getUserListFinished(cocos2d::CCArray *p0, UserListType p1);
     void getUserListFailed(UserListType p0, GJErrorCode p1);
     void advance();
 };
 
-}
+} // namespace globed

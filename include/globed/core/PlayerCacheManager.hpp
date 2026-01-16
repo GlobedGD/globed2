@@ -1,8 +1,8 @@
 #pragma once
 
-#include <globed/util/singleton.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
 #include <globed/core/data/SpecialUserData.hpp>
+#include <globed/util/singleton.hpp>
 
 namespace globed {
 
@@ -10,7 +10,7 @@ class GLOBED_DLL PlayerCacheManager : public SingletonBase<PlayerCacheManager> {
 public:
     using SingletonBase::get;
 
-    void insert(int accountId, const PlayerDisplayData& data);
+    void insert(int accountId, const PlayerDisplayData &data);
     void remove(int accountId);
 
     std::optional<PlayerDisplayData> get(int accountId);
@@ -33,4 +33,4 @@ private:
     PlayerCacheManager() = default;
 };
 
-}
+} // namespace globed

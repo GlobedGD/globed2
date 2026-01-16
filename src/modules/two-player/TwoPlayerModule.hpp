@@ -1,8 +1,8 @@
 #pragma once
 
 #include <globed/core/ModuleCrtp.hpp>
-#include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
+#include <globed/core/net/MessageListener.hpp>
 #include <qunet/buffers/ByteReader.hpp>
 
 namespace globed {
@@ -15,19 +15,23 @@ public:
 
     void onModuleInit();
 
-    virtual std::string_view name() const override {
+    virtual std::string_view name() const override
+    {
         return "Two Player Mode";
     }
 
-    virtual std::string_view id() const override {
+    virtual std::string_view id() const override
+    {
         return "globed.two-player-mode";
     }
 
-    virtual std::string_view author() const override {
+    virtual std::string_view author() const override
+    {
         return "Globed";
     }
 
-    virtual std::string_view description() const override {
+    virtual std::string_view description() const override
+    {
         return "";
     }
 
@@ -38,27 +42,28 @@ public:
     bool isLinked();
     bool isPlayer2();
     bool waitingForLink();
-    VisualPlayer* getLinkedPlayerObject(bool player2);
+    VisualPlayer *getLinkedPlayerObject(bool player2);
 
-    bool& ignoreNoclip();
+    bool &ignoreNoclip();
 
-    void causeLocalDeath(GJBaseGameLayer* gjbgl);
+    void causeLocalDeath(GJBaseGameLayer *gjbgl);
 
 private:
     std::optional<int> m_linkedPlayer;
     bool m_isPlayer2 = false;
     bool m_ignoreNoclip = false;
     std::optional<int> m_linkAttempt;
-    std::optional<MessageListenerImpl<msg::LevelDataMessage>*> m_listener;
+    std::optional<MessageListenerImpl<msg::LevelDataMessage> *> m_listener;
     std::shared_ptr<RemotePlayer> m_linkedRp;
 
     geode::Result<> onDisabled() override;
 
-    void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) override;
-    void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) override;
-    void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) override;
-    void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) override;
-    bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) override {
+    void onJoinLevel(GlobedGJBGL *gjbgl, GJGameLevel *level, bool editor) override;
+    void onPlayerDeath(GlobedGJBGL *gjbgl, RemotePlayer *player, const PlayerDeath &death) override;
+    void onUserlistSetup(cocos2d::CCNode *container, int accountId, bool myself, UserListPopup *popup) override;
+    void onPlayerLeave(GlobedGJBGL *gjbgl, int accountId) override;
+    bool shouldSpeedUpNewBest(GlobedGJBGL *gjbgl) override
+    {
         return true;
     }
 
@@ -66,9 +71,9 @@ private:
     void sendLinkEventTo(int id, bool player2);
     void linkSuccess(int id, bool player2);
 
-    void handleEvent(const InEvent& event);
-    void handleLinkEvent(const TwoPlayerLinkRequestEvent& reader);
-    void handleUnlinkEvent(const TwoPlayerUnlinkEvent& reader);
+    void handleEvent(const InEvent &event);
+    void handleLinkEvent(const TwoPlayerLinkRequestEvent &reader);
+    void handleUnlinkEvent(const TwoPlayerUnlinkEvent &reader);
 };
 
-}
+} // namespace globed

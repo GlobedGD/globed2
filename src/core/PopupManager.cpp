@@ -1,13 +1,13 @@
+#include <core/hooks/GJBaseGameLayer.hpp>
 #include <globed/core/PopupManager.hpp>
 #include <globed/util/CCData.hpp>
-#include <core/hooks/GJBaseGameLayer.hpp>
 #include <ui/BasePopup.hpp>
 #include <ui/Emojis.hpp>
 
 #include <AdvancedLabel.hpp>
 #include <UIBuilder.hpp>
-#include <asp/time/SystemTime.hpp>
 #include <asp/data/Cow.hpp>
+#include <asp/time/SystemTime.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -25,47 +25,57 @@ struct PopupRef::Data {
     bool persist = false;
 };
 
-PopupRef::PopupRef(FLAlertLayer* layer) : inner(layer) {}
+PopupRef::PopupRef(FLAlertLayer *layer) : inner(layer) {}
 PopupRef::PopupRef() : inner(nullptr) {}
 
-PopupRef::operator FLAlertLayer*() const {
+PopupRef::operator FLAlertLayer *() const
+{
     return inner;
 }
 
-FLAlertLayer* PopupRef::operator->() const {
+FLAlertLayer *PopupRef::operator->() const
+{
     return inner;
 }
 
-FLAlertLayer* PopupRef::getInner() const {
+FLAlertLayer *PopupRef::getInner() const
+{
     return inner;
 }
 
-void PopupRef::setPersistent(bool state) {
+void PopupRef::setPersistent(bool state)
+{
     this->getFields().persist = state;
 }
 
-void PopupRef::blockClosingFor(const asp::time::Duration& dur) {
+void PopupRef::blockClosingFor(const asp::time::Duration &dur)
+{
     this->getFields().blockClosingFor = dur;
 }
 
-void PopupRef::blockClosingFor(int durMillis) {
+void PopupRef::blockClosingFor(int durMillis)
+{
     return this->blockClosingFor(Duration::fromMillis(durMillis));
 }
 
-void PopupRef::showInstant() {
+void PopupRef::showInstant()
+{
     this->doShow(false);
 }
 
-void PopupRef::showQueue() {
+void PopupRef::showQueue()
+{
     PopupManager::get().queuePopup(*this);
 }
 
-bool PopupRef::isShown() {
+bool PopupRef::isShown()
+{
     return this->inner->getParent();
 }
 
-bool PopupRef::shouldPreventClosing() {
-    auto& fields = this->getFields();
+bool PopupRef::shouldPreventClosing()
+{
+    auto &fields = this->getFields();
 
     if (!fields.shownAt || fields.blockClosingFor.isZero()) {
         return false;
@@ -75,7 +85,8 @@ bool PopupRef::shouldPreventClosing() {
     return expiry.isFuture();
 }
 
-void PopupRef::doShow(bool reshowing) {
+void PopupRef::doShow(bool reshowing)
+{
     if (!reshowing && inner->getParent()) {
         return;
     }
@@ -83,50 +94,54 @@ void PopupRef::doShow(bool reshowing) {
     inner->setTag(MANAGED_ALERT_TAG);
     inner->show();
 
-    auto& fields = this->getFields();
+    auto &fields = this->getFields();
     fields.shownAt = SystemTime::now();
     fields.shownAtFrame = PopupManager::get().m_frameCounter;
 }
 
-PopupRef::Data& PopupRef::getFields() {
+PopupRef::Data &PopupRef::getFields()
+{
     using DataT = CCData<PopupRef::Data>;
 
-    auto obj = typeinfo_cast<DataT*>(inner->getUserObject(FIELDS_ID));
+    auto obj = typeinfo_cast<DataT *>(inner->getUserObject(FIELDS_ID));
 
     if (!obj) {
-        obj = DataT::create(Data {});
+        obj = DataT::create(Data{});
         inner->setUserObject(FIELDS_ID, obj);
     }
 
     return obj->data();
 }
 
-bool PopupRef::hasFields() const {
+bool PopupRef::hasFields() const
+{
     using DataT = CCData<PopupRef::Data>;
 
-    return typeinfo_cast<DataT*>(inner->getUserObject(FIELDS_ID));
+    return typeinfo_cast<DataT *>(inner->getUserObject(FIELDS_ID));
 }
 
 // CustomFLAlert
 
-class CustomFLAlert : public BasePopup<CustomFLAlert, CStr, CStr, CStr, cocos2d::CCNode*> {
+class CustomFLAlert : public BasePopup<CustomFLAlert, CStr, CStr, CStr, cocos2d::CCNode *> {
 public:
-    using Callback = std23::move_only_function<void (FLAlertLayer*, bool)>;
+    using Callback = std23::move_only_function<void(FLAlertLayer *, bool)>;
 
-    static CustomFLAlert* create(CStr title, std::string_view content, CStr btn1, CStr btn2, float width);
+    static CustomFLAlert *create(CStr title, std::string_view content, CStr btn1, CStr btn2, float width);
 
-    void setCallback(Callback&& cb) {
+    void setCallback(Callback &&cb)
+    {
         m_callback = std::move(cb);
     }
 
 private:
     Callback m_callback;
 
-    bool setup(CStr title, CStr btn1, CStr btn2, CCNode* content) override;
+    bool setup(CStr title, CStr btn1, CStr btn2, CCNode *content) override;
     void onClick(bool btn2);
 };
 
-bool CustomFLAlert::setup(CStr title, CStr btn1, CStr btn2, CCNode* content) {
+bool CustomFLAlert::setup(CStr title, CStr btn1, CStr btn2, CCNode *content)
+{
     m_closeBtn->setVisible(false);
 
     content->setPosition(m_size.width / 2.f, m_size.height / 2.f + 5.f);
@@ -136,24 +151,20 @@ bool CustomFLAlert::setup(CStr title, CStr btn1, CStr btn2, CCNode* content) {
 
     // confirm / cancel buttons
     auto bottomMenu = Build<CCMenu>::create()
-        .layout(RowLayout::create()->setGap(15.f)->setAutoScale(false))
-        .contentSize(m_size.width, 60.f)
-        .pos(this->fromBottom(30.f))
-        .parent(m_mainLayer)
-        .collect();
+                          .layout(RowLayout::create()->setGap(15.f)->setAutoScale(false))
+                          .contentSize(m_size.width, 60.f)
+                          .pos(this->fromBottom(30.f))
+                          .parent(m_mainLayer)
+                          .collect();
 
     Build<ButtonSprite>::create(btn1, "goldFont.fnt", "GJ_button_01.png", 1.0f)
-        .intoMenuItem([this] {
-            this->onClick(false);
-        })
+        .intoMenuItem([this] { this->onClick(false); })
         .scaleMult(1.15f)
         .parent(bottomMenu);
 
     if (btn2) {
         Build<ButtonSprite>::create(btn2, "goldFont.fnt", "GJ_button_01.png", 1.0f)
-            .intoMenuItem([this] {
-                this->onClick(true);
-            })
+            .intoMenuItem([this] { this->onClick(true); })
             .scaleMult(1.15f)
             .parent(bottomMenu);
     }
@@ -163,7 +174,8 @@ bool CustomFLAlert::setup(CStr title, CStr btn1, CStr btn2, CCNode* content) {
     return true;
 }
 
-void CustomFLAlert::onClick(bool btn2) {
+void CustomFLAlert::onClick(bool btn2)
+{
     if (m_callback) {
         m_callback(this, btn2);
     }
@@ -171,13 +183,8 @@ void CustomFLAlert::onClick(bool btn2) {
     this->onClose(nullptr);
 }
 
-CustomFLAlert* CustomFLAlert::create(
-    CStr title,
-    std::string_view content,
-    CStr btn1,
-    CStr btn2,
-    float rWidth
-) {
+CustomFLAlert *CustomFLAlert::create(CStr title, std::string_view content, CStr btn1, CStr btn2, float rWidth)
+{
     auto label = Label::createWrapped("", "chatFont.fnt", BMFontAlignment::Center, rWidth - 20.f);
     label->setExtraLineSpacing(3.f);
 
@@ -209,27 +216,16 @@ CustomFLAlert* CustomFLAlert::create(
 
 // PopupManager
 
-
 PopupManager::PopupManager() {}
 
-PopupRef PopupManager::alert(
-    CStr title,
-    const std::string& content,
-    CStr btn1,
-    CStr btn2,
-    float width
-) {
+PopupRef PopupManager::alert(CStr title, const std::string &content, CStr btn1, CStr btn2, float width)
+{
     return this->quickPopup(title, content, btn1, btn2, {}, width);
 }
 
-PopupRef PopupManager::quickPopup(
-    CStr title,
-    const std::string& content,
-    CStr btn1,
-    CStr btn2,
-    std23::move_only_function<void (FLAlertLayer*, bool)> callback,
-    float width
-) {
+PopupRef PopupManager::quickPopup(CStr title, const std::string &content, CStr btn1, CStr btn2,
+                                  std23::move_only_function<void(FLAlertLayer *, bool)> callback, float width)
+{
     auto alert = CustomFLAlert::create(title, content, btn1, btn2.getOrNull(), width);
 
     if (callback) {
@@ -239,29 +235,35 @@ PopupRef PopupManager::quickPopup(
     return this->manage(alert);
 }
 
-PopupRef PopupManager::manage(FLAlertLayer* alert) {
+PopupRef PopupManager::manage(FLAlertLayer *alert)
+{
     PopupRef ref(alert);
 
     return ref;
 }
 
-bool PopupManager::isManaged(FLAlertLayer* alert) {
+bool PopupManager::isManaged(FLAlertLayer *alert)
+{
     return this->manage(alert).hasFields();
 }
 
-void PopupManager::queuePopup(const PopupRef& popup) {
+void PopupManager::queuePopup(const PopupRef &popup)
+{
     m_queuedPopups.push(popup);
 }
 
-bool PopupManager::hasPendingPopups() const {
+bool PopupManager::hasPendingPopups() const
+{
     return !m_queuedPopups.empty();
 }
 
-void PopupManager::update(float dt) {
+void PopupManager::update(float dt)
+{
     m_frameCounter++;
 
     auto scene = globed::cachedSingleton<CCDirector>()->m_pRunningScene;
-    if (!scene) return;
+    if (!scene)
+        return;
 
     if (scene != m_prevScene) {
         this->changedScene(scene);
@@ -290,7 +292,7 @@ void PopupManager::update(float dt) {
     auto children = scene->getChildren();
     if (children) {
         auto child = children->firstObject();
-        if (typeinfo_cast<LoadingLayer*>(child)) {
+        if (typeinfo_cast<LoadingLayer *>(child)) {
             return;
         }
     }
@@ -301,10 +303,11 @@ void PopupManager::update(float dt) {
     m_queuedPopups.pop();
 }
 
-void PopupManager::changedScene(CCScene* newScene) {
+void PopupManager::changedScene(CCScene *newScene)
+{
     m_prevScene = newScene;
 
-    auto trans = typeinfo_cast<CCTransitionScene*>(newScene);
+    auto trans = typeinfo_cast<CCTransitionScene *>(newScene);
 
     // if we are transitioning, let's save all our popups and bring them to the other scene if needed
     if (trans) {
@@ -317,10 +320,11 @@ void PopupManager::changedScene(CCScene* newScene) {
 
         for (auto child : CCArrayExt<CCNode>(oldScene->getChildren())) {
             if (child->m_nTag == MANAGED_ALERT_TAG) {
-                if (auto alert = typeinfo_cast<FLAlertLayer*>(child)) {
+                if (auto alert = typeinfo_cast<FLAlertLayer *>(child)) {
                     alerts[alertCount++] = alert;
 
-                    if (alertCount == alerts.size()) break;
+                    if (alertCount == alerts.size())
+                        break;
                 }
             }
         }
@@ -338,10 +342,11 @@ void PopupManager::changedScene(CCScene* newScene) {
         // if we were transitioning but now switched to the actual scene, restore the popups
         for (size_t i = 0; i < m_savedAlertCount; i++) {
             auto alert = this->manage(m_savedAlerts[i]);
-            if (!alert || !alert.hasFields()) continue;
+            if (!alert || !alert.hasFields())
+                continue;
 
             // only show alert if persistent it enabled or if it has been visible for a small amount of time
-            auto& fields = alert.getFields();
+            auto &fields = alert.getFields();
             auto sinceShown = fields.shownAt.value_or(SystemTime::UNIX_EPOCH).elapsed();
             if (sinceShown < Duration::fromSecsF32(1.5f) || fields.persist) {
                 alert.doShow(true);
@@ -349,7 +354,6 @@ void PopupManager::changedScene(CCScene* newScene) {
                 m_savedAlerts[i] = nullptr;
             }
         }
-
 
         for (size_t i = 0; i < m_savedAlertCount; i++) {
             // cleanup those that we won't be adding back
@@ -365,34 +369,52 @@ void PopupManager::changedScene(CCScene* newScene) {
     }
 }
 
-void toast(geode::NotificationIcon icon, float duration, const std::string& message) {
+void toast(geode::NotificationIcon icon, float duration, const std::string &message)
+{
     Notification::create(message, icon, duration)->show();
 }
 
-void toast(cocos2d::CCSprite* icon, float duration, const std::string& message) {
+void toast(cocos2d::CCSprite *icon, float duration, const std::string &message)
+{
     Notification::create(message, icon, duration)->show();
 }
 
-static ccColor3B mapColor(char c) {
+static ccColor3B mapColor(char c)
+{
     switch (c) {
-        case 'b': return color3FromHex("#4a52e1");
-        case 'g': return color3FromHex("#40e348");
-        case 'l': return color3FromHex("#60abef");
-        case 'j': return color3FromHex("#32c8ff");
-        case 'y': return color3FromHex("#ffff00");
-        case 'o': return color3FromHex("#ffa54b");
-        case 'r': return color3FromHex("#ff5a5a");
-        case 'p': return color3FromHex("#ff00ff");
-        case 'a': return color3FromHex("#9632ff");
-        case 'd': return color3FromHex("#ff96ff");
-        case 'c': return color3FromHex("#ffff96");
-        case 'f': return color3FromHex("#96ffff");
-        case 's': return color3FromHex("#ffdc41");
-        default: return color3FromHex("#ff0000");
+    case 'b':
+        return color3FromHex("#4a52e1");
+    case 'g':
+        return color3FromHex("#40e348");
+    case 'l':
+        return color3FromHex("#60abef");
+    case 'j':
+        return color3FromHex("#32c8ff");
+    case 'y':
+        return color3FromHex("#ffff00");
+    case 'o':
+        return color3FromHex("#ffa54b");
+    case 'r':
+        return color3FromHex("#ff5a5a");
+    case 'p':
+        return color3FromHex("#ff00ff");
+    case 'a':
+        return color3FromHex("#9632ff");
+    case 'd':
+        return color3FromHex("#ff96ff");
+    case 'c':
+        return color3FromHex("#ffff96");
+    case 'f':
+        return color3FromHex("#96ffff");
+    case 's':
+        return color3FromHex("#ffdc41");
+    default:
+        return color3FromHex("#ff0000");
     }
 }
 
-void colorizeLabel(Label* label, std::string_view text) {
+void colorizeLabel(Label *label, std::string_view text)
+{
     struct Run {
         size_t start, end;
         ccColor3B color;
@@ -409,7 +431,8 @@ void colorizeLabel(Label* label, std::string_view text) {
         i += n;
 
         for (char c : sv) {
-            if (c != ' ' && c != '\t' && c != '\n' && c != '\r') childI++;
+            if (c != ' ' && c != '\t' && c != '\n' && c != '\r')
+                childI++;
         }
     };
 
@@ -450,11 +473,11 @@ void colorizeLabel(Label* label, std::string_view text) {
     auto mainBatch = label->getChildByType<CCSpriteBatchNode>(0);
     auto mchildren = mainBatch->getChildrenExt<CCSprite>();
 
-    for (auto& run : runs) {
+    for (auto &run : runs) {
         for (size_t i = run.start; i < run.end; i++) {
             mchildren[i]->setColor(run.color);
         }
     }
 }
 
-}
+} // namespace globed

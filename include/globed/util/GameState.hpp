@@ -25,4 +25,4 @@ GLOBED_DLL bool isGameFocused();
 /// Returns how many ms passed since last user input
 GLOBED_DLL uint64_t timeSinceInput();
 
-}
+} // namespace globed

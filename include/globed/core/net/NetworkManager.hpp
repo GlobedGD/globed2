@@ -1,13 +1,13 @@
 #pragma once
 
-#include <globed/util/singleton.hpp>
-#include <globed/core/net/MessageListener.hpp>
-#include <globed/core/data/UserRole.hpp>
-#include <globed/core/data/Event.hpp>
-#include <globed/core/data/UserPermissions.hpp>
-#include <globed/core/data/SpecialUserData.hpp>
-#include <globed/core/data/FeaturedLevel.hpp>
 #include "ConnectionState.hpp"
+#include <globed/core/data/Event.hpp>
+#include <globed/core/data/FeaturedLevel.hpp>
+#include <globed/core/data/SpecialUserData.hpp>
+#include <globed/core/data/UserPermissions.hpp>
+#include <globed/core/data/UserRole.hpp>
+#include <globed/core/net/MessageListener.hpp>
+#include <globed/util/singleton.hpp>
 
 #include <asp/time/Duration.hpp>
 #include <memory>
@@ -57,32 +57,31 @@ public:
     bool hasViewedFeaturedLevel();
     void setViewedFeaturedLevel();
 
-    void queueGameEvent(OutEvent&& event);
+    void queueGameEvent(OutEvent &&event);
     void sendQuickChat(uint32_t id);
 
     // Listeners
 
     template <typename T>
     [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]
-    MessageListener<T> listen(ListenerFn<T> callback) {
+    MessageListener<T> listen(ListenerFn<T> callback)
+    {
         auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
-            delete static_cast<MessageListenerImpl<T>*>(ptr);
-        });
+        this->addListener(
+            typeid(T), listener, (void *)+[](void *ptr) { delete static_cast<MessageListenerImpl<T> *>(ptr); });
         return MessageListener<T>(listener);
     }
 
-    template <typename T>
-    MessageListenerImpl<T>* listenGlobal(ListenerFn<T> callback) {
+    template <typename T> MessageListenerImpl<T> *listenGlobal(ListenerFn<T> callback)
+    {
         auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
-            delete static_cast<MessageListenerImpl<T>*>(ptr);
-        });
+        this->addListener(
+            typeid(T), listener, (void *)+[](void *ptr) { delete static_cast<MessageListenerImpl<T> *>(ptr); });
         return listener;
     }
 
-    void addListener(const std::type_info& ty, void* listener, void* dtor);
-    void removeListener(const std::type_info& ty, void* listener);
+    void addListener(const std::type_info &ty, void *listener, void *dtor);
+    void removeListener(const std::type_info &ty, void *listener);
 
 private:
     friend class SingletonBase;
@@ -95,9 +94,10 @@ private:
 };
 
 #ifndef globed2_EXPORTS
-inline void MessageListenerImplBase::destroy(const std::type_info& ty) {
+inline void MessageListenerImplBase::destroy(const std::type_info &ty)
+{
     NetworkManager::get().removeListener(ty, this);
 }
 #endif
 
-}
+} // namespace globed

@@ -1,39 +1,42 @@
 #include "ModRoleModifyPopup.hpp"
+#include <core/net/NetworkManagerImpl.hpp>
 #include <globed/core/PopupManager.hpp>
 #include <ui/misc/Badges.hpp>
-#include <core/net/NetworkManagerImpl.hpp>
 
-#include <cue/Util.hpp>
 #include <UIBuilder.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
-CCSize ModRoleModifyPopup::POPUP_SIZE {};
+CCSize ModRoleModifyPopup::POPUP_SIZE{};
 
 static const auto ROLE_ICON_SIZE = BADGE_SIZE * 1.2f;
 static const float WIDTH_PER_ROLE = ROLE_ICON_SIZE.width + 3.f;
 
-bool ModRoleModifyPopup::setup(int32_t accountId, std::vector<uint8_t> roleIds) {
+bool ModRoleModifyPopup::setup(int32_t accountId, std::vector<uint8_t> roleIds)
+{
     m_accountId = accountId;
     m_roleIds = std::move(roleIds);
 
     this->setTitle("Edit user roles");
 
-    auto* buttonLayout = Build<CCMenu>::create()
-        .pos(this->center())
-        .layout(RowLayout::create()->setGap(3.f))
-        .parent(m_mainLayer)
-        .collect();
+    auto *buttonLayout = Build<CCMenu>::create()
+                             .pos(this->center())
+                             .layout(RowLayout::create()->setGap(3.f))
+                             .parent(m_mainLayer)
+                             .collect();
 
     auto allRoles = NetworkManagerImpl::get().getAllRoles();
 
-    for (const auto& role : allRoles) {
-        auto* spr1 = globed::createBadge(role.icon);
-        if (!spr1) continue;
+    for (const auto &role : allRoles) {
+        auto *spr1 = globed::createBadge(role.icon);
+        if (!spr1)
+            continue;
 
-        bool present = std::find_if(m_roleIds.begin(), m_roleIds.end(), [&](uint8_t k) { return k == role.id; }) != m_roleIds.end();
+        bool present = std::find_if(m_roleIds.begin(), m_roleIds.end(), [&](uint8_t k) { return k == role.id; }) !=
+                       m_roleIds.end();
         cue::rescaleToMatch(spr1, ROLE_ICON_SIZE);
 
         Build(spr1)
@@ -56,9 +59,7 @@ bool ModRoleModifyPopup::setup(int32_t accountId, std::vector<uint8_t> roleIds) 
 
     Build<ButtonSprite>::create("Update", "bigFont.fnt", "GJ_button_01.png", 0.9f)
         .scale(0.8f)
-        .intoMenuItem([this] {
-            this->submit();
-        })
+        .intoMenuItem([this] { this->submit(); })
         .pos(this->fromBottom(28.f))
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
@@ -69,17 +70,20 @@ bool ModRoleModifyPopup::setup(int32_t accountId, std::vector<uint8_t> roleIds) 
     return true;
 }
 
-void ModRoleModifyPopup::setCallback(Callback&& cb) {
+void ModRoleModifyPopup::setCallback(Callback &&cb)
+{
     m_callback = std::move(cb);
 }
 
-void ModRoleModifyPopup::submit() {
+void ModRoleModifyPopup::submit()
+{
     this->startWaiting();
     NetworkManagerImpl::get().sendAdminEditRoles(m_accountId, m_roleIds);
 }
 
-void ModRoleModifyPopup::startWaiting() {
-    m_listener = NetworkManagerImpl::get().listen<msg::AdminResultMessage>([this](const auto& msg) {
+void ModRoleModifyPopup::startWaiting()
+{
+    m_listener = NetworkManagerImpl::get().listen<msg::AdminResultMessage>([this](const auto &msg) {
         this->stopWaiting(msg);
         return ListenerResult::Stop;
     });
@@ -93,7 +97,8 @@ void ModRoleModifyPopup::startWaiting() {
     m_loadPopup->show();
 }
 
-void ModRoleModifyPopup::stopWaiting(const msg::AdminResultMessage& msg) {
+void ModRoleModifyPopup::stopWaiting(const msg::AdminResultMessage &msg)
+{
     m_listener.reset();
 
     if (m_loadPopup) {
@@ -105,12 +110,14 @@ void ModRoleModifyPopup::stopWaiting(const msg::AdminResultMessage& msg) {
         globed::alertFormat("Error", "Failed to set user roles: <cy>{}</c>", msg.error);
     }
 
-    if (m_callback) m_callback();
+    if (m_callback)
+        m_callback();
 
     this->onClose(nullptr);
 }
 
-ModRoleModifyPopup* ModRoleModifyPopup::create(int32_t accountId, std::vector<uint8_t> roleIds) {
+ModRoleModifyPopup *ModRoleModifyPopup::create(int32_t accountId, std::vector<uint8_t> roleIds)
+{
     auto ret = new ModRoleModifyPopup;
     size_t allCnt = NetworkManagerImpl::get().getAllRoles().size();
 
@@ -119,4 +126,4 @@ ModRoleModifyPopup* ModRoleModifyPopup::create(int32_t accountId, std::vector<ui
     return BasePopup::create(accountId, std::move(roleIds));
 }
 
-}
+} // namespace globed

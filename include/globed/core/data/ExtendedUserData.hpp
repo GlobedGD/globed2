@@ -12,4 +12,4 @@ struct ExtendedUserData {
     UserPermissions permissions;
 };
 
-}
+} // namespace globed

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <globed/core/data/PlayerState.hpp>
 #include "SpeedTracker.hpp"
 #include <deque>
+#include <globed/core/data/PlayerState.hpp>
 #include <optional>
 
 namespace globed {
@@ -21,27 +21,29 @@ public:
     void removePlayer(int playerId);
     void resetPlayer(int playerId);
     bool hasPlayer(int playerId) const;
-    void updatePlayer(const PlayerState& player, float curTimestamp);
+    void updatePlayer(const PlayerState &player, float curTimestamp);
     void updateNoop(int accountId, float curTimestamp);
     void tick(float dt, cocos2d::CCPoint cameraDelta, cocos2d::CCPoint cameraVector);
 
-    PlayerState& getPlayerState(int playerId, OutFlags& outFlags);
-    PlayerState& getNewerState(int playerId);
+    PlayerState &getPlayerState(int playerId, OutFlags &outFlags);
+    PlayerState &getNewerState(int playerId);
     bool isPlayerStale(int playerId, float curTimestamp);
 
     // settings
 
-    /// Enables low latency mode. This will slightly increase chance of players jittering / teleporting, especially on unstable or high-ping connections,
-    /// but will decrease the time between a player moving and the move being rendered on your screen.
+    /// Enables low latency mode. This will slightly increase chance of players jittering / teleporting, especially on
+    /// unstable or high-ping connections, but will decrease the time between a player moving and the move being
+    /// rendered on your screen.
     void setLowLatencyMode(bool enable);
 
-    /// Enables realtime mode. This is even stronger than the low latency mode, and will cause the interpolator to always use the latest available data.
-    /// One frame of delay is still present for interpolation, so the movement will still be smooth in some capacity,
-    /// but lost, delayed or misplaced packets will cause jitter.
+    /// Enables realtime mode. This is even stronger than the low latency mode, and will cause the interpolator to
+    /// always use the latest available data. One frame of delay is still present for interpolation, so the movement
+    /// will still be smooth in some capacity, but lost, delayed or misplaced packets will cause jitter.
     void setRealtimeMode(bool enable);
 
-    /// Enables or disables camera corrections. When enabled, extra smoothing may be applied to players' movement using camera delta.
-    /// This is useful to make players have no jitter on screen, but will interfere if camera movement isn't predictable, for example when spectating a player.
+    /// Enables or disables camera corrections. When enabled, extra smoothing may be applied to players' movement using
+    /// camera delta. This is useful to make players have no jitter on screen, but will interfere if camera movement
+    /// isn't predictable, for example when spectating a player.
     void setCameraCorrections(bool enable);
 
     void setPlatformer(bool enable);
@@ -63,8 +65,8 @@ public:
         std::optional<PlayerDeath> takeDeath();
         std::optional<SpiderTeleportData> takeSpiderTp(bool p1);
         bool takeJump(bool p1);
-        PlayerState& oldestFrame();
-        PlayerState& newestFrame();
+        PlayerState &oldestFrame();
+        PlayerState &newestFrame();
     };
 
 private:
@@ -78,4 +80,4 @@ private:
     bool isCameraStationary();
 };
 
-}
+} // namespace globed

@@ -6,24 +6,20 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void FloatSettingCell::setup() {
+void FloatSettingCell::setup()
+{
     auto container = Build<CCNode>::create()
-        .layout(SimpleColumnLayout::create()
-            ->setMainAxisDirection(AxisDirection::BottomToTop)
-            ->setMainAxisScaling(AxisScaling::Fit)
-            ->setCrossAxisScaling(AxisScaling::Fit)
-            ->setGap(0.f)
-        )
-        .parent(m_rightMenu)
-        .collect();
+                         .layout(SimpleColumnLayout::create()
+                                     ->setMainAxisDirection(AxisDirection::BottomToTop)
+                                     ->setMainAxisScaling(AxisScaling::Fit)
+                                     ->setCrossAxisScaling(AxisScaling::Fit)
+                                     ->setGap(0.f))
+                         .parent(m_rightMenu)
+                         .collect();
 
-    Build<AxisGap>::create(3.f)
-        .parent(container);
+    Build<AxisGap>::create(3.f).parent(container);
 
-    m_slider = Build(createSlider())
-        .scale(0.9f)
-        .contentSize(80.f, 18.f)
-        .parent(container);
+    m_slider = Build(createSlider()).scale(0.9f).contentSize(80.f, 18.f).parent(container);
 
     // get limits
     auto limits = SettingsManager::get().getLimits(m_key);
@@ -36,14 +32,13 @@ void FloatSettingCell::setup() {
         this->reload();
     });
 
-    m_label = Build<CCLabelBMFont>::create("", "bigFont.fnt")
-        .scale(0.3f)
-        .parent(container);
+    m_label = Build<CCLabelBMFont>::create("", "bigFont.fnt").scale(0.3f).parent(container);
 
     this->reload();
 }
 
-void FloatSettingCell::reload() {
+void FloatSettingCell::reload()
+{
     float value = this->get<float>();
     m_slider->setValue(value);
     m_label->setString(fmt::format("{}%", (int)(value * 100)).c_str());
@@ -52,4 +47,4 @@ void FloatSettingCell::reload() {
     m_rightMenu->updateLayout();
 }
 
-}
+} // namespace globed

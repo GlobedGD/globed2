@@ -1,7 +1,7 @@
 #pragma once
 
-#include "FeaturedPopup.hpp"
 #include "FeaturedLevelCell.hpp"
+#include "FeaturedPopup.hpp"
 
 #include <globed/prelude.hpp>
 #include <ui/BasePopup.hpp>
@@ -13,9 +13,9 @@ public:
     static const CCSize POPUP_SIZE;
 
 private:
-    FeaturedLevelCell* m_cell;
+    FeaturedLevelCell *m_cell;
 
     bool setup();
 };
 
-}
+} // namespace globed

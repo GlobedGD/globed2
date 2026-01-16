@@ -1,6 +1,6 @@
-#include <globed/core/game/ProgressArrow.hpp>
-#include <globed/core/SettingsManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <globed/core/SettingsManager.hpp>
+#include <globed/core/game/ProgressArrow.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -9,30 +9,27 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool ProgressArrow::init() {
-    if (!CCNode::init()) return false;
+bool ProgressArrow::init()
+{
+    if (!CCNode::init())
+        return false;
 
     this->updateIcons(cue::Icons{});
 
     return true;
 }
 
-void ProgressArrow::updateIcons(const cue::Icons& icons) {
+void ProgressArrow::updateIcons(const cue::Icons &icons)
+{
     cue::resetNode(m_icon);
 
     float progressOpacity = globed::setting<float>("core.level.progress-opacity");
 
-    m_icon = Build(cue::PlayerIcon::create(icons))
-        .scale(0.5f)
-        .anchorPoint(0.5f, 0.5f)
-        .parent(this);
+    m_icon = Build(cue::PlayerIcon::create(icons)).scale(0.5f).anchorPoint(0.5f, 0.5f).parent(this);
 }
 
-void ProgressArrow::updatePosition(
-    const GameCameraState& camState,
-    CCPoint playerPosition,
-    double angle
-) {
+void ProgressArrow::updatePosition(const GameCameraState &camState, CCPoint playerPosition, double angle)
+{
     // angle is between 0 and 1, stretch it back to [0; 2pi)
     angle *= M_PI * 2;
 
@@ -51,12 +48,8 @@ void ProgressArrow::updatePosition(
     float visibleTop = camState.visibleOrigin.y + camState.visibleCoverage.height;
 
     // is the player visible? then dont show the arrow
-    bool inCameraCoverage = (
-        playerPosition.x >= cameraLeft &&
-        playerPosition.x <= cameraRight &&
-        playerPosition.y >= cameraBottom &&
-        playerPosition.y <= cameraTop
-    );
+    bool inCameraCoverage = (playerPosition.x >= cameraLeft && playerPosition.x <= cameraRight &&
+                             playerPosition.y >= cameraBottom && playerPosition.y <= cameraTop);
 
     if (inCameraCoverage) {
         this->setVisible(false);
@@ -65,7 +58,8 @@ void ProgressArrow::updatePosition(
 
     this->setVisible(true);
 
-    float distance = std::sqrt(std::pow(playerPosition.x - cameraCenter.x, 2) + std::pow(playerPosition.y - cameraCenter.y, 2));
+    float distance =
+        std::sqrt(std::pow(playerPosition.x - cameraCenter.x, 2) + std::pow(playerPosition.y - cameraCenter.y, 2));
 
     distance *= camState.zoom;
 
@@ -78,7 +72,8 @@ void ProgressArrow::updatePosition(
     this->setPosition(indicatorX, indicatorY);
 }
 
-ProgressArrow* ProgressArrow::create() {
+ProgressArrow *ProgressArrow::create()
+{
     auto ret = new ProgressArrow;
     if (ret->init()) {
         ret->autorelease();
@@ -89,4 +84,4 @@ ProgressArrow* ProgressArrow::create() {
     return nullptr;
 }
 
-}
+} // namespace globed

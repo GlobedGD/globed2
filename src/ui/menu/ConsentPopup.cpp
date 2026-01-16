@@ -1,18 +1,19 @@
 #include "ConsentPopup.hpp"
-#include <globed/core/SettingsManager.hpp>
-#include <globed/core/PopupManager.hpp>
-#include <UIBuilder.hpp>
 #include <AdvancedLabel.hpp>
+#include <UIBuilder.hpp>
 #include <cue/Util.hpp>
+#include <globed/core/PopupManager.hpp>
+#include <globed/core/SettingsManager.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize ConsentPopup::POPUP_SIZE {400.f, 260.f};
+const CCSize ConsentPopup::POPUP_SIZE{400.f, 260.f};
 
 static constexpr auto RULES_DESC = "I agree to follow the <cg>Globed rules</c> while using the mod";
-static constexpr auto ARGON_DESC = "I accept the <cy>privacy policy</c> and allow <cj>Globed</c> to send a one-time message to verify my GD account";
+static constexpr auto ARGON_DESC =
+    "I accept the <cy>privacy policy</c> and allow <cj>Globed</c> to send a one-time message to verify my GD account";
 
 static constexpr auto RULES_TEXT = R"(
 # Punishments
@@ -58,51 +59,41 @@ We use [Argon](https://github.com/GlobedGD/argon) for verifying accounts. Argon 
 Globed may access other account data, for example your list of <cg>friends</c> or <cg>blocked users</c>. This data is <cr>never</c> logged anywhere, and is only used to provide <cj>in-game functionality</c>, such as <cy>invite or voice chat filtering</c>.
 )";
 
-bool ConsentPopup::setup() {
+bool ConsentPopup::setup()
+{
     this->setID("consent-popup"_spr);
     this->setTitle("Before you continue...");
 
     // add buttons for enabling/disabling voice chat and quick chat
     auto chatContainer = Build<CCMenu>::create()
-        .layout(SimpleRowLayout::create()
-            ->setGap(5.f)
-            ->setMainAxisScaling(AxisScaling::Fit)
-            ->setCrossAxisScaling(AxisScaling::Fit)
-        )
-        .anchorPoint(0.5f, 0.5f)
-        .id("chat-select-container")
-        .parent(m_mainLayer)
-        .pos(this->fromCenter(0.f, 50.f))
-        .collect();
+                             .layout(SimpleRowLayout::create()
+                                         ->setGap(5.f)
+                                         ->setMainAxisScaling(AxisScaling::Fit)
+                                         ->setCrossAxisScaling(AxisScaling::Fit))
+                             .anchorPoint(0.5f, 0.5f)
+                             .id("chat-select-container")
+                             .parent(m_mainLayer)
+                             .pos(this->fromCenter(0.f, 50.f))
+                             .collect();
 
     m_vcButton = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f, [](auto) {}))
-        .id("vc-toggle-btn")
-        .parent(chatContainer);
+                     .id("vc-toggle-btn")
+                     .parent(chatContainer);
     m_vcButton->toggle(globed::setting<bool>("core.audio.voice-chat-enabled"));
 
-    Build<Label>::create("Voice chat", "bigFont.fnt")
-        .scale(0.55f)
-        .id("vc-label")
-        .parent(chatContainer);
+    Build<Label>::create("Voice chat", "bigFont.fnt").scale(0.55f).id("vc-label").parent(chatContainer);
 
-    Build(AxisGap::create(25.f))
-        .parent(chatContainer);
+    Build(AxisGap::create(25.f)).parent(chatContainer);
 
     m_qcButton = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f, [](auto) {}))
-        .id("qc-toggle-btn")
-        .parent(chatContainer);
+                     .id("qc-toggle-btn")
+                     .parent(chatContainer);
     m_qcButton->toggle(globed::setting<bool>("core.player.quick-chat-enabled"));
 
-    Build<Label>::create("Emotes", "bigFont.fnt")
-        .scale(0.55f)
-        .id("qc-label")
-        .parent(chatContainer);
+    Build<Label>::create("Emotes", "bigFont.fnt").scale(0.55f).id("qc-label").parent(chatContainer);
 
     chatContainer->updateLayout();
-    cue::attachBackground(chatContainer, cue::BackgroundOptions {
-        .sidePadding = 6.f,
-        .verticalPadding = 6.f
-    });
+    cue::attachBackground(chatContainer, cue::BackgroundOptions{.sidePadding = 6.f, .verticalPadding = 6.f});
 
     // small text above
     Build<Label>::create("Communication with other players (both can be adjusted later in settings)", "chatFont.fnt")
@@ -114,23 +105,22 @@ bool ConsentPopup::setup() {
     // actual consent questions (first for accepting rules, second for data collection)
 
     auto consentContainer = Build<CCNode>::create()
-        .layout(SimpleColumnLayout::create()
-            ->setGap(10.f)
-            ->setMainAxisScaling(AxisScaling::Fit)
-            ->setCrossAxisScaling(AxisScaling::Fit)
-        )
-        .anchorPoint(0.5f, 0.5f)
-        .id("consent-container")
-        .parent(m_mainLayer)
-        .pos(this->fromCenter(0.f, -40.f))
-        .collect();
+                                .layout(SimpleColumnLayout::create()
+                                            ->setGap(10.f)
+                                            ->setMainAxisScaling(AxisScaling::Fit)
+                                            ->setCrossAxisScaling(AxisScaling::Fit))
+                                .anchorPoint(0.5f, 0.5f)
+                                .id("consent-container")
+                                .parent(m_mainLayer)
+                                .pos(this->fromCenter(0.f, -40.f))
+                                .collect();
 
     auto clause1 = Build(this->createClause(RULES_DESC, "Globed Rules", RULES_TEXT, &m_rulesAccepted))
-        .parent(consentContainer)
-        .collect();
+                       .parent(consentContainer)
+                       .collect();
     auto clause2 = Build(this->createClause(ARGON_DESC, "Privacy Policy", ARGON_TEXT, &m_privacyAccepted))
-        .parent(consentContainer)
-        .collect();
+                       .parent(consentContainer)
+                       .collect();
 
     consentContainer->updateLayout();
     // cue::attachBackground(consentContainer, cue::BackgroundOptions {
@@ -147,33 +137,28 @@ bool ConsentPopup::setup() {
 
     // buttons at the bottom
     auto buttonMenu = Build<CCMenu>::create()
-        .layout(SimpleRowLayout::create()
-            ->setGap(3.f)
-            ->setCrossAxisScaling(AxisScaling::Fit)
-            ->setMainAxisScaling(AxisScaling::Fit)
-        )
-        .parent(m_mainLayer)
-        .anchorPoint(0.5f, 0.f)
-        .pos(this->fromBottom(8.f))
-        .collect();
+                          .layout(SimpleRowLayout::create()
+                                      ->setGap(3.f)
+                                      ->setCrossAxisScaling(AxisScaling::Fit)
+                                      ->setMainAxisScaling(AxisScaling::Fit))
+                          .parent(m_mainLayer)
+                          .anchorPoint(0.5f, 0.f)
+                          .pos(this->fromBottom(8.f))
+                          .collect();
 
     Build<ButtonSprite>::create("Decline", "bigFont.fnt", "GJ_button_06.png", 0.7f)
         .scale(0.9f)
-        .intoMenuItem([this] {
-            this->onButton(false);
-        })
+        .intoMenuItem([this] { this->onButton(false); })
         .scaleMult(1.15f)
         .parent(buttonMenu);
 
     m_acceptBtn = Build<ButtonSprite>::create("Accept", "bigFont.fnt", "GJ_button_01.png", 0.7f)
-        .scale(0.9f)
-        .cascadeColor(true)
-        .intoMenuItem([this] {
-            this->onButton(true);
-        })
-        .cascadeColor(true)
-        .scaleMult(1.15f)
-        .parent(buttonMenu);
+                      .scale(0.9f)
+                      .cascadeColor(true)
+                      .intoMenuItem([this] { this->onButton(true); })
+                      .cascadeColor(true)
+                      .scaleMult(1.15f)
+                      .parent(buttonMenu);
 
     buttonMenu->updateLayout();
 
@@ -182,62 +167,60 @@ bool ConsentPopup::setup() {
     return true;
 }
 
-CCNode* ConsentPopup::createClause(CStr description, CStr popupTitle, std::string_view content, bool* accepted) {
+CCNode *ConsentPopup::createClause(CStr description, CStr popupTitle, std::string_view content, bool *accepted)
+{
     float width = POPUP_SIZE.width * 0.9f;
     float textWidth = width - 64.f;
 
     auto container = Build<CCMenu>::create()
-        .contentSize(width, 0.f)
-        .layout(SimpleRowLayout::create()
-            ->setGap(5.f)
-            ->setMainAxisScaling(AxisScaling::Fit)
-            ->setCrossAxisScaling(AxisScaling::Fit)
-        )
-        .collect();
+                         .contentSize(width, 0.f)
+                         .layout(SimpleRowLayout::create()
+                                     ->setGap(5.f)
+                                     ->setMainAxisScaling(AxisScaling::Fit)
+                                     ->setCrossAxisScaling(AxisScaling::Fit))
+                         .collect();
 
     auto descLabel = Build(Label::createWrapped("", "chatFont.fnt", textWidth))
-        .scale(0.65f)
-        .id("clause-desc-label")
-        .parent(container)
-        .collect();
+                         .scale(0.65f)
+                         .id("clause-desc-label")
+                         .parent(container)
+                         .collect();
     colorizeLabel(descLabel, description);
     descLabel->updateChars();
 
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .scale(1.f)
-        .intoMenuItem([content, popupTitle] {
-            MDPopup::create(std::string(popupTitle), std::string(content), "Ok")->show();
-        })
+        .intoMenuItem(
+            [content, popupTitle] { MDPopup::create(std::string(popupTitle), std::string(content), "Ok")->show(); })
         .scaleMult(1.15f)
         .parent(container);
 
     Build(CCMenuItemExt::createTogglerWithStandardSprites(0.8f, [this, accepted](auto btn) {
         *accepted = !btn->isOn();
         this->updateAcceptButton();
-    }))
-        .parent(container);
+    })).parent(container);
 
     container->updateLayout();
 
-    cue::attachBackground(container, cue::BackgroundOptions {
-        .sidePadding = 8.f,
-        .verticalPadding = 4.f
-    });
+    cue::attachBackground(container, cue::BackgroundOptions{.sidePadding = 8.f, .verticalPadding = 4.f});
 
     return container;
 }
 
-void ConsentPopup::setCallback(ConsentCallback&& cb) {
+void ConsentPopup::setCallback(ConsentCallback &&cb)
+{
     m_callback = std::move(cb);
 }
 
-void ConsentPopup::updateAcceptButton() {
+void ConsentPopup::updateAcceptButton()
+{
     bool enable = m_privacyAccepted && m_rulesAccepted;
     m_acceptBtn->setEnabled(enable);
     m_acceptBtn->setColor(enable ? ccColor3B{255, 255, 255} : ccColor3B{127, 127, 127});
 }
 
-void ConsentPopup::onButton(bool accept) {
+void ConsentPopup::onButton(bool accept)
+{
     if (accept) {
         // save vc and qc settings
         globed::setting<bool>("core.audio.voice-chat-enabled") = m_vcButton->isOn();
@@ -253,4 +236,4 @@ void ConsentPopup::onButton(bool accept) {
     Popup::onClose(this);
 }
 
-}
+} // namespace globed

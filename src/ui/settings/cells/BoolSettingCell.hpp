@@ -6,10 +6,10 @@ namespace globed {
 
 class BoolSettingCell : public BaseSettingCell<BoolSettingCell> {
 protected:
-    CCMenuItemToggler* m_toggler;
+    CCMenuItemToggler *m_toggler;
 
     void setup() override;
     void reload() override;
 };
 
-}
+} // namespace globed

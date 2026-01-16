@@ -9,12 +9,12 @@ using namespace asp::time;
 
 namespace globed {
 
-bool UserPunishmentPopup::initCustomSize(const std::string& reason, int64_t expiresAt, bool isBan) {
+bool UserPunishmentPopup::initCustomSize(const std::string &reason, int64_t expiresAt, bool isBan)
+{
     constexpr float WIDTH = 340.f;
     auto reasonText = fmt::format("Reason: {}", reason.empty() ? "No reason provided" : reason);
 
-    m_textArea = Build<SimpleTextArea>::create(reasonText, "bigFont.fnt", 0.5f, WIDTH * 0.9f)
-        .anchorPoint(0.5f, 0.5f);
+    m_textArea = Build<SimpleTextArea>::create(reasonText, "bigFont.fnt", 0.5f, WIDTH * 0.9f).anchorPoint(0.5f, 0.5f);
     m_textArea->setLinePadding(-1.f);
     m_textArea->setWrappingMode(WrappingMode::SPACE_WRAP);
     m_textArea->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
@@ -27,7 +27,8 @@ bool UserPunishmentPopup::initCustomSize(const std::string& reason, int64_t expi
     return this->initAnchored(WIDTH, 120.f + taHeight);
 }
 
-bool UserPunishmentPopup::setup() {
+bool UserPunishmentPopup::setup()
+{
     this->setTitle(m_isBan ? "You have been banned!" : "You have been muted!");
 
     Duration punishmentTime = SystemTime::fromUnix(m_expiresAt).until();
@@ -35,12 +36,12 @@ bool UserPunishmentPopup::setup() {
     std::string timeUntil = punishmentTime.isZero() ? "Never" : fmt::format("in {}", punishmentTime.toHumanString(1));
 
     auto layout = Build<CCNode>::create()
-        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(10.f))
-        .contentSize(m_size.width * 0.9f, m_size.height * 0.58f)
-        .anchorPoint(0.5f, 0.5f)
-        .pos(this->fromCenter(0.f, 7.5f))
-        .parent(m_mainLayer)
-        .collect();
+                      .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(10.f))
+                      .contentSize(m_size.width * 0.9f, m_size.height * 0.58f)
+                      .anchorPoint(0.5f, 0.5f)
+                      .pos(this->fromCenter(0.f, 7.5f))
+                      .parent(m_mainLayer)
+                      .collect();
 
     layout->addChild(m_textArea);
 
@@ -52,9 +53,7 @@ bool UserPunishmentPopup::setup() {
 
     Build<ButtonSprite>::create("Close", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .scale(0.75f)
-        .intoMenuItem([this] {
-            this->onClose(nullptr);
-        })
+        .intoMenuItem([this] { this->onClose(nullptr); })
         .pos(this->fromBottom(24.f))
         .parent(m_buttonMenu);
 
@@ -77,7 +76,8 @@ bool UserPunishmentPopup::setup() {
     return true;
 }
 
-UserPunishmentPopup* UserPunishmentPopup::create(const std::string& reason, int64_t expiresAt, bool isBan) {
+UserPunishmentPopup *UserPunishmentPopup::create(const std::string &reason, int64_t expiresAt, bool isBan)
+{
     auto ret = new UserPunishmentPopup;
     if (ret->initCustomSize(reason, expiresAt, isBan)) {
         ret->autorelease();
@@ -87,4 +87,4 @@ UserPunishmentPopup* UserPunishmentPopup::create(const std::string& reason, int6
     return nullptr;
 }
 
-}
+} // namespace globed

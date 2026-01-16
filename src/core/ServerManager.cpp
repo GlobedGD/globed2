@@ -7,31 +7,39 @@ using namespace geode::prelude;
 
 namespace globed {
 
-ServerManager::ServerManager() {
+ServerManager::ServerManager()
+{
     this->reload();
 }
 
-CentralServerData& ServerManager::getServer(size_t index) {
+CentralServerData &ServerManager::getServer(size_t index)
+{
     return m_storage.servers.at(index);
 }
 
-CentralServerData& ServerManager::getActiveServer() {
+CentralServerData &ServerManager::getActiveServer()
+{
     return this->getServer(m_storage.activeIdx);
 }
 
-size_t ServerManager::getActiveIndex() {
+size_t ServerManager::getActiveIndex()
+{
     return m_storage.activeIdx;
 }
 
-void ServerManager::switchTo(size_t index) {
-    if (index >= m_storage.servers.size()) return;
+void ServerManager::switchTo(size_t index)
+{
+    if (index >= m_storage.servers.size())
+        return;
 
     m_storage.activeIdx = index;
     this->commit();
 }
 
-void ServerManager::deleteServer(size_t index) {
-    if (index >= m_storage.servers.size()) return;
+void ServerManager::deleteServer(size_t index)
+{
+    if (index >= m_storage.servers.size())
+        return;
 
     m_storage.servers.erase(m_storage.servers.begin() + index);
 
@@ -44,20 +52,24 @@ void ServerManager::deleteServer(size_t index) {
     this->commit();
 }
 
-void ServerManager::addServer(CentralServerData&& data) {
+void ServerManager::addServer(CentralServerData &&data)
+{
     m_storage.servers.push_back(std::move(data));
     this->commit();
 }
 
-std::vector<CentralServerData>& ServerManager::getAllServers() {
+std::vector<CentralServerData> &ServerManager::getAllServers()
+{
     return m_storage.servers;
 }
 
-void ServerManager::commit() {
+void ServerManager::commit()
+{
     globed::setValue("core.central-servers", m_storage);
 }
 
-static std::string getMainServerUrl() {
+static std::string getMainServerUrl()
+{
 #ifdef GEODE_IS_WINDOWS
     char envbuf[1024];
     size_t count = 0;
@@ -71,7 +83,7 @@ static std::string getMainServerUrl() {
     auto path2 = Mod::get()->getConfigDir(false);
     auto path3 = Mod::get()->getSaveDir();
 
-    for (const auto& p : {path1, path2, path3}) {
+    for (const auto &p : {path1, path2, path3}) {
         auto path = p / "globed-server-url.txt";
 
         if (asp::fs::exists(path)) {
@@ -89,7 +101,8 @@ static std::string getMainServerUrl() {
     return GLOBED_DEFAULT_MAIN_SERVER_URL;
 }
 
-void ServerManager::reload() {
+void ServerManager::reload()
+{
     if (auto opt = globed::value<Storage>("core.central-servers")) {
         m_storage = std::move(*opt);
     } else {
@@ -99,13 +112,11 @@ void ServerManager::reload() {
     // ensure the main server is always present and is the first one
     auto mainServerUrl = getMainServerUrl();
 
-    auto it = std::find_if(
-        m_storage.servers.begin(), m_storage.servers.end(),
-        [&](const CentralServerData& server) { return server.url == mainServerUrl; }
-    );
+    auto it = std::find_if(m_storage.servers.begin(), m_storage.servers.end(),
+                           [&](const CentralServerData &server) { return server.url == mainServerUrl; });
 
     if (it == m_storage.servers.end()) {
-        m_storage.servers.insert(m_storage.servers.begin(), { "Globed Server", mainServerUrl });
+        m_storage.servers.insert(m_storage.servers.begin(), {"Globed Server", mainServerUrl});
     } else if (it != m_storage.servers.begin()) {
         std::iter_swap(m_storage.servers.begin(), it);
     }
@@ -115,8 +126,9 @@ void ServerManager::reload() {
     }
 }
 
-bool ServerManager::isOfficialServerActive() {
+bool ServerManager::isOfficialServerActive()
+{
     return this->getActiveServer().url == GLOBED_DEFAULT_MAIN_SERVER_URL;
 }
 
-}
+} // namespace globed

@@ -3,8 +3,8 @@
 #include <globed/prelude.hpp>
 #include <ui/BasePopup.hpp>
 
-#include <std23/move_only_function.h>
 #include <cue/ListNode.hpp>
+#include <std23/move_only_function.h>
 
 namespace globed {
 
@@ -14,7 +14,8 @@ public:
 
     using Callback = std23::move_only_function<void()>;
 
-    inline void setSwitchCallback(Callback&& callback) {
+    inline void setSwitchCallback(Callback &&callback)
+    {
         m_callback = std::move(callback);
     }
 
@@ -24,9 +25,9 @@ public:
 
 private:
     Callback m_callback;
-    cue::ListNode* m_list;
+    cue::ListNode *m_list;
 
     bool setup() override;
 };
 
-}
+} // namespace globed

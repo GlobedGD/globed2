@@ -1,14 +1,14 @@
-#include <globed/core/game/VisualPlayer.hpp>
-#include <globed/core/SettingsManager.hpp>
-#include <globed/core/RoomManager.hpp>
-#include <globed/audio/AudioManager.hpp>
-#include <globed/util/lazy.hpp>
 #include <core/PreloadManager.hpp>
-#include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/game/SettingCache.hpp>
+#include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
-#include <ui/misc/NameLabel.hpp>
+#include <globed/audio/AudioManager.hpp>
+#include <globed/core/RoomManager.hpp>
+#include <globed/core/SettingsManager.hpp>
+#include <globed/core/game/VisualPlayer.hpp>
+#include <globed/util/lazy.hpp>
 #include <ui/game/EmoteBubble.hpp>
+#include <ui/misc/NameLabel.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -20,15 +20,17 @@ using namespace geode::prelude;
 
 namespace globed {
 
-static auto& g_settings = CachedSettings::get();
+static auto &g_settings = CachedSettings::get();
 
 #ifdef GLOBED_DEBUG
-static inline bool lerpDebug() {
+static inline bool lerpDebug()
+{
     static bool val = Loader::get()->getLaunchFlag("globed/core.dev.lerp-debug");
     return val;
 }
 #else
-static inline bool lerpDebug() {
+static inline bool lerpDebug()
+{
     return false;
 }
 #endif
@@ -45,7 +47,7 @@ VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
     m_unk4C8 = -1;
     m_unk4CC = -1;
     m_unk50C = 1.0f;
-    m_defaultZLayer= ZLayer::T1;
+    m_defaultZLayer = ZLayer::T1;
     m_pixelScaleX = 1.0f;
     m_areaOpacityValue = 1.0f;
 
@@ -69,7 +71,9 @@ VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
     new (&m_currentRobotAnimation) gd::string("run");
 }
 
-bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
+bool VisualPlayer::init(GJBaseGameLayer *gameLayer, RemotePlayer *rp, CCNode *playerNode, bool isSecond,
+                        bool localPlayer)
+{
     this->setTag(VISUAL_PLAYER_TAG);
 
     if (!PlayerObject::init(1, 1, gameLayer, gameLayer->m_objectLayer, !gameLayer->m_isEditor)) {
@@ -95,37 +99,36 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     m_forceHideName = !showName;
 
     m_nameLabel = Build<NameLabel>::create("", "chatFont.fnt")
-        .visible(showName)
-        .pos(0.f, NAME_OFFSET)
-        .parent(playerNode)
-        .store(m_nameLabel);
+                      .visible(showName)
+                      .pos(0.f, NAME_OFFSET)
+                      .parent(playerNode)
+                      .store(m_nameLabel);
 
     m_nameLabel->setShadowEnabled(true);
 
     if (m_isLocalPlayer) {
-        auto& nm = NetworkManagerImpl::get();
+        auto &nm = NetworkManagerImpl::get();
         if (auto sud = nm.getOwnSpecialData()) {
             m_nameLabel->updateWithRoles(*sud);
         }
 
-        auto& rm = RoomManager::get();
+        auto &rm = RoomManager::get();
         if (auto team = rm.getCurrentTeam()) {
             m_nameLabel->updateTeam(rm.getCurrentTeamId(), team->color);
         }
     }
 
     // create status icons
-    bool showStatus = !isSecond &&
-        (localPlayer ? g_settings.selfStatusIcons : g_settings.showStatusIcons);
+    bool showStatus = !isSecond && (localPlayer ? g_settings.selfStatusIcons : g_settings.showStatusIcons);
 
     if (showStatus) {
         float opacity = static_cast<unsigned char>(g_settings.playerOpacity * 255.f);
         m_statusIcons = Build<PlayerStatusIcons>::create(opacity)
-            .scale(0.8f)
-            .anchorPoint(0.5f, 0.f)
-            .pos(0.f, showName ? STATUS_ICONS_OFFSET : NAME_OFFSET)
-            .parent(playerNode)
-            .id("status-icons"_spr);
+                            .scale(0.8f)
+                            .anchorPoint(0.5f, 0.f)
+                            .pos(0.f, showName ? STATUS_ICONS_OFFSET : NAME_OFFSET)
+                            .parent(playerNode)
+                            .id("status-icons"_spr);
     }
 
     if (lerpDebug()) {
@@ -142,7 +145,9 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     return true;
 }
 
-void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState, bool forceHide) {
+void VisualPlayer::updateFromData(const PlayerObjectData &data, const PlayerState &state,
+                                  const GameCameraState &camState, bool forceHide)
+{
     if (lerpDebug()) {
         this->updateLerpTrajectory(data);
     }
@@ -172,7 +177,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     // m_isSwing = data.iconType == PlayerIconType::Swing;
 
     if (data.extData) {
-        auto& ed = *data.extData;
+        auto &ed = *data.extData;
         m_platformerXVelocity = ed.velocityX;
         m_yVelocity = ed.velocityY;
         m_isAccelerating = ed.accelerating;
@@ -209,8 +214,10 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     this->setVisible(shouldBeVisible);
     if (!shouldBeVisible) {
         m_playEffects = false;
-        if (m_regularTrail) m_regularTrail->setVisible(false);
-        if (m_shipStreak) m_shipStreak->setVisible(false);
+        if (m_regularTrail)
+            m_regularTrail->setVisible(false);
+        if (m_shipStreak)
+            m_shipStreak->setVisible(false);
     }
 
     bool extraProcessing = shouldBeVisible || m_isLocalPlayer;
@@ -265,7 +272,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
                 // invert if 30% of the bubble is inside the ceiling
                 float bubbleTop = data.position.y + fullOffset.y +
-                    m_emoteBubble->getContentHeight() * std::abs(m_emoteBubble->getScaleY()) * 0.7f;
+                                  m_emoteBubble->getContentHeight() * std::abs(m_emoteBubble->getScaleY()) * 0.7f;
 
                 invertY = bubbleTop > maxY;
             }
@@ -282,7 +289,8 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         }
 
         if (m_statusIcons) {
-            m_statusIcons->setPosition(data.position + dir.vector * (m_nameLabel->isVisible() ? STATUS_ICONS_OFFSET : NAME_OFFSET));
+            m_statusIcons->setPosition(data.position +
+                                       dir.vector * (m_nameLabel->isVisible() ? STATUS_ICONS_OFFSET : NAME_OFFSET));
             m_statusIcons->setRotation(dir.angle);
         }
     }
@@ -332,7 +340,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     }
 
     if (m_statusIcons && extraProcessing) {
-        auto& am = AudioManager::get();
+        auto &am = AudioManager::get();
         bool speaking = m_isLocalPlayer ? am.isPassiveRecording() : gjbgl->isSpeaking(state.accountId);
 
         PlayerStatusFlags flags = {};
@@ -348,15 +356,14 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
     // animate robot and spider
     if (data.iconType == PlayerIconType::Robot || data.iconType == PlayerIconType::Spider) {
-        if (m_prevGrounded != data.isGrounded || m_prevStationary != data.isStationary || m_prevFalling != data.isFalling || switchedMode || cameNearby) {
+        if (m_prevGrounded != data.isGrounded || m_prevStationary != data.isStationary ||
+            m_prevFalling != data.isFalling || switchedMode || cameNearby) {
             m_prevGrounded = data.isGrounded;
             m_prevStationary = data.isStationary;
             m_prevFalling = data.isFalling;
 
             if (shouldBeVisible) {
-                data.iconType == PlayerIconType::Robot ?
-                    this->updateRobotAnimation()
-                    : this->updateSpiderAnimation();
+                data.iconType == PlayerIconType::Robot ? this->updateRobotAnimation() : this->updateSpiderAnimation();
             }
         }
     }
@@ -403,31 +410,23 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     }
 }
 
-void VisualPlayer::updateLerpTrajectory(const PlayerObjectData& data) {
+void VisualPlayer::updateLerpTrajectory(const PlayerObjectData &data)
+{
     if (!m_playerTrajectory) {
         return;
     }
 
-    m_playerTrajectory->drawSegment(
-        m_prevPosition, data.position,
-        0.5f,
-        ccColor4F{0.f, 1.f, 0.1f, 1.f}
-    );
+    m_playerTrajectory->drawSegment(m_prevPosition, data.position, 0.5f, ccColor4F{0.f, 1.f, 0.1f, 1.f});
 
-    auto& interpolator = GlobedGJBGL::get()->m_fields->m_interpolator;
+    auto &interpolator = GlobedGJBGL::get()->m_fields->m_interpolator;
     int accountId = m_remotePlayer->m_state.accountId;
 
     if (interpolator.hasPlayer(accountId)) {
-        auto& newstate = interpolator.getNewerState(m_remotePlayer->m_state.accountId);
+        auto &newstate = interpolator.getNewerState(m_remotePlayer->m_state.accountId);
 
-        m_playerTrajectory->drawCircle(
-            m_isSecond ? (newstate.player2 ? newstate.player2->position : CCPoint{}) : newstate.player1->position,
-            1.5f,
-            ccColor4F{0.1f, 0.9f, 0.2f, 1.f},
-            0.3f,
-            ccColor4F{1.f, 0.f, 0.f, 0.f},
-            8
-        );
+        m_playerTrajectory->drawCircle(m_isSecond ? (newstate.player2 ? newstate.player2->position : CCPoint{})
+                                                  : newstate.player1->position,
+                                       1.5f, ccColor4F{0.1f, 0.9f, 0.2f, 1.f}, 0.3f, ccColor4F{1.f, 0.f, 0.f, 0.f}, 8);
     }
 
     // detect if the player reset
@@ -436,26 +435,28 @@ void VisualPlayer::updateLerpTrajectory(const PlayerObjectData& data) {
     }
 }
 
-bool VisualPlayer::hideNearby(GJBaseGameLayer* gjbgl) {
+bool VisualPlayer::hideNearby(GJBaseGameLayer *gjbgl)
+{
     // if this is the local player, do nothing
     if (m_isLocalPlayer) {
         return false;
     }
 
-    return gjbgl->m_level->isPlatformer()
-        ? g_settings.hideNearbyPlat
-        : g_settings.hideNearbyClassic;
+    return gjbgl->m_level->isPlatformer() ? g_settings.hideNearbyPlat : g_settings.hideNearbyClassic;
 }
 
-PlayerIconData& VisualPlayer::icons() {
+PlayerIconData &VisualPlayer::icons()
+{
     return m_remotePlayer->m_data.icons;
 }
 
-PlayerDisplayData& VisualPlayer::displayData() {
+PlayerDisplayData &VisualPlayer::displayData()
+{
     return m_remotePlayer->m_data;
 }
 
-void VisualPlayer::setStickyState(bool p1, bool sticky) {
+void VisualPlayer::setStickyState(bool p1, bool sticky)
+{
     if (p1) {
         m_p1Sticky = sticky;
     } else {
@@ -463,7 +464,8 @@ void VisualPlayer::setStickyState(bool p1, bool sticky) {
     }
 }
 
-void VisualPlayer::updateOpacity() {
+void VisualPlayer::updateOpacity()
+{
     float mult = 1.f;
 
     bool hideNearby_ = this->hideNearby(GlobedGJBGL::get(m_gameLayer));
@@ -474,10 +476,7 @@ void VisualPlayer::updateOpacity() {
         auto p2pos = m_gameLayer->m_player2->getPosition();
         auto ourPos = m_prevPosition;
 
-        float distance = std::min(
-            cocos2d::ccpDistance(ourPos, p1pos),
-            cocos2d::ccpDistance(ourPos, p2pos)
-        );
+        float distance = std::min(cocos2d::ccpDistance(ourPos, p1pos), cocos2d::ccpDistance(ourPos, p2pos));
 
         // range of 150 units (5 blocks)
         distance = std::clamp(distance, 0.f, 150.f);
@@ -510,8 +509,9 @@ void VisualPlayer::updateOpacity() {
     }
 }
 
-void VisualPlayer::updateIconType(PlayerIconType iconType) {
-    auto& icons = this->icons();
+void VisualPlayer::updateIconType(PlayerIconType iconType)
+{
+    auto &icons = this->icons();
 
     this->toggleFlyMode(false, true);
     this->toggleRollMode(false, false);
@@ -522,47 +522,49 @@ void VisualPlayer::updateIconType(PlayerIconType iconType) {
     this->toggleSwingMode(false, false);
 
     switch (iconType) {
-        case PlayerIconType::Unknown: break;
-        case PlayerIconType::Cube: {
-            // don't call toggle
-            this->updatePlayerFrame(icons.cube);
-        } break;
-        case PlayerIconType::Ship: {
-            this->toggleFlyMode(true, false);
-            this->updatePlayerShipFrame(icons.ship);
-        } break;
-        case PlayerIconType::Ball: {
-            this->toggleRollMode(true, false);
-            this->updatePlayerRollFrame(icons.ball);
-        } break;
-        case PlayerIconType::Ufo: {
-            this->toggleBirdMode(true, false);
-            this->updatePlayerBirdFrame(icons.ufo);
-        } break;
-        case PlayerIconType::Wave: {
-            this->toggleDartMode(true, false);
-            this->updatePlayerDartFrame(icons.wave);
-        } break;
-        case PlayerIconType::Robot: {
-            this->toggleRobotMode(true, false);
-            this->updatePlayerRobotFrame(icons.robot);
-        } break;
-        case PlayerIconType::Spider: {
-            this->toggleSpiderMode(true, false);
-            this->updatePlayerSpiderFrame(icons.spider);
-        } break;
-        case PlayerIconType::Swing: {
-            this->toggleSwingMode(true, false);
-            this->updatePlayerSwingFrame(icons.swing);
-        } break;
-        case PlayerIconType::Jetpack: {
-            this->toggleFlyMode(true, true);
-            this->updatePlayerJetpackFrame(icons.jetpack);
-        } break;
+    case PlayerIconType::Unknown:
+        break;
+    case PlayerIconType::Cube: {
+        // don't call toggle
+        this->updatePlayerFrame(icons.cube);
+    } break;
+    case PlayerIconType::Ship: {
+        this->toggleFlyMode(true, false);
+        this->updatePlayerShipFrame(icons.ship);
+    } break;
+    case PlayerIconType::Ball: {
+        this->toggleRollMode(true, false);
+        this->updatePlayerRollFrame(icons.ball);
+    } break;
+    case PlayerIconType::Ufo: {
+        this->toggleBirdMode(true, false);
+        this->updatePlayerBirdFrame(icons.ufo);
+    } break;
+    case PlayerIconType::Wave: {
+        this->toggleDartMode(true, false);
+        this->updatePlayerDartFrame(icons.wave);
+    } break;
+    case PlayerIconType::Robot: {
+        this->toggleRobotMode(true, false);
+        this->updatePlayerRobotFrame(icons.robot);
+    } break;
+    case PlayerIconType::Spider: {
+        this->toggleSpiderMode(true, false);
+        this->updatePlayerSpiderFrame(icons.spider);
+    } break;
+    case PlayerIconType::Swing: {
+        this->toggleSwingMode(true, false);
+        this->updatePlayerSwingFrame(icons.swing);
+    } break;
+    case PlayerIconType::Jetpack: {
+        this->toggleFlyMode(true, true);
+        this->updatePlayerJetpackFrame(icons.jetpack);
+    } break;
     }
 }
 
-void VisualPlayer::updateRobotAnimation() {
+void VisualPlayer::updateRobotAnimation()
+{
     if (m_prevGrounded && m_prevStationary) {
         // if on ground and not moving, play the idle animation
         m_robotSprite->tweenToAnimation("idle01", 0.1f);
@@ -582,7 +584,8 @@ void VisualPlayer::updateRobotAnimation() {
     }
 }
 
-void VisualPlayer::updateSpiderAnimation() {
+void VisualPlayer::updateSpiderAnimation()
+{
     // this is practically the same as the robot animation
 
     if (!m_prevGrounded && m_prevFalling) {
@@ -596,7 +599,8 @@ void VisualPlayer::updateSpiderAnimation() {
     }
 }
 
-void VisualPlayer::animateSwingFire(bool goingDown) {
+void VisualPlayer::animateSwingFire(bool goingDown)
+{
     if (goingDown) {
         m_swingFireTop->animateFireIn();
         m_swingFireBottom->animateFireOut();
@@ -606,24 +610,19 @@ void VisualPlayer::animateSwingFire(bool goingDown) {
     }
 }
 
-void VisualPlayer::animateRobotFire(bool enable) {
+void VisualPlayer::animateRobotFire(bool enable)
+{
     m_robotFire->stopActionByTag(ROBOT_FIRE_ACTION);
 
-    CCSequence* seq;
+    CCSequence *seq;
     if (enable) {
-        seq = CCSequence::create(
-            CCDelayTime::create(0.15f),
-            CCCallFunc::create(this, callfunc_selector(VisualPlayer::showRobotFire)),
-            nullptr
-        );
+        seq = CCSequence::create(CCDelayTime::create(0.15f),
+                                 CCCallFunc::create(this, callfunc_selector(VisualPlayer::showRobotFire)), nullptr);
 
         m_robotFire->setVisible(true);
     } else {
-        seq = CCSequence::create(
-            CCDelayTime::create(0.1f),
-            CCCallFunc::create(this, callfunc_selector(VisualPlayer::hideRobotFire)),
-            nullptr
-        );
+        seq = CCSequence::create(CCDelayTime::create(0.1f),
+                                 CCCallFunc::create(this, callfunc_selector(VisualPlayer::hideRobotFire)), nullptr);
 
         m_robotFire->animateFireOut();
     }
@@ -632,16 +631,22 @@ void VisualPlayer::animateRobotFire(bool enable) {
     m_robotFire->runAction(seq);
 }
 
-void VisualPlayer::hideRobotFire() {
+void VisualPlayer::hideRobotFire()
+{
     m_robotFire->setVisible(false);
 }
 
-void VisualPlayer::showRobotFire() {
+void VisualPlayer::showRobotFire()
+{
     m_robotFire->animateFireIn();
 }
 
-void VisualPlayer::cleanupObjectLayer() {
-#define $clear(x) if (x) x->removeFromParent(); x = nullptr
+void VisualPlayer::cleanupObjectLayer()
+{
+#define $clear(x)                                                                                                      \
+    if (x)                                                                                                             \
+        x->removeFromParent();                                                                                         \
+    x = nullptr
 
     // Robtop does not properly remove most/all those nodes from the playerobject in the destructor,
     // so whenever someone leaves the level, these nodes are never deleted until you leave the level too.
@@ -676,10 +681,11 @@ void VisualPlayer::cleanupObjectLayer() {
 #undef $clear
 }
 
-void VisualPlayer::updateDisplayData() {
+void VisualPlayer::updateDisplayData()
+{
     auto gm = cachedSingleton<GameManager>();
-    auto& rm = RoomManager::get();
-    auto& ddata = this->displayData();
+    auto &rm = RoomManager::get();
+    auto &ddata = this->displayData();
 
     // update the team if not initialized
     if (!m_teamInitialized) {
@@ -702,20 +708,23 @@ void VisualPlayer::updateDisplayData() {
     this->updateIconType(m_prevMode);
 }
 
-void VisualPlayer::updateTeam(uint16_t teamId) {
+void VisualPlayer::updateTeam(uint16_t teamId)
+{
     if (auto team = RoomManager::get().getTeam(teamId)) {
         m_nameLabel->updateTeam(teamId, team->color);
         m_teamInitialized = true;
     }
 }
 
-void VisualPlayer::playDeathEffect() {
+void VisualPlayer::playDeathEffect()
+{
     // do nothing if the player is not nearby or in editor
-    if (!m_prevNearby || m_isEditor) return;
+    if (!m_prevNearby || m_isEditor)
+        return;
 
     this->hideRobotFire();
 
-    auto* gm = globed::cachedSingleton<GameManager>();
+    auto *gm = globed::cachedSingleton<GameManager>();
 
     int oldEffect = gm->getPlayerDeathEffect();
     gm->setPlayerDeathEffect(this->icons().deathEffect);
@@ -727,7 +736,7 @@ void VisualPlayer::playDeathEffect() {
 
     // find all children in the object layer so we can later compare and see what nodes were added by playerDestroyed
     auto children = m_gameLayer->m_objectLayer->getChildrenExt();
-    std::unordered_set<CCNode*> prevChildren{children.begin(), children.end()};
+    std::unordered_set<CCNode *> prevChildren{children.begin(), children.end()};
 
     // cause the actual death
     m_playEffects = true;
@@ -746,9 +755,11 @@ void VisualPlayer::playDeathEffect() {
     m_playingDeathEffect = true;
 }
 
-void VisualPlayer::handleSpiderTp(const SpiderTeleportData& tp) {
+void VisualPlayer::handleSpiderTp(const SpiderTeleportData &tp)
+{
     auto pl = globed::cachedSingleton<GameManager>()->m_playLayer;
-    if (!pl || !m_prevNearby) return;
+    if (!pl || !m_prevNearby)
+        return;
 
     m_playEffects = true;
     this->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
@@ -759,19 +770,22 @@ void VisualPlayer::handleSpiderTp(const SpiderTeleportData& tp) {
     size_t countAfter = arr ? arr->count() : 0;
 
     for (size_t i = countBefore; i < countAfter; i++) {
-        static_cast<CCNode*>(arr->objectAtIndex(i))->setTag(SPIDER_DASH_CIRCLE_WAVE_TAG);
+        static_cast<CCNode *>(arr->objectAtIndex(i))->setTag(SPIDER_DASH_CIRCLE_WAVE_TAG);
     }
 
     for (auto child : m_parentLayer->getChildrenExt()) {
-        if (child->getZOrder() != 40) continue;
-        if (!child->getID().empty()) continue;
+        if (child->getZOrder() != 40)
+            continue;
+        if (!child->getID().empty())
+            continue;
 
-        auto sprite = typeinfo_cast<CCSprite*>(child);
-        if (!sprite) continue;
+        auto sprite = typeinfo_cast<CCSprite *>(child);
+        if (!sprite)
+            continue;
 
         auto sfc = cachedSingleton<CCSpriteFrameCache>();
-        auto* spdash1 = sfc->spriteFrameByName("spiderDash_001.png")->getTexture();
-        auto* tex = sprite->getTexture();
+        auto *spdash1 = sfc->spriteFrameByName("spiderDash_001.png")->getTexture();
+        auto *tex = sprite->getTexture();
 
         if (tex == spdash1) {
             sprite->setTag(SPIDER_DASH_SPRITE_TAG);
@@ -782,7 +796,8 @@ void VisualPlayer::handleSpiderTp(const SpiderTeleportData& tp) {
     this->spiderTeleportUpdateColor();
 }
 
-static inline ccColor3B lerpColor(ccColor3B from, ccColor3B to, float delta) {
+static inline ccColor3B lerpColor(ccColor3B from, ccColor3B to, float delta)
+{
     delta = std::clamp(delta, 0.f, 1.f);
 
     ccColor3B out;
@@ -793,7 +808,8 @@ static inline ccColor3B lerpColor(ccColor3B from, ccColor3B to, float delta) {
     return out;
 }
 
-void VisualPlayer::spiderTeleportUpdateColor() {
+void VisualPlayer::spiderTeleportUpdateColor()
+{
     constexpr float MAX_TIME = 0.4f;
 
     m_tpColorDelta += (1.f / 60.f);
@@ -813,18 +829,18 @@ void VisualPlayer::spiderTeleportUpdateColor() {
     this->setColor(main);
     this->setSecondColor(secondary);
 
-    auto* seq = CCSequence::create(
-        CCDelayTime::create(1.f / 60.f),
-        CCCallFunc::create(this, callfunc_selector(VisualPlayer::spiderTeleportUpdateColor)),
-        nullptr
-    );
+    auto *seq = CCSequence::create(CCDelayTime::create(1.f / 60.f),
+                                   CCCallFunc::create(this, callfunc_selector(VisualPlayer::spiderTeleportUpdateColor)),
+                                   nullptr);
     seq->setTag(SPIDER_TELEPORT_COLOR_ACTION);
 
     this->runAction(seq);
 }
 
-void VisualPlayer::playPlatformerJump() {
-    if (!m_prevNearby) return;
+void VisualPlayer::playPlatformerJump()
+{
+    if (!m_prevNearby)
+        return;
 
     if (m_isPlatformer && m_prevMode == PlayerIconType::Cube && !m_prevRotating) {
         this->animatePlatformerJump(1.f);
@@ -832,25 +848,27 @@ void VisualPlayer::playPlatformerJump() {
     }
 }
 
-void VisualPlayer::playEmote(uint32_t emoteId) {
+void VisualPlayer::playEmote(uint32_t emoteId)
+{
     if (!m_emoteBubble) {
-        m_emoteBubble = Build<EmoteBubble>::create()
-            .parent(m_remotePlayer->m_parentNode);
+        m_emoteBubble = Build<EmoteBubble>::create().parent(m_remotePlayer->m_parentNode);
     }
 
     m_emoteBubble->playEmote(emoteId, m_remotePlayer->shared_from_this());
 }
 
-void VisualPlayer::cancelPlatformerJumpAnim() {
+void VisualPlayer::cancelPlatformerJumpAnim()
+{
     if (m_didPlatformerJump) {
         m_didPlatformerJump = false;
         this->stopPlatformerJumpAnimation();
     }
 }
 
-void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
-    auto* gm = globed::cachedSingleton<GameManager>();
-    auto& icons = this->icons();
+void VisualPlayer::updatePlayerObjectIcons(bool skipFrames)
+{
+    auto *gm = globed::cachedSingleton<GameManager>();
+    auto &icons = this->icons();
 
     m_color1 = icons.color1.asColor();
     m_color2 = icons.color2.asColor();
@@ -885,9 +903,11 @@ void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
     this->updateOpacity();
 }
 
-bool VisualPlayer::isPlayerNearby(const PlayerObjectData& data, const GameCameraState& camState) {
+bool VisualPlayer::isPlayerNearby(const PlayerObjectData &data, const GameCameraState &camState)
+{
     // always render them in editor (cause im lazy)
-    if (m_isEditor) return true;
+    if (m_isEditor)
+        return true;
 
     // check if they are inside a grid of 3x3 screens
     float fullScaleMult = 3.f;
@@ -902,32 +922,39 @@ bool VisualPlayer::isPlayerNearby(const PlayerObjectData& data, const GameCamera
     float cameraBottom = cameraOrigin.y;
     float cameraTop = cameraOrigin.y + cameraCoverage.height;
 
-    auto& pos = data.position;
+    auto &pos = data.position;
 
-    return pos.x >= cameraLeft && pos.x <= cameraRight &&
-           pos.y >= cameraBottom && pos.y <= cameraTop;
+    return pos.x >= cameraLeft && pos.x <= cameraRight && pos.y >= cameraBottom && pos.y <= cameraTop;
 }
 
-CCPoint VisualPlayer::getLastPosition() {
+CCPoint VisualPlayer::getLastPosition()
+{
     return m_prevPosition;
 }
 
-float VisualPlayer::getLastRotation() {
+float VisualPlayer::getLastRotation()
+{
     return m_prevRotation;
 }
 
-void VisualPlayer::setVisible(bool vis) {
+void VisualPlayer::setVisible(bool vis)
+{
     bool showName = !m_forceHideName && (m_isLocalPlayer || vis);
 
-    if (vis == m_bVisible && m_nameLabel->m_bVisible == showName) return;
+    if (vis == m_bVisible && m_nameLabel->m_bVisible == showName)
+        return;
     PlayerObject::setVisible(vis);
 
     m_nameLabel->setVisible(showName);
-    if (m_statusIcons) m_statusIcons->setVisible(m_isLocalPlayer || vis);
-    if (m_emoteBubble) m_emoteBubble->setVisible(m_isLocalPlayer || vis);
+    if (m_statusIcons)
+        m_statusIcons->setVisible(m_isLocalPlayer || vis);
+    if (m_emoteBubble)
+        m_emoteBubble->setVisible(m_isLocalPlayer || vis);
 }
 
-VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
+VisualPlayer *VisualPlayer::create(GJBaseGameLayer *gameLayer, RemotePlayer *rp, CCNode *playerNode, bool isSecond,
+                                   bool localPlayer)
+{
     auto data = operator new(sizeof(VisualPlayer));
     std::memset(data, 0, sizeof(VisualPlayer));
 
@@ -947,4 +974,4 @@ VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp,
     return nullptr;
 }
 
-}
+} // namespace globed

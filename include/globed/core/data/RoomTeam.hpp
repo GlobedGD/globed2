@@ -6,4 +6,4 @@ struct RoomTeam {
     cocos2d::ccColor4B color;
 };
 
-}
+} // namespace globed

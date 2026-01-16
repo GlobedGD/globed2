@@ -1,7 +1,7 @@
 #pragma once
 
-#include <qunet/buffers/ByteReader.hpp>
 #include <modules/scripting/objects/ExtendedObjectBase.hpp>
+#include <qunet/buffers/ByteReader.hpp>
 
 namespace globed {
 
@@ -16,7 +16,8 @@ struct MoveAbsGroupData {
     float x, y;
 };
 
-inline geode::Result<MoveGroupData> decodeMoveGroupData(qn::ByteReader& reader) {
+inline geode::Result<MoveGroupData> decodeMoveGroupData(qn::ByteReader &reader)
+{
     MoveGroupData out{};
 
     out.group = READER_UNWRAP(reader.readVarUint());
@@ -26,7 +27,8 @@ inline geode::Result<MoveGroupData> decodeMoveGroupData(qn::ByteReader& reader) 
     return geode::Ok(out);
 }
 
-inline geode::Result<MoveAbsGroupData> decodeMoveAbsGroupData(qn::ByteReader& reader) {
+inline geode::Result<MoveAbsGroupData> decodeMoveAbsGroupData(qn::ByteReader &reader)
+{
     MoveAbsGroupData out{};
 
     out.group = READER_UNWRAP(reader.readVarUint());
@@ -37,5 +39,4 @@ inline geode::Result<MoveAbsGroupData> decodeMoveAbsGroupData(qn::ByteReader& re
     return geode::Ok(out);
 }
 
-
-}
+} // namespace globed

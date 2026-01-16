@@ -74,11 +74,13 @@ void main() {
 
 namespace globed {
 
-static CCGLProgram* getShader() {
+static CCGLProgram *getShader()
+{
     auto ccsc = CCShaderCache::sharedShaderCache();
     auto program = ccsc->programForKey("gradient-label-shader"_spr);
 
-    if (program) return program;
+    if (program)
+        return program;
 
     auto vsh = vertex;
     auto fsh = multiFrag;
@@ -102,12 +104,11 @@ static CCGLProgram* getShader() {
     return program;
 }
 
-bool GradientLabel::init(std::string_view text, const std::string& font) {
+bool GradientLabel::init(std::string_view text, const std::string &font)
+{
     CCNode::init();
 
-    m_label = Build<Label>::create(text, font)
-        .anchorPoint(0.f, 0.f)
-        .parent(this);
+    m_label = Build<Label>::create(text, font).anchorPoint(0.f, 0.f).parent(this);
 
     m_startTime = Instant::now();
 
@@ -119,7 +120,8 @@ bool GradientLabel::init(std::string_view text, const std::string& font) {
     return true;
 }
 
-void GradientLabel::initShader() {
+void GradientLabel::initShader()
+{
     m_shader = getShader();
     m_shaderEnabled = false;
 
@@ -128,33 +130,40 @@ void GradientLabel::initShader() {
     }
 }
 
-void GradientLabel::limitLabelWidth(float maxw, float defaults, float mins) {
+void GradientLabel::limitLabelWidth(float maxw, float defaults, float mins)
+{
     m_label->limitLabelWidth(maxw, defaults, mins);
     this->setContentSize(m_label->getContentSize());
 }
 
-void GradientLabel::setColor(const Color3& color) {
+void GradientLabel::setColor(const Color3 &color)
+{
     CCNodeRGBA::setColor(color);
     m_label->setColor(_displayedColor);
     m_shaderEnabled = false;
 }
 
-void GradientLabel::setOpacity(uint8_t op) {
+void GradientLabel::setOpacity(uint8_t op)
+{
     CCNodeRGBA::setOpacity(op);
     m_label->setOpacity(_displayedOpacity);
 }
 
-void GradientLabel::setString(std::string_view text) {
+void GradientLabel::setString(std::string_view text)
+{
     m_label->setString(text);
     this->setContentSize(m_label->getContentSize());
 }
 
-void GradientLabel::setGradientColors(const MultiColor& color) {
+void GradientLabel::setGradientColors(const MultiColor &color)
+{
     this->setGradientColors(color.getColors());
 }
 
-void GradientLabel::setGradientColors(const std::vector<Color3>& inp) {
-    if (!m_shader || inp.empty()) return;
+void GradientLabel::setGradientColors(const std::vector<Color3> &inp)
+{
+    if (!m_shader || inp.empty())
+        return;
 
     // reset to white to properly show the gradient
     this->setColor({255, 255, 255});
@@ -162,15 +171,16 @@ void GradientLabel::setGradientColors(const std::vector<Color3>& inp) {
     m_colorCount = std::min(inp.size() + 1, MAX_COLORS + 1);
 
     size_t idx = 0;
-    for (auto& col : inp) {
-        m_colors[idx] = Color3F {
+    for (auto &col : inp) {
+        m_colors[idx] = Color3F{
             (float)col.r / 255.f,
             (float)col.g / 255.f,
             (float)col.b / 255.f,
         };
 
         idx++;
-        if (idx == MAX_COLORS) break;
+        if (idx == MAX_COLORS)
+            break;
     }
 
     // push the first color as the last color, for a smooth transition!!
@@ -178,15 +188,18 @@ void GradientLabel::setGradientColors(const std::vector<Color3>& inp) {
     m_shaderEnabled = true;
 }
 
-void GradientLabel::setGradientSpeed(float mod) {
+void GradientLabel::setGradientSpeed(float mod)
+{
     m_speedMod = mod;
 }
 
-void GradientLabel::setGlobalTime(bool global) {
+void GradientLabel::setGlobalTime(bool global)
+{
     m_globalTime = global;
 }
 
-void GradientLabel::draw() {
+void GradientLabel::draw()
+{
     if (!m_shader) {
         CCNode::draw();
         return;
@@ -206,11 +219,11 @@ void GradientLabel::draw() {
     m_shader->setUniformLocationWith1i(colorCountLoc, m_colorCount);
 
     GLint colorsLoc = m_shader->getUniformLocationForName("colors");
-    m_shader->setUniformLocationWith3fv(colorsLoc, (GLfloat*)m_colors.data(), m_colors.size());
+    m_shader->setUniformLocationWith3fv(colorsLoc, (GLfloat *)m_colors.data(), m_colors.size());
 
     float time = (m_globalTime ? g_globalTimer : m_startTime).elapsed().seconds<float>() * m_speedMod;
     // on mobile, floats in shaders are 16-bit so we should make sure this value doesn't grow large
-    // after even a few minutes, the gradient is noticably sluggish without this
+    // after even a few minutes, the gradient is noticeably sluggish without this
     time = std::fmod(time, 10.f);
 
     GLint timeLoc = m_shader->getUniformLocationForName("customTime");
@@ -219,7 +232,8 @@ void GradientLabel::draw() {
     CCNode::draw();
 }
 
-GradientLabel* GradientLabel::create(std::string_view text, const std::string& font) {
+GradientLabel *GradientLabel::create(std::string_view text, const std::string &font)
+{
     auto ret = new GradientLabel;
     if (ret->init(text, font)) {
         ret->autorelease();
@@ -230,4 +244,4 @@ GradientLabel* GradientLabel::create(std::string_view text, const std::string& f
     return nullptr;
 }
 
-}
+} // namespace globed

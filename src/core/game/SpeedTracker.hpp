@@ -24,4 +24,4 @@ private:
     bool m_hasAverage = false;
 };
 
-}
+} // namespace globed
