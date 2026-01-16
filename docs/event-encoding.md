@@ -4,8 +4,8 @@ This document defines various parts related to event encoding.
 
 ## Type ranges
 
-* `[0; 0xf000)` - custom, undefined types. Levels are free to use these for custom scripted events.
-* `[0xf000; 0xffff]` - internal globed types. Do not manually invoke these.
+- `[0; 0xf000)` - custom, undefined types. Levels are free to use these for custom scripted events.
+- `[0xf000; 0xffff]` - internal globed types. Do not manually invoke these.
 
 # Events
 
