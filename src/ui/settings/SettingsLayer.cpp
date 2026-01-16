@@ -338,7 +338,7 @@ void SettingsLayer::addSettings() {
     // Audio
     this->addHeader("core.audio", "Audio", m_voiceTab);
     this->addSetting<BoolSettingCell>("core.audio.voice-chat-enabled", "Voice Chat",
-        "Enable in-game voice chat (default keybind is V). Note: <cy>this is currently only supported on Windows, and requires you to link your </c><cb>Discord</c><cy>account</c>."
+        "Enable in-game voice chat (default keybind is V). Note: <cy>this is currently only supported on Windows, and requires you to link your </c><cb>Discord</c> <cy>account</c>."
     );
     this->addSetting<FloatSettingCell>("core.audio.playback-volume", "Voice Volume",
         "Adjust the global voice chat volume."

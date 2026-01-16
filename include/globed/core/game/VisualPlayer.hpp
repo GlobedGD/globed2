@@ -24,7 +24,7 @@ struct GameCameraState;
 
 class GLOBED_DLL VisualPlayer : public PlayerObject {
 public:
-    VisualPlayer() = default;
+    VisualPlayer();
     GLOBED_NOCOPY(VisualPlayer);
     GLOBED_NOMOVE(VisualPlayer);
 
@@ -106,6 +106,8 @@ private:
     void animateRobotFire(bool enable);
     void hideRobotFire();
     void showRobotFire();
+
+    bool hideNearby(GJBaseGameLayer* gjbgl);
 
     void updatePlayerObjectIcons(bool skipFrames);
     bool isPlayerNearby(const PlayerObjectData& data, const GameCameraState& camState);

@@ -75,6 +75,7 @@ bloaty.sh
 bloaty-*.txt
 mod.json
 !libs/bb/*
+symstone.sh
 
 __pycache__
 config.toml

@@ -34,7 +34,8 @@ public:
     VisualPlayer* player2();
 
     PlayerDisplayData& displayData();
-    int id();
+    int id() const;
+    bool isLocal() const;
 
     bool isPlayer1Culled();
     bool isPlayer2Culled();
@@ -53,6 +54,7 @@ private:
     bool m_forceHide = false;
     bool m_player1Culled = false;
     bool m_player2Culled = false;
+    bool m_localPlayer = false;
     cocos2d::CCNode* m_parentNode = nullptr;
     VisualPlayer* m_player1 = nullptr;
     VisualPlayer* m_player2 = nullptr;

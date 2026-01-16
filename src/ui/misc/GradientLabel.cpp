@@ -33,42 +33,6 @@ void main() {
 }
 )";
 
-// Old, less optimized shader
-// constexpr auto multiFrag = R"(
-// #ifdef GL_ES
-// precision mediump float;
-// #endif
-
-// varying vec4 v_fragmentColor;
-// varying vec2 v_texCoord;
-// varying vec2 v_texCoordRaw;
-// uniform int colorCount;
-// uniform vec3 colors[32];
-// uniform bool enabled;
-// uniform float customTime;
-// uniform sampler2D CC_Texture0;
-
-// void main() {
-//     if (enabled) {
-//         float t = mod(v_texCoord.x + customTime / 5.0, 1.0);
-
-//         vec3 col = colors[0]; // default
-
-//         for (int i = 0; i < 31; i++) { // one less than array size
-//             if (i >= colorCount - 1) break;
-//             if (t >= float(i)/float(colorCount - 1) && t <= float(i+1)/float(colorCount - 1)) {
-//                 float localT = (t - float(i)/float(colorCount - 1)) / (1.0/float(colorCount - 1));
-//                 col = mix(colors[i], colors[i+1], localT);
-//             }
-//         }
-
-//         gl_FragColor = vec4(col, 1.0) * v_fragmentColor * texture2D(CC_Texture0, v_texCoordRaw);
-//     } else {
-//         gl_FragColor = v_fragmentColor * texture2D(CC_Texture0, v_texCoordRaw);
-//     }
-// }
-// )";
-
 constexpr auto multiFrag = R"(
 #ifdef GL_ES
 precision mediump float;
@@ -90,7 +54,7 @@ void main() {
     }
 
     // keep t in [0,1)
-    float t = fract(v_texCoord.x + customTime * 0.2); // customTime/5.0 == customTime*0.2
+    float t = fract(v_texCoord.x + customTime * 0.2);
 
     // default color
     vec3 col = colors[0];
@@ -147,8 +111,8 @@ bool GradientLabel::init(std::string_view text, const std::string& font) {
 
     m_startTime = Instant::now();
 
-    this->setCascadeColorEnabled(true);
-    this->setCascadeOpacityEnabled(true);
+    this->setCascadeColorEnabled(false);
+    this->setCascadeOpacityEnabled(false);
     this->setContentSize(m_label->getContentSize());
     this->initShader();
 
@@ -175,6 +139,11 @@ void GradientLabel::setColor(const Color3& color) {
     m_shaderEnabled = false;
 }
 
+void GradientLabel::setOpacity(uint8_t op) {
+    CCNodeRGBA::setOpacity(op);
+    m_label->setOpacity(_displayedOpacity);
+}
+
 void GradientLabel::setString(std::string_view text) {
     m_label->setString(text);
     this->setContentSize(m_label->getContentSize());
@@ -186,6 +155,9 @@ void GradientLabel::setGradientColors(const MultiColor& color) {
 
 void GradientLabel::setGradientColors(const std::vector<Color3>& inp) {
     if (!m_shader || inp.empty()) return;
+
+    // reset to white to properly show the gradient
+    this->setColor({255, 255, 255});
 
     m_colorCount = std::min(inp.size() + 1, MAX_COLORS + 1);
 
@@ -236,9 +208,13 @@ void GradientLabel::draw() {
     GLint colorsLoc = m_shader->getUniformLocationForName("colors");
     m_shader->setUniformLocationWith3fv(colorsLoc, (GLfloat*)m_colors.data(), m_colors.size());
 
-    float time = (m_globalTime ? g_globalTimer : m_startTime).elapsed().seconds<float>();
+    float time = (m_globalTime ? g_globalTimer : m_startTime).elapsed().seconds<float>() * m_speedMod;
+    // on mobile, floats in shaders are 16-bit so we should make sure this value doesn't grow large
+    // after even a few minutes, the gradient is noticably sluggish without this
+    time = std::fmod(time, 10.f);
+
     GLint timeLoc = m_shader->getUniformLocationForName("customTime");
-    m_shader->setUniformLocationWith1f(timeLoc, time * m_speedMod);
+    m_shader->setUniformLocationWith1f(timeLoc, time);
 
     CCNode::draw();
 }

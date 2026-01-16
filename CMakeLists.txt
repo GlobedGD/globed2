@@ -19,5 +19,5 @@ endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
-CPMAddPackage("gh:dankmeme01/geobuild#c7e58fa")
+CPMAddPackage("gh:dankmeme01/geobuild#90a5e83")
 include("${CMAKE_CURRENT_BINARY_DIR}/geobuild-gen.cmake")

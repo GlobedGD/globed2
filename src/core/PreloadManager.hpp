@@ -3,6 +3,7 @@
 #include <globed/util/singleton.hpp>
 #include <asp/thread/ThreadPool.hpp>
 #include <asp/time/Instant.hpp>
+#include <asp/sync/SpinLock.hpp>
 #include <queue>
 
 // TODO (very low): it's time consuming so postponing for later, but we should add background preloading,
@@ -85,7 +86,7 @@ private:
 
     bool m_iconsLoaded = false;
     bool m_deathEffectsLoaded = false;
-    std::vector<std::string> m_loadedFrames;
+    asp::SpinLock<std::unordered_set<std::string>> m_loadedFrames;
     std::unordered_map<std::pair<int, int>, geode::Ref<cocos2d::CCTexture2D>, PairIntIntHash> m_loadedIcons;
 
     PreloadManager();

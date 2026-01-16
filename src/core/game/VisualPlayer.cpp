@@ -5,6 +5,7 @@
 #include <globed/util/lazy.hpp>
 #include <core/PreloadManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <core/game/SettingCache.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/NameLabel.hpp>
 #include <ui/game/EmoteBubble.hpp>
@@ -19,6 +20,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+static auto& g_settings = CachedSettings::get();
+
 #ifdef GLOBED_DEBUG
 static inline bool lerpDebug() {
     static bool val = Loader::get()->getLaunchFlag("globed/core.dev.lerp-debug");
@@ -30,8 +33,40 @@ static inline bool lerpDebug() {
 }
 #endif
 
-static inline bool hideNearby(GJBaseGameLayer* gjbgl) {
-    return setting<bool>(gjbgl->m_level->isPlatformer() ? "core.player.hide-nearby-plat" : "core.player.hide-nearby-classic");
+VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
+{
+    // TODO: this is a very temp fix, complete this and bring this to geode bindings
+    // gobj incomplete
+    m_boxOffsetCalculated = true;
+    m_scaleX = 1.0f;
+    m_scaleY = 1.0f;
+    m_unk4C0 = -1;
+    m_unk4C4 = -1;
+    m_unk4C8 = -1;
+    m_unk4CC = -1;
+    m_unk50C = 1.0f;
+    m_defaultZLayer= ZLayer::T1;
+    m_pixelScaleX = 1.0f;
+    m_areaOpacityValue = 1.0f;
+
+    // pobj
+    m_lastCollisionBottom = -1;
+    m_lastCollisionTop = -1;
+    m_lastCollisionLeft = -1;
+    m_lastCollisionRight = -1;
+    m_unk50C = -1;
+    m_unk510 = -1;
+    new (&m_rotateObjectsRelated) decltype(m_rotateObjectsRelated)();
+    new (&m_potentialSlopeMap) decltype(m_potentialSlopeMap)();
+    m_rotateSpeed = 1.0f;
+    new (&m_ringRelatedSet) decltype(m_ringRelatedSet)();
+    m_playerSpeed = 0.9f;
+    m_platformerVelocityRelated = 1.0f;
+    new (&m_touchedRings) decltype(m_touchedRings)();
+    m_gravityMod = 1.0f;
+    new (&m_jumpPadRelated) decltype(m_jumpPadRelated)();
+    new (&m_holdingButtons) decltype(m_holdingButtons)();
+    new (&m_currentRobotAnimation) gd::string("run");
 }
 
 bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
@@ -52,9 +87,9 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     m_prevMode = PlayerIconType::Cube;
 
     // create the name label
-    bool showName = localPlayer ? setting<bool>("core.level.self-name") : setting<bool>("core.player.show-names");
+    bool showName = localPlayer ? g_settings.selfName : g_settings.showNames;
     if (isSecond) {
-        showName = showName && !localPlayer && setting<bool>("core.player.dual-name");
+        showName = showName && !localPlayer && g_settings.dualName;
     }
 
     m_forceHideName = !showName;
@@ -81,11 +116,10 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
 
     // create status icons
     bool showStatus = !isSecond &&
-        (localPlayer ? setting<bool>("core.level.self-status-icons")
-        : setting<bool>("core.player.status-icons"));
+        (localPlayer ? g_settings.selfStatusIcons : g_settings.showStatusIcons);
 
     if (showStatus) {
-        float opacity = static_cast<unsigned char>(setting<float>("core.player.opacity") * 255.f);
+        float opacity = static_cast<unsigned char>(g_settings.playerOpacity * 255.f);
         m_statusIcons = Build<PlayerStatusIcons>::create(opacity)
             .scale(0.8f)
             .anchorPoint(0.5f, 0.f)
@@ -166,10 +200,10 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
     if (forceHide) {
         shouldBeVisible = false;
-    } else if (state.isPracticing && setting<bool>("core.player.hide-practicing")) {
+    } else if (state.isPracticing && g_settings.hidePracticing) {
         shouldBeVisible = false;
     } else {
-        shouldBeVisible = ((data.isVisible && !m_playingDeathEffect) || setting<bool>("core.player.force-visibility")) && isNearby;
+        shouldBeVisible = ((data.isVisible && !m_playingDeathEffect) || g_settings.forceVisibility) && isNearby;
     }
 
     this->setVisible(shouldBeVisible);
@@ -200,7 +234,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
     if (extraProcessing) {
         // rotate the name label together with the camera
-        bool rotateNames = setting<bool>("core.player.rotate-names");
+        bool rotateNames = g_settings.rotateNames;
         CameraDirection dir{};
 
         if (rotateNames && *gjbgl) {
@@ -292,7 +326,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         m_prevMode = data.iconType;
     }
 
-    if ((switchedMode || (isNearby && hideNearby(*gjbgl))) && !updatedOpacity) {
+    if ((switchedMode || (isNearby && this->hideNearby(*gjbgl))) && !updatedOpacity) {
         this->updateOpacity();
         updatedOpacity = true;
     }
@@ -402,6 +436,17 @@ void VisualPlayer::updateLerpTrajectory(const PlayerObjectData& data) {
     }
 }
 
+bool VisualPlayer::hideNearby(GJBaseGameLayer* gjbgl) {
+    // if this is the local player, do nothing
+    if (m_isLocalPlayer) {
+        return false;
+    }
+
+    return gjbgl->m_level->isPlatformer()
+        ? g_settings.hideNearbyPlat
+        : g_settings.hideNearbyClassic;
+}
+
 PlayerIconData& VisualPlayer::icons() {
     return m_remotePlayer->m_data.icons;
 }
@@ -421,7 +466,7 @@ void VisualPlayer::setStickyState(bool p1, bool sticky) {
 void VisualPlayer::updateOpacity() {
     float mult = 1.f;
 
-    bool hideNearby_ = hideNearby(GlobedGJBGL::get(m_gameLayer));
+    bool hideNearby_ = this->hideNearby(GlobedGJBGL::get(m_gameLayer));
 
     if (hideNearby_) {
         // calculate distance
@@ -439,7 +484,7 @@ void VisualPlayer::updateOpacity() {
         mult = distance / 150.f;
     }
 
-    uint8_t opacity = static_cast<uint8_t>(setting<float>("core.player.opacity") * mult * 255.f);
+    uint8_t opacity = static_cast<uint8_t>(g_settings.playerOpacity * mult * 255.f);
 
     this->setOpacity(opacity);
     m_spiderSprite->GJRobotSprite::setOpacity(opacity);
@@ -644,12 +689,12 @@ void VisualPlayer::updateDisplayData() {
     }
 
     m_nameLabel->updateName(ddata.username);
-    m_nameLabel->updateOpacity(globed::setting<float>("core.player.name-opacity"));
+    m_nameLabel->updateOpacity(g_settings.nameOpacity);
     if (ddata.specialUserData) {
         m_nameLabel->updateWithRoles(*ddata.specialUserData);
     }
 
-    if (globed::setting<bool>("core.player.default-death-effects")) {
+    if (g_settings.defaultDeathEffects) {
         ddata.icons.deathEffect = DEFAULT_DEATH;
     }
 
@@ -883,7 +928,16 @@ void VisualPlayer::setVisible(bool vis) {
 }
 
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
-    auto ret = new VisualPlayer();
+    auto data = operator new(sizeof(VisualPlayer));
+    std::memset(data, 0, sizeof(VisualPlayer));
+
+    // PlayerObject members are initialized in the ctor
+    // GameObject members are initialized in the ctor
+    // CCSpritePlus members are zero-initialized
+    // CCSprite members need initialization
+    auto spr = new (data) CCSprite();
+    auto ret = std::launder<VisualPlayer>(new (data) VisualPlayer());
+
     if (ret->init(gameLayer, rp, playerNode, isSecond, localPlayer)) {
         ret->autorelease();
         return ret;

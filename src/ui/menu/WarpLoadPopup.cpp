@@ -76,18 +76,25 @@ void WarpLoadPopup::levelDownloadFailed(int p0) {
 }
 
 void WarpLoadPopup::onLoadedData(GJGameLevel* level) {
+    bool open = m_openLevel;
+    bool replace = m_replaceScene;
+    bool shown = this->getParent() != nullptr;
+
     this->onClose(this);
 
-    // depending on whether open level is true or not, we should either open `LevelInfoLayer` or create a `PlayLayer`
-    if (m_openLevel) {
-        auto scene = PlayLayer::scene(level, false, false);
-        m_replaceScene ? globed::replaceScene(scene) : globed::pushScene(scene);
-    } else {
-        auto layer = LevelInfoLayer::create(level, false);
-        m_replaceScene ? globed::replaceScene(layer) : globed::pushScene(layer);
+    if (!shown) {
+        m_finished = true;
     }
 
-    m_finished = true;
+    // depending on whether open level is true or not, we should either open `LevelInfoLayer` or create a `PlayLayer`
+    if (open) {
+        auto scene = PlayLayer::scene(level, false, false);
+        replace ? globed::replaceScene(scene) : globed::pushScene(scene);
+    } else {
+        auto layer = LevelInfoLayer::create(level, false);
+        replace ? globed::replaceScene(layer) : globed::pushScene(layer);
+    }
+
 }
 
 }

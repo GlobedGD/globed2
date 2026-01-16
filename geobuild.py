@@ -21,7 +21,7 @@ import sys
 REQUIRED_GEODE_VERSION = "v4.10.0"
 QUNET_VERSION = "7b7c649"
 SERVER_SHARED_VERSION = "6282374"
-CUE_VERSION = "d1ab67b"
+CUE_VERSION = "ae3ee0b"
 
 if sys.version_info < (3, 12):
     raise RuntimeError("Globed's build system requires Python 3.12 or higher")

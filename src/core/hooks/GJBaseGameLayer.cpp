@@ -14,6 +14,7 @@
 #include <core/CoreImpl.hpp>
 #include <core/PreloadManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <core/game/SettingCache.hpp>
 
 #include <Geode/utils/VMTHookManager.hpp>
 #include <UIBuilder.hpp>
@@ -57,21 +58,7 @@ private:
 
 namespace globed {
 
-/// Cache for some settings that are often accessed
-struct CachedSettings {
-    bool selfName = globed::setting<bool>("core.level.self-name");
-    bool selfStatusIcons = globed::setting<bool>("core.level.self-status-icons");
-    bool quickChat = globed::setting<bool>("core.player.quick-chat-enabled");
-    bool voiceChat = globed::setting<bool>("core.audio.voice-chat-enabled");
-    bool voiceLoopback = globed::setting<bool>("core.audio.voice-loopback");
-    bool friendsOnlyAudio = globed::setting<bool>("core.audio.only-friends");
-    bool editorEnabled = globed::setting<bool>("core.editor.enabled");
-    bool ghostFollower = globed::setting<bool>("core.dev.ghost-follower");
-
-    void reload() {
-        *this = CachedSettings{};
-    }
-} g_settings;
+static auto& g_settings = CachedSettings::get();
 
 static std::optional<Instant> g_lastEmoteTime;
 
@@ -84,7 +71,7 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     auto& nm = NetworkManagerImpl::get();
     fields.m_editor = editor;
 
-    this->reloadCachedSettings();
+    g_settings.reload();
 
     // determine if mulitplayer should be active
 
@@ -165,28 +152,28 @@ void GlobedGJBGL::setupAssetLoading() {
 }
 
 void GlobedGJBGL::setupAudio() {
-    if (!globed::setting<bool>("core.audio.voice-chat-enabled")) return;
-
     auto& am = AudioManager::get();
     am.stopAllOutputSources(); // preemptively
     m_fields->m_audioInterval.setInterval(Duration::fromSecsF32(1.f / 30.f).value());
 
 #ifdef GLOBED_VOICE_CAN_TALK
-    // set audio device
-    am.refreshDevices();
-    am.setRecordBufferCapacity(globed::setting<int>("core.audio.buffer-size"));
-    auto result = am.startRecordingEncoded([this](const auto& frame) {
-        NetworkManagerImpl::get().sendVoiceData(frame);
+    if (g_settings.voiceChat) {
+        // set audio device
+        am.refreshDevices();
+        am.setRecordBufferCapacity(globed::setting<int>("core.audio.buffer-size"));
+        auto result = am.startRecordingEncoded([this](const auto& frame) {
+            NetworkManagerImpl::get().sendVoiceData(frame);
 
-        if (g_settings.voiceLoopback) {
-            m_fields->m_ghost->playVoiceData(frame);
+            if (g_settings.voiceLoopback) {
+                m_fields->m_ghost->playVoiceData(frame);
+            }
+        });
+        am.setPassiveMode(true);
+
+        if (!result) {
+            log::warn("[Globed] Failed to start recording audio: {}", result.unwrapErr());
+            globed::toastError("[Globed] Failed to start recording audio");
         }
-    });
-    am.setPassiveMode(true);
-
-    if (!result) {
-        log::warn("[Globed] Failed to start recording audio: {}", result.unwrapErr());
-        globed::toastError("[Globed] Failed to start recording audio");
     }
 #endif
 
@@ -198,19 +185,21 @@ void GlobedGJBGL::setupAudio() {
         : globed::setting<bool>("core.audio.classic-proximity");
 
     // schedule voice overlay 1 frame later, when we have a scene
-    FunctionQueue::get().queue([self = Ref(this), winSize] {
-        bool onTop = globed::setting<bool>("core.audio.overlaying-overlay");
-        CCNode* scene = self->getParent();
-        CCNode* parent = onTop && scene ? scene : self->m_uiLayer;
+    if (g_settings.voiceChat) {
+        FunctionQueue::get().queue([self = Ref(this), winSize] {
+            bool onTop = globed::setting<bool>("core.audio.overlaying-overlay");
+            CCNode* scene = self->getParent();
+            CCNode* parent = onTop && scene ? scene : self->m_uiLayer;
 
-        self->m_fields->m_voiceOverlay = Build<VoiceOverlay>::create()
-            .parent(parent)
-            .visible(globed::setting<bool>("core.level.voice-overlay"))
-            .zOrder(onTop ? 20 : 1)
-            .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
-            .anchorPoint(1.f, 0.f)
-            .collect();
-    });
+            self->m_fields->m_voiceOverlay = Build<VoiceOverlay>::create()
+                .parent(parent)
+                .visible(globed::setting<bool>("core.level.voice-overlay"))
+                .zOrder(onTop ? 20 : 1)
+                .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
+                .anchorPoint(1.f, 0.f)
+                .collect();
+        });
+    }
 }
 
 void GlobedGJBGL::setupUpdateLoop() {
@@ -358,18 +347,20 @@ void GlobedGJBGL::selUpdate(float tsdt) {
 
     auto camState = this->getCameraState();
 
-    for (auto& it : fields.m_players) {
-        int playerId = it.first;
-        auto& player = it.second;
+    for (auto it = fields.m_players.begin(); it != fields.m_players.end();) {
+        int playerId = it->first;
+        auto& player = it->second;
 
         if (!fields.m_interpolator.hasPlayer(playerId)) {
             log::error("Interpolator is missing a player: {}", playerId);
+            ++it;
             continue;
         }
 
         // if the player has left the level, remove them
         if (fields.m_interpolator.isPlayerStale(playerId, fields.m_lastServerUpdate)) {
-            this->handlePlayerLeave(playerId);
+            this->handlePlayerLeave(playerId, false);
+            it = fields.m_players.erase(it);
             continue;
         }
 
@@ -404,6 +395,8 @@ void GlobedGJBGL::selUpdate(float tsdt) {
                 log::debug("player {} has unknown team", playerId);
             }
         }
+
+        ++it;
     }
 
     // update audio
@@ -414,9 +407,10 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     // the server might not send any updates if there are no players on the level,
     // if we receive no response for a while, assume all players have left
     if (fields.m_timeCounter - fields.m_lastServerUpdate > 1.5f && fields.m_players.size() <= 2) {
-        for (auto& it : fields.m_players) {
-            int playerId = it.first;
-            this->handlePlayerLeave(playerId);
+        for (auto it = fields.m_players.begin(); it != fields.m_players.end(); ) {
+            int playerId = it->first;
+            this->handlePlayerLeave(playerId, false);
+            it = fields.m_players.erase(it);
         }
     }
 
@@ -454,7 +448,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     // update ghost player
     OutFlags ghostFlags{};
     state.accountId = 0;
-    fields.m_ghost->update(state, camState, ghostFlags, !g_settings.ghostFollower);
+    fields.m_ghost->update(state, camState, ghostFlags, false);
 
     fields.m_periodicalDelta += dt;
     if (fields.m_periodicalDelta >= 0.25f) {
@@ -714,7 +708,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     CoreImpl::get().onPlayerJoin(this, playerId);
 }
 
-void GlobedGJBGL::handlePlayerLeave(int playerId) {
+void GlobedGJBGL::handlePlayerLeave(int playerId, bool removeFromMap) {
     auto& am = AudioManager::get();
 
     auto& fields = *m_fields.self();
@@ -731,7 +725,10 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     player->stopVoiceStream();
     CoreImpl::get().onPlayerLeave(this, playerId);
 
-    fields.m_players.erase(playerId);
+    if (removeFromMap) {
+        fields.m_players.erase(playerId);
+    }
+
     fields.m_interpolator.removePlayer(playerId);
     PlayerCacheManager::get().evictToLayer2(playerId);
 }
@@ -916,10 +913,6 @@ void GlobedGJBGL::setNoticeAlertActive(bool active) {
     if (fields.m_noticeAlert) {
         fields.m_noticeAlert->setVisible(active);
     }
-}
-
-void GlobedGJBGL::reloadCachedSettings() {
-    g_settings.reload();
 }
 
 void GlobedGJBGL::toggleCullingEnabled(bool culling) {

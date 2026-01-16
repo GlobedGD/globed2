@@ -338,9 +338,8 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
             }
 
             auto plistKey = fmt::format("{}.plist", state.item.image);
-            auto& loaded = self.m_loadedFrames;
 
-            if (std::find(loaded.begin(), loaded.end(), plistKey) != loaded.end()) {
+            if (self.m_loadedFrames.lock()->contains(plistKey)) {
                 log::info("PreloadManager: already loaded frames for '{}', skipping", state.item.image);
                 return;
             }
@@ -374,11 +373,11 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
                 texCache->m_pTextures->removeObjectForKey(state.path);
                 return;
             } else {
-                auto _lock = cocosLock.lock();
+                self.m_loadedFrames.lock()->insert(plistKey);
 
+                auto _lock = cocosLock.lock();
                 // hacky!
                 _addSpriteFramesWithDictionary(dict, state.texture);
-                self.m_loadedFrames.push_back(plistKey);
             }
 
             if (dict) dict->release(); // release after unlocking
@@ -460,7 +459,7 @@ void PreloadManager::enterContext(PreloadContext context) {
         log::info("PreloadManager: resetting state due to texture reload");
         m_iconsLoaded = false;
         m_deathEffectsLoaded = false;
-        m_loadedFrames.clear();
+        m_loadedFrames.lock()->clear();
         m_loadedIcons.clear();
     }
 

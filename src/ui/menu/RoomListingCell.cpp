@@ -19,6 +19,19 @@ namespace {
     }
 }
 
+static bool hasNameColor(const SpecialUserData& sud) {
+    if (sud.nameColor) return true;
+
+    for (uint8_t id : sud.roleIds) {
+        auto role = NetworkManagerImpl::get().findRole(id);
+        if (role && !role->hide) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup) {
     if (!CCLayerColor::init()) {
         return false;
@@ -57,7 +70,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
         .zOrder(-1)
         .collect();
 
-    bool customNameColor = info.roomOwner.specialUserData && info.roomOwner.specialUserData->nameColor;
+    bool customNameColor = info.roomOwner.specialUserData && hasNameColor(*info.roomOwner.specialUserData);
 
     auto nameButton = Build(NameLabel::create(info.roomOwner.accountData.username, customNameColor ? "bigFont.fnt" : "goldFont.fnt"))
         .scale(customNameColor ? 0.68f : 0.7f)

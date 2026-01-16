@@ -36,6 +36,7 @@ protected:
     std::optional<MessageListener<msg::RoomJoinFailedMessage>> m_failListener;
     LoadingPopup* m_loadingPopup = nullptr;
     uint32_t m_joinedRoomId = 0;
+    uint64_t m_joinedRoomPasscode = 0;
 
     bool setup() override;
     void updateTitle(size_t roomCount);
@@ -52,7 +53,7 @@ protected:
     void doJoinRoom(uint32_t roomId, bool hasPassword);
     void actuallyJoin(uint32_t roomId, uint64_t passcode);
     void waitForResponse();
-    void stopWaiting(std::optional<std::string> failReason);
+    void stopWaiting(std::optional<std::string> failReason, bool dontClose = false);
 
     void doRemoveCell(RoomListingCell* cell);
 };

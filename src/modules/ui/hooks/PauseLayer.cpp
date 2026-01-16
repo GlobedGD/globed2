@@ -4,6 +4,7 @@
 #include <globed/core/KeybindsManager.hpp>
 #include <globed/core/EmoteManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <core/game/SettingCache.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <ui/misc/HoldableButton.hpp>
 #include <ui/misc/CancellableMenu.hpp>
@@ -45,9 +46,7 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
         CCMenu* m_quickEmotePopup = nullptr;
 
         ~Fields() {
-            if (auto gjbgl = GlobedGJBGL::get()) {
-                gjbgl->reloadCachedSettings();
-            }
+            CachedSettings::get().reload();
         }
     };
 

@@ -211,6 +211,8 @@ static argon::AccountData g_argonData{};
 
 namespace globed {
 
+const char* getIosTeamId();
+
 static Future<Result<std::string>> startArgonAuth() {
     auto task = argon::startAuthWithAccount(g_argonData);
     GeodeTaskAwaiter awaiter{task};
@@ -238,7 +240,7 @@ static void updateServers(ConnectionInfo& info, auto& newServers) {
     info.m_gameServersUpdated = true;
 }
 
-void GameServer::updateLatency(uint32_t latency) {
+bool GameServer::updateLatency(uint32_t latency) {
     if (avgLatency == (uint32_t)-1) {
         avgLatency = latency;
     } else {
@@ -246,6 +248,9 @@ void GameServer::updateLatency(uint32_t latency) {
     }
 
     lastLatency = latency;
+
+    // consider unstable if the jitter is significant enough
+    return std::abs((int32_t)lastLatency - (int32_t)avgLatency) > (int32_t)(avgLatency * 0.5f);
 }
 
 WorkerState createWorkerState() {
@@ -500,13 +505,23 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                         auto it = servers.find(srvkey);
                         if (it != servers.end()) {
                             auto lat = (uint32_t)res.responseTime.millis();
-                            it->second.updateLatency(lat);
+                            bool unstable = it->second.updateLatency(lat);
                             log::debug(
-                                "Ping to server {} arrived, latency: {}ms avg, {}ms last",
+                                "Ping to server {} arrived, latency: {}ms avg, {}ms last, stable: {}",
                                 srvkey,
                                 it->second.avgLatency,
-                                it->second.lastLatency
+                                it->second.lastLatency,
+                                unstable ? "no" : "yes"
                             );
+
+                            // if at least one server is unstable, ping all servers again soon
+                            if (unstable) {
+                                log::debug("Scheduling a ping soon due to unstable results!");
+                                m_workerState.nextGSPing = std::min(
+                                    Instant::now() + Duration::fromSecs(5),
+                                    m_workerState.nextGSPing
+                                );
+                            }
                         }
                     }
                 ),
@@ -1059,11 +1074,11 @@ bool NetworkManagerImpl::isGameConnected() const {
 }
 
 Duration NetworkManagerImpl::getGamePing() {
-    return m_gameConn->getLatency();
+    return m_gameConn ? m_gameConn->getLatency() : Duration::zero();
 }
 
 Duration NetworkManagerImpl::getCentralPing() {
-    return m_centralConn->getLatency();
+    return m_centralConn ? m_centralConn->getLatency() : Duration::zero();
 }
 
 std::string NetworkManagerImpl::getCentralIdent() {
@@ -1240,7 +1255,25 @@ std::vector<uint8_t> NetworkManagerImpl::computeUident(int accountId) {
     }
 
     uint8_t buf[512];
-    size_t outLen = bb_work(accountId, (char*)buf, 512);
+    WorkData wd{};
+    wd.v1 = accountId;
+    wd.v2 = (char*)buf;
+    wd.v3 = sizeof(buf);
+
+#ifdef GEODE_IS_IOS
+    wd.v4 = getIosTeamId();
+#else
+    wd.v4 = "";
+#endif
+    wd.v5 = strlen(wd.v4);
+
+#ifdef __APPLE__
+    auto sdir = Mod::get()->getSaveDir().string();
+    wd.v6 = sdir.c_str();
+    wd.v7 = sdir.size();
+#endif
+
+    size_t outLen = bb_work(wd);
 
     if (outLen == 0) {
         log::error("Failed to compute uident!");
