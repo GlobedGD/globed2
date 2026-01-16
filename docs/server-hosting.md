@@ -58,6 +58,7 @@ This section will describe (almost) all configuration options for every module. 
 ### Core
 ```toml
 # core.toml
+
 # How much memory to pre-allocate for certain socket operations
 # This is a value from 1 to 11, and the recommended value depends on the activity you expect.
 # 1-3 - < 1MB of buffers, recommended for < 100 player servers
@@ -66,6 +67,18 @@ This section will describe (almost) all configuration options for every module. 
 # 11 - 1GB of buffers, absolute overkill :)
 # This number matters the most for the game server, but the central server benefits from it as well.
 memory_usage = 3
+# How aggressive compression of messages should be.
+# 0 - never compress
+# 1 - use LZ4 for messages >= 1024 bytes
+# 2 - use LZ4 for messages >= 512 bytes
+# 3 (default) - use ZSTD for >= 256 bytes, LZ4 for >= 2048 bytes
+# Levels 4-6 tweak points at which LZ4 starts being used, aka preferring ZSTD more and more
+# 4 -> 8192 bytes, 5 -> 32768 bytes, 6 -> 131072 bytes
+# LZ4 is much faster than ZSTD, but has worse compression.
+#
+# The default level of 3 is highly recommended, unless compression
+# starts using too much CPU, then levels 0-2 are great.
+compression_level = 3
 
 # Whether to enable logging to a file. If disabled, logs will only be printed to the console
 log_file_enabled = true
