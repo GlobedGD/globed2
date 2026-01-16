@@ -1,12 +1,12 @@
 #include "RoomListingPopup.hpp"
 #include "RoomListingCell.hpp"
 
-#include <globed/core/SettingsManager.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <globed/core/SettingsManager.hpp>
 #include <globed/util/Random.hpp>
 #include <ui/misc/InputPopup.hpp>
 #include <ui/misc/LoadingPopup.hpp>
-#include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
 #include <asp/iter.hpp>
@@ -20,24 +20,25 @@ const CCSize RoomListingPopup::LIST_SIZE = {375.f, 200.f};
 
 static std::vector<RoomListingInfo> makeFakeData();
 
-bool RoomListingPopup::setup() {
+bool RoomListingPopup::setup()
+{
     this->updateTitle(0);
     this->setID("room-listing"_spr);
 
-    auto& nm = NetworkManagerImpl::get();
+    auto &nm = NetworkManagerImpl::get();
     if (!nm.isConnected()) {
         return false;
     }
 
     m_list = Build(cue::ListNode::create(LIST_SIZE))
-        .anchorPoint(0.5f, 1.f)
-        .pos(this->fromTop(35.f))
-        .zOrder(2)
-        .parent(m_mainLayer);
+                 .anchorPoint(0.5f, 1.f)
+                 .pos(this->fromTop(35.f))
+                 .zOrder(2)
+                 .parent(m_mainLayer);
 
     m_list->setAutoUpdate(false);
 
-    m_roomListListener = NetworkManagerImpl::get().listen<msg::RoomListMessage>([this](const auto& msg) {
+    m_roomListListener = NetworkManagerImpl::get().listen<msg::RoomListMessage>([this](const auto &msg) {
         m_loading = false;
         m_totalRooms = msg.total;
 
@@ -52,19 +53,17 @@ bool RoomListingPopup::setup() {
     });
 
     m_background = Build<CCScale9Sprite>::create("square02_small.png")
-        .id("background")
-        .contentSize(LIST_SIZE)
-        .opacity(75)
-        .anchorPoint(0.5f, 1.f)
-        .pos(m_list->getPosition())
-        .parent(m_mainLayer)
-        .zOrder(1);
+                       .id("background")
+                       .contentSize(LIST_SIZE)
+                       .opacity(75)
+                       .anchorPoint(0.5f, 1.f)
+                       .pos(m_list->getPosition())
+                       .parent(m_mainLayer)
+                       .zOrder(1);
 
     Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
         .scale(0.9f)
-        .intoMenuItem([this](auto) {
-            this->onReload();
-        })
+        .intoMenuItem([this](auto) { this->onReload(); })
         .pos(this->fromBottomRight(3.f, 3.f))
         .id("reload-btn")
         .parent(m_buttonMenu);
@@ -91,38 +90,30 @@ bool RoomListingPopup::setup() {
         .parent(m_buttonMenu);
 
     auto bottomMenu = Build<CCMenu>::create()
-        .id("bottom-menu")
-        .pos(this->fromBottom(22.f))
-        .layout(
-            RowLayout::create()
-                ->setGap(8.f)
-                ->setAutoScale(false)
-        )
-        .contentSize(150.f, 0.f)
-        .parent(m_mainLayer)
-        .collect();
+                          .id("bottom-menu")
+                          .pos(this->fromBottom(22.f))
+                          .layout(RowLayout::create()->setGap(8.f)->setAutoScale(false))
+                          .contentSize(150.f, 0.f)
+                          .parent(m_mainLayer)
+                          .collect();
 
     // mod actions button
     if (NetworkManagerImpl::get().isAuthorizedModerator()) {
-        auto menu = Build<CCMenu>::create()
-            .id("mod-actions-menu")
-            .layout(
-                RowLayout::create()
-                    ->setGap(8.f)
-                    ->setAutoScale(false)
-            )
-            .contentSize(60.f, 0.f)
-            .parent(bottomMenu)
-            .child(Build<CCLabelBMFont>::create("Mod", "bigFont.fnt").scale(0.4f))
-            .child(
-                Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f, [this](auto btn) {
-                    bool enabled = !btn->isToggled();
-                    this->toggleModActions(enabled);
-                }))
-            )
-            .zOrder(20)
-            .updateLayout()
-            .collect();
+        auto menu =
+            Build<CCMenu>::create()
+                .id("mod-actions-menu")
+                .layout(RowLayout::create()->setGap(8.f)->setAutoScale(false))
+                .contentSize(60.f, 0.f)
+                .parent(bottomMenu)
+                .child(Build<CCLabelBMFont>::create("Mod", "bigFont.fnt").scale(0.4f))
+                .child(Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f,
+                                                                             [this](auto btn) {
+                                                                                 bool enabled = !btn->isToggled();
+                                                                                 this->toggleModActions(enabled);
+                                                                             })))
+                .zOrder(20)
+                .updateLayout()
+                .collect();
 
         cue::attachBackground(menu);
     }
@@ -130,9 +121,7 @@ bool RoomListingPopup::setup() {
     // page arrow buttons
     Build<CCSprite>::createSpriteName("GJ_arrow_03_001.png")
         .scale(0.7f)
-        .intoMenuItem([this](auto) {
-            this->switchPage(-1);
-        })
+        .intoMenuItem([this](auto) { this->switchPage(-1); })
         .zOrder(10)
         .id("btn-prev-page")
         .parent(bottomMenu);
@@ -140,9 +129,7 @@ bool RoomListingPopup::setup() {
     Build<CCSprite>::createSpriteName("GJ_arrow_03_001.png")
         .flipX(true)
         .scale(0.7f)
-        .intoMenuItem([this](auto) {
-            this->switchPage(1);
-        })
+        .intoMenuItem([this](auto) { this->switchPage(1); })
         .zOrder(30)
         .id("btn-prev-page")
         .parent(bottomMenu);
@@ -153,26 +140,22 @@ bool RoomListingPopup::setup() {
 
     // search and clear search buttons
     m_searchBtn = Build<CCSprite>::create("search01.png"_spr)
-        .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
-        .intoMenuItem([this] {
-            this->promptFilter();
-        })
-        .zOrder(8)
-        .scaleMult(1.1f)
-        .id("search-btn")
-        .pos(this->fromBottomLeft(40.f, 23.f))
-        .parent(m_buttonMenu);
+                      .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
+                      .intoMenuItem([this] { this->promptFilter(); })
+                      .zOrder(8)
+                      .scaleMult(1.1f)
+                      .id("search-btn")
+                      .pos(this->fromBottomLeft(40.f, 23.f))
+                      .parent(m_buttonMenu);
 
     m_clearSearchBtn = Build<CCSprite>::create("search02.png"_spr)
-        .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
-        .intoMenuItem([this] {
-            this->setFilter("");
-        })
-        .zOrder(8)
-        .scaleMult(1.1f)
-        .id("clear-search-btn")
-        .pos(this->fromBottomLeft(40.f, 23.f))
-        .parent(m_buttonMenu);
+                           .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
+                           .intoMenuItem([this] { this->setFilter(""); })
+                           .zOrder(8)
+                           .scaleMult(1.1f)
+                           .id("clear-search-btn")
+                           .pos(this->fromBottomLeft(40.f, 23.f))
+                           .parent(m_buttonMenu);
 
     this->onReload();
 
@@ -182,7 +165,8 @@ bool RoomListingPopup::setup() {
     return true;
 }
 
-void RoomListingPopup::promptFilter() {
+void RoomListingPopup::promptFilter()
+{
     auto popup = InputPopup::create("bigFont.fnt");
     popup->setTitle("Filter Rooms");
     popup->setPlaceholder("Name");
@@ -190,19 +174,22 @@ void RoomListingPopup::promptFilter() {
     popup->setCommonFilter(CommonFilter::Any);
     popup->setWidth(240.f);
     popup->setCallback([this](auto outcome) {
-        if (outcome.cancelled) return;
+        if (outcome.cancelled)
+            return;
 
         this->setFilter(outcome.text);
     });
     popup->show();
 }
 
-void RoomListingPopup::setFilter(std::string_view filter) {
+void RoomListingPopup::setFilter(std::string_view filter)
+{
     m_filter = filter;
     this->onReload();
 }
 
-void RoomListingPopup::onReload() {
+void RoomListingPopup::onReload()
+{
     m_loadedPages = 0;
     m_page = 0;
     m_maxPages = 0;
@@ -213,8 +200,10 @@ void RoomListingPopup::onReload() {
     this->requestRooms();
 }
 
-void RoomListingPopup::requestRooms() {
-    if (m_loading) return;
+void RoomListingPopup::requestRooms()
+{
+    if (m_loading)
+        return;
 
     log::debug("Requesting page {}", m_loadedPages);
 
@@ -225,12 +214,14 @@ void RoomListingPopup::requestRooms() {
     m_searchBtn->setVisible(m_filter.empty());
 }
 
-void RoomListingPopup::updateTitle(size_t roomCount) {
+void RoomListingPopup::updateTitle(size_t roomCount)
+{
     m_roomCount = roomCount;
     this->setTitle(fmt::format("Public Rooms ({} Rooms)", roomCount), "goldFont.fnt", 0.7f, 17.f);
 }
 
-void RoomListingPopup::populateList() {
+void RoomListingPopup::populateList()
+{
     log::debug("Rendering page {}", m_page);
     GLOBED_ASSERT(m_page < m_allRooms.size());
 
@@ -242,9 +233,8 @@ void RoomListingPopup::populateList() {
 
     this->updateTitle(m_totalRooms ?: m_list->size());
 
-    m_list->sortAs<RoomListingCell>([](RoomListingCell* a, RoomListingCell* b) {
-        return a->getPlayerCount() > b->getPlayerCount();
-    });
+    m_list->sortAs<RoomListingCell>(
+        [](RoomListingCell *a, RoomListingCell *b) { return a->getPlayerCount() > b->getPlayerCount(); });
 
     m_list->updateLayout();
 
@@ -253,7 +243,8 @@ void RoomListingPopup::populateList() {
     this->toggleModActions(m_modActionsOn);
 }
 
-void RoomListingPopup::onPageLoaded(const std::vector<RoomListingInfo>& rooms, uint32_t page) {
+void RoomListingPopup::onPageLoaded(const std::vector<RoomListingInfo> &rooms, uint32_t page)
+{
     if (rooms.empty()) {
         // no rooms on this page, means the previous page was the last one
         m_maxPages = m_loadedPages;
@@ -275,8 +266,10 @@ void RoomListingPopup::onPageLoaded(const std::vector<RoomListingInfo>& rooms, u
     this->populateList();
 }
 
-void RoomListingPopup::switchPage(int delta) {
-    if (m_loadedPages == 0 || m_loading || (m_page == 0 && delta < 0)) return;
+void RoomListingPopup::switchPage(int delta)
+{
+    if (m_loadedPages == 0 || m_loading || (m_page == 0 && delta < 0))
+        return;
 
     if (m_maxPages != 0 && (m_page + delta) >= m_maxPages) {
         return;
@@ -292,7 +285,8 @@ void RoomListingPopup::switchPage(int delta) {
     }
 }
 
-void RoomListingPopup::toggleModActions(bool enabled) {
+void RoomListingPopup::toggleModActions(bool enabled)
+{
     m_modActionsOn = enabled;
 
     for (auto cell : m_list->iter<RoomListingCell>()) {
@@ -300,13 +294,14 @@ void RoomListingPopup::toggleModActions(bool enabled) {
     }
 }
 
-void RoomListingPopup::doJoinRoom(uint32_t roomId, bool hasPassword) {
+void RoomListingPopup::doJoinRoom(uint32_t roomId, bool hasPassword)
+{
     if (roomId == 0) {
         globed::alert("Error", "Invalid room ID");
         return;
     }
 
-    auto& nm = NetworkManagerImpl::get();
+    auto &nm = NetworkManagerImpl::get();
 
     if (hasPassword) {
         // prompt for password
@@ -328,21 +323,23 @@ void RoomListingPopup::doJoinRoom(uint32_t roomId, bool hasPassword) {
     }
 }
 
-void RoomListingPopup::actuallyJoin(uint32_t roomId, uint64_t passcode) {
+void RoomListingPopup::actuallyJoin(uint32_t roomId, uint64_t passcode)
+{
     m_joinedRoomId = roomId;
     this->waitForResponse();
     NetworkManagerImpl::get().sendJoinRoom(roomId, passcode);
 }
 
-void RoomListingPopup::waitForResponse() {
-    // wait for either a room state mesage or a room join failed message
+void RoomListingPopup::waitForResponse()
+{
+    // wait for either a room state message or a room join failed message
 
     m_loadingPopup = LoadingPopup::create();
     m_loadingPopup->setTitle("Joining Room...");
     m_loadingPopup->setClosable(true);
     m_loadingPopup->show();
 
-    m_successListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
+    m_successListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto &msg) {
         // small sanity check to make sure it is actually the response we need
         if (msg.roomId == m_joinedRoomId) {
             this->stopWaiting(std::nullopt);
@@ -352,26 +349,34 @@ void RoomListingPopup::waitForResponse() {
     });
     m_successListener.value()->setPriority(-100);
 
-    m_failListener = NetworkManagerImpl::get().listen<msg::RoomJoinFailedMessage>([this](const auto& msg) {
+    m_failListener = NetworkManagerImpl::get().listen<msg::RoomJoinFailedMessage>([this](const auto &msg) {
         using enum msg::RoomJoinFailedReason;
         std::string reason;
 
         switch (msg.reason) {
-            case NotFound: reason = "Room not found"; break;
-            case InvalidPasscode: {
-                this->stopWaiting(std::nullopt, true);
-                this->doJoinRoom(m_joinedRoomId, true);
+        case NotFound:
+            reason = "Room not found";
+            break;
+        case InvalidPasscode: {
+            this->stopWaiting(std::nullopt, true);
+            this->doJoinRoom(m_joinedRoomId, true);
 
-                if (m_joinedRoomPasscode != 0) {
-                    // means invalid passcode, rather than none entered
-                    globed::alert("Error", "Failed to join room: <cy>incorrect passcode</c>");
-                }
+            if (m_joinedRoomPasscode != 0) {
+                // means invalid passcode, rather than none entered
+                globed::alert("Error", "Failed to join room: <cy>incorrect passcode</c>");
+            }
 
-                return ListenerResult::Stop;
-            } break;
-            case Full: reason = "Room is full"; break;
-            case Banned: reason = "You are banned from this room"; break;
-            default: reason = "Unknown reason"; break;
+            return ListenerResult::Stop;
+        } break;
+        case Full:
+            reason = "Room is full";
+            break;
+        case Banned:
+            reason = "You are banned from this room";
+            break;
+        default:
+            reason = "Unknown reason";
+            break;
         }
 
         this->stopWaiting(reason);
@@ -381,7 +386,8 @@ void RoomListingPopup::waitForResponse() {
     m_failListener.value()->setPriority(-1);
 }
 
-void RoomListingPopup::stopWaiting(std::optional<std::string> failReason, bool dontClose) {
+void RoomListingPopup::stopWaiting(std::optional<std::string> failReason, bool dontClose)
+{
     if (m_loadingPopup) {
         m_loadingPopup->forceClose();
         m_loadingPopup = nullptr;
@@ -397,52 +403,55 @@ void RoomListingPopup::stopWaiting(std::optional<std::string> failReason, bool d
     }
 }
 
-void RoomListingPopup::doRemoveCell(RoomListingCell* cell) {
-    auto idx = m_list->indexForCell(static_cast<cue::ListCell*>(cell->getParent()));
+void RoomListingPopup::doRemoveCell(RoomListingCell *cell)
+{
+    auto idx = m_list->indexForCell(static_cast<cue::ListCell *>(cell->getParent()));
     m_list->removeCell(idx);
     this->updateTitle(m_roomCount - 1);
 }
 
-static std::vector<RoomListingInfo> makeFakeData() {
+static std::vector<RoomListingInfo> makeFakeData()
+{
     std::vector<RoomListingInfo> rooms;
 
     size_t count = rng::generate<size_t>(500, 1000);
     for (size_t i = 0; i < count; i++) {
-        rooms.push_back(RoomListingInfo {
+        rooms.push_back(RoomListingInfo{
             .roomId = rng::generate<uint32_t>(100000, 999999),
             .roomName = fmt::format("Room {}", i + 1),
-            .roomOwner = RoomPlayer {
-                MinimalRoomPlayer {
-                    .accountData = PlayerAccountData {
-                        .accountId = rng::generate<int>(),
-                        .userId = rng::generate<int>(),
-                        .username = fmt::format("Player {}", rng::generate<int>(1, 1000000))
+            .roomOwner =
+                RoomPlayer{
+                    MinimalRoomPlayer{
+                        .accountData =
+                            PlayerAccountData{.accountId = rng::generate<int>(),
+                                              .userId = rng::generate<int>(),
+                                              .username = fmt::format("Player {}", rng::generate<int>(1, 1000000))},
+                        .cube = rng::generate<int16_t>(1, 484),
+                        .color1 = rng::generate<uint16_t>(1, 106),
+                        .color2 = rng::generate<uint16_t>(1, 106),
+                        .glowColor = NO_GLOW,
                     },
-                    .cube = rng::generate<int16_t>(1, 484),
-                    .color1 = rng::generate<uint16_t>(1, 106),
-                    .color2 = rng::generate<uint16_t>(1, 106),
-                    .glowColor = NO_GLOW,
+                    SessionId{},
                 },
-                SessionId{},
-            },
             .playerCount = rng::generate<uint32_t>(1, 1000),
             .hasPassword = rng::ratio(0.3),
-            .settings = RoomSettings {
-                .serverId = 0,
-                .playerLimit = rng::ratio(0.1) ? rng::generate<uint16_t>(1, 2000) : (uint16_t)0,
-                .fasterReset = rng::generate<bool>(),
-                .hidden = rng::ratio(0.1),
-                .privateInvites = rng::ratio(0.2),
-                .isFollower = rng::ratio(0.2),
-                .levelIntegrity = rng::ratio(0.1),
-                .collision = rng::ratio(0.2),
-                .twoPlayerMode = rng::ratio(0.2),
-                .deathlink = rng::ratio(0.2),
-            },
+            .settings =
+                RoomSettings{
+                    .serverId = 0,
+                    .playerLimit = rng::ratio(0.1) ? rng::generate<uint16_t>(1, 2000) : (uint16_t)0,
+                    .fasterReset = rng::generate<bool>(),
+                    .hidden = rng::ratio(0.1),
+                    .privateInvites = rng::ratio(0.2),
+                    .isFollower = rng::ratio(0.2),
+                    .levelIntegrity = rng::ratio(0.1),
+                    .collision = rng::ratio(0.2),
+                    .twoPlayerMode = rng::ratio(0.2),
+                    .deathlink = rng::ratio(0.2),
+                },
         });
     }
 
     return rooms;
 }
 
-}
+} // namespace globed

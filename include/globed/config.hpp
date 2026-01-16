@@ -4,33 +4,33 @@
 // Dllexport macro (note: globed2_EXPORTS is not defined in cmakelists, it's an internal cmake macro)
 
 #ifdef _WIN32
-# ifdef globed2_EXPORTS
-#  define GLOBED_DLL __declspec(dllexport)
-# else
-#  define GLOBED_DLL __declspec(dllimport)
-# endif
+#ifdef globed2_EXPORTS
+#define GLOBED_DLL __declspec(dllexport)
 #else
-# ifdef globed2_EXPORTS
-#  define GLOBED_DLL __attribute__((visibility("default")))
-# else
-#  define GLOBED_DLL
-# endif
+#define GLOBED_DLL __declspec(dllimport)
+#endif
+#else
+#ifdef globed2_EXPORTS
+#define GLOBED_DLL __attribute__((visibility("default")))
+#else
+#define GLOBED_DLL
+#endif
 #endif
 
 // Various attribute macros
 
 #if defined(GEODE_IS_WINDOWS)
-# define GLOBED_NOVTABLE __declspec(novtable)
-# define GLOBED_NOINLINE __declspec(noinline)
-# define GLOBED_ALWAYS_INLINE __forceinline
+#define GLOBED_NOVTABLE __declspec(novtable)
+#define GLOBED_NOINLINE __declspec(noinline)
+#define GLOBED_ALWAYS_INLINE __forceinline
 #else
-# define GLOBED_NOVTABLE
-# define GLOBED_NOINLINE __attribute__((noinline))
-# define GLOBED_ALWAYS_INLINE __attribute__((always_inline)) inline
+#define GLOBED_NOVTABLE
+#define GLOBED_NOINLINE __attribute__((noinline))
+#define GLOBED_ALWAYS_INLINE __attribute__((always_inline)) inline
 #endif
 
 #define GLOBED_MODIFY_ATTR GLOBED_DLL GLOBED_NOVTABLE
 
 #if __has_include(<std23/move_only_function.h>)
-# define GLOBED_API_EXT_FUNCTIONS
+#define GLOBED_API_EXT_FUNCTIONS
 #endif

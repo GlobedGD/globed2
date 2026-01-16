@@ -1,10 +1,10 @@
 #pragma once
 
-#include <globed/prelude.hpp>
-#include <globed/core/data/PlayerState.hpp>
-#include <globed/core/data/PlayerDisplayData.hpp>
-#include <globed/core/game/PlayerStatusIcons.hpp>
 #include <Geode/Geode.hpp>
+#include <globed/core/data/PlayerDisplayData.hpp>
+#include <globed/core/data/PlayerState.hpp>
+#include <globed/core/game/PlayerStatusIcons.hpp>
+#include <globed/prelude.hpp>
 
 namespace globed {
 
@@ -28,19 +28,21 @@ public:
     GLOBED_NOCOPY(VisualPlayer);
     GLOBED_NOMOVE(VisualPlayer);
 
-    static VisualPlayer* create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer);
-    void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState, bool forceHide);
+    static VisualPlayer *create(GJBaseGameLayer *gameLayer, RemotePlayer *rp, CCNode *playerNode, bool isSecond,
+                                bool localPlayer);
+    void updateFromData(const PlayerObjectData &data, const PlayerState &state, const GameCameraState &camState,
+                        bool forceHide);
     void cleanupObjectLayer();
 
-    PlayerIconData& icons();
-    PlayerDisplayData& displayData();
+    PlayerIconData &icons();
+    PlayerDisplayData &displayData();
 
     void setStickyState(bool p1, bool sticky);
 
     void updateDisplayData();
     void updateTeam(uint16_t teamId);
     void playDeathEffect();
-    void handleSpiderTp(const SpiderTeleportData& tp);
+    void handleSpiderTp(const SpiderTeleportData &tp);
     CCPoint getLastPosition();
     float getLastRotation();
     void playPlatformerJump();
@@ -52,13 +54,13 @@ public:
 private:
     friend class RemotePlayer;
 
-    RemotePlayer* m_remotePlayer = nullptr;
+    RemotePlayer *m_remotePlayer = nullptr;
     ccColor3B m_color1{}, m_color2{};
     bool m_teamInitialized = false;
-    NameLabel* m_nameLabel;
+    NameLabel *m_nameLabel;
     Ref<PlayerStatusIcons> m_statusIcons;
     Ref<cocos2d::CCDrawNode> m_playerTrajectory;
-    EmoteBubble* m_emoteBubble = nullptr;
+    EmoteBubble *m_emoteBubble = nullptr;
 
     bool m_isLocalPlayer = false;
     bool m_isSecond = false;
@@ -97,7 +99,7 @@ private:
     bool m_p1Sticky = false;
     bool m_p2Sticky = false;
 
-    bool init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer);
+    bool init(GJBaseGameLayer *gameLayer, RemotePlayer *rp, CCNode *playerNode, bool isSecond, bool localPlayer);
     void updateOpacity();
     void updateIconType(PlayerIconType iconType);
     void updateRobotAnimation();
@@ -107,14 +109,14 @@ private:
     void hideRobotFire();
     void showRobotFire();
 
-    bool hideNearby(GJBaseGameLayer* gjbgl);
+    bool hideNearby(GJBaseGameLayer *gjbgl);
 
     void updatePlayerObjectIcons(bool skipFrames);
-    bool isPlayerNearby(const PlayerObjectData& data, const GameCameraState& camState);
+    bool isPlayerNearby(const PlayerObjectData &data, const GameCameraState &camState);
     void spiderTeleportUpdateColor();
     void cancelPlatformerJumpAnim();
 
-    void updateLerpTrajectory(const PlayerObjectData& data);
+    void updateLerpTrajectory(const PlayerObjectData &data);
 };
 
-}
+} // namespace globed

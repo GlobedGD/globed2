@@ -8,9 +8,9 @@ First add Globed as a dependency in your mod's `mod.json`:
 
 ```json
 {
-    "dependencies": {
-        "dankmeme.globed2": ">=2.0.0"
-    }
+  "dependencies": {
+    "dankmeme.globed2": ">=2.0.0"
+  }
 }
 ```
 
@@ -221,6 +221,7 @@ am.setDeafen(true);
 ```
 
 ### Getting data from various singletons
+
 ```cpp
 // Retrieve data about a player (icons, username, etc)
 auto& pcm = globed::PlayerCacheManager::get();

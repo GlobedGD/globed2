@@ -1,10 +1,10 @@
 #include "MenuLayer.hpp"
 #include <UIBuilder.hpp>
-#include <globed/core/net/NetworkManager.hpp>
-#include <globed/core/SettingsManager.hpp>
 #include <globed/core/ServerManager.hpp>
-#include <ui/menu/GlobedMenuLayer.hpp>
+#include <globed/core/SettingsManager.hpp>
+#include <globed/core/net/NetworkManager.hpp>
 #include <ui/menu/ConsentPopup.hpp>
+#include <ui/menu/GlobedMenuLayer.hpp>
 
 #include <argon/argon.hpp>
 
@@ -12,14 +12,15 @@ using namespace geode::prelude;
 
 namespace globed {
 
-static void initiateAutoConnect() {
+static void initiateAutoConnect()
+{
     // check if signed into an account
     if (!argon::signedIn() || !globed::flag("core.flags.seen-consent-notice")) {
         return;
     }
 
     if (globed::flag("core.was-connected")) {
-        auto& sm = ServerManager::get();
+        auto &sm = ServerManager::get();
         auto url = sm.getActiveServer().url;
 
         if (auto err = NetworkManager::get().connectCentral(url).err()) {
@@ -29,8 +30,10 @@ static void initiateAutoConnect() {
     }
 }
 
-bool HookedMenuLayer::init() {
-    if (!MenuLayer::init()) return false;
+bool HookedMenuLayer::init()
+{
+    if (!MenuLayer::init())
+        return false;
 
     argon::initConfigLock();
 
@@ -50,19 +53,22 @@ bool HookedMenuLayer::init() {
     return true;
 }
 
-void HookedMenuLayer::checkButton(float) {
-    auto& fields = *m_fields.self();
+void HookedMenuLayer::checkButton(float)
+{
+    auto &fields = *m_fields.self();
 
     bool active = NetworkManager::get().getConnectionState() == ConnectionState::Connected;
 
-    if (active == fields.btnActive) return;
+    if (active == fields.btnActive)
+        return;
     fields.btnActive = active;
 
     this->recreateButton();
 }
 
-void HookedMenuLayer::recreateButton() {
-    CCNode* parent = nullptr;
+void HookedMenuLayer::recreateButton()
+{
+    CCNode *parent = nullptr;
     CCPoint pos;
 
     if ((parent = this->getChildByID("bottom-menu"))) {
@@ -78,26 +84,23 @@ void HookedMenuLayer::recreateButton() {
         return;
     }
 
-    auto makeSprite = [this]() -> CCNode* {
+    auto makeSprite = [this]() -> CCNode * {
         if (false) {
             return CCSprite::createWithSpriteFrameName("GJ_reportBtn_001.png");
         } else {
             return CircleButtonSprite::createWithSprite(
-                "globed-gold-icon.png"_spr,
-                1.f,
-                m_fields->btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
-                CircleBaseSize::MediumAlt
-            );
+                "globed-gold-icon.png"_spr, 1.f, m_fields->btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
+                CircleBaseSize::MediumAlt);
         }
     };
 
     if (!m_fields->btn) {
         m_fields->btn = Build<CCNode>(makeSprite())
-            .intoMenuItem(this, menu_selector(HookedMenuLayer::onGlobedButton))
-            .zOrder(5) // force it to be at the end of the layout for consistency
-            .id("main-menu-button"_spr)
-            .parent(parent)
-            .collect();
+                            .intoMenuItem(this, menu_selector(HookedMenuLayer::onGlobedButton))
+                            .zOrder(5) // force it to be at the end of the layout for consistency
+                            .id("main-menu-button"_spr)
+                            .parent(parent)
+                            .collect();
     } else {
         m_fields->btn->setNormalImage(makeSprite());
     }
@@ -105,7 +108,8 @@ void HookedMenuLayer::recreateButton() {
     parent->updateLayout();
 }
 
-void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
+void HookedMenuLayer::onGlobedButton(cocos2d::CCObject *)
+{
     if (globed::flag("core.flags.seen-consent-notice")) {
         GlobedMenuLayer::create()->switchTo();
         return;
@@ -122,4 +126,4 @@ void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
     p->show();
 }
 
-}
+} // namespace globed

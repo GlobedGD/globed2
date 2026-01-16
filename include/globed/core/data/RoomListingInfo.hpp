@@ -14,4 +14,4 @@ struct RoomListingInfo {
     RoomSettings settings;
 };
 
-}
+} // namespace globed

@@ -8,11 +8,13 @@ EncodedAudioFrame::EncodedAudioFrame() : m_capacity(VOICE_MAX_FRAMES_IN_AUDIO_FR
 
 EncodedAudioFrame::EncodedAudioFrame(size_t capacity) : m_capacity(capacity) {}
 
-EncodedAudioFrame::~EncodedAudioFrame() {
+EncodedAudioFrame::~EncodedAudioFrame()
+{
     this->clear();
 }
 
-Result<> EncodedAudioFrame::pushOpusFrame(const EncodedOpusData& frame) {
+Result<> EncodedAudioFrame::pushOpusFrame(const EncodedOpusData &frame)
+{
     if (m_frames.size() >= m_capacity && m_capacity) {
         return Err("EncodedAudioFrame is full (capacity {})", m_capacity);
     }
@@ -21,24 +23,29 @@ Result<> EncodedAudioFrame::pushOpusFrame(const EncodedOpusData& frame) {
     return Ok();
 }
 
-void EncodedAudioFrame::setCapacity(size_t frames) {
+void EncodedAudioFrame::setCapacity(size_t frames)
+{
     m_capacity = frames;
 }
 
-void EncodedAudioFrame::clear() {
+void EncodedAudioFrame::clear()
+{
     m_frames.clear();
 }
 
-size_t EncodedAudioFrame::size() const {
+size_t EncodedAudioFrame::size() const
+{
     return m_frames.size();
 }
 
-size_t EncodedAudioFrame::capacity() const {
+size_t EncodedAudioFrame::capacity() const
+{
     return m_capacity;
 }
 
-const std::vector<EncodedOpusData>& EncodedAudioFrame::getFrames() const {
+const std::vector<EncodedOpusData> &EncodedAudioFrame::getFrames() const
+{
     return m_frames;
 }
 
-}
+} // namespace globed

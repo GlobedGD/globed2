@@ -7,11 +7,13 @@ using namespace geode::prelude;
 
 namespace globed {
 
-static bool isValid(CCSprite* spr) {
+static bool isValid(CCSprite *spr)
+{
     return spr && !spr->getUserObject("geode.texture-loader/fallback");
 }
 
-static CCSprite* createAny(const char* name) {
+static CCSprite *createAny(const char *name)
+{
     auto sprite = CCSprite::create(name);
     if (!isValid(sprite)) {
         sprite = CCSprite::createWithSpriteFrameName(name);
@@ -20,7 +22,8 @@ static CCSprite* createAny(const char* name) {
     return isValid(sprite) ? sprite : nullptr;
 }
 
-CCSprite* createBadge(CStr spriteName) {
+CCSprite *createBadge(CStr spriteName)
+{
     auto name = fmt::format("{}"_spr, spriteName.get());
 
     auto sprite = createAny(name.c_str());
@@ -44,7 +47,8 @@ CCSprite* createBadge(CStr spriteName) {
     return sprite;
 }
 
-CCSprite* createBadge(uint8_t roleId) {
+CCSprite *createBadge(uint8_t roleId)
+{
     if (auto role = NetworkManagerImpl::get().findRole(roleId)) {
         return createBadge(role->icon.c_str());
     } else {
@@ -53,8 +57,9 @@ CCSprite* createBadge(uint8_t roleId) {
     }
 }
 
-CCSprite* createMyBadge() {
-    auto& nm = NetworkManagerImpl::get();
+CCSprite *createMyBadge()
+{
+    auto &nm = NetworkManagerImpl::get();
 
     if (auto role = nm.getUserHighestRole()) {
         return createBadge(role->icon.c_str());
@@ -63,4 +68,4 @@ CCSprite* createMyBadge() {
     }
 }
 
-}
+} // namespace globed

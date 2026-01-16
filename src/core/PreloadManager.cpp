@@ -1,12 +1,12 @@
 #include "PreloadManager.hpp"
+#include <asp/format.hpp>
+#include <asp/fs.hpp>
+#include <globed/core/SettingsManager.hpp>
 #include <globed/prelude.hpp>
 #include <globed/util/SpinLock.hpp>
-#include <globed/core/SettingsManager.hpp>
-#include <asp/fs.hpp>
-#include <asp/format.hpp>
 
 #ifndef GEODE_IS_WINDOWS
-# include <sys/stat.h>
+#include <sys/stat.h>
 #endif
 
 using namespace asp::time;
@@ -17,41 +17,42 @@ namespace globed {
 
 // big hack to call a private cocos function
 namespace {
-    template <typename TC>
-    using priv_method_t = void(TC::*)(CCDictionary*, CCTexture2D*);
+template <typename TC> using priv_method_t = void (TC::*)(CCDictionary *, CCTexture2D *);
 
-    template <typename TC, priv_method_t<TC> func>
-    struct priv_caller {
-        friend void _addSpriteFramesWithDictionary(CCDictionary* p1, CCTexture2D* p2) {
-            auto* obj = CCSpriteFrameCache::sharedSpriteFrameCache();
-            (obj->*func)(p1, p2);
-        }
-    };
+template <typename TC, priv_method_t<TC> func> struct priv_caller {
+    friend void _addSpriteFramesWithDictionary(CCDictionary *p1, CCTexture2D *p2)
+    {
+        auto *obj = CCSpriteFrameCache::sharedSpriteFrameCache();
+        (obj->*func)(p1, p2);
+    }
+};
 
-    template struct priv_caller<CCSpriteFrameCache, &CCSpriteFrameCache::addSpriteFramesWithDictionary>;
+template struct priv_caller<CCSpriteFrameCache, &CCSpriteFrameCache::addSpriteFramesWithDictionary>;
 
-    void _addSpriteFramesWithDictionary(CCDictionary* p1, CCTexture2D* p2);
-}
+void _addSpriteFramesWithDictionary(CCDictionary *p1, CCTexture2D *p2);
+} // namespace
 
 struct HookedFileUtils : public CCFileUtils {
-    static HookedFileUtils& get() {
-        return *static_cast<HookedFileUtils*>(CCFileUtils::get());
+    static HookedFileUtils &get()
+    {
+        return *static_cast<HookedFileUtils *>(CCFileUtils::get());
     }
 
-    bool fileExists(const char* path) {
+    bool fileExists(const char *path)
+    {
 #ifdef GEODE_IS_WINDOWS
         auto attrs = GetFileAttributesA(path);
 
-        return (attrs != INVALID_FILE_ATTRIBUTES &&
-                !(attrs & FILE_ATTRIBUTE_DIRECTORY));
+        return (attrs != INVALID_FILE_ATTRIBUTES && !(attrs & FILE_ATTRIBUTE_DIRECTORY));
 #else
         struct stat st;
         return (stat(path, &st) == 0) && S_ISREG(st.st_mode);
 #endif
     }
 
-    $override
-    gd::string getPathForFilename(const gd::string& filename, const gd::string& resolutionDirectory, const gd::string& searchPath) {
+    $override gd::string getPathForFilename(const gd::string &filename, const gd::string &resolutionDirectory,
+                                            const gd::string &searchPath)
+    {
         std::string_view file = filename;
         std::string_view filePath;
 
@@ -72,7 +73,8 @@ struct HookedFileUtils : public CCFileUtils {
     }
 };
 
-static std::string_view relativizeIconPath(std::string_view fullpath) {
+static std::string_view relativizeIconPath(std::string_view fullpath)
+{
     auto countSlashes = [](std::string_view sv) {
         return std::count_if(sv.begin(), sv.end(), [](char c) { return c == '/' || c == '\\'; });
     };
@@ -105,7 +107,8 @@ PreloadManager::PreloadManager() {}
 
 PreloadManager::~PreloadManager() {}
 
-void PreloadManager::initLoadQueue() {
+void PreloadManager::initLoadQueue()
+{
     auto gm = globed::cachedSingleton<GameManager>();
     m_totalCount = 0;
     m_loadQueue = {};
@@ -124,12 +127,13 @@ void PreloadManager::initLoadQueue() {
 
     // Death effects
     // skip if death effects are disabled in settings or default death effects are enabled
-    bool loadDe = globed::setting<bool>("core.player.death-effects") && !globed::setting<bool>("core.player.default-death-effects");
+    bool loadDe = globed::setting<bool>("core.player.death-effects") &&
+                  !globed::setting<bool>("core.player.default-death-effects");
     if (!m_deathEffectsLoaded && loadDe) {
         m_deathEffectsLoaded = true;
 
         for (size_t i = 1; i < 20; i++) {
-            m_loadQueue.push(Item { fmt::format("PlayerExplosion_{:02}.png", i) });
+            m_loadQueue.push(Item{fmt::format("PlayerExplosion_{:02}.png", i)});
         }
     }
 
@@ -143,12 +147,7 @@ void PreloadManager::initLoadQueue() {
                     continue;
                 }
 
-                m_loadQueue.push(Item {
-                    .image = sheetName,
-                    .isIcon = true,
-                    .iconType = ty,
-                    .iconId = id
-                });
+                m_loadQueue.push(Item{.image = sheetName, .isIcon = true, .iconType = ty, .iconId = id});
             }
         };
 
@@ -172,9 +171,10 @@ void PreloadManager::initLoadQueue() {
     m_totalCount = m_loadQueue.size();
 }
 
-void PreloadManager::loadNextBatch() {
-    // 200 icons is a somewhat reasonable batch to load in a single call that shouldn't cause freezes even on low-end devices
-    // death effects are huge and would be counted as 20 icons
+void PreloadManager::loadNextBatch()
+{
+    // 200 icons is a somewhat reasonable batch to load in a single call that shouldn't cause freezes even on low-end
+    // devices death effects are huge and would be counted as 20 icons
     constexpr size_t Limit = 200;
     size_t count = 0;
 
@@ -184,7 +184,7 @@ void PreloadManager::loadNextBatch() {
         items.push_back(std::move(m_loadQueue.front()));
         m_loadQueue.pop();
 
-        auto& item = items.back();
+        auto &item = items.back();
         if (item.isIcon) {
             count++;
         } else {
@@ -195,7 +195,8 @@ void PreloadManager::loadNextBatch() {
     this->doLoadBatch(items);
 }
 
-void PreloadManager::loadEverything() {
+void PreloadManager::loadEverything()
+{
     std::vector<Item> items;
     items.reserve(m_loadQueue.size());
 
@@ -207,7 +208,8 @@ void PreloadManager::loadEverything() {
     this->doLoadBatch(items);
 }
 
-void PreloadManager::doLoadBatch(std::vector<Item>& items) {
+void PreloadManager::doLoadBatch(std::vector<Item> &items)
+{
     // TODO: optimize.
 
     if (!m_sstate.initialized) {
@@ -216,7 +218,7 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
 
     auto timeBegin = Instant::now();
 
-    auto& pool = *m_sstate.threadPool;
+    auto &pool = *m_sstate.threadPool;
 
     log::debug("PreloadManager: loading batch of {} items", items.size());
 
@@ -227,9 +229,9 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
     auto fu = CCFileUtils::get();
 
     struct ItemState {
-        Item& item;
+        Item &item;
         gd::string path;
-        CCTexture2D* texture = nullptr;
+        CCTexture2D *texture = nullptr;
     };
 
     // note: this vector might seem not thread safe and you would be right to think so,
@@ -237,7 +239,7 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
     // and a single specific item will initially be only accessed by the pool, and then given to the main thread
     std::vector<ItemState> itemStates;
 
-    for (auto& item : items) {
+    for (auto &item : items) {
         auto fullPath = this->fullPathForFilename(item.image + ".png");
         if (fullPath.empty()) {
             log::warn("PreloadManager: could not find full path for '{}'", item.image);
@@ -255,16 +257,18 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
         });
     }
 
-    if (itemStates.empty()) return;
+    if (itemStates.empty())
+        return;
 
-    log::debug("PreloadManager: loading {} images (took {} to populate)", itemStates.size(), timeBegin.elapsed().toString());
+    log::debug("PreloadManager: loading {} images (took {} to populate)", itemStates.size(),
+               timeBegin.elapsed().toString());
     auto timePreInit = Instant::now();
 
-    asp::Channel<std::pair<size_t, CCImage*>> texInitRequests;
+    asp::Channel<std::pair<size_t, CCImage *>> texInitRequests;
 
     for (size_t i = 0; i < itemStates.size(); i++) {
         pool.pushTask([i, &itemStates, &texInitRequests] {
-            auto& state = itemStates[i];
+            auto &state = itemStates[i];
 
             unsigned long filesize = 0;
             std::unique_ptr<unsigned char[]> buffer{getFileDataThreadSafe(state.path.c_str(), "rb", &filesize)};
@@ -298,7 +302,7 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
         }
 
         auto [idx, image] = texInitRequests.popNow();
-        auto& state = itemStates[idx];
+        auto &state = itemStates[idx];
 
         auto texture = new CCTexture2D();
         if (!texture->initWithImage(image)) {
@@ -312,15 +316,16 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
         texCache->m_pTextures->setObject(texture, state.path);
 
         texture->release(); // bring ref count back to 1
-        delete image; // no longer needed
+        delete image;       // no longer needed
 
         // cache the icon texture
-        this->setCachedIcon((int) state.item.iconType, state.item.iconId, texture);
+        this->setCachedIcon((int)state.item.iconType, state.item.iconId, texture);
 
         inited++;
     }
 
-    log::debug("PreloadManager: initialized {} textures in {}, adding frames", inited, timePreInit.elapsed().toString());
+    log::debug("PreloadManager: initialized {} textures in {}, adding frames", inited,
+               timePreInit.elapsed().toString());
     auto timePreFrames = Instant::now();
 
     // TODO: bring over the pugixml sprite frame parsing code from blaze?
@@ -329,8 +334,8 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
         pool.pushTask([i, &itemStates] {
             auto texCache = CCTextureCache::get();
             auto sfCache = CCSpriteFrameCache::get();
-            auto& state = itemStates[i];
-            auto& self = PreloadManager::get();
+            auto &state = itemStates[i];
+            auto &self = PreloadManager::get();
 
             if (!state.texture) {
                 log::warn("PreloadManager: texture for '{}' was not initialized", state.path);
@@ -349,7 +354,7 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
 
             // file reading is not thread safe on android, so we need to lock it
 
-            CCDictionary* dict;
+            CCDictionary *dict;
             {
                 GEODE_ANDROID(auto _lock = g_fileMutex.lock());
 
@@ -380,21 +385,20 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
                 _addSpriteFramesWithDictionary(dict, state.texture);
             }
 
-            if (dict) dict->release(); // release after unlocking
+            if (dict)
+                dict->release(); // release after unlocking
         });
     }
 
     // wait for all frames to be added
     pool.join();
 
-    log::debug(
-        "PreloadManager: initialized all frames in {}, total time: {}",
-            timePreFrames.elapsed().toString(),
-            timeBegin.elapsed().toString()
-    );
+    log::debug("PreloadManager: initialized all frames in {}, total time: {}", timePreFrames.elapsed().toString(),
+               timeBegin.elapsed().toString());
 }
 
-void PreloadManager::initSessionState() {
+void PreloadManager::initSessionState()
+{
     m_sstate.preInitTime = Instant::now();
     m_sstate.texQuality = getTextureQuality();
 
@@ -402,7 +406,7 @@ void PreloadManager::initSessionState() {
     fs::path textureLdrUnzipped = dirs::getGeodeDir() / "unzipped" / "geode.texture-loader" / "resources";
 
     size_t idx = 0;
-    for (const auto& path : CCFileUtils::get()->getSearchPaths()) {
+    for (const auto &path : CCFileUtils::get()->getSearchPaths()) {
         std::string_view sv{path};
         auto fspath = fs::path(sv);
 
@@ -438,20 +442,24 @@ void PreloadManager::initSessionState() {
     m_sstate.initialized = true;
     m_sstate.postInitTime = Instant::now();
 
-    log::debug("PreloadManager: initialized session state in {}", m_sstate.postInitTime.durationSince(m_sstate.preInitTime).toString());
+    log::debug("PreloadManager: initialized session state in {}",
+               m_sstate.postInitTime.durationSince(m_sstate.preInitTime).toString());
 }
 
-void PreloadManager::resetState() {
+void PreloadManager::resetState()
+{
     m_loadQueue = {};
     m_totalCount = 0;
     m_sstate = {};
 }
 
-bool PreloadManager::shouldPreload() {
+bool PreloadManager::shouldPreload()
+{
     return !m_loadQueue.empty();
 }
 
-void PreloadManager::enterContext(PreloadContext context) {
+void PreloadManager::enterContext(PreloadContext context)
+{
     m_context = context;
 
     // if we are reloading textures, everything must be reset
@@ -466,24 +474,29 @@ void PreloadManager::enterContext(PreloadContext context) {
     this->initLoadQueue();
 }
 
-void PreloadManager::exitContext() {
+void PreloadManager::exitContext()
+{
     m_context = PreloadContext::None;
     this->resetState();
 }
 
-size_t PreloadManager::getLoadedCount() {
+size_t PreloadManager::getLoadedCount()
+{
     return m_totalCount - m_loadQueue.size();
 }
 
-size_t PreloadManager::getTotalCount() {
+size_t PreloadManager::getTotalCount()
+{
     return m_totalCount;
 }
 
-bool PreloadManager::deathEffectsLoaded() {
+bool PreloadManager::deathEffectsLoaded()
+{
     return m_deathEffectsLoaded;
 }
 
-CCTexture2D* PreloadManager::getCachedIcon(int iconType, int id) {
+CCTexture2D *PreloadManager::getCachedIcon(int iconType, int id)
+{
     auto key = std::make_pair(iconType, id);
     auto it = m_loadedIcons.find(key);
     if (it != m_loadedIcons.end()) {
@@ -493,32 +506,41 @@ CCTexture2D* PreloadManager::getCachedIcon(int iconType, int id) {
     return nullptr;
 }
 
-void PreloadManager::setCachedIcon(int iconType, int id, cocos2d::CCTexture2D* texture) {
+void PreloadManager::setCachedIcon(int iconType, int id, cocos2d::CCTexture2D *texture)
+{
     auto key = std::make_pair(iconType, id);
     m_loadedIcons[key] = texture;
 }
 
 // transforms a string like "icon-41" into "icon-41-hd.png" depending on the current texture quality.
-static void appendQualitySuffix(std::string& out, TextureQuality quality, bool plist) {
+static void appendQualitySuffix(std::string &out, TextureQuality quality, bool plist)
+{
     switch (quality) {
-        case TextureQuality::Low: {
-            if (plist) out.append(".plist");
-            else out.append(".png");
-        } break;
-        case TextureQuality::Medium: {
-            if (plist) out.append("-hd.plist");
-            else out.append("-hd.png");
-        } break;
-        case TextureQuality::High: {
-            if (plist) out.append("-uhd.plist");
-            else out.append("-uhd.png");
-        } break;
+    case TextureQuality::Low: {
+        if (plist)
+            out.append(".plist");
+        else
+            out.append(".png");
+    } break;
+    case TextureQuality::Medium: {
+        if (plist)
+            out.append("-hd.plist");
+        else
+            out.append("-hd.png");
+    } break;
+    case TextureQuality::High: {
+        if (plist)
+            out.append("-uhd.plist");
+        else
+            out.append("-uhd.png");
+    } break;
     }
 }
 
 // this function scares me
-gd::string PreloadManager::fullPathForFilename(std::string_view input, bool ignoreSuffix) {
-    auto& fu = HookedFileUtils::get();
+gd::string PreloadManager::fullPathForFilename(std::string_view input, bool ignoreSuffix)
+{
+    auto &fu = HookedFileUtils::get();
 
     if (input.empty()) {
         return {};
@@ -542,10 +564,8 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
     std::string filename;
 
     if (!ignoreSuffix) {
-        bool hasQualitySuffix = input.ends_with("-hd.png") ||
-                                input.ends_with("-uhd.png") ||
-                                input.ends_with("-hd.plist") ||
-                                input.ends_with("-uhd.plist");
+        bool hasQualitySuffix = input.ends_with("-hd.png") || input.ends_with("-uhd.png") ||
+                                input.ends_with("-hd.plist") || input.ends_with("-uhd.plist");
 
         if (!hasQualitySuffix) {
             if (input.ends_with(".plist")) {
@@ -566,31 +586,31 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
     // no one uses it anyway fortunately
 
     std::string fullpath;
-    auto& searchPaths = fu.getSearchPaths();
+    auto &searchPaths = fu.getSearchPaths();
 
     // we discard resolution directories here, since no one uses them
-#define TRY_PATH(sp) \
-    auto _fp = fu.getPathForFilename(filename, "", sp); \
-    if (!_fp.empty()) { \
-        return _fp; \
+#define TRY_PATH(sp)                                                                                                   \
+    auto _fp = fu.getPathForFilename(filename, "", sp);                                                                \
+    if (!_fp.empty()) {                                                                                                \
+        return _fp;                                                                                                    \
     }
 
     // check the texture pack overrides first
     for (size_t tpidx : m_sstate.texturePackIndices) {
-        auto& sp = searchPaths.at(tpidx);
+        auto &sp = searchPaths.at(tpidx);
         TRY_PATH(sp);
     }
 
     // try the gd resource folder
     if (m_sstate.gameSearchPathIdx != (size_t)-1) {
-        auto& sp = searchPaths.at(m_sstate.gameSearchPathIdx);
+        auto &sp = searchPaths.at(m_sstate.gameSearchPathIdx);
         TRY_PATH(sp);
     }
 
     log::warn("PreloadManager: missed all known paths, trying everything: {}", input);
 
     // try all search paths
-    for (const auto& sp : searchPaths) {
+    for (const auto &sp : searchPaths) {
         TRY_PATH(sp);
     }
 
@@ -599,7 +619,8 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
     return filename;
 }
 
-TextureQuality getTextureQuality() {
+TextureQuality getTextureQuality()
+{
     float sf = CCDirector::get()->getContentScaleFactor();
     if (sf >= 4.f) {
         return TextureQuality::High;
@@ -611,7 +632,8 @@ TextureQuality getTextureQuality() {
 }
 
 // TODO: maybe use AAssetManager again, need to compare
-unsigned char* getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize) {
+unsigned char *getFileDataThreadSafe(const char *path, const char *mode, unsigned long *outSize)
+{
 #ifndef GEODE_IS_ANDROID
     auto fu = CCFileUtils::get();
     return fu->getFileData(path, mode, outSize);
@@ -622,4 +644,4 @@ unsigned char* getFileDataThreadSafe(const char* path, const char* mode, unsigne
 #endif
 }
 
-}
+} // namespace globed

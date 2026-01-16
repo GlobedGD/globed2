@@ -8,14 +8,14 @@ namespace globed {
 class UserPunishmentPopup : public BasePopup<UserPunishmentPopup> {
 protected:
     bool setup() override;
-    bool initCustomSize(const std::string& reason, int64_t expiresAt, bool isBan);
+    bool initCustomSize(const std::string &reason, int64_t expiresAt, bool isBan);
 
 public:
-    geode::SimpleTextArea* m_textArea = nullptr;
+    geode::SimpleTextArea *m_textArea = nullptr;
     int64_t m_expiresAt = 0;
     bool m_isBan = false;
 
-    static UserPunishmentPopup* create(const std::string& reason, int64_t expiresAt, bool isBan);
+    static UserPunishmentPopup *create(const std::string &reason, int64_t expiresAt, bool isBan);
 };
 
-}
+} // namespace globed

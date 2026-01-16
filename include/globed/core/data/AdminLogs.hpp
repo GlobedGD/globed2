@@ -27,5 +27,4 @@ struct AdminAuditLog {
     std::string message;
 };
 
-
-}
+} // namespace globed

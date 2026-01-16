@@ -6,19 +6,17 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool PingOverlay::init() {
+bool PingOverlay::init()
+{
     CCNode::init();
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    m_pingLabel = Build<Label>::create("", "bigFont.fnt")
-        .parent(this)
-        .id("ping-label"_spr);
+    m_pingLabel = Build<Label>::create("", "bigFont.fnt").parent(this).id("ping-label"_spr);
 
 #ifdef GLOBED_DEBUG
-    m_versionLabel = Build<Label>::create(Mod::get()->getVersion().toVString(), "bigFont.fnt")
-        .parent(this)
-        .id("version-label"_spr);
+    m_versionLabel =
+        Build<Label>::create(Mod::get()->getVersion().toVString(), "bigFont.fnt").parent(this).id("version-label"_spr);
 #endif
 
     this->setContentHeight(winSize.height);
@@ -27,7 +25,8 @@ bool PingOverlay::init() {
     return true;
 }
 
-void PingOverlay::addToLayer(CCNode* parent) {
+void PingOverlay::addToLayer(CCNode *parent)
+{
     Ref _self(this);
 
     this->removeFromParent();
@@ -46,18 +45,18 @@ void PingOverlay::addToLayer(CCNode* parent) {
     float anchorY = onTop ? 1.f : 0.f;
 
     this->setLayout(ColumnLayout::create()
-        ->setGap(3.f)
-        ->setAxisReverse(!onTop)
-        ->setAxisAlignment(onTop ? AxisAlignment::End : AxisAlignment::Start)
-        ->setCrossAxisLineAlignment(onRight ? AxisAlignment::End : AxisAlignment::Start)
-    );
+                        ->setGap(3.f)
+                        ->setAxisReverse(!onTop)
+                        ->setAxisAlignment(onTop ? AxisAlignment::End : AxisAlignment::Start)
+                        ->setCrossAxisLineAlignment(onRight ? AxisAlignment::End : AxisAlignment::Start));
 
     this->setPosition(obx, oby);
     this->setAnchorPoint({anchorX, anchorY});
     this->updateLayout();
 }
 
-void PingOverlay::reloadFromSettings() {
+void PingOverlay::reloadFromSettings()
+{
     m_enabled = globed::setting<bool>("core.overlay.enabled");
     m_conditional = !globed::setting<bool>("core.overlay.always-show");
 
@@ -65,7 +64,8 @@ void PingOverlay::reloadFromSettings() {
     this->updateOpacity();
 }
 
-void PingOverlay::updateOpacity() {
+void PingOverlay::updateOpacity()
+{
     auto op = static_cast<uint8_t>(globed::setting<float>("core.overlay.opacity") * 255.f);
 
     m_pingLabel->setOpacity(op);
@@ -75,7 +75,8 @@ void PingOverlay::updateOpacity() {
     }
 }
 
-void PingOverlay::updatePing(uint32_t ms) {
+void PingOverlay::updatePing(uint32_t ms)
+{
     if (!m_enabled) {
         this->setVisible(false);
         return;
@@ -86,7 +87,8 @@ void PingOverlay::updatePing(uint32_t ms) {
     this->updateLayout();
 }
 
-void PingOverlay::updateWithDisconnected() {
+void PingOverlay::updateWithDisconnected()
+{
     if (!m_enabled || m_conditional) {
         this->setVisible(false);
         return;
@@ -97,7 +99,8 @@ void PingOverlay::updateWithDisconnected() {
     this->updateLayout();
 }
 
-void PingOverlay::updateWithEditor() {
+void PingOverlay::updateWithEditor()
+{
     if (!m_enabled || m_conditional) {
         this->setVisible(false);
         return;
@@ -108,7 +111,8 @@ void PingOverlay::updateWithEditor() {
     this->updateLayout();
 }
 
-PingOverlay* PingOverlay::create() {
+PingOverlay *PingOverlay::create()
+{
     auto ret = new PingOverlay;
     if (ret->init()) {
         ret->autorelease();
@@ -119,4 +123,4 @@ PingOverlay* PingOverlay::create() {
     return nullptr;
 }
 
-}
+} // namespace globed

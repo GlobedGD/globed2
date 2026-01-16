@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ui/BasePopup.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/net/MessageListener.hpp>
+#include <ui/BasePopup.hpp>
 #include <ui/misc/LoadingPopup.hpp>
 
 #include <std23/move_only_function.h>
@@ -15,13 +15,13 @@ public:
 
 protected:
     std23::move_only_function<void()> m_callback;
-    geode::TextInput* m_passwordInput = nullptr;
+    geode::TextInput *m_passwordInput = nullptr;
     std::optional<MessageListener<msg::AdminResultMessage>> m_listener;
-    LoadingPopup* m_loadPopup = nullptr;
+    LoadingPopup *m_loadPopup = nullptr;
 
     bool setup(std23::move_only_function<void()> callback);
     void wait();
     void stopWaiting(bool success);
 };
 
-}
+} // namespace globed

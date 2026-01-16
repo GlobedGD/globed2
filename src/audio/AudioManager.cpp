@@ -5,37 +5,40 @@
 #include <globed/util/format.hpp>
 
 #ifdef GEODE_IS_WINDOWS
-# include <objbase.h>
+#include <objbase.h>
 #endif
 
-#include <fmod_errors.h>
 #include <Geode/utils/permission.hpp>
 #include <asp/time/sleep.hpp>
+#include <fmod_errors.h>
 
 using namespace geode::prelude;
 namespace permission = geode::utils::permission;
 using permission::Permission;
 
-static std::string formatFmodError(FMOD_RESULT result, const char* whatFailed) {
+static std::string formatFmodError(FMOD_RESULT result, const char *whatFailed)
+{
     return fmt::format("{} failed: [FMOD error {}] {}", whatFailed, (int)result, FMOD_ErrorString(result));
 }
 
-#define FMOD_ERRC(res, msg) \
-    do { \
-        auto _res = (res); \
-        if (_res != FMOD_OK) return Err(formatFmodError(_res, msg)); \
+#define FMOD_ERRC(res, msg)                                                                                            \
+    do {                                                                                                               \
+        auto _res = (res);                                                                                             \
+        if (_res != FMOD_OK)                                                                                           \
+            return Err(formatFmodError(_res, msg));                                                                    \
     } while (0)
 
 namespace globed {
 
-static float proximityVolumeMult(float distance) {
+static float proximityVolumeMult(float distance)
+{
     distance = std::clamp(distance, 0.0f, PROXIMITY_AUDIO_LIMIT);
     float t = distance / PROXIMITY_AUDIO_LIMIT;
     return 1.0f - t * t;
 }
 
-AudioManager::AudioManager()
-    : m_encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
+AudioManager::AudioManager() : m_encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS)
+{
 
     m_thread.setLoopFunction(&AudioManager::audioThreadFunc);
 
@@ -50,9 +53,7 @@ AudioManager::AudioManager()
     });
 
 #ifdef GEODE_IS_WINDOWS
-    m_thread.setTerminationFunction([] {
-        CoUninitialize();
-    });
+    m_thread.setTerminationFunction([] { CoUninitialize(); });
 #endif
 
     m_thread.setName("Audio Thread");
@@ -60,27 +61,28 @@ AudioManager::AudioManager()
 
     m_recordDevice = AudioRecordingDevice{.id = -1};
 
-    m_vcVolume = SettingsManager::get().getAndListenForChanges<float>("core.audio.playback-volume", [this](float value) {
-        m_vcVolume = value;
-    });
+    m_vcVolume = SettingsManager::get().getAndListenForChanges<float>("core.audio.playback-volume",
+                                                                      [this](float value) { m_vcVolume = value; });
 
-    m_sfxVolume = SettingsManager::get().getAndListenForChanges<float>("core.player.quick-chat-sfx-volume", [this](float value) {
-        m_sfxVolume = value;
-    });
+    m_sfxVolume = SettingsManager::get().getAndListenForChanges<float>("core.player.quick-chat-sfx-volume",
+                                                                       [this](float value) { m_sfxVolume = value; });
 }
 
-AudioManager::~AudioManager() {
+AudioManager::~AudioManager()
+{
     m_thread.stopAndWait();
 }
 
-void AudioManager::preInitialize() {
+void AudioManager::preInitialize()
+{
 #ifdef GEODE_IS_ANDROID
     // the first call to FMOD::System::getRecordDriverInfo for some reason can take half a second on android,
     // causing a freeze when the user first opens the playlayer.
     // to avoid that, we call this once upon loading the mod, so the freeze happens on the loading screen instead.
     try {
         this->getRecordingDevice(0);
-    } catch (const std::exception& _e) {}
+    } catch (const std::exception &_e) {
+    }
 #endif
 
     int deviceId = globed::setting<int>("core.audio.input-device");
@@ -111,7 +113,8 @@ void AudioManager::preInitialize() {
     }
 }
 
-std::vector<AudioRecordingDevice> AudioManager::getRecordingDevices() {
+std::vector<AudioRecordingDevice> AudioManager::getRecordingDevices()
+{
     std::vector<AudioRecordingDevice> out;
 
     int numDrivers, numConnected;
@@ -131,44 +134,41 @@ std::vector<AudioRecordingDevice> AudioManager::getRecordingDevices() {
     return out;
 }
 
-std::optional<AudioRecordingDevice> AudioManager::getRecordingDevice(int deviceId) {
+std::optional<AudioRecordingDevice> AudioManager::getRecordingDevice(int deviceId)
+{
     AudioRecordingDevice device;
     char name[256];
 
-    if (this->getSystem()->getRecordDriverInfo(
-        deviceId, name, 256,
-        &device.guid,
-        &device.sampleRate,
-        &device.speakerMode,
-        &device.speakerModeChannels,
-        &device.driverState
-    ) != FMOD_OK) {
+    if (this->getSystem()->getRecordDriverInfo(deviceId, name, 256, &device.guid, &device.sampleRate,
+                                               &device.speakerMode, &device.speakerModeChannels,
+                                               &device.driverState) != FMOD_OK) {
         return std::nullopt;
     }
 
     device.id = deviceId;
     device.name = std::string(name);
 
-    if (!m_loopbacksAllowed && (
-        device.name.find("[loopback]") != std::string::npos
-        || device.name.find("(loopback)") != std::string::npos
-        || device.name.find("Monitor of") != std::string::npos
-    )) {
+    if (!m_loopbacksAllowed &&
+        (device.name.find("[loopback]") != std::string::npos || device.name.find("(loopback)") != std::string::npos ||
+         device.name.find("Monitor of") != std::string::npos)) {
         return std::nullopt;
     }
 
     return device;
 }
 
-const std::optional<AudioRecordingDevice>& AudioManager::getRecordingDevice() {
+const std::optional<AudioRecordingDevice> &AudioManager::getRecordingDevice()
+{
     return m_recordDevice;
 }
 
-bool AudioManager::isRecordingDeviceSet() {
+bool AudioManager::isRecordingDeviceSet()
+{
     return m_recordDevice.has_value();
 }
 
-void AudioManager::validateDevices() {
+void AudioManager::validateDevices()
+{
     if (this->isRecording()) {
         log::warn("Attempting to invoke validateDevices while recording audio");
         return;
@@ -185,7 +185,8 @@ void AudioManager::validateDevices() {
     }
 }
 
-void AudioManager::refreshDevices() {
+void AudioManager::refreshDevices()
+{
     this->validateDevices();
 
     if (!m_recordDevice) {
@@ -197,13 +198,14 @@ void AudioManager::refreshDevices() {
     }
 }
 
-void AudioManager::setRecordBufferCapacity(size_t frames) {
+void AudioManager::setRecordBufferCapacity(size_t frames)
+{
     m_recordFrame.setCapacity(frames);
 }
 
-Result<> AudioManager::startRecordingEncoded(
-    std23::move_only_function<void(const EncodedAudioFrame&)>&& encodedCallback
-) {
+Result<>
+AudioManager::startRecordingEncoded(std23::move_only_function<void(const EncodedAudioFrame &)> &&encodedCallback)
+{
     GEODE_UNWRAP(this->startRecordingInternal());
     m_callback = std::move(encodedCallback);
     m_rawCallback = nullptr;
@@ -211,9 +213,8 @@ Result<> AudioManager::startRecordingEncoded(
     return Ok();
 }
 
-Result<> AudioManager::startRecordingRaw(
-    std23::move_only_function<void(const float*, size_t)>&& rawCallback
-) {
+Result<> AudioManager::startRecordingRaw(std23::move_only_function<void(const float *, size_t)> &&rawCallback)
+{
     GEODE_UNWRAP(this->startRecordingInternal());
     m_rawCallback = std::move(rawCallback);
     m_callback = nullptr;
@@ -221,7 +222,8 @@ Result<> AudioManager::startRecordingRaw(
     return Ok();
 }
 
-Result<> AudioManager::startRecordingInternal() {
+Result<> AudioManager::startRecordingInternal()
+{
     if (!permission::getPermissionStatus(Permission::RecordAudio)) {
         return Err("Recording failed, please grant microphone permission in Globed settings");
     }
@@ -248,15 +250,9 @@ Result<> AudioManager::startRecordingInternal() {
     exinfo.length = sizeof(float) * exinfo.defaultfrequency * exinfo.numchannels;
     m_recordChunkSize = exinfo.length;
 
-    FMOD_ERRC(
-        this->getSystem()->createSound(
-            nullptr,
-            FMOD_2D | FMOD_OPENUSER | FMOD_LOOP_NORMAL | FMOD_CREATESAMPLE,
-            &exinfo,
-            &m_recordSound
-        ),
-        "FMOD::System::createSound"
-    );
+    FMOD_ERRC(this->getSystem()->createSound(nullptr, FMOD_2D | FMOD_OPENUSER | FMOD_LOOP_NORMAL | FMOD_CREATESAMPLE,
+                                             &exinfo, &m_recordSound),
+              "FMOD::System::createSound");
 
     FMOD_RESULT res = this->getSystem()->recordStart(m_recordDevice->id, m_recordSound, true);
 
@@ -275,16 +271,19 @@ Result<> AudioManager::startRecordingInternal() {
     return Ok();
 }
 
-void AudioManager::stopRecording() {
+void AudioManager::stopRecording()
+{
     m_recordQueuedStop = true;
 }
 
-void AudioManager::haltRecording() {
+void AudioManager::haltRecording()
+{
     m_recordQueuedHalt = true;
     m_recordQueuedStop = true;
 }
 
-bool AudioManager::isRecording() {
+bool AudioManager::isRecording()
+{
     if (!m_recordDevice) {
         return false;
     }
@@ -304,30 +303,32 @@ bool AudioManager::isRecording() {
     return recording && m_recordActive;
 }
 
-void AudioManager::setPassiveMode(bool passive) {
+void AudioManager::setPassiveMode(bool passive)
+{
     m_recordingPassive = passive;
 }
 
-void AudioManager::resumePassiveRecording() {
+void AudioManager::resumePassiveRecording()
+{
     m_recordingPassiveActive = true;
 }
 
-void AudioManager::pausePassiveRecording() {
+void AudioManager::pausePassiveRecording()
+{
     m_recordingPassiveActive = false;
 }
 
-Result<FMOD::Channel*> AudioManager::playSound(FMOD::Sound* sound) {
-    FMOD::Channel* ch = nullptr;
+Result<FMOD::Channel *> AudioManager::playSound(FMOD::Sound *sound)
+{
+    FMOD::Channel *ch = nullptr;
 
-    FMOD_ERRC(
-        this->getSystem()->playSound(sound, nullptr, false, &ch),
-        "System::playSound"
-    );
+    FMOD_ERRC(this->getSystem()->playSound(sound, nullptr, false, &ch), "System::playSound");
 
     return Ok(ch);
 }
 
-void AudioManager::setActiveRecordingDevice(int deviceId) {
+void AudioManager::setActiveRecordingDevice(int deviceId)
+{
     auto dev = this->getRecordingDevice(deviceId);
 
     if (dev.has_value()) {
@@ -335,7 +336,8 @@ void AudioManager::setActiveRecordingDevice(int deviceId) {
     }
 }
 
-void AudioManager::setActiveRecordingDevice(const AudioRecordingDevice& device) {
+void AudioManager::setActiveRecordingDevice(const AudioRecordingDevice &device)
+{
     if (this->isRecording()) {
         globed::toastError("Attempting to change recording device while recording audio");
         return;
@@ -344,11 +346,13 @@ void AudioManager::setActiveRecordingDevice(const AudioRecordingDevice& device) 
     m_recordDevice = device;
 }
 
-void AudioManager::toggleLoopbacksAllowed(bool allowed) {
+void AudioManager::toggleLoopbacksAllowed(bool allowed)
+{
     m_loopbacksAllowed = allowed;
 }
 
-FMOD::System* AudioManager::getSystem() {
+FMOD::System *AudioManager::getSystem()
+{
     if (!m_system) {
         m_system = FMODAudioEngine::get()->m_system;
     }
@@ -356,29 +360,32 @@ FMOD::System* AudioManager::getSystem() {
     return m_system;
 }
 
-Result<> AudioManager::mapError(FMOD_RESULT result) {
-    if (result == FMOD_OK) return Ok();
+Result<> AudioManager::mapError(FMOD_RESULT result)
+{
+    if (result == FMOD_OK)
+        return Ok();
 
     return Err("[FMOD error {}] {}", (int)result, FMOD_ErrorString(result));
 }
 
-void AudioManager::stopAllOutputSources() {
-    for (auto& src : m_playbackSources) {
+void AudioManager::stopAllOutputSources()
+{
+    for (auto &src : m_playbackSources) {
         src->stop();
     }
     m_playbackSources.clear();
 }
 
-float AudioManager::calculateVolume(AudioSource& src, const CCPoint& playerPos, bool voiceProximity) {
-    if (m_deafen) return 0.f;
+float AudioManager::calculateVolume(AudioSource &src, const CCPoint &playerPos, bool voiceProximity)
+{
+    if (m_deafen)
+        return 0.f;
 
     float targetVolume = src.getVolume();
     auto kind = src.kind();
 
     // proximity
-    bool applyProximity = kind == AudioKind::VoiceChat
-        ? voiceProximity
-        : true;
+    bool applyProximity = kind == AudioKind::VoiceChat ? voiceProximity : true;
 
     if (applyProximity) {
         auto pos = src.getPosition();
@@ -390,22 +397,23 @@ float AudioManager::calculateVolume(AudioSource& src, const CCPoint& playerPos, 
 
     // kind multipliers
     switch (kind) {
-        case AudioKind::EmoteSfx: {
-            targetVolume *= m_sfxVolume;
-        } break;
+    case AudioKind::EmoteSfx: {
+        targetVolume *= m_sfxVolume;
+    } break;
 
-        case AudioKind::VoiceChat: {
-            targetVolume *= m_vcVolume;
-        } break;
+    case AudioKind::VoiceChat: {
+        targetVolume *= m_vcVolume;
+    } break;
 
-        default: break;
+    default:
+        break;
     }
 
     // focused player
     if (m_focusedPlayer != -1) {
         int id = -1;
 
-        if (auto ps = dynamic_cast<PlayerSound*>(&src)) {
+        if (auto ps = dynamic_cast<PlayerSound *>(&src)) {
             if (auto pl = ps->getPlayer()) {
                 id = pl->id();
             }
@@ -419,9 +427,10 @@ float AudioManager::calculateVolume(AudioSource& src, const CCPoint& playerPos, 
     return targetVolume;
 }
 
-void AudioManager::updatePlayback(CCPoint playerPos, bool voiceProximity) {
-    for (auto it = m_playbackSources.begin(); it != m_playbackSources.end(); ) {
-        auto& src = *it;
+void AudioManager::updatePlayback(CCPoint playerPos, bool voiceProximity)
+{
+    for (auto it = m_playbackSources.begin(); it != m_playbackSources.end();) {
+        auto &src = *it;
         if (!src->isPlaying()) {
             src->stop();
             it = m_playbackSources.erase(it);
@@ -436,33 +445,40 @@ void AudioManager::updatePlayback(CCPoint playerPos, bool voiceProximity) {
     }
 }
 
-void AudioManager::registerPlaybackSource(std::shared_ptr<AudioSource> source) {
+void AudioManager::registerPlaybackSource(std::shared_ptr<AudioSource> source)
+{
     m_playbackSources.insert(source);
 }
 
-void AudioManager::setDeafen(bool deafen) {
+void AudioManager::setDeafen(bool deafen)
+{
     m_deafen = deafen;
 }
 
-bool AudioManager::getDeafen() {
+bool AudioManager::getDeafen()
+{
     return m_deafen;
 }
 
-void AudioManager::setFocusedPlayer(int playerId) {
+void AudioManager::setFocusedPlayer(int playerId)
+{
     m_focusedPlayer = playerId;
 }
 
-void AudioManager::clearFocusedPlayer() {
+void AudioManager::clearFocusedPlayer()
+{
     this->setFocusedPlayer(-1);
 }
 
-int AudioManager::getFocusedPlayer() {
+int AudioManager::getFocusedPlayer()
+{
     return m_focusedPlayer;
 }
 
 // Thread stuff
 
-void AudioManager::audioThreadFunc(decltype(m_thread)::StopToken&) {
+void AudioManager::audioThreadFunc(decltype(m_thread)::StopToken &)
+{
     // if we are not recording right now, sleep
     if (!m_recordActive) {
         m_thrSleeping = true;
@@ -489,8 +505,9 @@ void AudioManager::audioThreadFunc(decltype(m_thread)::StopToken&) {
     }
 }
 
-void AudioManager::internalStopRecording(bool ignoreErrors) {
-    auto res =  this->getSystem()->recordStop(m_recordDevice->id);
+void AudioManager::internalStopRecording(bool ignoreErrors)
+{
+    auto res = this->getSystem()->recordStop(m_recordDevice->id);
 
     if (res != FMOD_OK && !ignoreErrors) {
         globed::toastError("{}", formatFmodError(res, "FMOD::System::recordStop"));
@@ -506,8 +523,8 @@ void AudioManager::internalStopRecording(bool ignoreErrors) {
     }
 
     // cleanup
-    m_callback = [](const auto&){};
-    m_rawCallback = [](const auto*, auto) {};
+    m_callback = [](const auto &) {};
+    m_rawCallback = [](const auto *, auto) {};
     m_recordLastPosition = 0;
     m_recordChunkSize = 0;
     m_recordingRaw = false;
@@ -524,15 +541,13 @@ void AudioManager::internalStopRecording(bool ignoreErrors) {
     m_recordQueuedStop = false;
 }
 
-Result<> AudioManager::audioThreadWork() {
-    float* pcmData;
+Result<> AudioManager::audioThreadWork()
+{
+    float *pcmData;
     unsigned int pcmLen;
 
     unsigned int pos;
-    FMOD_ERRC(
-        this->getSystem()->getRecordPosition(m_recordDevice->id, &pos),
-        "System::getRecordPosition"
-    );
+    FMOD_ERRC(this->getSystem()->getRecordPosition(m_recordDevice->id, &pos), "System::getRecordPosition");
 
     // if we are at the same position, do nothing
     if (pos == m_recordLastPosition) {
@@ -540,10 +555,7 @@ Result<> AudioManager::audioThreadWork() {
         return Ok();
     }
 
-    FMOD_ERRC(
-        m_recordSound->lock(0, m_recordChunkSize, (void**)&pcmData, nullptr, &pcmLen, nullptr),
-        "Sound::lock"
-    );
+    FMOD_ERRC(m_recordSound->lock(0, m_recordChunkSize, (void **)&pcmData, nullptr, &pcmLen, nullptr), "Sound::lock");
 
     // don't write any data if we are in passive recording and not currently recording
     if (!m_recordingPassive || m_recordingPassiveActive) {
@@ -560,10 +572,7 @@ Result<> AudioManager::audioThreadWork() {
 
     m_recordLastPosition = pos;
 
-    FMOD_ERRC(
-        m_recordSound->unlock(pcmData, nullptr, pcmLen, 0),
-        "Sound::unlock"
-    );
+    FMOD_ERRC(m_recordSound->unlock(pcmData, nullptr, pcmLen, 0), "Sound::unlock");
 
     if (m_recordingRaw) {
         size_t samples = m_recordQueue.size();
@@ -603,22 +612,29 @@ Result<> AudioManager::audioThreadWork() {
     return Ok();
 }
 
-void AudioManager::recordInvokeCallback() {
-    if (m_recordFrame.size() == 0) return;
+void AudioManager::recordInvokeCallback()
+{
+    if (m_recordFrame.size() == 0)
+        return;
 
-    if (m_callback) m_callback(m_recordFrame);
+    if (m_callback)
+        m_callback(m_recordFrame);
     m_recordFrame.clear();
 }
 
-void AudioManager::recordInvokeRawCallback(const float* pcm, size_t samples) {
-    if (samples == 0) return;
+void AudioManager::recordInvokeRawCallback(const float *pcm, size_t samples)
+{
+    if (samples == 0)
+        return;
 
-    if (m_rawCallback) m_rawCallback(pcm, samples);
+    if (m_rawCallback)
+        m_rawCallback(pcm, samples);
 }
 
-}
+} // namespace globed
 
-$on_mod(Loaded) {
+$on_mod(Loaded)
+{
 #ifdef GLOBED_VOICE_SUPPORT
     globed::AudioManager::get().preInitialize();
 #endif

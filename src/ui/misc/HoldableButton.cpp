@@ -7,11 +7,9 @@ namespace globed {
 
 constexpr int ACTION_TAG = 83487329;
 
-bool HoldableButton::init(
-    cocos2d::CCSprite* sprite,
-    std23::move_only_function<void(HoldableButton*)> onClick,
-    std23::move_only_function<void(HoldableButton*)> onHold
-) {
+bool HoldableButton::init(cocos2d::CCSprite *sprite, std23::move_only_function<void(HoldableButton *)> onClick,
+                          std23::move_only_function<void(HoldableButton *)> onHold)
+{
     if (!CCMenuItemSprite::initWithNormalSprite(sprite, nullptr, nullptr, this, nullptr)) {
         return false;
     }
@@ -24,8 +22,10 @@ bool HoldableButton::init(
     return true;
 }
 
-void HoldableButton::selected() {
-    if (!m_bEnabled) return;
+void HoldableButton::selected()
+{
+    if (!m_bEnabled)
+        return;
     CCMenuItemSprite::selected();
 
     m_shortHold = true;
@@ -36,29 +36,33 @@ void HoldableButton::selected() {
     }
 }
 
-void HoldableButton::setScaleMult(float mult) {
+void HoldableButton::setScaleMult(float mult)
+{
     m_scaleMult = mult;
 }
 
-void HoldableButton::unselected() {
-    if (!m_bEnabled) return;
+void HoldableButton::unselected()
+{
+    if (!m_bEnabled)
+        return;
     CCMenuItemSprite::unselected();
 
     this->rescaleTo(1.0f);
     this->unschedule(schedule_selector(HoldableButton::onHoldFinished));
 }
 
-void HoldableButton::rescaleTo(float s) {
+void HoldableButton::rescaleTo(float s)
+{
     this->stopActionByTag(ACTION_TAG);
-    auto action = CCEaseBounceOut::create(
-        CCScaleTo::create(0.3f, s)
-    );
+    auto action = CCEaseBounceOut::create(CCScaleTo::create(0.3f, s));
     action->setTag(ACTION_TAG);
     this->runAction(action);
 }
 
-void HoldableButton::activate() {
-    if (!m_bEnabled || !m_shortHold) return;
+void HoldableButton::activate()
+{
+    if (!m_bEnabled || !m_shortHold)
+        return;
 
     CCMenuItemSprite::activate();
     m_shortHold = false;
@@ -73,27 +77,27 @@ void HoldableButton::activate() {
     }
 }
 
-void HoldableButton::onHoldFinished(float s) {
+void HoldableButton::onHoldFinished(float s)
+{
     m_shortHold = false;
 
     if (m_onHold) {
         m_onHold(this);
     }
 
-    if (auto menu = typeinfo_cast<CancellableMenu*>(this->getParent())) {
+    if (auto menu = typeinfo_cast<CancellableMenu *>(this->getParent())) {
         menu->cancelTouch(); // should call unselected()
     }
 }
 
-void HoldableButton::setHoldThreshold(float seconds) {
+void HoldableButton::setHoldThreshold(float seconds)
+{
     m_holdThreshold = seconds;
 }
 
-HoldableButton* HoldableButton::create(
-    CCSprite* sprite,
-    std23::move_only_function<void(HoldableButton*)> onClick,
-    std23::move_only_function<void(HoldableButton*)> onHold
-) {
+HoldableButton *HoldableButton::create(CCSprite *sprite, std23::move_only_function<void(HoldableButton *)> onClick,
+                                       std23::move_only_function<void(HoldableButton *)> onHold)
+{
     auto ret = new HoldableButton();
     if (ret->init(sprite, std::move(onClick), std::move(onHold))) {
         ret->autorelease();
@@ -103,4 +107,4 @@ HoldableButton* HoldableButton::create(
     return nullptr;
 }
 
-}
+} // namespace globed

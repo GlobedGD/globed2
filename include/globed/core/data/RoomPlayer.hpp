@@ -1,11 +1,11 @@
 #pragma once
 #include "PlayerAccountData.hpp"
 #include "SpecialUserData.hpp"
-#include <globed/core/data/ColorId.hpp>
 #include <globed/core/SessionId.hpp>
+#include <globed/core/data/ColorId.hpp>
 
 #ifdef GLOBED_BUILD
-# include <cue/PlayerIcon.hpp>
+#include <cue/PlayerIcon.hpp>
 #endif
 
 namespace globed {
@@ -18,7 +18,7 @@ struct MinimalRoomPlayer {
     ColorId<uint16_t> glowColor;
 
 #ifdef GLOBED_BUILD
-    cue::PlayerIcon* createIcon() const;
+    cue::PlayerIcon *createIcon() const;
     cue::Icons toIcons() const;
 #endif
 
@@ -33,4 +33,4 @@ struct RoomPlayer : MinimalRoomPlayer {
     static RoomPlayer createMyself();
 };
 
-}
+} // namespace globed

@@ -1,16 +1,18 @@
-#include <globed/util/GameState.hpp>
 #include <Windows.h>
+#include <globed/util/GameState.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
-bool isGameFocused() {
+bool isGameFocused()
+{
     HWND wnd = WindowFromDC(wglGetCurrentDC());
     return GetForegroundWindow() == wnd;
 }
 
-uint64_t timeSinceInput() {
+uint64_t timeSinceInput()
+{
     LASTINPUTINFO lii;
     lii.cbSize = sizeof(LASTINPUTINFO);
     GetLastInputInfo(&lii);
@@ -19,4 +21,4 @@ uint64_t timeSinceInput() {
     return elapsed;
 }
 
-}
+} // namespace globed

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <qunet/buffers/ByteReader.hpp>
-#include <qunet/buffers/HeapByteWriter.hpp>
 #include <globed/core/data/Event.hpp>
 #include <modules/scripting/objects/ExtendedObjectBase.hpp>
+#include <qunet/buffers/ByteReader.hpp>
+#include <qunet/buffers/HeapByteWriter.hpp>
 
 namespace globed {
 
@@ -15,7 +15,8 @@ struct SpawnData {
     gd::vector<int> remaps{};
 };
 
-inline geode::Result<SpawnData> decodeSpawnData(qn::ByteReader& reader) {
+inline geode::Result<SpawnData> decodeSpawnData(qn::ByteReader &reader)
+{
     SpawnData out{};
 
     uint8_t flagByte = READER_UNWRAP(reader.readU8());
@@ -53,4 +54,4 @@ inline geode::Result<SpawnData> decodeSpawnData(qn::ByteReader& reader) {
     return geode::Ok(out);
 }
 
-}
+} // namespace globed

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <globed/prelude.hpp>
-#include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
+#include <globed/core/net/MessageListener.hpp>
+#include <globed/prelude.hpp>
 #include <ui/misc/GradientLabel.hpp>
 
 #include <cue/LoadingCircle.hpp>
@@ -11,7 +11,7 @@ namespace globed {
 
 class FeaturedLevelCell : public CCLayer {
 public:
-    static FeaturedLevelCell* create();
+    static FeaturedLevelCell *create();
     ~FeaturedLevelCell();
 
     void reloadFull();
@@ -29,7 +29,7 @@ protected:
     void hideLoading();
     void removeLoadedElements();
 
-    void levelLoaded(Result<GJGameLevel*, int> result);
+    void levelLoaded(Result<GJGameLevel *, int> result);
 
     void requestPlayerCount(float);
 
@@ -50,4 +50,4 @@ protected:
     Ref<GJGameLevel> m_level;
 };
 
-}
+} // namespace globed

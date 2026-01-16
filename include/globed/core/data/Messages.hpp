@@ -2,18 +2,18 @@
 
 #pragma once
 #include "AdminLogs.hpp"
-#include "PlayerState.hpp"
-#include "PlayerDisplayData.hpp"
-#include "RoomListingInfo.hpp"
-#include "FeaturedLevel.hpp"
-#include "UserRole.hpp"
+#include "Credits.hpp"
 #include "Event.hpp"
+#include "ExtendedUserData.hpp"
+#include "FeaturedLevel.hpp"
+#include "FetchedMod.hpp"
+#include "PlayerDisplayData.hpp"
+#include "PlayerState.hpp"
+#include "PunishReasons.hpp"
+#include "RoomListingInfo.hpp"
 #include "RoomTeam.hpp"
 #include "UserPunishment.hpp"
-#include "FetchedMod.hpp"
-#include "Credits.hpp"
-#include "ExtendedUserData.hpp"
-#include "PunishReasons.hpp"
+#include "UserRole.hpp"
 #include <globed/audio/EncodedAudioFrame.hpp>
 
 namespace globed::msg {
@@ -276,4 +276,4 @@ struct AdminPunishmentReasonsMessage {
     PunishReasons reasons;
 };
 
-}
+} // namespace globed::msg

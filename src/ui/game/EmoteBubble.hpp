@@ -7,7 +7,7 @@ namespace globed {
 
 class EmoteBubble : public CCNode {
 public:
-    static EmoteBubble* create();
+    static EmoteBubble *create();
 
     void playEmote(uint32_t emoteId, std::shared_ptr<RemotePlayer> player);
     void setOpacity(uint8_t op);
@@ -17,8 +17,8 @@ public:
     bool isPlaying();
 
 private:
-    CCSprite* m_emoteSpr = nullptr;
-    CCSprite* m_bubbleSpr = nullptr;
+    CCSprite *m_emoteSpr = nullptr;
+    CCSprite *m_bubbleSpr = nullptr;
     float m_initialScale;
 
     bool init() override;
@@ -27,4 +27,4 @@ private:
     void customToggleVis(bool vis);
 };
 
-}
+} // namespace globed

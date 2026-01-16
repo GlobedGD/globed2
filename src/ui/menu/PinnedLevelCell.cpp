@@ -1,35 +1,38 @@
 #include "PinnedLevelCell.hpp"
 #include <globed/util/gd.hpp>
 
-#include <cue/Util.hpp>
 #include <UIBuilder.hpp>
 #include <asp/iter.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
-bool PinnedLevelCell::init(float width) {
+bool PinnedLevelCell::init(float width)
+{
     CCNode::init();
 
-    this->setContentSize({ width, HEIGHT });
+    this->setContentSize({width, HEIGHT});
 
     // create the loading circle
 
-    m_circle = Build(cue::LoadingCircle::create(false))
-        .scale(0.5f);
+    m_circle = Build(cue::LoadingCircle::create(false)).scale(0.5f);
     m_circle->addToLayer(this);
 
     return true;
 }
 
-void PinnedLevelCell::hide() {
+void PinnedLevelCell::hide()
+{
     this->setContentHeight(0);
     this->invokeCallback();
 }
 
-void PinnedLevelCell::loadLevel(int id) {
-    if (m_lastLoaded == id) return;
+void PinnedLevelCell::loadLevel(int id)
+{
+    if (m_lastLoaded == id)
+        return;
     m_lastLoaded = id;
 
     // don't load main/tower levels
@@ -46,15 +49,17 @@ void PinnedLevelCell::loadLevel(int id) {
 
     this->invokeCallback();
 
-    globed::getOnlineLevel(id, [ref = WeakRef(this)](GJGameLevel* level) {
+    globed::getOnlineLevel(id, [ref = WeakRef(this)](GJGameLevel *level) {
         auto self = ref.lock();
-        if (!self) return;
+        if (!self)
+            return;
 
         self->onLevelLoaded(level);
     });
 }
 
-void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
+void PinnedLevelCell::onLevelLoaded(GJGameLevel *level)
+{
     m_circle->setVisible(false);
 
     if (!level) {
@@ -71,8 +76,8 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
     m_levelCell->autorelease();
     m_levelCell->m_compactView = useCompact;
     m_levelCell->loadFromLevel(level);
-    m_levelCell->setContentSize({ this->getContentWidth(), HEIGHT });
-    m_levelCell->setPosition({ 0.f, 0.f });
+    m_levelCell->setContentSize({this->getContentWidth(), HEIGHT});
+    m_levelCell->setPosition({0.f, 0.f});
 
     if (auto cvoltonID = m_levelCell->m_mainLayer->getChildByIDRecursive("cvolton.betterinfo/level-id-label")) {
         cvoltonID->setVisible(false);
@@ -94,13 +99,9 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
     if (useCompact && !hasCompactListsMod) {
         float shift = 20.f;
 
-        std::array toHide = {
-            std::string_view{"level-place"}
-        };
+        std::array toHide = {std::string_view{"level-place"}};
 
-        std::array dontShift = {
-            std::string_view{"main-menu"}
-        };
+        std::array dontShift = {std::string_view{"main-menu"}};
 
         for (auto child : m_levelCell->m_mainLayer->getChildrenExt()) {
             bool hide = asp::iter::contains(toHide, child->getID());
@@ -121,7 +122,7 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
             creator->setPositionX(creator->getPositionX() - shift);
         }
 
-        CCNode* cper = m_levelCell->m_mainLayer->getChildByID("completed-icon");
+        CCNode *cper = m_levelCell->m_mainLayer->getChildByID("completed-icon");
         if (!cper) {
             cper = m_levelCell->m_mainLayer->getChildByID("percentage-label");
         }
@@ -144,7 +145,8 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
     this->addChild(m_levelCell);
 }
 
-PinnedLevelCell* PinnedLevelCell::create(float width) {
+PinnedLevelCell *PinnedLevelCell::create(float width)
+{
     auto ret = new PinnedLevelCell();
     if (ret->init(width)) {
         ret->autorelease();
@@ -154,4 +156,4 @@ PinnedLevelCell* PinnedLevelCell::create(float width) {
     return nullptr;
 }
 
-}
+} // namespace globed

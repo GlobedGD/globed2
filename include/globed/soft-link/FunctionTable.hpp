@@ -8,7 +8,8 @@ namespace globed {
 
 static constexpr uint32_t GLOBED_ABI = 1;
 
-static uint64_t fnv1aHash(std::string_view str) {
+static uint64_t fnv1aHash(std::string_view str)
+{
     uint64_t hash = 0xcbf29ce484222325;
     for (char c : str) {
         hash ^= c;
@@ -19,21 +20,24 @@ static uint64_t fnv1aHash(std::string_view str) {
 
 class FunctionTable {
 public:
-    inline void insert(std::string_view name, auto* func) {
+    inline void insert(std::string_view name, auto *func)
+    {
         GLOBED_ASSERT(m_writable && "Cannot add functions to a finalized FunctionTable");
-        m_functions[fnv1aHash(name)] = reinterpret_cast<void*>(func);
+        m_functions[fnv1aHash(name)] = reinterpret_cast<void *>(func);
     }
 
-    inline void finalize() {
+    inline void finalize()
+    {
         m_writable = false;
     }
 
-    inline uint32_t abi() const {
+    inline uint32_t abi() const
+    {
         return m_abi;
     }
 
-    template <typename FTy>
-    inline geode::Result<FTy> getFunction(std::string_view name) {
+    template <typename FTy> inline geode::Result<FTy> getFunction(std::string_view name)
+    {
         auto it = m_functions.find(fnv1aHash(name));
         if (it == m_functions.end()) {
             return geode::Err("Function not found in the table: '{}'", name);
@@ -43,9 +47,9 @@ public:
         return geode::Ok(func);
     }
 
-    template <typename T, typename... Args>
-    inline geode::Result<T> invoke(std::string_view name, Args&&... args) {
-        using FTy = geode::Result<T>(*)(Args...);
+    template <typename T, typename... Args> inline geode::Result<T> invoke(std::string_view name, Args &&...args)
+    {
+        using FTy = geode::Result<T> (*)(Args...);
         GEODE_UNWRAP_INTO(auto func, this->getFunction<FTy>(name));
 
         return func(std::forward<Args>(args)...);
@@ -53,17 +57,16 @@ public:
 
 private:
     uint32_t m_abi = GLOBED_ABI;
-    std::unordered_map<uint64_t, void*> m_functions;
+    std::unordered_map<uint64_t, void *> m_functions;
     bool m_writable = true;
 };
 
-template <typename Table>
-struct FunctionTableSubcat {
-    Table* table;
+template <typename Table> struct FunctionTableSubcat {
+    Table *table;
     std::string_view name;
 
-    template <typename T, typename... Args>
-    inline geode::Result<T> invoke(std::string_view name, Args&&... args) {
+    template <typename T, typename... Args> inline geode::Result<T> invoke(std::string_view name, Args &&...args)
+    {
         char combined[128];
         auto res = fmt::format_to(combined, "{}.{}", this->name, name);
 
@@ -71,8 +74,8 @@ struct FunctionTableSubcat {
         return table->template invoke<T>(sv, std::forward<Args>(args)...);
     }
 
-    template <typename FTy>
-    inline geode::Result<FTy> getFunction(std::string_view name) {
+    template <typename FTy> inline geode::Result<FTy> getFunction(std::string_view name)
+    {
         char combined[128];
         auto res = fmt::format_to(combined, "{}.{}", this->name, name);
 
@@ -81,4 +84,4 @@ struct FunctionTableSubcat {
     }
 };
 
-}
+} // namespace globed

@@ -1,8 +1,8 @@
-#include <globed/core/data/PlayerDisplayData.hpp>
-#include <globed/util/gd.hpp>
-#include <globed/util/assert.hpp>
-#include <globed/util/singleton.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <globed/core/data/PlayerDisplayData.hpp>
+#include <globed/util/assert.hpp>
+#include <globed/util/gd.hpp>
+#include <globed/util/singleton.hpp>
 
 #include <asp/iter.hpp>
 #include <queue>
@@ -11,16 +11,15 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void reorderDownloadedLevel(GJGameLevel* level) {
+void reorderDownloadedLevel(GJGameLevel *level)
+{
     // thank you cvolton :D
     // this is needed so the level appears at the top of the saved list (unless Manual Level Order is enabled)
 
-    CCDictionaryExt<gd::string, GJGameLevel*> levels = GameLevelManager::get()->m_onlineLevels;
+    CCDictionaryExt<gd::string, GJGameLevel *> levels = GameLevelManager::get()->m_onlineLevels;
     bool putAtLowest = cachedSingleton<GameManager>()->getGameVariable("0084");
 
-    auto iter = asp::iter::from(levels).map([](const auto& pair) {
-        return pair.second->m_levelIndex;
-    });
+    auto iter = asp::iter::from(levels).map([](const auto &pair) { return pair.second->m_levelIndex; });
 
     int idx = (putAtLowest ? std::move(iter).min() : std::move(iter).max()).value_or(0);
 
@@ -33,33 +32,39 @@ void reorderDownloadedLevel(GJGameLevel* level) {
     level->m_levelIndex = idx;
 }
 
-void pushScene(cocos2d::CCLayer* layer) {
+void pushScene(cocos2d::CCLayer *layer)
+{
     auto scene = CCScene::create();
     scene->addChild(layer);
     return pushScene(scene);
 }
 
-void pushScene(cocos2d::CCScene* scene) {
+void pushScene(cocos2d::CCScene *scene)
+{
     // note: (applies to functions below too), fade transition is already removed by gd if fast menu is enabled
     // so we don't need to worry about that here
     cachedSingleton<CCDirector>()->pushScene(CCTransitionFade::create(.5f, scene));
 }
 
-void replaceScene(cocos2d::CCLayer* layer) {
+void replaceScene(cocos2d::CCLayer *layer)
+{
     auto scene = CCScene::create();
     scene->addChild(layer);
     return replaceScene(scene);
 }
 
-void replaceScene(cocos2d::CCScene* scene) {
+void replaceScene(cocos2d::CCScene *scene)
+{
     cachedSingleton<CCDirector>()->replaceScene(CCTransitionFade::create(.5f, scene));
 }
 
-void popScene() {
+void popScene()
+{
     cachedSingleton<CCDirector>()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
 }
 
-GameLevelKind classifyLevel(int levelId) {
+GameLevelKind classifyLevel(int levelId)
+{
     auto glm = GameLevelManager::get();
 
     // sanity check time!
@@ -69,78 +74,100 @@ GameLevelKind classifyLevel(int levelId) {
     // main levels, tower levels, the challenge
     bool isRealMain = (levelId >= 1 && levelId <= 127) || (levelId >= 5001 && levelId <= 5024) || (levelId == 3001);
 
-    auto mlevel = static_cast<GJGameLevel*>(glm->m_mainLevels->objectForKey(fmt::to_string(levelId)));
+    auto mlevel = static_cast<GJGameLevel *>(glm->m_mainLevels->objectForKey(fmt::to_string(levelId)));
 
     if (!mlevel || !isRealMain) {
-        return GameLevelKind {
-            .level = nullptr,
-            .kind = GameLevelKind::Custom
-        };
+        return GameLevelKind{.level = nullptr, .kind = GameLevelKind::Custom};
     }
 
     if (levelId >= 1 && levelId <= 22) {
         // classic main levels
-        return GameLevelKind {
-            .level = glm->getMainLevel(levelId, false),
-            .kind = GameLevelKind::Main
-        };
+        return GameLevelKind{.level = glm->getMainLevel(levelId, false), .kind = GameLevelKind::Main};
     } else {
         // tower levels or the challenge
-        return GameLevelKind {
-            .level = glm->getMainLevel(levelId, false),
-            .kind = GameLevelKind::Tower
-        };
+        return GameLevelKind{.level = glm->getMainLevel(levelId, false), .kind = GameLevelKind::Tower};
     }
 }
 
-static std::string gvkey(GameVariable var) {
+static std::string gvkey(GameVariable var)
+{
     return fmt::format("{:04}", static_cast<int>(var));
 }
 
-bool gameVariable(GameVariable var) {
+bool gameVariable(GameVariable var)
+{
     return globed::cachedSingleton<GameManager>()->getGameVariable(gvkey(var).c_str());
 }
 
-void setGameVariable(GameVariable var, bool state) {
+void setGameVariable(GameVariable var, bool state)
+{
     globed::cachedSingleton<GameManager>()->setGameVariable(gvkey(var).c_str(), state);
 }
 
-const char* difficultyToString(Difficulty diff) {
+const char *difficultyToString(Difficulty diff)
+{
     switch (diff) {
-        case Difficulty::Auto: return "Auto";
-        case Difficulty::NA: return "NA";
-        case Difficulty::Easy: return "Easy";
-        case Difficulty::Normal: return "Normal";
-        case Difficulty::Hard: return "Hard";
-        case Difficulty::Harder: return "Harder";
-        case Difficulty::Insane: return "Insane";
-        case Difficulty::HardDemon: return "HardDemon";
-        case Difficulty::EasyDemon: return "EasyDemon";
-        case Difficulty::MediumDemon: return "MediumDemon";
-        case Difficulty::InsaneDemon: return "InsaneDemon";
-        case Difficulty::ExtremeDemon: return "ExtremeDemon";
-        default: return "NA";
+    case Difficulty::Auto:
+        return "Auto";
+    case Difficulty::NA:
+        return "NA";
+    case Difficulty::Easy:
+        return "Easy";
+    case Difficulty::Normal:
+        return "Normal";
+    case Difficulty::Hard:
+        return "Hard";
+    case Difficulty::Harder:
+        return "Harder";
+    case Difficulty::Insane:
+        return "Insane";
+    case Difficulty::HardDemon:
+        return "HardDemon";
+    case Difficulty::EasyDemon:
+        return "EasyDemon";
+    case Difficulty::MediumDemon:
+        return "MediumDemon";
+    case Difficulty::InsaneDemon:
+        return "InsaneDemon";
+    case Difficulty::ExtremeDemon:
+        return "ExtremeDemon";
+    default:
+        return "NA";
     }
 }
 
-std::optional<Difficulty> difficultyFromString(std::string_view diff) {
-    if (diff == "Auto") return Difficulty::Auto;
-    if (diff == "NA") return Difficulty::NA;
-    if (diff == "Easy") return Difficulty::Easy;
-    if (diff == "Normal") return Difficulty::Normal;
-    if (diff == "Hard") return Difficulty::Hard;
-    if (diff == "Harder") return Difficulty::Harder;
-    if (diff == "Insane") return Difficulty::Insane;
-    if (diff == "HardDemon") return Difficulty::HardDemon;
-    if (diff == "EasyDemon") return Difficulty::EasyDemon;
-    if (diff == "MediumDemon") return Difficulty::MediumDemon;
-    if (diff == "InsaneDemon") return Difficulty::InsaneDemon;
-    if (diff == "ExtremeDemon") return Difficulty::ExtremeDemon;
+std::optional<Difficulty> difficultyFromString(std::string_view diff)
+{
+    if (diff == "Auto")
+        return Difficulty::Auto;
+    if (diff == "NA")
+        return Difficulty::NA;
+    if (diff == "Easy")
+        return Difficulty::Easy;
+    if (diff == "Normal")
+        return Difficulty::Normal;
+    if (diff == "Hard")
+        return Difficulty::Hard;
+    if (diff == "Harder")
+        return Difficulty::Harder;
+    if (diff == "Insane")
+        return Difficulty::Insane;
+    if (diff == "HardDemon")
+        return Difficulty::HardDemon;
+    if (diff == "EasyDemon")
+        return Difficulty::EasyDemon;
+    if (diff == "MediumDemon")
+        return Difficulty::MediumDemon;
+    if (diff == "InsaneDemon")
+        return Difficulty::InsaneDemon;
+    if (diff == "ExtremeDemon")
+        return Difficulty::ExtremeDemon;
 
     return std::nullopt;
 }
 
-Difficulty calcLevelDifficulty(GJGameLevel* level) {
+Difficulty calcLevelDifficulty(GJGameLevel *level)
+{
     using enum Difficulty;
 
     Difficulty diff = NA;
@@ -148,7 +175,7 @@ Difficulty calcLevelDifficulty(GJGameLevel* level) {
     if (level->m_autoLevel) {
         diff = Auto;
     } else if (level->m_ratingsSum != 0) {
-        if (level->m_demon == 1){
+        if (level->m_demon == 1) {
             int fixedNum = std::clamp(level->m_demonDifficulty, 0, 6);
 
             if (fixedNum != 0) {
@@ -158,10 +185,10 @@ Difficulty calcLevelDifficulty(GJGameLevel* level) {
             diff = static_cast<Difficulty>(6 + fixedNum);
         } else {
             int val = level->m_ratingsSum / level->m_ratings;
-            if (val > (int) Difficulty::ExtremeDemon) {
-                val = (int) Difficulty::ExtremeDemon;
-            } else if (val < (int) Difficulty::NA) {
-                val = (int) Difficulty::NA;
+            if (val > (int)Difficulty::ExtremeDemon) {
+                val = (int)Difficulty::ExtremeDemon;
+            } else if (val < (int)Difficulty::NA) {
+                val = (int)Difficulty::NA;
             }
 
             diff = static_cast<Difficulty>(val);
@@ -171,10 +198,11 @@ Difficulty calcLevelDifficulty(GJGameLevel* level) {
     return diff;
 }
 
-cue::Icons getPlayerIcons() {
+cue::Icons getPlayerIcons()
+{
     auto gm = cachedSingleton<GameManager>();
 
-    return cue::Icons {
+    return cue::Icons{
         .type = IconType::Cube,
         .id = gm->m_playerFrame,
         .color1 = gm->m_playerColor,
@@ -183,8 +211,9 @@ cue::Icons getPlayerIcons() {
     };
 }
 
-cue::Icons convertPlayerIcons(const PlayerIconData& data) {
-    return cue::Icons {
+cue::Icons convertPlayerIcons(const PlayerIconData &data)
+{
+    return cue::Icons{
         .type = IconType::Cube,
         .id = data.cube,
         .color1 = data.color1.asIdx(),
@@ -193,7 +222,8 @@ cue::Icons convertPlayerIcons(const PlayerIconData& data) {
     };
 }
 
-PlayerIconData PlayerIconData::getOwn() {
+PlayerIconData PlayerIconData::getOwn()
+{
     auto gm = globed::cachedSingleton<GameManager>();
 
     globed::PlayerIconData out{};
@@ -218,7 +248,8 @@ PlayerIconData PlayerIconData::getOwn() {
     return out;
 }
 
-PlayerDisplayData PlayerDisplayData::getOwn() {
+PlayerDisplayData PlayerDisplayData::getOwn()
+{
     auto gjam = cachedSingleton<GJAccountManager>();
     auto gm = cachedSingleton<GameManager>();
     auto icons = getPlayerIcons();
@@ -236,8 +267,9 @@ class Downloader : public SingletonNodeBase<Downloader>, LevelManagerDelegate {
 public:
     using Callback = std23::move_only_function<void(geode::Ref<GJGameLevel>)>;
 
-    void push(int level, Callback&& cb) {
-        m_requests.push(Request{ level, std::move(cb) });
+    void push(int level, Callback &&cb)
+    {
+        m_requests.push(Request{level, std::move(cb)});
 
         if (m_idle) {
             this->processNext();
@@ -257,7 +289,8 @@ private:
 
     Downloader() = default;
 
-    void processNext() {
+    void processNext()
+    {
         if (m_requests.empty()) {
             m_idle = true;
             return;
@@ -270,7 +303,8 @@ private:
         glm->getOnlineLevels(GJSearchObject::create(SearchType::Type26, fmt::to_string(m_requests.front().level)));
     }
 
-    void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) override {
+    void loadLevelsFinished(cocos2d::CCArray *p0, char const *p1, int p2) override
+    {
         GLOBED_ASSERT(m_requests.size() > 0 && "No callback in the request queue");
         auto req = std::move(m_requests.front());
         m_requests.pop();
@@ -281,9 +315,10 @@ private:
             return;
         }
 
-        auto level = static_cast<GJGameLevel*>(p0->objectAtIndex(0));
+        auto level = static_cast<GJGameLevel *>(p0->objectAtIndex(0));
         if (level->m_levelID != req.level) {
-            log::error("Downloader: downloaded level ID {} does not match requested ID {}", level->m_levelID, req.level);
+            log::error("Downloader: downloaded level ID {} does not match requested ID {}", level->m_levelID,
+                       req.level);
             req.cb(nullptr);
             return;
         }
@@ -294,7 +329,8 @@ private:
         this->processNext();
     }
 
-    void loadLevelsFailed(char const* p0, int p1) override {
+    void loadLevelsFailed(char const *p0, int p1) override
+    {
         GLOBED_ASSERT(m_requests.size() > 0 && "No callback in the request queue");
 
         auto req = std::move(m_requests.front());
@@ -307,7 +343,8 @@ private:
     }
 };
 
-void getOnlineLevel(int id, Downloader::Callback cb) {
+void getOnlineLevel(int id, Downloader::Callback cb)
+{
     auto glm = cachedSingleton<GameLevelManager>();
     auto level = glm->getSavedLevel(id);
 
@@ -319,4 +356,4 @@ void getOnlineLevel(int id, Downloader::Callback cb) {
     Downloader::get().push(id, std::move(cb));
 }
 
-}
+} // namespace globed

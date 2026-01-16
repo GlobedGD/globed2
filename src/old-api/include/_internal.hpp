@@ -1,7 +1,7 @@
 #pragma once
-#include <globed/prelude.hpp>
-#include <Geode/loader/Event.hpp>
 #include <Geode/Result.hpp>
+#include <Geode/loader/Event.hpp>
+#include <globed/prelude.hpp>
 
 namespace globed {
 
@@ -44,48 +44,51 @@ public:
     Type type;
 };
 
-template <typename Ret, typename... Args>
-class RequestEvent : public BaseEvent {
+template <typename Ret, typename... Args> class RequestEvent : public BaseEvent {
 public:
-    RequestEvent(Type type, const Args&... args) :
-        BaseEvent(type),
-        args(args...),
-        // We preset this to an error value so that we can detect if the dispatcher did not respond at all.
-        result(Err("_placeholder")) {}
+    RequestEvent(Type type, const Args &...args)
+        : BaseEvent(type), args(args...),
+          // We preset this to an error value so that we can detect if the dispatcher did not respond at all.
+          result(Err("_placeholder"))
+    {
+    }
 
     std::tuple<Args...> args;
     Result<Ret> result;
 
     // This method should only ever be called by the event dispatcher, aka Globed itself.
-    template <class A = Ret, class = std::enable_if_t<!std::is_void_v<A>>>
-    void respond(A&& value) {
+    template <class A = Ret, class = std::enable_if_t<!std::is_void_v<A>>> void respond(A &&value)
+    {
         result = Ok(std::move(value));
     }
 
     // This method should only ever be called by the event dispatcher, aka Globed itself.
-    template <class A = Ret, class = std::enable_if_t<!std::is_void_v<A>>>
-    void respond(const A& value) {
+    template <class A = Ret, class = std::enable_if_t<!std::is_void_v<A>>> void respond(const A &value)
+    {
         result = Ok(std::move(value));
     }
 
     // This method should only ever be called by the event dispatcher, aka Globed itself.
-    void respond() requires std::is_void_v<Ret> {
+    void respond()
+        requires std::is_void_v<Ret>
+    {
         result = Ok();
     }
 
     // This method should only ever be called by the event dispatcher, aka Globed itself.
-    void respondError(const std::string& error) {
+    void respondError(const std::string &error)
+    {
         result = Err(error);
     }
 };
 
-template <typename Ret, typename... Args>
-inline Result<Ret> request(Type type, const Args&... args) {
+template <typename Ret, typename... Args> inline Result<Ret> request(Type type, const Args &...args)
+{
     RequestEvent<Ret, Args...> event(type, args...);
     event.post();
 
     if (event.result.isErr()) {
-        auto& err = event.result.unwrapErr();
+        auto &err = event.result.unwrapErr();
         if (err == "_placeholder") {
             // This means the dispatcher did not respond to the event. Likely Globed is not loaded.
             return Err("No response received - is Globed currently loaded?");
@@ -97,8 +100,8 @@ inline Result<Ret> request(Type type, const Args&... args) {
     return std::move(event.result);
 }
 
-template <typename... Args>
-inline Result<void> requestVoid(Type type, const Args&... args) {
+template <typename... Args> inline Result<void> requestVoid(Type type, const Args &...args)
+{
     return request<void, Args...>(type, args...);
 }
 

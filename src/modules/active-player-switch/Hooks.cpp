@@ -1,9 +1,9 @@
 #include "Hooks.hpp"
 
-#include <globed/core/RoomManager.hpp>
-#include <globed/util/Random.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <globed/core/RoomManager.hpp>
+#include <globed/util/Random.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -16,52 +16,56 @@ static bool g_ignoreButtonBlock = true;
 
 namespace globed {
 
-bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
-    if (!PlayLayer::init(level, a, b)) return false;
+bool APSPlayLayer::init(GJGameLevel *level, bool a, bool b)
+{
+    if (!PlayLayer::init(level, a, b))
+        return false;
 
-    m_fields->m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& msg) {
-        for (auto& event : msg.events) {
-            if (event.is<ActivePlayerSwitchEvent>()) {
-                this->handleEvent(event.as<ActivePlayerSwitchEvent>());
+    m_fields->m_listener =
+        NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage &msg) {
+            for (auto &event : msg.events) {
+                if (event.is<ActivePlayerSwitchEvent>()) {
+                    this->handleEvent(event.as<ActivePlayerSwitchEvent>());
+                }
             }
-        }
 
-        return ListenerResult::Continue;
-    });
+            return ListenerResult::Continue;
+        });
 
     float glowScale = 1.5f;
 
     m_fields->m_switchGlow = Build(CCScale9Sprite::create("switch-screen-glow.png"_spr))
-        .scale(glowScale)
-        .zOrder(11)
-        .contentSize(CCDirector::get()->getWinSize() / glowScale)
-        .visible(false)
-        .id("switch-glow"_spr)
-        .parent(m_uiLayer)
-        .anchorPoint(0.f, 0.f);
+                                 .scale(glowScale)
+                                 .zOrder(11)
+                                 .contentSize(CCDirector::get()->getWinSize() / glowScale)
+                                 .visible(false)
+                                 .id("switch-glow"_spr)
+                                 .parent(m_uiLayer)
+                                 .anchorPoint(0.f, 0.f);
 
     m_fields->m_switchPreglow = Build(CCScale9Sprite::create("switch-screen-preglow.png"_spr))
-        .scale(glowScale)
-        .zOrder(10)
-        .contentSize(CCDirector::get()->getWinSize() / glowScale)
-        .visible(false)
-        .id("switch-preglow"_spr)
-        .parent(m_uiLayer)
-        .anchorPoint(0.f, 0.f);
+                                    .scale(glowScale)
+                                    .zOrder(10)
+                                    .contentSize(CCDirector::get()->getWinSize() / glowScale)
+                                    .visible(false)
+                                    .id("switch-preglow"_spr)
+                                    .parent(m_uiLayer)
+                                    .anchorPoint(0.f, 0.f);
 
     auto gjbgl = GlobedGJBGL::get(this);
     gjbgl->toggleCullingEnabled(false);
     gjbgl->toggleExtendedData(true);
-    auto& lerper = gjbgl->m_fields->m_interpolator;
+    auto &lerper = gjbgl->m_fields->m_interpolator;
     lerper.setLowLatencyMode(true);
     lerper.setCameraCorrections(false);
 
     return true;
 }
 
-void APSPlayLayer::destroyPlayer(PlayerObject* player, GameObject* obj) {
-    auto& mod = APSModule::get();
-    auto& fields = *m_fields.self();
+void APSPlayLayer::destroyPlayer(PlayerObject *player, GameObject *obj)
+{
+    auto &mod = APSModule::get();
+    auto &fields = *m_fields.self();
     auto gameLayer = GlobedGJBGL::get();
 
     if (!gameLayer || fields.m_meActive || fields.m_activePlayer == 0) {
@@ -70,7 +74,8 @@ void APSPlayLayer::destroyPlayer(PlayerObject* player, GameObject* obj) {
     }
 
     // noclip if spectating another player
-    if (obj != m_anticheatSpike && !g_ignoreNoclip && (player == gameLayer->m_player1 || player == gameLayer->m_player2)) {
+    if (obj != m_anticheatSpike && !g_ignoreNoclip &&
+        (player == gameLayer->m_player1 || player == gameLayer->m_player2)) {
         // log::debug("(APS) Noclipping death");
         return;
     }
@@ -78,7 +83,8 @@ void APSPlayLayer::destroyPlayer(PlayerObject* player, GameObject* obj) {
     PlayLayer::destroyPlayer(player, obj);
 }
 
-void APSPlayLayer::handleEvent(const ActivePlayerSwitchEvent& event) {
+void APSPlayLayer::handleEvent(const ActivePlayerSwitchEvent &event)
+{
     log::info("(APS) Switching active player to {} (type: {})", event.playerId, event.type);
 
     auto self = GlobedGJBGL::get(this);
@@ -95,11 +101,11 @@ void APSPlayLayer::handleEvent(const ActivePlayerSwitchEvent& event) {
         return;
     }
 
-    auto& fields = *m_fields.self();
+    auto &fields = *m_fields.self();
     fields.m_activePlayer = event.playerId;
     fields.m_meActive = event.playerId == globed::get<GJAccountManager>()->m_accountID;
 
-    for (auto& [id, player] : self->m_fields->m_players) {
+    for (auto &[id, player] : self->m_fields->m_players) {
         if (id == fields.m_activePlayer) {
             player->setForceHide(false);
         } else {
@@ -123,16 +129,19 @@ void APSPlayLayer::handleEvent(const ActivePlayerSwitchEvent& event) {
     this->showSwitchEffect();
 }
 
-void APSPlayLayer::showSwitchEffect() {
+void APSPlayLayer::showSwitchEffect()
+{
     this->showEffect(false);
 }
 
-void APSPlayLayer::showPreSwitchEffect() {
+void APSPlayLayer::showPreSwitchEffect()
+{
     this->showEffect(true);
 }
 
-void APSPlayLayer::showEffect(bool presw) {
-    auto& fields = *m_fields.self();
+void APSPlayLayer::showEffect(bool presw)
+{
+    auto &fields = *m_fields.self();
     auto node = presw ? fields.m_switchPreglow : fields.m_switchGlow;
 
     // first disable both
@@ -142,19 +151,13 @@ void APSPlayLayer::showEffect(bool presw) {
     fields.m_switchGlow->stopAllActions();
 
     node->setOpacity(0);
-    node->runAction(
-        CCSequence::create(
-            CCShow::create(),
-            CCFadeIn::create(presw ? 0.01f : 0.f),
-            CCDelayTime::create(presw ? 5.f : 0.4f),
-            CCFadeOut::create(0.1f),
-            CCHide::create(),
-            nullptr
-        )
-    );
+    node->runAction(CCSequence::create(CCShow::create(), CCFadeIn::create(presw ? 0.01f : 0.f),
+                                       CCDelayTime::create(presw ? 5.f : 0.4f), CCFadeOut::create(0.1f),
+                                       CCHide::create(), nullptr));
 }
 
-void APSPlayLayer::handlePlayerDeath(const PlayerDeath& death, RemotePlayer* player) {
+void APSPlayLayer::handlePlayerDeath(const PlayerDeath &death, RemotePlayer *player)
+{
     if (player->id() == m_fields->m_activePlayer) {
         log::info("Handling death from {}", player->displayData().username);
         g_ignoreNoclip = true;
@@ -163,7 +166,8 @@ void APSPlayLayer::handlePlayerDeath(const PlayerDeath& death, RemotePlayer* pla
     }
 }
 
-void APSPlayLayer::customResetLevel() {
+void APSPlayLayer::customResetLevel()
+{
     auto scene = CCScene::get();
 
     auto pauselayer = scene->getChildByType<PauseLayer>(0);
@@ -179,27 +183,30 @@ void APSPlayLayer::customResetLevel() {
     }
 }
 
-bool APSPlayLayer::shouldBlockInput() {
-    auto& fields = *m_fields.self();
+bool APSPlayLayer::shouldBlockInput()
+{
+    auto &fields = *m_fields.self();
     return !fields.m_meActive && fields.m_activePlayer != 0;
 }
 
-void APSPlayLayer::performSwitch() {
-    auto& fields = *m_fields.self();
+void APSPlayLayer::performSwitch()
+{
+    auto &fields = *m_fields.self();
     log::info("(APS) Sending switch event to {}", fields.m_switchingTo);
 
-    NetworkManagerImpl::get().queueGameEvent(ActivePlayerSwitchEvent {
+    NetworkManagerImpl::get().queueGameEvent(ActivePlayerSwitchEvent{
         .playerId = fields.m_switchingTo,
         .type = 1, // switch
     });
 }
 
-void APSPlayLayer::performPreSwitch() {
-    auto& fields = *m_fields.self();
+void APSPlayLayer::performPreSwitch()
+{
+    auto &fields = *m_fields.self();
     auto self = GlobedGJBGL::get(this);
 
     // choose the next player
-    auto& players = self->m_fields->m_players;
+    auto &players = self->m_fields->m_players;
 
     if (players.empty()) {
         log::warn("no players to switch to!");
@@ -214,7 +221,7 @@ void APSPlayLayer::performPreSwitch() {
     fields.m_switchingTo = it->first;
     log::info("(APS) Sending pre-switch event to {}", it->first);
 
-    NetworkManagerImpl::get().queueGameEvent(ActivePlayerSwitchEvent {
+    NetworkManagerImpl::get().queueGameEvent(ActivePlayerSwitchEvent{
         .playerId = fields.m_switchingTo,
         .type = 0, // pre-switch
     });
@@ -226,16 +233,21 @@ void APSPlayLayer::performPreSwitch() {
     this->showPreSwitchEffect();
 }
 
-void APSPlayLayer::performSwitchProxy(float dt) {
-    if (auto pl = APSPlayLayer::get()) pl->performSwitch();
+void APSPlayLayer::performSwitchProxy(float dt)
+{
+    if (auto pl = APSPlayLayer::get())
+        pl->performSwitch();
 }
 
-void APSPlayLayer::performPreSwitchProxy(float dt) {
-    if (auto pl = APSPlayLayer::get()) pl->performPreSwitch();
+void APSPlayLayer::performPreSwitchProxy(float dt)
+{
+    if (auto pl = APSPlayLayer::get())
+        pl->performPreSwitch();
 }
 
-void APSPlayLayer::handleUpdate() {
-    auto& fields = *m_fields.self();
+void APSPlayLayer::handleUpdate()
+{
+    auto &fields = *m_fields.self();
     auto self = GlobedGJBGL::get(this);
 
     if (fields.m_activePlayer != 0) {
@@ -243,12 +255,16 @@ void APSPlayLayer::handleUpdate() {
         bool p2vis = fields.m_meActive && m_gameState.m_isDualMode;
 
         m_player1->setVisible(p1vis);
-        if (m_player1->m_shipStreak) m_player1->m_shipStreak->setVisible(p1vis);
-        if (m_player1->m_regularTrail) m_player1->m_regularTrail->setVisible(p1vis);
+        if (m_player1->m_shipStreak)
+            m_player1->m_shipStreak->setVisible(p1vis);
+        if (m_player1->m_regularTrail)
+            m_player1->m_regularTrail->setVisible(p1vis);
 
         m_player2->setVisible(p2vis);
-        if (m_player2->m_shipStreak) m_player2->m_shipStreak->setVisible(p2vis);
-        if (m_player2->m_regularTrail) m_player2->m_regularTrail->setVisible(p2vis);
+        if (m_player2->m_shipStreak)
+            m_player2->m_shipStreak->setVisible(p2vis);
+        if (m_player2->m_regularTrail)
+            m_player2->m_regularTrail->setVisible(p2vis);
     }
 
     if (!fields.m_meActive && fields.m_activePlayer != 0) {
@@ -263,9 +279,11 @@ void APSPlayLayer::handleUpdate() {
     }
 }
 
-void APSPlayLayer::handleUpdateFromRp(PlayerObject* local, RemotePlayer* rp, bool isPlayer2) {
+void APSPlayLayer::handleUpdateFromRp(PlayerObject *local, RemotePlayer *rp, bool isPlayer2)
+{
     auto p1 = isPlayer2 ? rp->player2() : rp->player1();
-    if (p1->m_isDead) return;
+    if (p1->m_isDead)
+        return;
 
     auto pos = p1->getLastPosition();
 
@@ -289,40 +307,45 @@ void APSPlayLayer::handleUpdateFromRp(PlayerObject* local, RemotePlayer* rp, boo
     // m_player1->m_isDashing = p1->m_isDashing;
 }
 
-APSPlayLayer* APSPlayLayer::get(GJBaseGameLayer* gjbgl) {
+APSPlayLayer *APSPlayLayer::get(GJBaseGameLayer *gjbgl)
+{
     if (!gjbgl || gjbgl->m_isEditor) {
         gjbgl = globed::get<GameManager>()->m_playLayer;
     }
 
-    return static_cast<APSPlayLayer*>(gjbgl);
+    return static_cast<APSPlayLayer *>(gjbgl);
 }
 
 // GJBGL
 
-void APSGJBGL::handleButton(bool a, int b, bool c) {
+void APSGJBGL::handleButton(bool a, int b, bool c)
+{
     auto pl = APSPlayLayer::get(this);
     if (!pl || !pl->shouldBlockInput() || g_ignoreButtonBlock) {
         GJBaseGameLayer::handleButton(a, b, c);
     }
 }
 
-void APSGJBGL::update(float dt) {
+void APSGJBGL::update(float dt)
+{
     GJBaseGameLayer::update(dt);
 
     auto pl = APSPlayLayer::get(this);
-    if (pl) pl->handleUpdate();
+    if (pl)
+        pl->handleUpdate();
 }
 
 // PauseLayer
 
-void APSPauseLayer::customSetup() {
+void APSPauseLayer::customSetup()
+{
     PauseLayer::customSetup();
 
     if (!NetworkManagerImpl::get().isConnected()) {
         return;
     }
 
-    auto& rm = RoomManager::get();
+    auto &rm = RoomManager::get();
     if (!rm.isOwner()) {
         return;
     }
@@ -339,16 +362,17 @@ void APSPauseLayer::customSetup() {
         .scale(0.9f)
         .intoMenuItem(+[] {
             if (!globed::swapFlag("core.flags.seen-switcheroo-note")) {
-                globed::alert(
-                    "Switcheroo",
-                    "This button starts (or restarts) the <cj>Switcheroo</c> mode. You do <cr>not</c> need to press it multiple times (e.g. every switch or when someone joins), players are going to be switched <cg>automatically</c> once started, this button only serves to <cy>start or restart</c> the mode.\n\n"
-                    "Press the button again once all your friends join, to <cg>start</c> the game!"
-                );
+                globed::alert("Switcheroo",
+                              "This button starts (or restarts) the <cj>Switcheroo</c> mode. You do <cr>not</c> need "
+                              "to press it multiple times (e.g. every switch or when someone joins), players are going "
+                              "to be switched <cg>automatically</c> once started, this button only serves to <cy>start "
+                              "or restart</c> the mode.\n\n"
+                              "Press the button again once all your friends join, to <cg>start</c> the game!");
 
                 return;
             }
 
-            NetworkManagerImpl::get().queueGameEvent(ActivePlayerSwitchEvent {
+            NetworkManagerImpl::get().queueGameEvent(ActivePlayerSwitchEvent{
                 .playerId = GJAccountManager::get()->m_accountID,
                 .type = 2,
             });
@@ -360,4 +384,4 @@ void APSPauseLayer::customSetup() {
     menu->updateLayout();
 }
 
-}
+} // namespace globed

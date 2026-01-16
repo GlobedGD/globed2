@@ -1,51 +1,54 @@
 #include "GJBaseGameLayer.hpp"
 
+#include <core/hooks/GJBaseGameLayer.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <globed/util/Random.hpp>
 #include <globed/util/algo.hpp>
-#include <core/net/NetworkManagerImpl.hpp>
-#include <core/hooks/GJBaseGameLayer.hpp>
-#include <modules/scripting/data/SpawnData.hpp>
-#include <modules/scripting/data/SetItemData.hpp>
-#include <modules/scripting/data/MoveGroupData.hpp>
 #include <modules/scripting/data/FollowPlayerData.hpp>
+#include <modules/scripting/data/MoveGroupData.hpp>
+#include <modules/scripting/data/SetItemData.hpp>
+#include <modules/scripting/data/SpawnData.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
 
 namespace globed {
 
-SCBaseGameLayer* SCBaseGameLayer::get(GJBaseGameLayer* base) {
-    if (!base) base = GlobedGJBGL::get();
+SCBaseGameLayer *SCBaseGameLayer::get(GJBaseGameLayer *base)
+{
+    if (!base)
+        base = GlobedGJBGL::get();
 
-    return static_cast<SCBaseGameLayer*>(base);
+    return static_cast<SCBaseGameLayer *>(base);
 }
 
-void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
-    auto& nm = NetworkManagerImpl::get();
-    auto& fields = *m_fields.self();
+void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript> &scripts)
+{
+    auto &nm = NetworkManagerImpl::get();
+    auto &fields = *m_fields.self();
 
-    fields.m_listener = nm.listen<msg::LevelDataMessage>([this](const auto& msg) {
-        auto& fields = *m_fields.self();
+    fields.m_listener = nm.listen<msg::LevelDataMessage>([this](const auto &msg) {
+        auto &fields = *m_fields.self();
 
-        for (auto& event : msg.events) {
+        for (auto &event : msg.events) {
             this->handleEvent(event);
         }
 
         return ListenerResult::Continue;
     });
 
-    fields.m_logsListener = nm.listen<msg::ScriptLogsMessage>([this](const auto& msg) {
-        auto& fields = *m_fields.self();
+    fields.m_logsListener = nm.listen<msg::ScriptLogsMessage>([this](const auto &msg) {
+        auto &fields = *m_fields.self();
 
         log::debug("Received {} logs from game server, mem usage: {}", msg.logs.size(), msg.memUsage * 100.f);
 
-        for (auto& log : msg.logs) {
+        for (auto &log : msg.logs) {
             log::debug("(Script) {}", log);
             fields.m_logBuffer.push_back(log);
         }
 
-        fields.m_memLimitBuffer.push_back({ SystemTime::now(), msg.memUsage });
+        fields.m_memLimitBuffer.push_back({SystemTime::now(), msg.memUsage});
         if (fields.m_memLimitBuffer.size() > 300) {
             fields.m_memLimitBuffer.pop_front();
         }
@@ -54,7 +57,7 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
     });
 
     // send over the scripts to the server if we are the room owner
-    auto& rm = RoomManager::get();
+    auto &rm = RoomManager::get();
     fields.m_hasScripts = !scripts.empty();
 
     if (rm.isOwner() && !scripts.empty()) {
@@ -63,9 +66,8 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
         fields.m_scriptsSent = true;
 
         auto gjbgl = GlobedGJBGL::get(this);
-        gjbgl->customSchedule("2p-send-log-request"_spr, [this](GlobedGJBGL*, float dt) {
-            this->sendLogRequest(dt);
-        }, 1.0f);
+        gjbgl->customSchedule(
+            "2p-send-log-request"_spr, [this](GlobedGJBGL *, float dt) { this->sendLogRequest(dt); }, 1.0f);
     }
 
     fields.m_localId = cachedSingleton<GJAccountManager>()->m_accountID;
@@ -73,26 +75,30 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
     this->schedule(schedule_selector(SCBaseGameLayer::processCustomFollowActions));
 }
 
-void SCBaseGameLayer::sendLogRequest(float) {
+void SCBaseGameLayer::sendLogRequest(float)
+{
     NetworkManagerImpl::get().queueGameEvent(RequestScriptLogsEvent{});
 }
 
-void SCBaseGameLayer::customMoveBy(int group, double dx, double dy) {
+void SCBaseGameLayer::customMoveBy(int group, double dx, double dy)
+{
     this->moveObjectsSilent(group, dx, dy);
 }
 
-void SCBaseGameLayer::customMoveTo(int group, int center, double x, double y) {
+void SCBaseGameLayer::customMoveTo(int group, int center, double x, double y)
+{
     auto centerGroup = this->getGroup(center);
-    if (!centerGroup || centerGroup->count() == 0) return;
+    if (!centerGroup || centerGroup->count() == 0)
+        return;
 
     auto parent = this->getGroupParent(group);
-    GameObject* centerObj;
+    GameObject *centerObj;
 
     // random unless group id parent is present
     if (parent) {
         centerObj = parent;
     } else {
-        centerObj = CCArrayExt<GameObject*>(centerGroup)[rng::generate<size_t>(0, centerGroup->count() - 1)];
+        centerObj = CCArrayExt<GameObject *>(centerGroup)[rng::generate<size_t>(0, centerGroup->count() - 1)];
     }
 
     double dx = x - centerObj->m_positionX;
@@ -101,17 +107,9 @@ void SCBaseGameLayer::customMoveTo(int group, int center, double x, double y) {
     this->customMoveBy(group, dx, dy);
 }
 
-void SCBaseGameLayer::customMoveDirection(
-    int group,
-    int targetPosGroup,
-    int centerGroup,
-    float distance,
-    float time,
-    bool silent,
-    bool onlyX,
-    bool onlyY,
-    bool dynamic
-) {
+void SCBaseGameLayer::customMoveDirection(int group, int targetPosGroup, int centerGroup, float distance, float time,
+                                          bool silent, bool onlyX, bool onlyY, bool dynamic)
+{
     // auto obj = new EffectGameObject;
     // obj->m_objectID = 901;
     // obj->m_targetGroupID = group;
@@ -125,8 +123,9 @@ void SCBaseGameLayer::customMoveDirection(
     // this->triggerMoveCommand(obj);
 }
 
-void SCBaseGameLayer::customRotateBy(int group, int center, double theta) {
-    auto& fields = *m_fields.self();
+void SCBaseGameLayer::customRotateBy(int group, int center, double theta)
+{
+    auto &fields = *m_fields.self();
     auto gjbgl = GlobedGJBGL::get(this);
 
     if (center == 0) {
@@ -144,22 +143,18 @@ void SCBaseGameLayer::customRotateBy(int group, int center, double theta) {
 
     // log::debug("rotating this bitch!! {} against {} by {}", group, center, theta);
 
-    m_effectManager->createRotateCommand(
-        theta,
-        0.f,
-        group,
-        center,
-        (int)EasingType::None,
-        0.f, // easing rate
-        false, // m_lockObjectRotation
-        false, false, // idk
-        0, // m_uniqueID
-        0 // m_controlID
+    m_effectManager->createRotateCommand(theta, 0.f, group, center, (int)EasingType::None,
+                                         0.f,          // easing rate
+                                         false,        // m_lockObjectRotation
+                                         false, false, // idk
+                                         0,            // m_uniqueID
+                                         0             // m_controlID
     );
 }
 
-void SCBaseGameLayer::customFollowPlayerMov(int player, int group, bool enable) {
-    auto& fields = *m_fields.self();
+void SCBaseGameLayer::customFollowPlayerMov(int player, int group, bool enable)
+{
+    auto &fields = *m_fields.self();
     auto gjbgl = GlobedGJBGL::get(this);
 
     if (!enable) {
@@ -167,12 +162,13 @@ void SCBaseGameLayer::customFollowPlayerMov(int player, int group, bool enable) 
         return;
     }
 
-    auto& action = this->insertCustomFollow(player, group);
+    auto &action = this->insertCustomFollow(player, group);
     action.m_pos = enable;
 }
 
-void SCBaseGameLayer::customFollowPlayerRot(int player, int group, int center, bool enable) {
-    auto& fields = *m_fields.self();
+void SCBaseGameLayer::customFollowPlayerRot(int player, int group, int center, bool enable)
+{
+    auto &fields = *m_fields.self();
     auto gjbgl = GlobedGJBGL::get(this);
 
     log::debug("follow rot {} {} {} {}", player, group, center, enable);
@@ -182,24 +178,24 @@ void SCBaseGameLayer::customFollowPlayerRot(int player, int group, int center, b
         return;
     }
 
-    auto& action = this->insertCustomFollow(player, group);
+    auto &action = this->insertCustomFollow(player, group);
     action.m_rot = enable;
     action.m_centerGroupId = center;
 }
 
-CustomFollowAction& SCBaseGameLayer::insertCustomFollow(int player, int group) {
-    auto& fields = *m_fields.self();
+CustomFollowAction &SCBaseGameLayer::insertCustomFollow(int player, int group)
+{
+    auto &fields = *m_fields.self();
     auto gjbgl = GlobedGJBGL::get(this);
 
     size_t idx = this->getCustomFollowIndex(player, group);
 
     if (idx == (size_t)-1) {
-        fields.m_followActions.push_back(CustomFollowAction {
+        fields.m_followActions.push_back(CustomFollowAction{
             .m_playerId = player,
             .m_groupId = group,
         });
         idx = fields.m_followActions.size() - 1;
-
     }
 
     if (!fields.m_lastPlayerPositions.contains(player)) {
@@ -215,15 +211,17 @@ CustomFollowAction& SCBaseGameLayer::insertCustomFollow(int player, int group) {
     return fields.m_followActions[idx];
 }
 
-void SCBaseGameLayer::disableCustomFollow(int player, int group, bool disableMov, bool disableRot) {
-    auto& fields = *m_fields.self();
+void SCBaseGameLayer::disableCustomFollow(int player, int group, bool disableMov, bool disableRot)
+{
+    auto &fields = *m_fields.self();
     auto gjbgl = GlobedGJBGL::get(this);
 
     size_t idx = this->getCustomFollowIndex(player, group);
 
-    if (idx == (size_t)-1) return;
+    if (idx == (size_t)-1)
+        return;
 
-    auto& action = fields.m_followActions[idx];
+    auto &action = fields.m_followActions[idx];
     if (disableMov) {
         action.m_pos = disableMov;
     }
@@ -237,11 +235,12 @@ void SCBaseGameLayer::disableCustomFollow(int player, int group, bool disableMov
     }
 }
 
-size_t SCBaseGameLayer::getCustomFollowIndex(int player, int group) {
-    auto& fields = *m_fields.self();
+size_t SCBaseGameLayer::getCustomFollowIndex(int player, int group)
+{
+    auto &fields = *m_fields.self();
 
     for (size_t i = 0; i < fields.m_followActions.size(); i++) {
-        auto& act = fields.m_followActions[i];
+        auto &act = fields.m_followActions[i];
         if (act.m_playerId == player && act.m_groupId == group) {
             return i;
         }
@@ -250,8 +249,9 @@ size_t SCBaseGameLayer::getCustomFollowIndex(int player, int group) {
     return -1;
 }
 
-CustomFollowedData SCBaseGameLayer::positionForPlayer(int player) {
-    auto& fields = *m_fields.self();
+CustomFollowedData SCBaseGameLayer::positionForPlayer(int player)
+{
+    auto &fields = *m_fields.self();
 
     if (player == fields.m_localId) {
         return {
@@ -265,19 +265,17 @@ CustomFollowedData SCBaseGameLayer::positionForPlayer(int player) {
             return {};
         }
 
-        return {
-            rp->player1()->getLastPosition(),
-            globed::normalizeAngle(rp->player1()->getLastRotation())
-        };
+        return {rp->player1()->getLastPosition(), globed::normalizeAngle(rp->player1()->getLastRotation())};
     }
 }
 
-void SCBaseGameLayer::processCustomFollowActions(float) {
-    auto& fields = *m_fields.self();
+void SCBaseGameLayer::processCustomFollowActions(float)
+{
+    auto &fields = *m_fields.self();
     auto gjbgl = GlobedGJBGL::get(this);
 
     for (size_t i = 0; i < fields.m_followActions.size(); i++) {
-        auto& action = fields.m_followActions[i];
+        auto &action = fields.m_followActions[i];
 
         auto data = this->positionForPlayer(action.m_playerId);
 
@@ -288,12 +286,13 @@ void SCBaseGameLayer::processCustomFollowActions(float) {
         auto it = fields.m_lastPlayerPositions.find(action.m_playerId);
 
         if (it == fields.m_lastPlayerPositions.end()) {
-            // this player was not available when the follow action started, if they are now, then start following next frame
+            // this player was not available when the follow action started, if they are now, then start following next
+            // frame
             fields.m_lastPlayerPositions.insert(it, std::make_pair(action.m_playerId, data));
             continue;
         }
 
-        auto& lastData = it->second;
+        auto &lastData = it->second;
 
         if (action.m_pos) {
             float dx = data.pos.x - lastData.pos.x;
@@ -307,29 +306,33 @@ void SCBaseGameLayer::processCustomFollowActions(float) {
         }
     }
 
-    for (auto& it : fields.m_lastPlayerPositions) {
+    for (auto &it : fields.m_lastPlayerPositions) {
         auto pos = this->positionForPlayer(it.first);
         it.second = pos;
     }
 }
 
-void SCBaseGameLayer::unfollowAllForPlayer(int id) {
+void SCBaseGameLayer::unfollowAllForPlayer(int id)
+{
     // TODO: im too sleepy to do this rn
 }
 
-std::vector<std::string>& SCBaseGameLayer::getLogs() {
+std::vector<std::string> &SCBaseGameLayer::getLogs()
+{
     return m_fields->m_logBuffer;
 }
 
-std::deque<std::pair<asp::time::SystemTime, float>>& SCBaseGameLayer::getMemLimitBuffer() {
+std::deque<std::pair<asp::time::SystemTime, float>> &SCBaseGameLayer::getMemLimitBuffer()
+{
     return m_fields->m_memLimitBuffer;
 }
 
-void SCBaseGameLayer::handleEvent(const InEvent& event) {
-    auto& fields = *m_fields.self();
+void SCBaseGameLayer::handleEvent(const InEvent &event)
+{
+    auto &fields = *m_fields.self();
 
     if (event.is<SpawnGroupEvent>()) {
-        auto& data = event.as<SpawnGroupEvent>().data;
+        auto &data = event.as<SpawnGroupEvent>().data;
 
         double delay = data.delay.value_or(0.f);
 
@@ -339,7 +342,8 @@ void SCBaseGameLayer::handleEvent(const InEvent& event) {
             delay = rng::generate(min, max);
         }
 
-        log::debug("Spawning group {} with delay {} (ordered: {}), remaps {}", data.groupId, delay, data.ordered, data.remaps.size());
+        log::debug("Spawning group {} with delay {} (ordered: {}), remaps {}", data.groupId, delay, data.ordered,
+                   data.remaps.size());
 
         if (!data.remaps.empty()) {
             int id = m_spawnRemapTriggers.size();
@@ -357,37 +361,39 @@ void SCBaseGameLayer::handleEvent(const InEvent& event) {
         }
 
     } else if (event.is<SetItemEvent>()) {
-        auto& data = event.as<SetItemEvent>().data;
+        auto &data = event.as<SetItemEvent>().data;
 
         m_effectManager->updateCountForItem(data.itemId, data.value);
         this->updateCounters(data.itemId, data.value);
     } else if (event.is<MoveGroupEvent>()) {
-        auto& data = event.as<MoveGroupEvent>().data;
+        auto &data = event.as<MoveGroupEvent>().data;
 
         this->customMoveBy(data.group, data.x, data.y);
     } else if (event.is<MoveGroupAbsoluteEvent>()) {
-        auto& data = event.as<MoveGroupAbsoluteEvent>().data;
+        auto &data = event.as<MoveGroupAbsoluteEvent>().data;
 
         this->customMoveTo(data.group, data.center, data.x, data.y);
     } else if (event.is<FollowPlayerEvent>()) {
-        auto& data = event.as<FollowPlayerEvent>().data;
+        auto &data = event.as<FollowPlayerEvent>().data;
 
         this->customFollowPlayerMov(data.player, data.group, data.enable);
     } else if (event.is<FollowRotationEvent>()) {
-        auto& data = event.as<FollowRotationEvent>().data;
+        auto &data = event.as<FollowRotationEvent>().data;
 
         this->customFollowPlayerRot(data.player, data.group, data.center, data.enable);
     }
 }
 
-void SCBaseGameLayer::addEventListener(const ListenEventPayload& obj) {
+void SCBaseGameLayer::addEventListener(const ListenEventPayload &obj)
+{
     // m_fields->m_customListeners[obj.eventId].push_back(obj.groupId);
 }
 
-}
+} // namespace globed
 
 // class $modify(GJBaseGameLayer) {
-//     void spawnGroup(int group, bool ordered, double delay, gd::vector<int> const& remapKeys, int triggerID, int controlID) {
+//     void spawnGroup(int group, bool ordered, double delay, gd::vector<int> const& remapKeys, int triggerID, int
+//     controlID) {
 //         log::debug("spawnGroup({}, {}, {}, {}, {}, {})", group, ordered, delay, remapKeys, triggerID, controlID);
 //         log::debug("{}", m_spawnRemapTriggers);
 //         GJBaseGameLayer::spawnGroup(group, ordered, delay, remapKeys, triggerID, controlID);

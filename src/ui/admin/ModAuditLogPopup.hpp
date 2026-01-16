@@ -1,7 +1,7 @@
 #pragma once
 
-#include <globed/core/data/Messages.hpp>
 #include <globed/core/data/AdminLogs.hpp>
+#include <globed/core/data/Messages.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <ui/BasePopup.hpp>
 
@@ -15,13 +15,13 @@ class ModAuditLogPopup : public BasePopup<ModAuditLogPopup, FetchLogsFilters> {
 public:
     static const cocos2d::CCSize POPUP_SIZE;
 
-    static ModAuditLogPopup* create(FetchLogsFilters filters = {});
+    static ModAuditLogPopup *create(FetchLogsFilters filters = {});
 
 protected:
-    cue::DropdownNode* m_typeDropdown;
-    cue::DropdownNode* m_userDropdown;
-    cue::ListNode* m_list;
-    cue::LoadingCircle* m_loadingCircle;
+    cue::DropdownNode *m_typeDropdown;
+    cue::DropdownNode *m_userDropdown;
+    cue::ListNode *m_list;
+    cue::LoadingCircle *m_loadingCircle;
     size_t m_loadReqs = 0;
 
     FetchLogsFilters m_filters;
@@ -31,8 +31,8 @@ protected:
     bool setup(FetchLogsFilters filters) override;
     void refetch();
 
-    void populateMods(const std::vector<FetchedMod>& mods);
-    void populateLogs(const std::vector<AdminAuditLog>& logs, const std::vector<PlayerAccountData>& users);
+    void populateMods(const std::vector<FetchedMod> &mods);
+    void populateLogs(const std::vector<AdminAuditLog> &logs, const std::vector<PlayerAccountData> &users);
 };
 
-}
+} // namespace globed

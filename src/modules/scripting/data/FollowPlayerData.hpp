@@ -1,7 +1,7 @@
 #pragma once
 
-#include <qunet/buffers/ByteReader.hpp>
 #include <modules/scripting/objects/ExtendedObjectBase.hpp>
+#include <qunet/buffers/ByteReader.hpp>
 
 namespace globed {
 
@@ -18,7 +18,8 @@ struct FollowRotationData {
     bool enable;
 };
 
-inline geode::Result<FollowPlayerData> decodeFollowPlayerData(qn::ByteReader& reader) {
+inline geode::Result<FollowPlayerData> decodeFollowPlayerData(qn::ByteReader &reader)
+{
     FollowPlayerData out{};
 
     uint16_t val = READER_UNWRAP(reader.readU16());
@@ -30,7 +31,8 @@ inline geode::Result<FollowPlayerData> decodeFollowPlayerData(qn::ByteReader& re
     return geode::Ok(out);
 }
 
-inline geode::Result<FollowRotationData> decodeFollowRotationData(qn::ByteReader& reader) {
+inline geode::Result<FollowRotationData> decodeFollowRotationData(qn::ByteReader &reader)
+{
     FollowRotationData out{};
 
     uint16_t group = READER_UNWRAP(reader.readU16());
@@ -44,4 +46,4 @@ inline geode::Result<FollowRotationData> decodeFollowRotationData(qn::ByteReader
     return geode::Ok(out);
 }
 
-}
+} // namespace globed

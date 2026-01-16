@@ -1,16 +1,17 @@
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/ValueManager.hpp>
 
-#include <std23/function_ref.h>
-#include <fmt/format.h>
 #include <asp/fs.hpp>
 #include <asp/iter.hpp>
+#include <fmt/format.h>
+#include <std23/function_ref.h>
 
 using namespace geode::prelude;
 
 namespace globed {
 
-SettingsManager::SettingsManager() {
+SettingsManager::SettingsManager()
+{
     this->loadSaveSlots();
 
     // Preload
@@ -119,8 +120,9 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.dev.ghost-follower", false);
 }
 
-void SettingsManager::loadSaveSlots() {
-    (void) Mod::get()->loadData();
+void SettingsManager::loadSaveSlots()
+{
+    (void)Mod::get()->loadData();
 
     m_slotDir = Mod::get()->getSaveDir() / "save-slots-v2";
     auto oldDir = Mod::get()->getSaveDir() / "saveslots";
@@ -165,10 +167,10 @@ void SettingsManager::loadSaveSlots() {
 
     log::debug("Loaded {} save slots", m_saveSlots.size());
 
-    auto& container = Mod::get()->getSaveContainer();
-    m_activeSaveSlot = container.get("core.settingsv3.save-slot").andThen([](auto& v) {
-        return v.template as<size_t>();
-    }).unwrapOr(-1);
+    auto &container = Mod::get()->getSaveContainer();
+    m_activeSaveSlot = container.get("core.settingsv3.save-slot")
+                           .andThen([](auto &v) { return v.template as<size_t>(); })
+                           .unwrapOr(-1);
 
     if (m_activeSaveSlot >= m_saveSlots.size()) {
         m_activeSaveSlot = 0;
@@ -181,8 +183,9 @@ void SettingsManager::loadSaveSlots() {
     globed::setValue("core.settingsv3.save-slot", m_activeSaveSlot);
 }
 
-static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
-    using MapperFn = std23::function_ref<matjson::Value(const matjson::Value&)>;
+static std::optional<matjson::Value> migrateSlot(const matjson::Value &slot)
+{
+    using MapperFn = std23::function_ref<matjson::Value(const matjson::Value &)>;
 
     matjson::Value out;
 
@@ -190,7 +193,8 @@ static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
         out.set("_saveslot-name", std::move(*name));
     }
 
-    auto migMapper = [&](std::string_view bCat, std::string_view bKey, std::string_view after, MapperFn mapper) -> bool {
+    auto migMapper = [&](std::string_view bCat, std::string_view bKey, std::string_view after,
+                         MapperFn mapper) -> bool {
         auto fullKey = fmt::format("{}{}", bCat, bKey);
         if (auto val = slot.get(fullKey).copied().ok()) {
             log::info("Migrating setting from old format: {} -> {}", fullKey, after);
@@ -202,11 +206,11 @@ static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
     };
 
     auto migDirect = [&](std::string_view bCat, std::string_view bKey, std::string_view after) -> bool {
-        return migMapper(bCat, bKey, after, [](auto&& v) { return v; });
+        return migMapper(bCat, bKey, after, [](auto &&v) { return v; });
     };
 
     auto migInvertBool = [&](std::string_view bCat, std::string_view bKey, std::string_view after) {
-        return migMapper(bCat, bKey, after, [](auto&& v) {
+        return migMapper(bCat, bKey, after, [](auto &&v) {
             if (!v.isBool()) {
                 return v;
             }
@@ -245,7 +249,7 @@ static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
     migDirect("communication", "classicProximity", "core.audio-classic-proximity");
     migDirect("communication", "voiceVolume", "core.audio.playback-volume");
     migDirect("communication", "onlyFriends", "core.audio.only-friends");
-    migMapper("communication", "lowerAudioLatency", "core.audio.buffer-size", [](auto&& v) {
+    migMapper("communication", "lowerAudioLatency", "core.audio.buffer-size", [](auto &&v) {
         if (!v.isBool()) {
             return matjson::Value(4);
         }
@@ -288,7 +292,8 @@ static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
     return out;
 }
 
-void SettingsManager::migrateOldSettings() {
+void SettingsManager::migrateOldSettings()
+{
     log::info("Migrating legacy save slots");
 
     auto oldDir = Mod::get()->getSaveDir() / "saveslots";
@@ -336,17 +341,20 @@ void SettingsManager::migrateOldSettings() {
     // add a small readme file that says this folder isnt used anymore
     auto rmpath = oldDir / "README.txt";
     auto content = "This folder was used by Globed v1.x.x and is no longer used since Globed v2.\n\n"
-        "You can safely delete this folder if you want, it is kept only so that users can switch between old and new releases without losing their settings,"
-        " while still automatically migrating old settings to the new format if necessary.";
+                   "You can safely delete this folder if you want, it is kept only so that users can switch between "
+                   "old and new releases without losing their settings,"
+                   " while still automatically migrating old settings to the new format if necessary.";
 
-    (void) geode::utils::file::writeStringSafe(rmpath, content);
+    (void)geode::utils::file::writeStringSafe(rmpath, content);
 }
 
-void SettingsManager::freeze() {
+void SettingsManager::freeze()
+{
     m_frozen = true;
 }
 
-void SettingsManager::commitSlotsToDisk() {
+void SettingsManager::commitSlotsToDisk()
+{
     for (size_t i = 0; i < m_saveSlots.size(); i++) {
         auto slotp = m_slotDir / fmt::format("{}.json", i);
         auto res = geode::utils::file::writeStringSafe(slotp, m_saveSlots[i].dump());
@@ -357,25 +365,31 @@ void SettingsManager::commitSlotsToDisk() {
     }
 }
 
-std::vector<SaveSlotMeta> SettingsManager::getSaveSlots() {
-    return asp::iter::from(m_saveSlots).enumerate().map([&](const auto& slot) {
-        SaveSlotMeta meta;
-        meta.id = slot.first;
-        meta.name = slot.second.get("_saveslot-name").andThen([](auto& v) {
-            return v.template as<std::string>();
-        }).unwrapOr(fmt::format("Slot {}", slot.first + 1));
-        meta.active = (slot.first == m_activeSaveSlot);
-        return meta;
-    }).collect();
+std::vector<SaveSlotMeta> SettingsManager::getSaveSlots()
+{
+    return asp::iter::from(m_saveSlots)
+        .enumerate()
+        .map([&](const auto &slot) {
+            SaveSlotMeta meta;
+            meta.id = slot.first;
+            meta.name = slot.second.get("_saveslot-name")
+                            .andThen([](auto &v) { return v.template as<std::string>(); })
+                            .unwrapOr(fmt::format("Slot {}", slot.first + 1));
+            meta.active = (slot.first == m_activeSaveSlot);
+            return meta;
+        })
+        .collect();
 }
 
-void SettingsManager::renameSaveSlot(size_t id, std::string_view newName) {
+void SettingsManager::renameSaveSlot(size_t id, std::string_view newName)
+{
     if (id < m_saveSlots.size()) {
         m_saveSlots[id].set("_saveslot-name", std::string(newName));
     }
 }
 
-void SettingsManager::deleteSaveSlot(size_t id) {
+void SettingsManager::deleteSaveSlot(size_t id)
+{
     if (id >= m_saveSlots.size() || id == m_activeSaveSlot) {
         return;
     }
@@ -390,12 +404,14 @@ void SettingsManager::deleteSaveSlot(size_t id) {
     }
 }
 
-void SettingsManager::createSaveSlot() {
+void SettingsManager::createSaveSlot()
+{
     m_saveSlots.emplace_back(matjson::Value::object());
     m_saveSlots.back().set("_saveslot-name", fmt::format("Slot {}", m_saveSlots.size()));
 }
 
-void SettingsManager::switchToSaveSlot(size_t id) {
+void SettingsManager::switchToSaveSlot(size_t id)
+{
     if (id >= m_saveSlots.size() || id == m_activeSaveSlot) {
         return;
     }
@@ -406,19 +422,23 @@ void SettingsManager::switchToSaveSlot(size_t id) {
     this->reloadFromSlot();
 }
 
-bool SettingsManager::isPlayerBlacklisted(int id) {
+bool SettingsManager::isPlayerBlacklisted(int id)
+{
     return m_blacklisted.contains(id);
 }
 
-bool SettingsManager::isPlayerWhitelisted(int id) {
+bool SettingsManager::isPlayerWhitelisted(int id)
+{
     return m_whitelisted.contains(id);
 }
 
-bool SettingsManager::isPlayerHidden(int id) {
+bool SettingsManager::isPlayerHidden(int id)
+{
     return m_hidden.contains(id);
 }
 
-void SettingsManager::refreshPlayerLists() {
+void SettingsManager::refreshPlayerLists()
+{
     auto bl = this->getSettingRaw<std::vector<int>>(this->keyHash("core.player.blacklisted-players"));
     auto wl = this->getSettingRaw<std::vector<int>>(this->keyHash("core.player.whitelisted-players"));
     auto hl = this->getSettingRaw<std::vector<int>>(this->keyHash("core.player.hidden-players"));
@@ -428,7 +448,8 @@ void SettingsManager::refreshPlayerLists() {
     m_hidden = asp::iter::from(hl).collect<std::unordered_set<int>>();
 }
 
-void SettingsManager::commitPlayerLists() {
+void SettingsManager::commitPlayerLists()
+{
     std::vector<int> bl{asp::iter::from(m_blacklisted).collect()};
     std::vector<int> wl{asp::iter::from(m_whitelisted).collect()};
     std::vector<int> hl{asp::iter::from(m_hidden).collect()};
@@ -438,17 +459,20 @@ void SettingsManager::commitPlayerLists() {
     this->setSettingRaw(this->keyHash("core.player.hidden-players"), std::move(hl));
 }
 
-void SettingsManager::blacklistPlayer(int id) {
+void SettingsManager::blacklistPlayer(int id)
+{
     m_blacklisted.insert(id);
     m_whitelisted.erase(id);
 }
 
-void SettingsManager::whitelistPlayer(int id) {
+void SettingsManager::whitelistPlayer(int id)
+{
     m_whitelisted.insert(id);
     m_blacklisted.erase(id);
 }
 
-void SettingsManager::setPlayerHidden(int id, bool hidden) {
+void SettingsManager::setPlayerHidden(int id, bool hidden)
+{
     if (hidden) {
         m_hidden.insert(id);
     } else {
@@ -456,18 +480,20 @@ void SettingsManager::setPlayerHidden(int id, bool hidden) {
     }
 }
 
-void SettingsManager::reloadFromSlot() {
-    for (const auto& [hash, fullKey] : m_fullKeys) {
+void SettingsManager::reloadFromSlot()
+{
+    for (const auto &[hash, fullKey] : m_fullKeys) {
         this->reloadSetting(fullKey);
     }
 }
 
-static std::optional<matjson::Value> findOverride(std::string_view key) {
-    static auto overrideMap = []{
+static std::optional<matjson::Value> findOverride(std::string_view key)
+{
+    static auto overrideMap = [] {
         std::unordered_map<std::string, matjson::Value> map;
         auto names = Loader::get()->getLaunchArgumentNames();
 
-        for (auto& name : names) {
+        for (auto &name : names) {
             if (name.starts_with("globed/")) {
                 auto val = *Loader::get()->getLaunchArgument(name);
 
@@ -488,7 +514,7 @@ static std::optional<matjson::Value> findOverride(std::string_view key) {
         }
 
         // Print all the overrides
-        for (const auto& [k, v] : map) {
+        for (const auto &[k, v] : map) {
             log::debug("Launch argument override: {} = {}", k, v.dump(matjson::NO_INDENTATION));
         }
 
@@ -497,29 +523,35 @@ static std::optional<matjson::Value> findOverride(std::string_view key) {
 
     auto it = overrideMap.find(std::string(key));
     if (it != overrideMap.end()) {
-        auto& value = it->second;
+        auto &value = it->second;
         return value;
     }
 
     return std::nullopt;
 }
 
-static std::string_view matjsonTypeToStr(matjson::Type t) {
+static std::string_view matjsonTypeToStr(matjson::Type t)
+{
     switch (t) {
-        case matjson::Type::Null: return "null";
-        case matjson::Type::Bool: return "bool";
-        case matjson::Type::Number: return "number";
-        case matjson::Type::String: return "string";
-        case matjson::Type::Object: return "object";
-        case matjson::Type::Array: return "array";
-        default: return "unknown";
+    case matjson::Type::Null:
+        return "null";
+    case matjson::Type::Bool:
+        return "bool";
+    case matjson::Type::Number:
+        return "number";
+    case matjson::Type::String:
+        return "string";
+    case matjson::Type::Object:
+        return "object";
+    case matjson::Type::Array:
+        return "array";
+    default:
+        return "unknown";
     }
 }
 
-void SettingsManager::registerSetting(
-    std::string_view key,
-    matjson::Value defaultVal
-) {
+void SettingsManager::registerSetting(std::string_view key, matjson::Value defaultVal)
+{
     if (m_frozen) {
         log::error("Tried to add setting {} after SettingsManager was frozen", key);
         return;
@@ -538,22 +570,21 @@ void SettingsManager::registerSetting(
     this->reloadSetting(fullKey);
 }
 
-void SettingsManager::reloadSetting(std::string_view fullKey) {
+void SettingsManager::reloadSetting(std::string_view fullKey)
+{
     auto hash = this->finalKeyHash(fullKey);
-    auto& defaultVal = m_defaults.at(hash);
+    auto &defaultVal = m_defaults.at(hash);
 
     auto strippedKey = fullKey;
     strippedKey.remove_prefix(8); // remove "setting."
 
-    auto tryApply = [&](const std::optional<matjson::Value>& val, std::string_view fromWhere) {
-        if (!val) return false;
+    auto tryApply = [&](const std::optional<matjson::Value> &val, std::string_view fromWhere) {
+        if (!val)
+            return false;
 
         if (val->type() != defaultVal.type()) {
-            log::error(
-                "Type mismatch for setting {} loaded from {}, expected type '{}' but got '{}'",
-                strippedKey, fromWhere,
-                matjsonTypeToStr(defaultVal.type()), matjsonTypeToStr(val->type())
-            );
+            log::error("Type mismatch for setting {} loaded from {}, expected type '{}' but got '{}'", strippedKey,
+                       fromWhere, matjsonTypeToStr(defaultVal.type()), matjsonTypeToStr(val->type()));
 
             return false;
         }
@@ -581,9 +612,10 @@ void SettingsManager::reloadSetting(std::string_view fullKey) {
     }
 }
 
-void SettingsManager::reset() {
+void SettingsManager::reset()
+{
     GLOBED_ASSERT(m_activeSaveSlot < m_saveSlots.size());
-    auto& slot = m_saveSlots[m_activeSaveSlot];
+    auto &slot = m_saveSlots[m_activeSaveSlot];
 
     // preserve just the name
     auto name = slot.get("_saveslot-name").copied().ok();
@@ -597,19 +629,18 @@ void SettingsManager::reset() {
     this->reloadFromSlot();
 }
 
-std::optional<matjson::Value> SettingsManager::findSettingInSaveSlot(std::string_view key) {
+std::optional<matjson::Value> SettingsManager::findSettingInSaveSlot(std::string_view key)
+{
     if (m_activeSaveSlot >= m_saveSlots.size()) {
         return std::nullopt;
     }
 
-    auto& slot = m_saveSlots[m_activeSaveSlot];
+    auto &slot = m_saveSlots[m_activeSaveSlot];
     return slot.get(key).copied().ok();
 }
 
-void SettingsManager::registerValidator(
-    std::string_view key,
-    Validator func
-) {
+void SettingsManager::registerValidator(std::string_view key, Validator func)
+{
     if (m_frozen) {
         log::error("Tried to add validator for {} after SettingsManager was frozen", key);
         return;
@@ -619,11 +650,8 @@ void SettingsManager::registerValidator(
     m_validators[hash] = std::move(func);
 }
 
-void SettingsManager::registerLimits(
-    std::string_view key,
-    matjson::Value min,
-    matjson::Value max
-) {
+void SettingsManager::registerLimits(std::string_view key, matjson::Value min, matjson::Value max)
+{
     if (m_frozen) {
         log::error("Tried to add limits for {} after SettingsManager was frozen", key);
         return;
@@ -633,10 +661,9 @@ void SettingsManager::registerLimits(
     m_limits[hash] = std::make_pair(std::move(min), std::move(max));
 }
 
-bool SettingsManager::listenForChangesRaw(
-    std::string_view key,
-    std23::move_only_function<void(const matjson::Value&)> callback
-) {
+bool SettingsManager::listenForChangesRaw(std::string_view key,
+                                          std23::move_only_function<void(const matjson::Value &)> callback)
+{
     auto hash = this->keyHash(key);
     if (!m_settings.contains(hash)) {
         return false;
@@ -646,20 +673,23 @@ bool SettingsManager::listenForChangesRaw(
     return true;
 }
 
-std::optional<std::pair<matjson::Value, matjson::Value>> SettingsManager::getLimits(std::string_view key) {
+std::optional<std::pair<matjson::Value, matjson::Value>> SettingsManager::getLimits(std::string_view key)
+{
     auto hash = this->keyHash(key);
     auto it = m_limits.find(hash);
 
     return it == m_limits.end() ? std::nullopt : std::optional(it->second);
 }
 
-bool SettingsManager::hasSetting(uint64_t hash) {
+bool SettingsManager::hasSetting(uint64_t hash)
+{
     return m_settings.contains(hash);
 }
 
-uint64_t SettingsManager::keyHash(std::string_view key) {
+uint64_t SettingsManager::keyHash(std::string_view key)
+{
     uint64_t hash = 0xcbf29ce484222325;
-    const char* pfx = "setting.";
+    const char *pfx = "setting.";
 
     while (*pfx) {
         hash ^= *pfx++;
@@ -674,7 +704,8 @@ uint64_t SettingsManager::keyHash(std::string_view key) {
     return hash;
 }
 
-uint64_t SettingsManager::finalKeyHash(std::string_view key) {
+uint64_t SettingsManager::finalKeyHash(std::string_view key)
+{
     uint64_t hash = 0xcbf29ce484222325;
     for (char c : key) {
         hash ^= c;
@@ -683,10 +714,11 @@ uint64_t SettingsManager::finalKeyHash(std::string_view key) {
     return hash;
 }
 
-$on_mod(DataSaved) {
-    auto& sm = SettingsManager::get();
+$on_mod(DataSaved)
+{
+    auto &sm = SettingsManager::get();
     sm.commitPlayerLists();
     sm.commitSlotsToDisk();
 }
 
-}
+} // namespace globed

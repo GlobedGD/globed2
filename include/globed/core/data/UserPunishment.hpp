@@ -1,14 +1,10 @@
 #pragma once
-#include <string>
 #include <stdint.h>
+#include <string>
 
 namespace globed {
 
-enum class UserPunishmentType {
-    Ban,
-    Mute,
-    RoomBan
-};
+enum class UserPunishmentType { Ban, Mute, RoomBan };
 
 struct UserPunishment {
     int32_t issuedBy;
@@ -17,4 +13,4 @@ struct UserPunishment {
     int64_t expiresAt;
 };
 
-}
+} // namespace globed

@@ -20,15 +20,15 @@ public:
     ~AudioDecoder();
 
     // disable copying and enable moving
-    AudioDecoder(const AudioDecoder&) = delete;
-    AudioDecoder& operator=(const AudioDecoder&) = delete;
+    AudioDecoder(const AudioDecoder &) = delete;
+    AudioDecoder &operator=(const AudioDecoder &) = delete;
 
-    AudioDecoder(AudioDecoder&& other) noexcept;
-    AudioDecoder& operator=(AudioDecoder&& other) noexcept;
+    AudioDecoder(AudioDecoder &&other) noexcept;
+    AudioDecoder &operator=(AudioDecoder &&other) noexcept;
 
     // Decodes the given Opus data into PCM float samples. `length` must be the size of the input data in bytes.
-    [[nodiscard]] Result<DecodedOpusData> decode(const uint8_t* data, size_t length);
-    [[nodiscard]] Result<DecodedOpusData> decode(const EncodedOpusData& frame);
+    [[nodiscard]] Result<DecodedOpusData> decode(const uint8_t *data, size_t length);
+    [[nodiscard]] Result<DecodedOpusData> decode(const EncodedOpusData &frame);
 
     // sets the sample rate that will be used and recreates the decoder
     Result<> setSampleRate(int sampleRate);
@@ -45,7 +45,7 @@ private:
     Result<> resetState();
 
 protected:
-    OpusDecoder* m_decoder = nullptr;
+    OpusDecoder *m_decoder = nullptr;
 
     int m_sampleRate, m_frameSize, m_channels;
 
@@ -53,4 +53,4 @@ protected:
     static std::string_view errorToString(int code);
 };
 
-}
+} // namespace globed

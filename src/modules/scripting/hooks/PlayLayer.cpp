@@ -1,3 +1,5 @@
+#include "Common.hpp"
+#include "GJBaseGameLayer.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <globed/config.hpp>
@@ -5,8 +7,6 @@
 #include <modules/scripting/ScriptingModule.hpp>
 #include <modules/scripting/objects/FireServerObject.hpp>
 #include <modules/scripting/objects/Ids.hpp>
-#include "GJBaseGameLayer.hpp"
-#include "Common.hpp"
 
 using namespace geode::prelude;
 
@@ -18,21 +18,19 @@ struct GLOBED_MODIFY_ATTR SCPlayLayerHook : geode::Modify<SCPlayLayerHook, PlayL
         std::vector<EmbeddedScript> m_scripts;
     };
 
-    static void onModify(auto& self) {
-        (void) self.setHookPriority("PlayLayer::addObject", -1000);
+    static void onModify(auto &self)
+    {
+        (void)self.setHookPriority("PlayLayer::addObject", -1000);
 
-        GLOBED_CLAIM_HOOKS(ScriptingModule::get(), self,
-            "PlayLayer::setupHasCompleted",
-            "PlayLayer::addObject",
-        );
+        GLOBED_CLAIM_HOOKS(ScriptingModule::get(), self, "PlayLayer::setupHasCompleted", "PlayLayer::addObject", );
     }
 
-    $override
-    void addObject(GameObject* p0) {
+    $override void addObject(GameObject *p0)
+    {
         std::optional<EmbeddedScript> script;
 
         if (globed::onAddObject(p0, false, script)) {
-            auto& fields = *m_fields.self();
+            auto &fields = *m_fields.self();
             fields.m_hasScriptObjects = true;
 
             if (script) {
@@ -44,15 +42,15 @@ struct GLOBED_MODIFY_ATTR SCPlayLayerHook : geode::Modify<SCPlayLayerHook, PlayL
         PlayLayer::addObject(p0);
     }
 
-    $override
-    void setupHasCompleted() {
+    $override void setupHasCompleted()
+    {
         PlayLayer::setupHasCompleted();
 
-        auto& fields = *m_fields.self();
+        auto &fields = *m_fields.self();
 
         if (!fields.m_hasScriptObjects) {
             log::debug("No script objects, disabling module");
-            (void) ScriptingModule::get().disable();
+            (void)ScriptingModule::get().disable();
             return;
         }
 
@@ -61,4 +59,4 @@ struct GLOBED_MODIFY_ATTR SCPlayLayerHook : geode::Modify<SCPlayLayerHook, PlayL
     }
 };
 
-}
+} // namespace globed

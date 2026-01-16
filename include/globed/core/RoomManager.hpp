@@ -1,9 +1,9 @@
 #pragma once
 
-#include <globed/util/singleton.hpp>
+#include <globed/core/SessionId.hpp>
 #include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/data/RoomTeam.hpp>
-#include <globed/core/SessionId.hpp>
+#include <globed/util/singleton.hpp>
 
 namespace globed {
 
@@ -12,9 +12,9 @@ namespace globed {
 class GLOBED_DLL RoomManager : public SingletonLeakBase<RoomManager> {
 public:
     void joinLevel(int levelId, int author, bool platformer, bool editorCollab);
-    void joinLevel(GJGameLevel* level);
+    void joinLevel(GJGameLevel *level);
 
-    static std::optional<SessionId> getEditorCollabId(GJGameLevel* level);
+    static std::optional<SessionId> getEditorCollabId(GJGameLevel *level);
 
     void leaveLevel();
     SessionId makeSessionId(int levelId);
@@ -29,7 +29,7 @@ public:
     uint32_t getRoomId();
     int getRoomOwner();
     std::optional<uint8_t> pickServerId();
-    RoomSettings& getSettings();
+    RoomSettings &getSettings();
     void setAttemptedPasscode(uint32_t code);
     uint32_t getPasscode();
     SessionId getPinnedLevel();
@@ -58,7 +58,6 @@ private:
     std::vector<RoomTeam> m_teams;
 
     void resetValues();
-
 };
 
-}
+} // namespace globed

@@ -10,9 +10,9 @@ struct GLOBED_MODIFY_ATTR HookedGJGameLevel : geode::Modify<HookedGJGameLevel, G
     // This function cannot be hooked on arm macos because of a tuliphook bug,
     // check the PlayLayer.cpp file
 
-    $override
-    void savePercentage(int p0, bool p1, int p2, int p3, bool p4) {
-        auto* gpl = GlobedGJBGL::get();
+    $override void savePercentage(int p0, bool p1, int p2, int p3, bool p4)
+    {
+        auto *gpl = GlobedGJBGL::get();
         if (!gpl || !gpl->isSafeMode()) {
             GJGameLevel::savePercentage(p0, p1, p2, p3, p4);
         }
@@ -20,4 +20,4 @@ struct GLOBED_MODIFY_ATTR HookedGJGameLevel : geode::Modify<HookedGJGameLevel, G
 #endif
 };
 
-}
+} // namespace globed

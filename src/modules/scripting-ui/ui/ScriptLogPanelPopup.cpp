@@ -1,46 +1,44 @@
 #include "ScriptLogPanelPopup.hpp"
 #include <core/net/NetworkManagerImpl.hpp>
-#include <modules/scripting/hooks/GJBaseGameLayer.hpp>
 #include <globed/util/assert.hpp>
+#include <modules/scripting/hooks/GJBaseGameLayer.hpp>
 
-#include <cue/Util.hpp>
 #include <UIBuilder.hpp>
 #include <asp/time/Instant.hpp>
+#include <cue/Util.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
 
 namespace globed {
 
-const CCSize ScriptLogPanelPopup::POPUP_SIZE {460.f, 300.f};
-static const CCSize GRAPH_SIZE {400.f, 240.f};
+const CCSize ScriptLogPanelPopup::POPUP_SIZE{460.f, 300.f};
+static const CCSize GRAPH_SIZE{400.f, 240.f};
 
-
-bool ScriptLogPanelPopup::setup() {
-    m_editor = Build(CodeEditor::create({400.f, 240.f}))
-        .pos(this->fromCenter(0.f, 10.f))
-        .parent(m_mainLayer);
+bool ScriptLogPanelPopup::setup()
+{
+    m_editor = Build(CodeEditor::create({400.f, 240.f})).pos(this->fromCenter(0.f, 10.f)).parent(m_mainLayer);
 
     m_drawNode = Build(CCDrawNode::create())
-        .anchorPoint(0.5f, 0.5f)
-        .pos(this->fromCenter(5.f, 20.f))
-        .contentSize(GRAPH_SIZE)
-        .parent(m_mainLayer);
+                     .anchorPoint(0.5f, 0.5f)
+                     .pos(this->fromCenter(5.f, 20.f))
+                     .contentSize(GRAPH_SIZE)
+                     .parent(m_mainLayer);
     m_drawNode->m_bUseArea = false;
 
     m_graphLabelsNode = Build<CCNode>::create()
-        .anchorPoint(0.5f, 0.5f)
-        .pos(this->fromCenter(5.f, 20.f))
-        .contentSize(GRAPH_SIZE)
-        .parent(m_mainLayer);
+                            .anchorPoint(0.5f, 0.5f)
+                            .pos(this->fromCenter(5.f, 20.f))
+                            .contentSize(GRAPH_SIZE)
+                            .parent(m_mainLayer);
 
     m_graphBottomLabels = Build<CCNode>::create()
-        .anchorPoint(0.5f, 0.5f)
-        .pos(this->fromCenter(5.f, 15.f))
-        .contentSize(GRAPH_SIZE)
-        .parent(m_mainLayer);
+                              .anchorPoint(0.5f, 0.5f)
+                              .pos(this->fromCenter(5.f, 15.f))
+                              .contentSize(GRAPH_SIZE)
+                              .parent(m_mainLayer);
 
-    m_listener = NetworkManagerImpl::get().listen<msg::ScriptLogsMessage>([this](const auto& msg) {
+    m_listener = NetworkManagerImpl::get().listen<msg::ScriptLogsMessage>([this](const auto &msg) {
         if (m_autoRefresh) {
             this->refresh();
         }
@@ -49,13 +47,14 @@ bool ScriptLogPanelPopup::setup() {
     });
     (*m_listener)->setPriority(1000); // be after the gjbgl listener
 
-    auto toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.8f, [this](auto toggler) {
-        bool on = !toggler->isOn();
-        m_autoRefresh = on;
-    }))
-        .parent(m_buttonMenu)
-        .pos(this->fromBottomLeft(21.f, 21.f))
-        .collect();
+    auto toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.8f,
+                                                                         [this](auto toggler) {
+                                                                             bool on = !toggler->isOn();
+                                                                             m_autoRefresh = on;
+                                                                         }))
+                       .parent(m_buttonMenu)
+                       .pos(this->fromBottomLeft(21.f, 21.f))
+                       .collect();
     toggler->toggle(m_autoRefresh);
 
     Build<CCLabelBMFont>::create("Auto refresh", "bigFont.fnt")
@@ -66,13 +65,14 @@ bool ScriptLogPanelPopup::setup() {
 
     // toggler for switching to graph
 
-    auto swToggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.8f, [this](auto toggler) {
-        bool on = !toggler->isOn();
-        this->toggleGraphShown(on);
-    }))
-        .parent(m_buttonMenu)
-        .pos(this->fromBottomRight(76.f, 21.f))
-        .collect();
+    auto swToggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.8f,
+                                                                           [this](auto toggler) {
+                                                                               bool on = !toggler->isOn();
+                                                                               this->toggleGraphShown(on);
+                                                                           }))
+                         .parent(m_buttonMenu)
+                         .pos(this->fromBottomRight(76.f, 21.f))
+                         .collect();
 
     Build<CCLabelBMFont>::create("Memory", "bigFont.fnt")
         .scale(0.4f)
@@ -84,7 +84,8 @@ bool ScriptLogPanelPopup::setup() {
     return true;
 }
 
-void ScriptLogPanelPopup::toggleGraphShown(bool graph) {
+void ScriptLogPanelPopup::toggleGraphShown(bool graph)
+{
     m_graphShown = graph;
 
     m_drawNode->setVisible(graph);
@@ -96,33 +97,34 @@ void ScriptLogPanelPopup::toggleGraphShown(bool graph) {
     this->refresh();
 }
 
-void ScriptLogPanelPopup::refresh() {
+void ScriptLogPanelPopup::refresh()
+{
     if (auto gjbgl = SCBaseGameLayer::get()) {
         if (!m_graphShown) {
             auto start = Instant::now();
 
-            auto& logs = gjbgl->getLogs();
+            auto &logs = gjbgl->getLogs();
             std::string joined;
 
-            for (auto& log : logs) {
+            for (auto &log : logs) {
                 joined += log;
                 joined += '\n';
             }
 
-
             m_editor->setContent(joined);
         } else {
-            auto& memLimits = gjbgl->getMemLimitBuffer();
+            auto &memLimits = gjbgl->getMemLimitBuffer();
             this->refreshGraph(memLimits);
         }
     }
 }
 
-void ScriptLogPanelPopup::refreshGraph(const std::deque<std::pair<asp::time::SystemTime, float>>& queue) {
+void ScriptLogPanelPopup::refreshGraph(const std::deque<std::pair<asp::time::SystemTime, float>> &queue)
+{
     m_drawNode->clear();
 
-    CCSize chartSize { GRAPH_SIZE.width - 20.f, GRAPH_SIZE.height - 20.f };
-    CCPoint chartBase = { 10.f, 10.f };
+    CCSize chartSize{GRAPH_SIZE.width - 20.f, GRAPH_SIZE.height - 20.f};
+    CCPoint chartBase = {10.f, 10.f};
 
     // draw grid
 
@@ -133,12 +135,8 @@ void ScriptLogPanelPopup::refreshGraph(const std::deque<std::pair<asp::time::Sys
         float ygap = chartSize.height / 10;
         float y = chartBase.y + ygap * i;
 
-        m_drawNode->drawSegment(
-            { chartBase.x, y },
-            { chartBase.x + chartSize.width, y },
-            0.5f,
-            ccColor4F {0.5f, 0.5f, 0.5f, 0.35f}
-        );
+        m_drawNode->drawSegment({chartBase.x, y}, {chartBase.x + chartSize.width, y}, 0.5f,
+                                ccColor4F{0.5f, 0.5f, 0.5f, 0.35f});
 
         if (addLabels && i > 0) {
             // add labels
@@ -151,14 +149,13 @@ void ScriptLogPanelPopup::refreshGraph(const std::deque<std::pair<asp::time::Sys
     }
 
     // outline
-    m_drawNode->drawRect(
-        chartBase - CCSize{2.f, 0.f},
-        chartBase + chartSize + CCSize{2.f, 0.f}, { 0.f, 0.f, 0.f, 0.f }, 1.0f, { 0.9f, 0.9f, 0.9f, 1.0f }
-    );
+    m_drawNode->drawRect(chartBase - CCSize{2.f, 0.f}, chartBase + chartSize + CCSize{2.f, 0.f}, {0.f, 0.f, 0.f, 0.f},
+                         1.0f, {0.9f, 0.9f, 0.9f, 1.0f});
 
     // draw the chart itself
 
-    if (queue.size() < 2) return;
+    if (queue.size() < 2)
+        return;
 
     std::vector<CCPoint> segments;
 
@@ -171,14 +168,14 @@ void ScriptLogPanelPopup::refreshGraph(const std::deque<std::pair<asp::time::Sys
         float xgap = chartSize.width / (float)(queue.size() - 1);
         float x = chartBase.x + xgap * i;
 
-        segments.push_back(CCPoint { x, y });
+        segments.push_back(CCPoint{x, y});
 
         i++;
     }
 
     for (size_t i = 0; i < segments.size() - 1; i++) {
-        auto& a = segments[i];
-        auto& b = segments[i + 1];
+        auto &a = segments[i];
+        auto &b = segments[i + 1];
         m_drawNode->drawSegment(a, b, 1.0f, {1.f, 1.f, 0.f, 1.f});
     }
 
@@ -186,8 +183,8 @@ void ScriptLogPanelPopup::refreshGraph(const std::deque<std::pair<asp::time::Sys
     size_t hintCount = std::min<size_t>(8, queue.size());
 
     auto now = SystemTime::now();
-    auto& [oldestTime, oldestVal] = queue.front();
-    auto& [newestTime, newestVal] = queue.back();
+    auto &[oldestTime, oldestVal] = queue.front();
+    auto &[newestTime, newestVal] = queue.back();
     auto wholeDelta = (newestTime - oldestTime).value_or(Duration{});
 
     m_graphBottomLabels->removeAllChildren();
@@ -230,4 +227,4 @@ void ScriptLogPanelPopup::refreshGraph(const std::deque<std::pair<asp::time::Sys
     }
 }
 
-}
+} // namespace globed

@@ -1,6 +1,6 @@
 #include "GJBaseGameLayer.hpp"
-#include "GJEffectManager.hpp"
 #include "../Ids.hpp"
+#include "GJEffectManager.hpp"
 
 #include <core/net/NetworkManagerImpl.hpp>
 
@@ -11,32 +11,35 @@ using namespace asp::time;
 
 namespace globed {
 #define $rid(name, offset) static constexpr inline int ITEM_##name = 80000 + offset
-    $rid(ACCOUNT_ID, 0);
-    $rid(LAST_JOINED, 1);
-    $rid(LAST_LEFT, 2);
-    $rid(TOTAL_PLAYERS, 3);
-    $rid(TOTAL_PLAYERS_JOINED, 4);
-    $rid(TOTAL_PLAYERS_LEFT, 5);
-    $rid(INITIALIZED, 6);
-    $rid(LOCAL_PING, 7);
-    $rid(IS_EDITOR, 8);
-    $rid(UNIX_TIME, 100);
-    $rid(UNIX_TIME_SUBMS, 101);
-    $rid(GLEPOCH_TIME, 102);
-    $rid(GLEPOCH_TIME_SUBMS, 103);
-    $rid(LAST_PAUSE_PLAYER, 200);
-    $rid(LAST_PAUSE_TIMESTAMP, 201);
-    $rid(LAST_PAUSE_TIMESTAMP_MS, 202);
-    $rid(LEVEL_ID, 500);
+$rid(ACCOUNT_ID, 0);
+$rid(LAST_JOINED, 1);
+$rid(LAST_LEFT, 2);
+$rid(TOTAL_PLAYERS, 3);
+$rid(TOTAL_PLAYERS_JOINED, 4);
+$rid(TOTAL_PLAYERS_LEFT, 5);
+$rid(INITIALIZED, 6);
+$rid(LOCAL_PING, 7);
+$rid(IS_EDITOR, 8);
+$rid(UNIX_TIME, 100);
+$rid(UNIX_TIME_SUBMS, 101);
+$rid(GLEPOCH_TIME, 102);
+$rid(GLEPOCH_TIME_SUBMS, 103);
+$rid(LAST_PAUSE_PLAYER, 200);
+$rid(LAST_PAUSE_TIMESTAMP, 201);
+$rid(LAST_PAUSE_TIMESTAMP_MS, 202);
+$rid(LEVEL_ID, 500);
 #undef $rid
 
-GTriggersGJBGL* GTriggersGJBGL::get(GJBaseGameLayer* base) {
-    if (!base) base = GlobedGJBGL::get();
+GTriggersGJBGL *GTriggersGJBGL::get(GJBaseGameLayer *base)
+{
+    if (!base)
+        base = GlobedGJBGL::get();
 
-    return static_cast<GTriggersGJBGL*>(base);
+    return static_cast<GTriggersGJBGL *>(base);
 }
 
-static float checkedDiv(float a, float b) {
+static float checkedDiv(float a, float b)
+{
     if (b == 0.0f) {
         return 0.0f;
     }
@@ -44,7 +47,8 @@ static float checkedDiv(float a, float b) {
     return a / b;
 }
 
-std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGameObject* obj) {
+std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGameObject *obj)
+{
     int item1Id = obj->m_itemID;
     int item1Mode = obj->m_item1Mode;
     int item2Id = obj->m_itemID2;
@@ -56,28 +60,40 @@ std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGame
 
     auto applyOperation = [](double a, double b, int op) -> double {
         switch (op) {
-            case 1: return a + b;
-            case 2: return a - b;
-            case 3: return a * b;
-            case 4: return checkedDiv(a, b);
-            default: return 0.0;
+        case 1:
+            return a + b;
+        case 2:
+            return a - b;
+        case 3:
+            return a * b;
+        case 4:
+            return checkedDiv(a, b);
+        default:
+            return 0.0;
         }
     };
 
     auto applyRounding = [](double val, int roundType) -> double {
         switch (roundType) {
-            case 1: return std::round(val);
-            case 2: return std::floor(val);
-            case 3: return std::ceil(val);
-            default: return val;
+        case 1:
+            return std::round(val);
+        case 2:
+            return std::floor(val);
+        case 3:
+            return std::ceil(val);
+        default:
+            return val;
         }
     };
 
     auto applySign = [](double val, int signType) -> double {
         switch (signType) {
-            case 1: return std::abs(val);
-            case 2: return -std::abs(val);
-            default: return val;
+        case 1:
+            return std::abs(val);
+        case 2:
+            return -std::abs(val);
+        default:
+            return val;
         }
     };
 
@@ -107,7 +123,8 @@ std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGame
 
         result = applyRounding(result, obj->m_roundType1);
         result = applySign(result, obj->m_signType1);
-        if (result != 0) result = applyOperation(targetValue, result, obj->m_resultType1);
+        if (result != 0)
+            result = applyOperation(targetValue, result, obj->m_resultType1);
         result = applyRounding(result, obj->m_roundType2);
         result = applySign(result, obj->m_signType2);
 
@@ -119,13 +136,13 @@ std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGame
             m_gameState.m_unkBool32 = true;
             m_gameState.m_points = result;
         }
-
     }
 
     return std::nullopt;
 }
 
-void GTriggersGJBGL::activateItemEditTrigger(ItemTriggerGameObject* obj) {
+void GTriggersGJBGL::activateItemEditTrigger(ItemTriggerGameObject *obj)
+{
     int targetId = obj->m_targetGroupID;
 
     if (!globed::isCustomItem(targetId)) {
@@ -137,7 +154,7 @@ void GTriggersGJBGL::activateItemEditTrigger(ItemTriggerGameObject* obj) {
         return; // do nothing
     }
 
-    auto efm = static_cast<HookedGJEffectManager*>(m_effectManager);
+    auto efm = static_cast<HookedGJEffectManager *>(m_effectManager);
 
     int oldValue = efm->countForCustomItem(targetId);
     auto newValue = this->activateItemEditTriggerReimpl(obj);
@@ -151,9 +168,10 @@ void GTriggersGJBGL::activateItemEditTrigger(ItemTriggerGameObject* obj) {
     GlobalTriggersModule::get().queueCounterChange(cc);
 }
 
-double GTriggersGJBGL::getItemValue(int a, int b) {
+double GTriggersGJBGL::getItemValue(int a, int b)
+{
     if (a == 1 && globed::isCustomItem(b)) {
-        auto value = static_cast<HookedGJEffectManager*>(m_effectManager)->countForCustomItem(b);
+        auto value = static_cast<HookedGJEffectManager *>(m_effectManager)->countForCustomItem(b);
         // log::debug("getItemValue({}, {}) = {}", a, b, value);
         return value;
     }
@@ -162,7 +180,8 @@ double GTriggersGJBGL::getItemValue(int a, int b) {
     return x;
 }
 
-void GTriggersGJBGL::postInit() {
+void GTriggersGJBGL::postInit()
+{
     this->registerListener();
     this->registerSchedules();
 
@@ -171,11 +190,12 @@ void GTriggersGJBGL::postInit() {
     this->updateCustomItem(ITEM_IS_EDITOR, m_isEditor);
 }
 
-void GTriggersGJBGL::registerListener() {
-    m_fields->m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const auto& msg) {
-        auto& fields = *m_fields.self();
+void GTriggersGJBGL::registerListener()
+{
+    m_fields->m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const auto &msg) {
+        auto &fields = *m_fields.self();
 
-        for (auto& event : msg.events) {
+        for (auto &event : msg.events) {
             this->handleEvent(event);
         }
 
@@ -187,7 +207,7 @@ void GTriggersGJBGL::registerListener() {
             this->updateCustomItem(ITEM_INITIALIZED, 1);
         }
 
-        for (auto& player : msg.players) {
+        for (auto &player : msg.players) {
             // check if the player paused this frame
             bool prevPause = fields.m_pausedPlayers[player.accountId];
             fields.m_pausedPlayers[player.accountId] = player.isPaused;
@@ -201,30 +221,37 @@ void GTriggersGJBGL::registerListener() {
     });
 }
 
-void GTriggersGJBGL::registerSchedules() {
+void GTriggersGJBGL::registerSchedules()
+{
     this->schedule(schedule_selector(GTriggersGJBGL::updateItems));
 }
 
-void GTriggersGJBGL::handlePlayerJoin(int accountId) {
-    auto& fields = *m_fields.self();
+void GTriggersGJBGL::handlePlayerJoin(int accountId)
+{
+    auto &fields = *m_fields.self();
 
     this->updateCustomItem(ITEM_LAST_JOINED, accountId);
     this->updateCustomItem(ITEM_TOTAL_PLAYERS_JOINED, ++fields.m_totalJoins);
-    this->updateCustomItem(ITEM_TOTAL_PLAYERS, GlobedGJBGL::get(this)->m_fields->m_players.size() + 1); // +1 to account for ourself
+    this->updateCustomItem(ITEM_TOTAL_PLAYERS,
+                           GlobedGJBGL::get(this)->m_fields->m_players.size() + 1); // +1 to account for ourself
 }
 
-void GTriggersGJBGL::handlePlayerLeave(int accountId) {
-    auto& fields = *m_fields.self();
+void GTriggersGJBGL::handlePlayerLeave(int accountId)
+{
+    auto &fields = *m_fields.self();
 
     this->updateCustomItem(ITEM_LAST_LEFT, accountId);
     this->updateCustomItem(ITEM_TOTAL_PLAYERS_LEFT, ++fields.m_totalLeaves);
-    this->updateCustomItem(ITEM_TOTAL_PLAYERS, GlobedGJBGL::get(this)->m_fields->m_players.size()); // no +1, because that player is about to be removed
+    this->updateCustomItem(
+        ITEM_TOTAL_PLAYERS,
+        GlobedGJBGL::get(this)->m_fields->m_players.size()); // no +1, because that player is about to be removed
 
     fields.m_pausedPlayers.erase(accountId);
 }
 
-void GTriggersGJBGL::recordPlayerPause(int accountId) {
-    auto& fields = *m_fields.self();
+void GTriggersGJBGL::recordPlayerPause(int accountId)
+{
+    auto &fields = *m_fields.self();
     auto now = SystemTime::now();
 
     this->updateCustomItem(ITEM_LAST_PAUSE_PLAYER, accountId);
@@ -232,7 +259,8 @@ void GTriggersGJBGL::recordPlayerPause(int accountId) {
     this->updateCustomItem(ITEM_LAST_PAUSE_TIMESTAMP_MS, now.timeSinceEpoch().subsecMillis());
 }
 
-void GTriggersGJBGL::updateItems(float dt) {
+void GTriggersGJBGL::updateItems(float dt)
+{
     // January 1st 2024
     static SystemTime GLOBED_EPOCH = SystemTime::fromUnix(1704067200);
 
@@ -251,17 +279,18 @@ void GTriggersGJBGL::updateItems(float dt) {
     this->updateCustomItem(ITEM_LOCAL_PING, ping.millis());
 }
 
-void GTriggersGJBGL::handleEvent(const InEvent& event) {
+void GTriggersGJBGL::handleEvent(const InEvent &event)
+{
     if (!event.is<CounterChangeEvent>()) {
         return;
     }
 
-    auto& data = event.as<CounterChangeEvent>();
+    auto &data = event.as<CounterChangeEvent>();
 
     CounterChange cc{};
 
-    if (data.rawType != (uint8_t) CounterChangeType::Set) {
-        log::warn("Received counter change with unexpected type {}", (int) data.rawType);
+    if (data.rawType != (uint8_t)CounterChangeType::Set) {
+        log::warn("Received counter change with unexpected type {}", (int)data.rawType);
         return;
     }
 
@@ -274,22 +303,24 @@ void GTriggersGJBGL::handleEvent(const InEvent& event) {
     this->applyCounterChange(cc);
 }
 
-void GTriggersGJBGL::applyCounterChange(const CounterChange& change) {
+void GTriggersGJBGL::applyCounterChange(const CounterChange &change)
+{
     if (change.type != CounterChangeType::Set) {
-        log::warn("applyCounterChange cannot handle type {}", (int) change.type);
+        log::warn("applyCounterChange cannot handle type {}", (int)change.type);
         return;
     }
 
     this->updateCustomItem(change.itemId, change.value.asInt());
 }
 
-void GTriggersGJBGL::updateCustomItem(int itemId, int value) {
+void GTriggersGJBGL::updateCustomItem(int itemId, int value)
+{
     if (!globed::isCustomItem(itemId)) {
         log::warn("updateCustomItem called for non-custom item ID {}", itemId);
         return;
     }
 
-    auto efm = static_cast<HookedGJEffectManager*>(m_effectManager);
+    auto efm = static_cast<HookedGJEffectManager *>(m_effectManager);
     if (!efm) {
         return;
     }
@@ -299,4 +330,4 @@ void GTriggersGJBGL::updateCustomItem(int itemId, int value) {
     }
 }
 
-}
+} // namespace globed

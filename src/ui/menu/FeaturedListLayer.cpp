@@ -1,30 +1,29 @@
 #include "FeaturedListLayer.hpp"
+#include <core/hooks/LevelCell.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <globed/util/gd.hpp>
-#include <core/net/NetworkManagerImpl.hpp>
-#include <core/hooks/LevelCell.hpp>
 #include <ui/menu/FeatureCommon.hpp>
 
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
 
-static constexpr CCSize LIST_SIZE {358.f, 220.f};
+static constexpr CCSize LIST_SIZE{358.f, 220.f};
 
 namespace globed {
 
-bool FeaturedListLayer::init() {
-    if (!BaseLayer::init()) return false;
+bool FeaturedListLayer::init()
+{
+    if (!BaseLayer::init())
+        return false;
 
     geode::addSideArt(this, SideArt::Bottom);
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    m_list = Build(cue::ListNode::createLevels(LIST_SIZE))
-        .zOrder(2)
-        .parent(this)
-        .pos(winSize / 2.f)
-        .id("level-list"_spr);
+    m_list =
+        Build(cue::ListNode::createLevels(LIST_SIZE)).zOrder(2).parent(this).pos(winSize / 2.f).id("level-list"_spr);
 
     Build<CCSprite>::create("icon-featured-label.png"_spr)
         .zOrder(10)
@@ -33,9 +32,7 @@ bool FeaturedListLayer::init() {
 
     // refresh button
     Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
-        .intoMenuItem([this](auto) {
-            this->refreshLevels(true);
-        })
+        .intoMenuItem([this](auto) { this->refreshLevels(true); })
         .id("btn-refresh")
         .pos(winSize.width - 35.f, 35.f)
         .store(m_refreshBtn)
@@ -46,12 +43,12 @@ bool FeaturedListLayer::init() {
 
     // levels label
     m_levelsLabel = Build<CCLabelBMFont>::create("", "goldFont.fnt")
-        .id("level-count-label")
-        .pos(winSize.width - 7, winSize.height - 2)
-        .scale(0.45f)
-        .zOrder(2)
-        .anchorPoint({1, 1})
-        .parent(this);
+                        .id("level-count-label")
+                        .pos(winSize.width - 7, winSize.height - 2)
+                        .scale(0.45f)
+                        .zOrder(2)
+                        .anchorPoint({1, 1})
+                        .parent(this);
 
     constexpr float pageBtnPadding = 20.f;
 
@@ -69,7 +66,7 @@ bool FeaturedListLayer::init() {
         .pos(0.f, 0.f)
         .parent(this);
 
-    CCSprite* btnSprite;
+    CCSprite *btnSprite;
     Build<CCSprite>::createSpriteName("GJ_arrow_03_001.png")
         .store(btnSprite)
         .intoMenuItem([this](auto) {
@@ -86,19 +83,20 @@ bool FeaturedListLayer::init() {
 
     btnSprite->setFlipX(true);
 
-    auto& nm = NetworkManagerImpl::get();
-    m_playerCountListener = nm.listen<msg::PlayerCountsMessage>([this](const auto& packet) {
+    auto &nm = NetworkManagerImpl::get();
+    m_playerCountListener = nm.listen<msg::PlayerCountsMessage>([this](const auto &packet) {
         m_playerCounts.clear();
 
-        for (auto& [k, v] : packet.counts) {
+        for (auto &[k, v] : packet.counts) {
             m_playerCounts[k.levelId()] = v;
         }
 
         return ListenerResult::Continue;
     });
 
-    m_listListener = nm.listen<msg::FeaturedListMessage>([this](const auto& packet) {
-        log::debug("Received featured list page {}/{} ({} levels)", packet.page + 1, packet.totalPages, packet.levels.size());
+    m_listListener = nm.listen<msg::FeaturedListMessage>([this](const auto &packet) {
+        log::debug("Received featured list page {}/{} ({} levels)", packet.page + 1, packet.totalPages,
+                   packet.levels.size());
 
         m_totalPages = packet.totalPages;
         m_pages.resize(m_totalPages);
@@ -113,22 +111,25 @@ bool FeaturedListLayer::init() {
     return true;
 }
 
-FeaturedListLayer::~FeaturedListLayer() {
+FeaturedListLayer::~FeaturedListLayer()
+{
     GameLevelManager::get()->m_levelManagerDelegate = nullptr;
 }
 
-void FeaturedListLayer::populatePage(uint32_t page, const std::vector<FeaturedLevelMeta>& levels) {
+void FeaturedListLayer::populatePage(uint32_t page, const std::vector<FeaturedLevelMeta> &levels)
+{
     m_pages[page] = levels;
-    for (auto& level : levels) {
+    for (auto &level : levels) {
         m_levelToRateTier[level.levelId] = level.rateTier;
     }
 }
 
-void FeaturedListLayer::queryCurrentPage() {
+void FeaturedListLayer::queryCurrentPage()
+{
     std::string query;
     m_currentQuery.clear();
 
-    for (auto& level : m_pages.at(m_page)) {
+    for (auto &level : m_pages.at(m_page)) {
         if (m_failedQueries.contains(level.levelId) || m_levelCache.contains(level.levelId)) {
             continue;
         }
@@ -152,12 +153,13 @@ void FeaturedListLayer::queryCurrentPage() {
     glm->getOnlineLevels(GJSearchObject::create(SearchType::Type19, query));
 }
 
-void FeaturedListLayer::loadPageFromCache() {
+void FeaturedListLayer::loadPageFromCache()
+{
     this->stopLoading();
 
     std::vector<uint64_t> sessions;
 
-    for (auto& level : m_pages.at(m_page)) {
+    for (auto &level : m_pages.at(m_page)) {
         auto it = m_levelCache.find(level.levelId);
 
         if (it == m_levelCache.end()) {
@@ -173,14 +175,14 @@ void FeaturedListLayer::loadPageFromCache() {
         cell->autorelease();
         cell->loadFromLevel(lvl);
         cell->setContentSize({356.f, 90.f});
-        static_cast<HookedLevelCell*>(cell)->setGlobedFeature(tier);
+        static_cast<HookedLevelCell *>(cell)->setGlobedFeature(tier);
 
         m_list->addCell(cell);
 
         sessions.push_back(RoomManager::get().makeSessionId(lvl->m_levelID));
     }
 
-    auto& nm = NetworkManagerImpl::get();
+    auto &nm = NetworkManagerImpl::get();
 
     int highest = nm.getFeaturedLevel().value_or(FeaturedLevelMeta{}).edition;
     int pageMin = m_page * 10 + 1;
@@ -192,20 +194,23 @@ void FeaturedListLayer::loadPageFromCache() {
     nm.sendRequestPlayerCounts(sessions);
 }
 
-void FeaturedListLayer::toggleSideButtons() {
+void FeaturedListLayer::toggleSideButtons()
+{
     m_prevButton->setVisible(m_page > 0);
     m_nextButton->setVisible(m_page + 1 < m_totalPages);
     m_refreshBtn->setVisible(true);
 }
 
-void FeaturedListLayer::refreshLevels(bool force) {
+void FeaturedListLayer::refreshLevels(bool force)
+{
     this->startLoading();
 
     // retrieve the current page
     NetworkManagerImpl::get().sendGetFeaturedList(m_page);
 }
 
-void FeaturedListLayer::update(float dt) {
+void FeaturedListLayer::update(float dt)
+{
     for (auto cell : m_list->iter<HookedLevelCell>()) {
         auto it = m_playerCounts.find(cell->m_level->m_levelID);
 
@@ -217,7 +222,8 @@ void FeaturedListLayer::update(float dt) {
     }
 }
 
-void FeaturedListLayer::startLoading() {
+void FeaturedListLayer::startLoading()
+{
     m_loading = true;
     m_prevButton->setVisible(false);
     m_nextButton->setVisible(false);
@@ -230,14 +236,16 @@ void FeaturedListLayer::startLoading() {
     m_list->clear();
 }
 
-void FeaturedListLayer::stopLoading() {
+void FeaturedListLayer::stopLoading()
+{
     m_loading = false;
     m_circle->fadeOut();
     this->toggleSideButtons();
 }
 
-void FeaturedListLayer::loadLevelsFinished(CCArray* levels, char const* key, int p2) {
-    for (GJGameLevel* level : CCArrayExt<GJGameLevel*>(levels)) {
+void FeaturedListLayer::loadLevelsFinished(CCArray *levels, char const *key, int p2)
+{
+    for (GJGameLevel *level : CCArrayExt<GJGameLevel *>(levels)) {
         m_levelCache[level->m_levelID] = level;
     }
 
@@ -252,12 +260,14 @@ void FeaturedListLayer::loadLevelsFinished(CCArray* levels, char const* key, int
     this->loadPageFromCache();
 }
 
-void FeaturedListLayer::loadLevelsFailed(char const* key, int p1) {
+void FeaturedListLayer::loadLevelsFailed(char const *key, int p1)
+{
     log::warn("Failed to load featured levels: {} (key: {})", p1, key);
     this->stopLoading();
 }
 
-FeaturedListLayer* FeaturedListLayer::create() {
+FeaturedListLayer *FeaturedListLayer::create()
+{
     auto ret = new FeaturedListLayer;
     if (ret->init()) {
         ret->autorelease();
@@ -268,4 +278,4 @@ FeaturedListLayer* FeaturedListLayer::create() {
     return nullptr;
 }
 
-}
+} // namespace globed

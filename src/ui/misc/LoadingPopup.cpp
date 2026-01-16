@@ -6,7 +6,8 @@ namespace globed {
 
 const cocos2d::CCSize LoadingPopup::POPUP_SIZE = {160.f, 90.f};
 
-bool LoadingPopup::setup() {
+bool LoadingPopup::setup()
+{
     m_circle = cue::LoadingCircle::create();
     m_circle->addToLayer(m_mainLayer);
     m_circle->setPositionY(35.f);
@@ -17,20 +18,23 @@ bool LoadingPopup::setup() {
     return true;
 }
 
-void LoadingPopup::forceClose() {
+void LoadingPopup::forceClose()
+{
     this->setClosable(true);
     this->onClose(nullptr);
 }
 
-void LoadingPopup::setClosable(bool closable) {
+void LoadingPopup::setClosable(bool closable)
+{
     m_closeBtn->setVisible(closable);
 }
 
-void LoadingPopup::onClose(cocos2d::CCObject*) {
+void LoadingPopup::onClose(cocos2d::CCObject *)
+{
     if (m_closeBtn->isVisible()) {
         m_circle->fadeOut();
         Popup::onClose(nullptr);
     }
 }
 
-}
+} // namespace globed

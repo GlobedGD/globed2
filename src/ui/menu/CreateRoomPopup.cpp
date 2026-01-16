@@ -1,8 +1,8 @@
 #include "CreateRoomPopup.hpp"
-#include <globed/core/PopupManager.hpp>
-#include <globed/core/ValueManager.hpp>
-#include <globed/core/ServerManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <globed/core/PopupManager.hpp>
+#include <globed/core/ServerManager.hpp>
+#include <globed/core/ValueManager.hpp>
 #include <globed/util/gd.hpp>
 #include <ui/misc/LoadingPopup.hpp>
 
@@ -17,69 +17,64 @@ const CCSize CreateRoomPopup::POPUP_SIZE = {420.f, 240.f};
 static constexpr int TAG_PRIVATE = 1021;
 static constexpr int TAG_CLOSED_INVITES = 1022;
 static constexpr int TAG_COLLISION = 1023;
-static constexpr int TAG_TWO_PLAYER= 1024;
+static constexpr int TAG_TWO_PLAYER = 1024;
 static constexpr int TAG_DEATHLINK = 1025;
 static constexpr int TAG_TEAMS = 1026;
 static constexpr int TAG_AUTO_PINNING = 1027;
 static constexpr int TAG_SWITCHEROO = 1028;
 
-bool CreateRoomPopup::setup() {
+bool CreateRoomPopup::setup()
+{
     this->setID("create-room-popup"_spr);
     this->setTitle("Create Room", "goldFont.fnt", 1.0f);
 
     bool canName = NetworkManagerImpl::get().getUserPermissions().canNameRooms;
 
     m_inputsWrapper = Build<CCNode>::create()
-        .id("inputs-wrapper")
-        .anchorPoint(0.f, 0.5f)
-        .pos(this->centerLeft() + CCPoint{15.f, 10.f})
-        .layout(ColumnLayout::create()->setAutoScale(false)->setGap(3.f))
-        .contentSize(0.f, POPUP_SIZE.height * 0.6f)
-        .parent(m_mainLayer)
-        .collect();
+                          .id("inputs-wrapper")
+                          .anchorPoint(0.f, 0.5f)
+                          .pos(this->centerLeft() + CCPoint{15.f, 10.f})
+                          .layout(ColumnLayout::create()->setAutoScale(false)->setGap(3.f))
+                          .contentSize(0.f, POPUP_SIZE.height * 0.6f)
+                          .parent(m_mainLayer)
+                          .collect();
 
     auto smallInputsWrapper = Build<CCNode>::create()
-        .id("small-wrapper")
-        .layout(RowLayout::create()->setAutoScale(false))
-        .parent(m_inputsWrapper)
-        .collect();
+                                  .id("small-wrapper")
+                                  .layout(RowLayout::create()->setAutoScale(false))
+                                  .parent(m_inputsWrapper)
+                                  .collect();
 
     // room name
-    auto roomNameWrapper = Build<CCNode>::create()
-        .id("name-wrapper")
-        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
-        .contentSize(0.f, 55.f)
-        .intoNewChild(CCMenu::create()) // label wrapper
-        .contentSize(100.f, 20.f)
-        .layout(RowLayout::create()->setGap(3.f)->setAutoScale(false))
-        .child(
-            Build<CCLabelBMFont>::create("Room Name", "bigFont.fnt")
-                .scale(0.5f)
-        )
-        .child(
-            Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-                .scale(0.5f)
-                .intoMenuItem([this, canName] {
-                    this->showRoomNameWarnPopup(canName);
-                })
-        )
-        .updateLayout()
-        .intoParent() // into name-wrapper
-        .parent(m_inputsWrapper)
-        .intoNewChild(TextInput::create(POPUP_SIZE.width * 0.515f, "", "chatFont.fnt"))
-        .with([&](TextInput* input) {
-            input->setCommonFilter(CommonFilter::Any);
-            input->setMaxCharCount(32);
+    auto roomNameWrapper =
+        Build<CCNode>::create()
+            .id("name-wrapper")
+            .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
+            .contentSize(0.f, 55.f)
+            .intoNewChild(CCMenu::create()) // label wrapper
+            .contentSize(100.f, 20.f)
+            .layout(RowLayout::create()->setGap(3.f)->setAutoScale(false))
+            .child(Build<CCLabelBMFont>::create("Room Name", "bigFont.fnt").scale(0.5f))
+            .child(Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png").scale(0.5f).intoMenuItem([this, canName] {
+                this->showRoomNameWarnPopup(canName);
+            }))
+            .updateLayout()
+            .intoParent() // into name-wrapper
+            .parent(m_inputsWrapper)
+            .intoNewChild(TextInput::create(POPUP_SIZE.width * 0.515f, "", "chatFont.fnt"))
+            .with([&](TextInput *input) {
+                input->setCommonFilter(CommonFilter::Any);
+                input->setMaxCharCount(32);
 
-            if (!canName) {
-                input->setString(fmt::format("{}'s Room", GJAccountManager::get()->m_username));
-                input->setEnabled(false);
-            }
-        })
-        .store(m_nameInput)
-        .intoParent()
-        .updateLayout()
-        .collect();
+                if (!canName) {
+                    input->setString(fmt::format("{}'s Room", GJAccountManager::get()->m_username));
+                    input->setEnabled(false);
+                }
+            })
+            .store(m_nameInput)
+            .intoParent()
+            .updateLayout()
+            .collect();
 
     bool hidePass = globed::setting<bool>("core.streamer-mode");
 
@@ -93,7 +88,7 @@ bool CreateRoomPopup::setup() {
         .intoParent()
         .parent(smallInputsWrapper)
         .intoNewChild(TextInput::create(POPUP_SIZE.width * 0.25f, "", hidePass ? "bigFont.fnt" : "chatFont.fnt"))
-        .with([&](TextInput* input) {
+        .with([&](TextInput *input) {
             input->setCommonFilter(CommonFilter::Uint);
             input->setMaxCharCount(11);
             input->setPasswordMode(hidePass);
@@ -112,7 +107,7 @@ bool CreateRoomPopup::setup() {
         .intoParent()
         .parent(smallInputsWrapper)
         .intoNewChild(TextInput::create(POPUP_SIZE.width * 0.25f, "", "chatFont.fnt"))
-        .with([&](TextInput* input) {
+        .with([&](TextInput *input) {
             input->setCommonFilter(CommonFilter::Uint);
             input->setMaxCharCount(6);
         })
@@ -122,11 +117,11 @@ bool CreateRoomPopup::setup() {
 
     // classic / follower room
     m_followerWrapper = Build<CCMenu>::create()
-        .id("follower-wrapper")
-        .zOrder(-1)
-        .layout(RowLayout::create()->setAutoScale(false)->setGap(5.f))
-        .contentSize(POPUP_SIZE.width * 0.515f, 0.f)
-        .parent(m_inputsWrapper);
+                            .id("follower-wrapper")
+                            .zOrder(-1)
+                            .layout(RowLayout::create()->setAutoScale(false)->setGap(5.f))
+                            .contentSize(POPUP_SIZE.width * 0.515f, 0.f)
+                            .parent(m_inputsWrapper);
     m_followerWrapper->setLayoutOptions(AxisLayoutOptions::create()->setNextGap(8.f));
 
     this->setFollowerMode(false);
@@ -136,68 +131,66 @@ bool CreateRoomPopup::setup() {
         .id("btn-wrapper")
         .layout(RowLayout::create()->setAutoScale(false))
         .parent(m_mainLayer)
-        .child(
-            Build<ButtonSprite>::create("Cancel", "goldFont.fnt", "GJ_button_05.png", 0.8f)
-                .intoMenuItem([this](auto) {
-                    this->onClose(nullptr);
-                })
-                .scaleMult(1.1f)
-                .collect()
-        )
-        .child(
-            Build<ButtonSprite>::create("Create", "goldFont.fnt", "GJ_button_04.png", 0.8f)
-                .intoMenuItem([this](auto) {
-                    std::string roomName = m_nameInput->getString();
-                    if (roomName.empty() || roomName.size() > 32) {
-                        roomName = fmt::format("{}'s room", GJAccountManager::get()->m_username);
-                    }
+        .child(Build<ButtonSprite>::create("Cancel", "goldFont.fnt", "GJ_button_05.png", 0.8f)
+                   .intoMenuItem([this](auto) { this->onClose(nullptr); })
+                   .scaleMult(1.1f)
+                   .collect())
+        .child(Build<ButtonSprite>::create("Create", "goldFont.fnt", "GJ_button_04.png", 0.8f)
+                   .intoMenuItem([this](auto) {
+                       std::string roomName = m_nameInput->getString();
+                       if (roomName.empty() || roomName.size() > 32) {
+                           roomName = fmt::format("{}'s room", GJAccountManager::get()->m_username);
+                       }
 
-                    geode::utils::string::trimIP(roomName);
+                       geode::utils::string::trimIP(roomName);
 
-                    // parse as a 32-bit int but cap at 9999
-                    // this is so that if a user inputs a number like 99999 (doesnt fit),
-                    // instead of making it 0, it makes it 9999
+                       // parse as a 32-bit int but cap at 9999
+                       // this is so that if a user inputs a number like 99999 (doesnt fit),
+                       // instead of making it 0, it makes it 9999
 
-                    uint32_t playerCount = geode::utils::numFromString<uint32_t>(m_playerLimitInput->getString()).unwrapOr(0);
-                    m_settings.playerLimit = std::min<uint32_t>(playerCount, 9999);
+                       uint32_t playerCount =
+                           geode::utils::numFromString<uint32_t>(m_playerLimitInput->getString()).unwrapOr(0);
+                       m_settings.playerLimit = std::min<uint32_t>(playerCount, 9999);
 
-                    if (m_settings.playerLimit == 1488) {
-                        globed::alert("Error", "Please choose a <cr>different</c> player limit number.");
-                        return;
-                    }
+                       if (m_settings.playerLimit == 1488) {
+                           globed::alert("Error", "Please choose a <cr>different</c> player limit number.");
+                           return;
+                       }
 
-                    auto passcodeStr = m_passcodeInput->getString();
-                    uint32_t passcode = 0;
+                       auto passcodeStr = m_passcodeInput->getString();
+                       uint32_t passcode = 0;
 
-                    if (!passcodeStr.empty()) {
-                        auto res = geode::utils::numFromString<uint32_t>(m_passcodeInput->getString());
-                        if (!res) {
-                            globed::alert("Error", "Invalid passcode, must consist of 1 to 10 digits.");
-                            return;
-                        }
+                       if (!passcodeStr.empty()) {
+                           auto res = geode::utils::numFromString<uint32_t>(m_passcodeInput->getString());
+                           if (!res) {
+                               globed::alert("Error", "Invalid passcode, must consist of 1 to 10 digits.");
+                               return;
+                           }
 
-                        passcode = *res;
-                    }
+                           passcode = *res;
+                       }
 
-                    // pick the preferred server
-                    if (auto srv = NetworkManagerImpl::get().getPreferredServer()) {
-                        log::debug("using server ID: {}", *srv);
-                        m_settings.serverId = *srv;
-                    } else {
-                        globed::alert("Error", "No game servers are available to host this room. This is a <cr>server issue</c>, please <cj>reconnect to the server and try again</c>.");
-                        return;
-                    }
+                       // pick the preferred server
+                       if (auto srv = NetworkManagerImpl::get().getPreferredServer()) {
+                           log::debug("using server ID: {}", *srv);
+                           m_settings.serverId = *srv;
+                       } else {
+                           globed::alert("Error",
+                                         "No game servers are available to host this room. This is a <cr>server "
+                                         "issue</c>, please <cj>reconnect to the server and try again</c>.");
+                           return;
+                       }
 
-                    m_settings.fasterReset = gameVariable(GameVariable::FastRespawn);
+                       m_settings.fasterReset = gameVariable(GameVariable::FastRespawn);
 
-                    this->waitForResponse();
+                       this->waitForResponse();
 
-                    // send the packet after setting up listeners, avoiding race condition if the server is on localhost
-                    NetworkManagerImpl::get().sendCreateRoom(roomName, passcode, m_settings);
-                })
-                .scaleMult(1.1f)
-                .collect()
-        )
+                       // send the packet after setting up listeners, avoiding race condition if the server is on
+                       // localhost
+                       NetworkManagerImpl::get().sendCreateRoom(roomName, passcode, m_settings);
+                   })
+                   .scaleMult(1.1f)
+                   .collect())
         .pos(this->fromBottom(25.f))
         .updateLayout();
 
@@ -208,25 +201,23 @@ bool CreateRoomPopup::setup() {
     // safe mode button
     Build<CCSprite>::create("white-period.png"_spr)
         .color(ccGREEN)
-        .intoMenuItem([this] {
-            this->showSafeModePopup(false);
-        })
+        .intoMenuItem([this] { this->showSafeModePopup(false); })
         .store(m_safeModeBtn)
         .parent(m_buttonMenu)
         .pos(this->fromTopRight(16.f, 16.f));
 
     // list of settings
     const float gap = 3.f;
-    auto* settingsList = Build<CCNode>::create()
-        .id("settings")
-        .anchorPoint(1.f, 0.5f)
-        .pos(this->centerRight() - CCPoint{15.f, 0.f})
-        .layout(ColumnLayout::create()->setAxisReverse(true)->setGap(gap))
-        .contentSize(0.f, POPUP_SIZE.height * 0.65f)
-        .parent(m_mainLayer)
-        .collect();
+    auto *settingsList = Build<CCNode>::create()
+                             .id("settings")
+                             .anchorPoint(1.f, 0.5f)
+                             .pos(this->centerRight() - CCPoint{15.f, 0.f})
+                             .layout(ColumnLayout::create()->setAxisReverse(true)->setGap(gap))
+                             .contentSize(0.f, POPUP_SIZE.height * 0.65f)
+                             .parent(m_mainLayer)
+                             .collect();
 
-    auto settings = std::to_array<std::tuple<const char*, std::string_view, int, CCMenuItemToggler**, bool>>({
+    auto settings = std::to_array<std::tuple<const char *, std::string_view, int, CCMenuItemToggler **, bool>>({
         {"Hidden Room", "hidden-room"_spr, TAG_PRIVATE, nullptr, false},
         {"Closed Invites", "closed-invites"_spr, TAG_CLOSED_INVITES, nullptr, false},
         {"Teams", "teams"_spr, TAG_TEAMS, nullptr, false},
@@ -239,7 +230,7 @@ bool CreateRoomPopup::setup() {
 
     float totalHeight = 0.f;
 
-    for (const auto& entry : settings) {
+    for (const auto &entry : settings) {
         const float height = 15.5f;
         const float width = 110.5f;
 
@@ -250,12 +241,10 @@ bool CreateRoomPopup::setup() {
 
         totalHeight += height;
 
-        CCMenuItemToggler* toggler;
-        Build(CCMenuItemToggler::create(
-            Build<CCSprite>::createSpriteName("GJ_checkOff_001.png").scale(0.5f),
-            Build<CCSprite>::createSpriteName("GJ_checkOn_001.png").scale(0.5f),
-            this, menu_selector(CreateRoomPopup::onCheckboxToggled)
-        ))
+        CCMenuItemToggler *toggler;
+        Build(CCMenuItemToggler::create(Build<CCSprite>::createSpriteName("GJ_checkOff_001.png").scale(0.5f),
+                                        Build<CCSprite>::createSpriteName("GJ_checkOn_001.png").scale(0.5f), this,
+                                        menu_selector(CreateRoomPopup::onCheckboxToggled)))
             .pos(width - 11.f, height / 2.f)
             .id(std::string(std::get<1>(entry)))
             .tag(std::get<2>(entry))
@@ -295,64 +284,78 @@ bool CreateRoomPopup::setup() {
     return true;
 }
 
-void CreateRoomPopup::setFollowerMode(bool follower) {
+void CreateRoomPopup::setFollowerMode(bool follower)
+{
     m_followerWrapper->removeAllChildren();
 
     m_settings.isFollower = follower;
 
     Build<ButtonSprite>::create("Classic", "bigFont.fnt", follower ? "GJ_button_05.png" : "GJ_button_01.png", 0.8f)
         .scale(0.8f)
-        .intoMenuItem([this](auto) {
-            this->setFollowerMode(false);
-        })
+        .intoMenuItem([this](auto) { this->setFollowerMode(false); })
         .scaleMult(1.1f)
         .parent(m_followerWrapper);
 
     Build<ButtonSprite>::create("Follower", "bigFont.fnt", follower ? "GJ_button_01.png" : "GJ_button_05.png", 0.8f)
         .scale(0.8f)
-        .intoMenuItem([this](auto) {
-            this->setFollowerMode(true);
-        })
+        .intoMenuItem([this](auto) { this->setFollowerMode(true); })
         .scaleMult(1.1f)
         .parent(m_followerWrapper);
 
     auto btn = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-        .scale(0.5f)
-        .intoMenuItem([](auto) {
-            globed::alert(
-                "Info",
-                "Follower rooms only allow the host to join levels, and the rest of the players will be instantly warped to the level the host joins."
-            );
-        })
-        .parent(m_followerWrapper)
-        .collect();
+                   .scale(0.5f)
+                   .intoMenuItem([](auto) {
+                       globed::alert("Info", "Follower rooms only allow the host to join levels, and the rest of the "
+                                             "players will be instantly warped to the level the host joins.");
+                   })
+                   .parent(m_followerWrapper)
+                   .collect();
 
     m_followerWrapper->updateLayout();
 
     btn->setPositionY(btn->getPositionY() + 14.f);
 }
 
-void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
-    auto* btn = static_cast<CCMenuItemToggler*>(p);
+void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject *p)
+{
+    auto *btn = static_cast<CCMenuItemToggler *>(p);
     bool state = !btn->isOn();
 
     bool isSafeMode = false;
 
     switch (p->getTag()) {
-        case TAG_TWO_PLAYER:     m_settings.twoPlayerMode = state; isSafeMode = true; break;
-        case TAG_COLLISION:      m_settings.collision = state; isSafeMode = true; break;
-        case TAG_CLOSED_INVITES: m_settings.privateInvites = state; break;
-        case TAG_PRIVATE:        m_settings.hidden = state; break;
-        case TAG_DEATHLINK:      m_settings.deathlink = state; break;
-        case TAG_TEAMS:          m_settings.teams = state; break;
-        case TAG_AUTO_PINNING:   m_settings.manualPinning = !state; break;
-        case TAG_SWITCHEROO:     m_settings.switcheroo = state; isSafeMode = true; break;
+    case TAG_TWO_PLAYER:
+        m_settings.twoPlayerMode = state;
+        isSafeMode = true;
+        break;
+    case TAG_COLLISION:
+        m_settings.collision = state;
+        isSafeMode = true;
+        break;
+    case TAG_CLOSED_INVITES:
+        m_settings.privateInvites = state;
+        break;
+    case TAG_PRIVATE:
+        m_settings.hidden = state;
+        break;
+    case TAG_DEATHLINK:
+        m_settings.deathlink = state;
+        break;
+    case TAG_TEAMS:
+        m_settings.teams = state;
+        break;
+    case TAG_AUTO_PINNING:
+        m_settings.manualPinning = !state;
+        break;
+    case TAG_SWITCHEROO:
+        m_settings.switcheroo = state;
+        isSafeMode = true;
+        break;
     }
 
     if (isSafeMode && state && !globed::swapFlag("core.flags.seen-room-safe-mode-notice")) {
         this->showSafeModePopup(true);
     }
-
 
     int which = p->getTag();
     if (state) {
@@ -362,44 +365,46 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
     m_safeModeBtn->getChildByType<CCSprite>(0)->setColor(m_settings.needsSafeMode() ? ccORANGE : ccGREEN);
 }
 
-void CreateRoomPopup::handleMutuallyExclusive(int which) {
+void CreateRoomPopup::handleMutuallyExclusive(int which)
+{
     // some settings are mutually exclusive
     // collision -> disables 2p mode and switcheroo
     // 2p mode -> disables collision, deathlink and switcheroo
     // deathlink -> disables 2p mode and switcheroo
     // switcheroo -> disables collision, 2p mode and deathlink
 
-    auto disable = [](auto btn, bool& setting) {
+    auto disable = [](auto btn, bool &setting) {
         setting = false;
         btn->toggle(false);
     };
 
     switch (which) {
-        case TAG_COLLISION: {
-            disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
-            disable(m_switcherooBtn, m_settings.switcheroo);
-        } break;
+    case TAG_COLLISION: {
+        disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
+        disable(m_switcherooBtn, m_settings.switcheroo);
+    } break;
 
-        case TAG_TWO_PLAYER: {
-            disable(m_collisionBtn, m_settings.collision);
-            disable(m_deathlinkBtn, m_settings.deathlink);
-            disable(m_switcherooBtn, m_settings.switcheroo);
-        } break;
+    case TAG_TWO_PLAYER: {
+        disable(m_collisionBtn, m_settings.collision);
+        disable(m_deathlinkBtn, m_settings.deathlink);
+        disable(m_switcherooBtn, m_settings.switcheroo);
+    } break;
 
-        case TAG_DEATHLINK: {
-            disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
-            disable(m_switcherooBtn, m_settings.switcheroo);
-        } break;
+    case TAG_DEATHLINK: {
+        disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
+        disable(m_switcherooBtn, m_settings.switcheroo);
+    } break;
 
-        case TAG_SWITCHEROO: {
-            disable(m_collisionBtn, m_settings.collision);
-            disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
-            disable(m_deathlinkBtn, m_settings.deathlink);
-        } break;
+    case TAG_SWITCHEROO: {
+        disable(m_collisionBtn, m_settings.collision);
+        disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
+        disable(m_deathlinkBtn, m_settings.deathlink);
+    } break;
     }
 }
 
-void CreateRoomPopup::showSafeModePopup(bool firstTime) {
+void CreateRoomPopup::showSafeModePopup(bool firstTime)
+{
     auto getSafeModeString = [&]() -> std::string {
         std::vector<std::string> mods;
 
@@ -415,61 +420,57 @@ void CreateRoomPopup::showSafeModePopup(bool firstTime) {
 
         auto joined = utils::string::join(mods, ", ");
 
-        return fmt::format(
-            "<cy>Safe mode</c> is <cr>enabled</c> due to the following setting{}: <cy>{}</c>.\n\n"
-            "You won't be able to make progress on levels while these settings are enabled.",
-            mods.size() > 1 ? "s" : "",
-            joined
-        );
+        return fmt::format("<cy>Safe mode</c> is <cr>enabled</c> due to the following setting{}: <cy>{}</c>.\n\n"
+                           "You won't be able to make progress on levels while these settings are enabled.",
+                           mods.size() > 1 ? "s" : "", joined);
     };
 
     if (!m_settings.needsSafeMode()) {
-        globed::alert("Safe Mode", "<cy>Safe Mode</c> is <cg>not enabled</c> with these room settings. You are able to make progress on levels while in this room.");
+        globed::alert("Safe Mode", "<cy>Safe Mode</c> is <cg>not enabled</c> with these room settings. You are able to "
+                                   "make progress on levels while in this room.");
         return;
     }
 
-    globed::alert(
-        "Safe Mode",
-        firstTime
-            ? "This setting enables <cy>safe mode</c>, which means you won't be able to make progress on levels while in this room."
-            : getSafeModeString()
-    );
+    globed::alert("Safe Mode", firstTime ? "This setting enables <cy>safe mode</c>, which means you won't be able to "
+                                           "make progress on levels while in this room."
+                                         : getSafeModeString());
 }
 
-void CreateRoomPopup::showRoomNameWarnPopup(bool canName) {
+void CreateRoomPopup::showRoomNameWarnPopup(bool canName)
+{
     if (!canName) {
         auto msg = ServerManager::get().isOfficialServerActive()
-            ? "Room names are currently <cy>disabled</c> for regular users due to <cr>abuse</c>. "
-            "You can gain the ability to name rooms by <cp>supporting Globed</c>, otherwise "
-            "your room will be named automatically."
+                       ? "Room names are currently <cy>disabled</c> for regular users due to <cr>abuse</c>. "
+                         "You can gain the ability to name rooms by <cp>supporting Globed</c>, otherwise "
+                         "your room will be named automatically."
 
-            : "Room names are <cy>disabled</c> on this server for your account.";
+                       : "Room names are <cy>disabled</c> on this server for your account.";
 
         globed::alert("Info", msg);
 
         return;
     }
 
-    globed::alert(
-        "Note",
+    globed::alert("Note",
 
-        "Room names should be clear and appropriate. "
-        "Creating a room with <cy>advertisements</c> or <cr>profanity</c> in its name may lead to a <cy>closure of the room</c>, "
-        "or in some cases a <cr>ban</c>."
-    );
+                  "Room names should be clear and appropriate. "
+                  "Creating a room with <cy>advertisements</c> or <cr>profanity</c> in its name may lead to a "
+                  "<cy>closure of the room</c>, "
+                  "or in some cases a <cr>ban</c>.");
 }
 
-void CreateRoomPopup::waitForResponse() {
-    // wait for either a room state mesage or a room create failed message
+void CreateRoomPopup::waitForResponse()
+{
+    // wait for either a room state message or a room create failed message
 
     m_loadingPopup = LoadingPopup::create();
     m_loadingPopup->setTitle("Creating Room...");
     m_loadingPopup->setClosable(true);
     m_loadingPopup->show();
 
-    auto& nm = NetworkManagerImpl::get();
+    auto &nm = NetworkManagerImpl::get();
 
-    m_successListener = nm.listen<msg::RoomStateMessage>([this](const auto& msg) {
+    m_successListener = nm.listen<msg::RoomStateMessage>([this](const auto &msg) {
         // small sanity check to make sure it is actually the response we need
         if (msg.roomOwner == cachedSingleton<GJAccountManager>()->m_accountID) {
             this->stopWaiting(std::nullopt);
@@ -479,18 +480,34 @@ void CreateRoomPopup::waitForResponse() {
     });
     m_successListener.value()->setPriority(-100);
 
-    m_failListener = nm.listen<msg::RoomCreateFailedMessage>([this](const auto& msg) {
+    m_failListener = nm.listen<msg::RoomCreateFailedMessage>([this](const auto &msg) {
         using enum msg::RoomCreateFailedReason;
         std::string reason;
 
         switch (msg.reason) {
-            case InvalidName: reason = "Invalid room name"; break;
-            case InvalidPasscode: reason = "Invalid passcode"; break;
-            case InvalidSettings: reason = "Invalid room settings"; break;
-            case InvalidServer: reason = "Invalid server chosen, this server is unavailable. Please choose a different server or try again later"; break;
-            case ServerDown: reason = "The server is currently down, please try again later"; break;
-            case InappropriateName: reason = "Inappropriate room name, please choose a different name. Bypassing the filter may result in a <cr>ban</c>."; break;
-            default: reason = "Unknown reason"; break;
+        case InvalidName:
+            reason = "Invalid room name";
+            break;
+        case InvalidPasscode:
+            reason = "Invalid passcode";
+            break;
+        case InvalidSettings:
+            reason = "Invalid room settings";
+            break;
+        case InvalidServer:
+            reason = "Invalid server chosen, this server is unavailable. Please choose a different server or try again "
+                     "later";
+            break;
+        case ServerDown:
+            reason = "The server is currently down, please try again later";
+            break;
+        case InappropriateName:
+            reason = "Inappropriate room name, please choose a different name. Bypassing the filter may result in a "
+                     "<cr>ban</c>.";
+            break;
+        default:
+            reason = "Unknown reason";
+            break;
         }
 
         this->stopWaiting(reason);
@@ -498,18 +515,17 @@ void CreateRoomPopup::waitForResponse() {
         return ListenerResult::Stop;
     });
 
-    m_bannedListener = nm.listen<msg::RoomBannedMessage>([this](const auto& msg) {
-        this->stopWaiting(fmt::format(
-            "You are banned from creating rooms{}{}. Reason: {}",
-            msg.expiresAt == 0 ? " " : " until ",
-            msg.expiresAt == 0 ? std::string{"forever"} : SystemTime::fromUnix(msg.expiresAt).toString(),
-            msg.reason.empty() ? "(no reason given)" : msg.reason
-        ));
+    m_bannedListener = nm.listen<msg::RoomBannedMessage>([this](const auto &msg) {
+        this->stopWaiting(
+            fmt::format("You are banned from creating rooms{}{}. Reason: {}", msg.expiresAt == 0 ? " " : " until ",
+                        msg.expiresAt == 0 ? std::string{"forever"} : SystemTime::fromUnix(msg.expiresAt).toString(),
+                        msg.reason.empty() ? "(no reason given)" : msg.reason));
         return ListenerResult::Stop;
     });
 }
 
-void CreateRoomPopup::stopWaiting(std::optional<std::string> failReason) {
+void CreateRoomPopup::stopWaiting(std::optional<std::string> failReason)
+{
     m_loadingPopup->forceClose();
     m_loadingPopup = nullptr;
     m_failListener.reset();
@@ -522,4 +538,4 @@ void CreateRoomPopup::stopWaiting(std::optional<std::string> failReason) {
     }
 }
 
-}
+} // namespace globed

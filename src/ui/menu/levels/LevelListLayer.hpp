@@ -1,30 +1,23 @@
 #pragma once
 
-#include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
+#include <globed/core/net/MessageListener.hpp>
 #include <globed/util/gd.hpp>
 #include <ui/BaseLayer.hpp>
 
 #include <Geode/Geode.hpp>
-#include <cue/LoadingCircle.hpp>
 #include <cue/ListNode.hpp>
+#include <cue/LoadingCircle.hpp>
 
 namespace globed {
 
 class LevelListLayer : public BaseLayer, LevelManagerDelegate {
 public:
-    static LevelListLayer* create();
+    static LevelListLayer *create();
     ~LevelListLayer();
 
     struct Filters {
-        enum class RateTier {
-            Unrated,
-            Rate,
-            Feature,
-            Epic,
-            Legendary,
-            Mythic
-        };
+        enum class RateTier { Unrated, Rate, Feature, Epic, Legendary, Mythic };
 
         std::set<Difficulty> difficulty;
         std::set<Difficulty> demonDifficulty;
@@ -38,13 +31,13 @@ public:
         // bool verifiedCoins = false;
         bool original = false;
 
-        bool operator==(const Filters&) const = default;
+        bool operator==(const Filters &) const = default;
     };
 
 private:
     friend class LevelFiltersPopup;
 
-    cue::ListNode* m_list = nullptr;
+    cue::ListNode *m_list = nullptr;
     geode::Ref<CCMenuItemSpriteExtra> m_btnPagePrev, m_btnPageNext, m_btnRefresh, m_btnFilters;
     geode::Ref<cue::LoadingCircle> m_loadingCircle;
     // GlobedFeaturedLevel currentFeaturedLevel;
@@ -66,7 +59,7 @@ private:
 
     bool init() override;
 
-    void onLoaded(const std::vector<std::pair<SessionId, uint16_t>>& levels);
+    void onLoaded(const std::vector<std::pair<SessionId, uint16_t>> &levels);
 
     void onOpenFilters();
     void onRefresh();
@@ -82,12 +75,12 @@ private:
 
     std::optional<size_t> findPlayerCountForLevel(int levelId);
 
-    bool isMatchingFilters(GJGameLevel* level);
+    bool isMatchingFilters(GJGameLevel *level);
 
-    void loadLevelsFinished(cocos2d::CCArray*, char const*) override;
-    void loadLevelsFinished(cocos2d::CCArray*, char const*, int) override;
-    void loadLevelsFailed(char const*) override;
-    void loadLevelsFailed(char const*, int) override;
+    void loadLevelsFinished(cocos2d::CCArray *, char const *) override;
+    void loadLevelsFinished(cocos2d::CCArray *, char const *, int) override;
+    void loadLevelsFailed(char const *) override;
+    void loadLevelsFailed(char const *, int) override;
 };
 
-}
+} // namespace globed

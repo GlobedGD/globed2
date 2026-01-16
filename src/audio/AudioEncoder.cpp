@@ -7,17 +7,20 @@ using namespace geode::prelude;
 namespace globed {
 
 AudioEncoder::AudioEncoder(int sampleRate, int frameSize, int channels)
-    : m_encoder(nullptr), m_sampleRate(sampleRate), m_frameSize(frameSize), m_channels(channels) {
-    (void) this->remakeEncoder().unwrap();
+    : m_encoder(nullptr), m_sampleRate(sampleRate), m_frameSize(frameSize), m_channels(channels)
+{
+    (void)this->remakeEncoder().unwrap();
 }
 
-AudioEncoder::~AudioEncoder() {
+AudioEncoder::~AudioEncoder()
+{
     if (m_encoder) {
         opus_encoder_destroy(m_encoder);
     }
 }
 
-AudioEncoder::AudioEncoder(AudioEncoder&& other) noexcept {
+AudioEncoder::AudioEncoder(AudioEncoder &&other) noexcept
+{
     m_encoder = other.m_encoder;
     other.m_encoder = nullptr;
 
@@ -26,7 +29,8 @@ AudioEncoder::AudioEncoder(AudioEncoder&& other) noexcept {
     m_frameSize = other.m_frameSize;
 }
 
-AudioEncoder& AudioEncoder::operator=(AudioEncoder&& other) noexcept {
+AudioEncoder &AudioEncoder::operator=(AudioEncoder &&other) noexcept
+{
     if (this != &other) {
         if (m_encoder) {
             opus_encoder_destroy(m_encoder);
@@ -43,7 +47,8 @@ AudioEncoder& AudioEncoder::operator=(AudioEncoder&& other) noexcept {
     return *this;
 }
 
-Result<EncodedOpusData> AudioEncoder::encode(const float* data) {
+Result<EncodedOpusData> AudioEncoder::encode(const float *data)
+{
     EncodedOpusData out;
     size_t bytes = sizeof(float) * m_frameSize / 2; // arbitrary size
 
@@ -60,37 +65,45 @@ Result<EncodedOpusData> AudioEncoder::encode(const float* data) {
     return Ok(std::move(out));
 }
 
-Result<> AudioEncoder::setSampleRate(int sampleRate) {
+Result<> AudioEncoder::setSampleRate(int sampleRate)
+{
     m_sampleRate = sampleRate;
     return this->remakeEncoder();
 }
 
-void AudioEncoder::setFrameSize(int frameSize) {
+void AudioEncoder::setFrameSize(int frameSize)
+{
     m_frameSize = frameSize;
 }
 
-Result<> AudioEncoder::setChannels(int channels) {
+Result<> AudioEncoder::setChannels(int channels)
+{
     m_channels = channels;
     return this->remakeEncoder();
 }
 
-Result<> AudioEncoder::resetState() {
+Result<> AudioEncoder::resetState()
+{
     return this->encoderCtl("resetState", OPUS_RESET_STATE);
 }
 
-Result<> AudioEncoder::setBitrate(int bitrate) {
+Result<> AudioEncoder::setBitrate(int bitrate)
+{
     return this->encoderCtl("setBitrate", OPUS_SET_BITRATE(bitrate));
 }
 
-Result<> AudioEncoder::setComplexity(int complexity) {
+Result<> AudioEncoder::setComplexity(int complexity)
+{
     return this->encoderCtl("setComplexity", OPUS_SET_COMPLEXITY(complexity));
 }
 
-Result<> AudioEncoder::setVariableBitrate(bool variablebr) {
+Result<> AudioEncoder::setVariableBitrate(bool variablebr)
+{
     return this->encoderCtl("setVariableBitrate", OPUS_SET_VBR(variablebr ? 1 : 0));
 }
 
-Result<> AudioEncoder::remakeEncoder() {
+Result<> AudioEncoder::remakeEncoder()
+{
     // if we are reinitializing, free the previous encoder
     if (m_encoder) {
         opus_encoder_destroy(m_encoder);
@@ -112,8 +125,9 @@ Result<> AudioEncoder::remakeEncoder() {
     return Ok();
 }
 
-std::string_view AudioEncoder::errorToString(int code) {
+std::string_view AudioEncoder::errorToString(int code)
+{
     return opus_strerror(code);
 }
 
-}
+} // namespace globed

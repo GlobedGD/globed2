@@ -1,18 +1,18 @@
 #pragma once
 #include <Geode/Geode.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
-#include <globed/config.hpp>
-#include <globed/core/game/RemotePlayer.hpp>
-#include <globed/core/net/MessageListener.hpp>
-#include <globed/core/data/Messages.hpp>
-#include <globed/util/BoolExt.hpp>
-#include <globed/util/Interval.hpp>
-#include <ui/game/VoiceOverlay.hpp>
-#include <ui/game/PingOverlay.hpp>
-#include <ui/misc/NameLabel.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/game/SpeedTracker.hpp>
+#include <globed/config.hpp>
+#include <globed/core/data/Messages.hpp>
+#include <globed/core/game/RemotePlayer.hpp>
+#include <globed/core/net/MessageListener.hpp>
+#include <globed/util/BoolExt.hpp>
+#include <globed/util/Interval.hpp>
 #include <ui/game/EmoteBubble.hpp>
+#include <ui/game/PingOverlay.hpp>
+#include <ui/game/VoiceOverlay.hpp>
+#include <ui/misc/NameLabel.hpp>
 
 namespace globed {
 
@@ -27,11 +27,13 @@ struct GameCameraState {
     cocos2d::CCSize visibleCoverage;
     float zoom;
 
-    inline cocos2d::CCSize cameraCoverage() const {
+    inline cocos2d::CCSize cameraCoverage() const
+    {
         return visibleCoverage / std::abs(zoom);
     }
 
-    inline cocos2d::CCPoint cameraCenter() const {
+    inline cocos2d::CCPoint cameraCenter() const
+    {
         return cameraOrigin + this->cameraCoverage() / 2.f;
     }
 };
@@ -79,7 +81,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_showingNoticeAlert = false;
         BoolExt m_didJustJump1, m_didJustJump2;
 
-        CCNode* m_playerNode = nullptr;
+        CCNode *m_playerNode = nullptr;
         Ref<CCNode> m_progressBarContainer;
         Ref<VoiceOverlay> m_voiceOverlay;
         Ref<PingOverlay> m_pingOverlay;
@@ -87,7 +89,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     };
 
     // Setup functions
-    void setupPreInit(GJGameLevel* level, bool editor);
+    void setupPreInit(GJGameLevel *level, bool editor);
     void setupPostInit();
     void onQuit();
     /// Necessary setup that runs always, even if multiplayer is not active.
@@ -104,8 +106,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void setupListeners();
 
     // Hooks
-    $override
-    bool init(GJGameLevel* level);
+    $override bool init(GJGameLevel *level);
 
     void onEnterHook();
 
@@ -126,9 +127,9 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     bool isQuitting();
     void handlePlayerJoin(int playerId);
     void handlePlayerLeave(int playerId, bool removeFromMap = true);
-    void handleLocalPlayerDeath(PlayerObject*);
+    void handleLocalPlayerDeath(PlayerObject *);
     void setPermanentSafeMode();
-    void sendPlayerData(const PlayerState& state);
+    void sendPlayerData(const PlayerState &state);
     /// Kills the local player, by default the death will not be counted as 'real'.
     /// If this is unwanted, pass `false`
     void killLocalPlayer(bool fake = true);
@@ -138,10 +139,10 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
 
     void pausedUpdate(float dt);
 
-    PlayLayer* asPlayLayer();
+    PlayLayer *asPlayLayer();
 
     // Functions for the outside :tm:
-    static GlobedGJBGL* get(GJBaseGameLayer* base = nullptr);
+    static GlobedGJBGL *get(GJBaseGameLayer *base = nullptr);
     bool active();
     CameraDirection getCameraDirection();
     GameCameraState getCameraState();
@@ -158,19 +159,20 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void resumeVoiceRecording();
     void pauseVoiceRecording();
 
-    void customSchedule(const std::string& id, std23::move_only_function<void(GlobedGJBGL*, float)>&& f, float interval);
-    void customSchedule(const std::string& id, float interval, std23::move_only_function<void(GlobedGJBGL*, float)>&& f);
-    void customUnschedule(const std::string& id);
+    void customSchedule(const std::string &id, std23::move_only_function<void(GlobedGJBGL *, float)> &&f,
+                        float interval);
+    void customSchedule(const std::string &id, float interval,
+                        std23::move_only_function<void(GlobedGJBGL *, float)> &&f);
+    void customUnschedule(const std::string &id);
     void customUnscheduleAll();
 
     bool playSelfEmote(uint32_t id);
     bool playSelfFavoriteEmote(uint32_t which);
 
-
 private:
-    void onLevelDataReceived(const msg::LevelDataMessage& message);
-    void onVoiceDataReceived(const msg::VoiceBroadcastMessage& message);
+    void onLevelDataReceived(const msg::LevelDataMessage &message);
+    void onVoiceDataReceived(const msg::VoiceBroadcastMessage &message);
     void onQuickChatReceived(int accountId, uint32_t quickChatId);
 };
 
-}
+} // namespace globed

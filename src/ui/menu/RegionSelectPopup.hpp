@@ -13,10 +13,10 @@ public:
     bool reloadList();
 
 protected:
-    cue::ListNode* m_list;
+    cue::ListNode *m_list;
 
     bool setup();
     void softRefresh(float);
 };
 
-}
+} // namespace globed

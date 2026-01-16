@@ -1,8 +1,8 @@
 #pragma once
 
-#include <globed/prelude.hpp>
-#include <asp/time/Instant.hpp>
 #include "AudioSampleQueue.hpp"
+#include <asp/time/Instant.hpp>
+#include <globed/prelude.hpp>
 
 namespace globed {
 
@@ -10,13 +10,13 @@ class GLOBED_DLL VolumeEstimator {
 public:
     VolumeEstimator(size_t sampleRate = 0);
 
-    VolumeEstimator(const VolumeEstimator&) = default;
-    VolumeEstimator& operator=(const VolumeEstimator&) = default;
+    VolumeEstimator(const VolumeEstimator &) = default;
+    VolumeEstimator &operator=(const VolumeEstimator &) = default;
 
-    VolumeEstimator(VolumeEstimator&&) = default;
-    VolumeEstimator& operator=(VolumeEstimator&&) = default;
+    VolumeEstimator(VolumeEstimator &&) = default;
+    VolumeEstimator &operator=(VolumeEstimator &&) = default;
 
-    void feedData(const float* pcm, size_t samples);
+    void feedData(const float *pcm, size_t samples);
 
     void update(float dt);
 
@@ -32,4 +32,4 @@ private:
     std::deque<std::pair<asp::time::Instant, size_t>> m_writeHistory;
 };
 
-}
+} // namespace globed

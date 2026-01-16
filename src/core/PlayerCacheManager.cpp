@@ -4,7 +4,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void PlayerCacheManager::insert(int accountId, const PlayerDisplayData& data) {
+void PlayerCacheManager::insert(int accountId, const PlayerDisplayData &data)
+{
     m_layer1[accountId] = Entry{data};
 
     if (m_layer2.contains(accountId)) {
@@ -12,12 +13,14 @@ void PlayerCacheManager::insert(int accountId, const PlayerDisplayData& data) {
     }
 }
 
-void PlayerCacheManager::remove(int accountId) {
+void PlayerCacheManager::remove(int accountId)
+{
     m_layer1.erase(accountId);
     m_layer2.erase(accountId);
 }
 
-std::optional<PlayerDisplayData> PlayerCacheManager::get(int accountId) {
+std::optional<PlayerDisplayData> PlayerCacheManager::get(int accountId)
+{
     auto it = m_layer1.find(accountId);
 
     if (it != m_layer1.end()) {
@@ -32,7 +35,8 @@ std::optional<PlayerDisplayData> PlayerCacheManager::get(int accountId) {
     return std::nullopt;
 }
 
-PlayerDisplayData PlayerCacheManager::getOrDefault(int accountId) {
+PlayerDisplayData PlayerCacheManager::getOrDefault(int accountId)
+{
     auto dataOpt = this->get(accountId);
     if (dataOpt.has_value()) {
         return dataOpt.value();
@@ -41,15 +45,18 @@ PlayerDisplayData PlayerCacheManager::getOrDefault(int accountId) {
     return DEFAULT_PLAYER_DATA;
 }
 
-bool PlayerCacheManager::has(int accountId) {
+bool PlayerCacheManager::has(int accountId)
+{
     return m_layer1.contains(accountId) || m_layer2.contains(accountId);
 }
 
-bool PlayerCacheManager::hasInLayer1(int accountId) {
+bool PlayerCacheManager::hasInLayer1(int accountId)
+{
     return m_layer1.contains(accountId);
 }
 
-void PlayerCacheManager::evictToLayer2(int accountId) {
+void PlayerCacheManager::evictToLayer2(int accountId)
+{
     auto it = m_layer1.find(accountId);
 
     if (it != m_layer1.end()) {
@@ -58,12 +65,13 @@ void PlayerCacheManager::evictToLayer2(int accountId) {
     }
 }
 
-void PlayerCacheManager::evictAllToLayer2() {
-    for (auto& [accountId, entry] : m_layer1) {
+void PlayerCacheManager::evictAllToLayer2()
+{
+    for (auto &[accountId, entry] : m_layer1) {
         m_layer2[accountId] = Entry{std::move(entry.data)};
     }
 
     m_layer1.clear();
 }
 
-}
+} // namespace globed

@@ -1,7 +1,7 @@
 #include "CollisionModule.hpp"
-#include <globed/core/game/RemotePlayer.hpp>
-#include <globed/core/RoomManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <globed/core/RoomManager.hpp>
+#include <globed/core/game/RemotePlayer.hpp>
 
 #include <Geode/modify/PlayLayer.hpp>
 
@@ -11,21 +11,24 @@ namespace globed {
 
 CollisionModule::CollisionModule() {}
 
-void CollisionModule::onModuleInit() {
+void CollisionModule::onModuleInit()
+{
     this->setAutoEnableMode(AutoEnableMode::Level);
 }
 
-void CollisionModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
+void CollisionModule::onJoinLevel(GlobedGJBGL *gjbgl, GJGameLevel *level, bool editor)
+{
     // if deathlink is disabled, disable the module for this level
     if (!RoomManager::get().getSettings().collision) {
-        (void) this->disable();
+        (void)this->disable();
     } else {
         // safe mode is forced in collision mode
         gjbgl->setPermanentSafeMode();
     }
 }
 
-static bool shouldCorrectCollision(const CCRect& p1, const CCRect& p2, CCPoint& displacement) {
+static bool shouldCorrectCollision(const CCRect &p1, const CCRect &p2, CCPoint &displacement)
+{
     if (std::abs(displacement.x) > 10.f) {
         displacement.x = -displacement.x;
         displacement.y = 0;
@@ -35,19 +38,21 @@ static bool shouldCorrectCollision(const CCRect& p1, const CCRect& p2, CCPoint& 
     return false;
 }
 
-void CollisionModule::checkCollisions(GlobedGJBGL* gjbgl, PlayerObject* player, float dt, bool p2) {
-    if (!this->isEnabled()) return;
+void CollisionModule::checkCollisions(GlobedGJBGL *gjbgl, PlayerObject *player, float dt, bool p2)
+{
+    if (!this->isEnabled())
+        return;
 
     bool isSecond = player == gjbgl->m_player2;
 
-    for (const auto& [_, rp] : gjbgl->m_fields->m_players) {
-        auto* p1 = rp->player1();
-        auto* p2 = rp->player2();
+    for (const auto &[_, rp] : gjbgl->m_fields->m_players) {
+        auto *p1 = rp->player1();
+        auto *p2 = rp->player2();
 
-        auto& p1Rect = p1->getObjectRect();
-        auto& p2Rect = p2->getObjectRect();
+        auto &p1Rect = p1->getObjectRect();
+        auto &p2Rect = p2->getObjectRect();
 
-        auto& playerRect = player->getObjectRect();
+        auto &playerRect = player->getObjectRect();
 
         CCRect p1CollRect = p1Rect;
         CCRect p2CollRect = p2Rect;
@@ -110,13 +115,13 @@ void CollisionModule::checkCollisions(GlobedGJBGL* gjbgl, PlayerObject* player, 
 }
 
 struct GLOBED_MODIFY_ATTR CollisionGJBGL : Modify<CollisionGJBGL, GJBaseGameLayer> {
-    static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(CollisionModule::get(), self,
-            "GJBaseGameLayer::checkCollisions"
-        );
+    static void onModify(auto &self)
+    {
+        GLOBED_CLAIM_HOOKS(CollisionModule::get(), self, "GJBaseGameLayer::checkCollisions");
     }
 
-    int checkCollisions(PlayerObject* player, float dt, bool p2) {
+    int checkCollisions(PlayerObject *player, float dt, bool p2)
+    {
         int retval = GJBaseGameLayer::checkCollisions(player, dt, p2);
 
         auto gjbgl = GlobedGJBGL::get(this);
@@ -130,4 +135,4 @@ struct GLOBED_MODIFY_ATTR CollisionGJBGL : Modify<CollisionGJBGL, GJBaseGameLaye
     }
 };
 
-}
+} // namespace globed

@@ -11,7 +11,8 @@ constexpr static float LINE_NUMBER_WIDTH = 30.f;
 
 namespace globed {
 
-static CCSize getEstimateLetterSize(float scale) {
+static CCSize getEstimateLetterSize(float scale)
+{
     auto label = CCLabelBMFont::create("Among us? Impostor sus sus sus", "Consolas.fnt"_spr);
     label->setScale(scale);
     auto size = label->getScaledContentSize();
@@ -19,8 +20,10 @@ static CCSize getEstimateLetterSize(float scale) {
     return {size.width / strlen(label->getString()), size.height};
 }
 
-bool CodeEditor::init(CCSize size) {
-    if (!CCLayer::init()) return false;
+bool CodeEditor::init(CCSize size)
+{
+    if (!CCLayer::init())
+        return false;
 
     m_size = size;
 
@@ -31,47 +34,49 @@ bool CodeEditor::init(CCSize size) {
     this->setAnchorPoint({0.5f, 0.5f});
 
     m_background = Build(CCLayerColor::create(colorFromHex("#1e1e1e"), size.width, size.height))
-        .zOrder(-4)
-        .anchorPoint(0.5f, 0.5f)
-        .ignoreAnchorPointForPos(false)
-        .pos(size / 2.f)
-        .parent(this);
+                       .zOrder(-4)
+                       .anchorPoint(0.5f, 0.5f)
+                       .ignoreAnchorPointForPos(false)
+                       .pos(size / 2.f)
+                       .parent(this);
 
     auto scrollSize = size - CCSize{TEXT_PAD * 2.f, TEXT_PAD * 2.f};
 
     m_scrollLayer = Build(ScrollLayer::create(scrollSize))
-        .anchorPoint(0.5f, 0.5f)
-        .ignoreAnchorPointForPos(false)
-        .pos(size / 2.f)
-        .parent(this);
+                        .anchorPoint(0.5f, 0.5f)
+                        .ignoreAnchorPointForPos(false)
+                        .pos(size / 2.f)
+                        .parent(this);
 
     m_textContainer = Build<CCNode>::create()
-        .id("text-container")
-        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(0.f))
-        .contentSize(scrollSize.width - LINE_NUMBER_WIDTH, 0.f)
-        .anchorPoint(0.f, 1.f)
-        .pos(LINE_NUMBER_WIDTH, scrollSize.height)
-        .parent(m_scrollLayer->m_contentLayer);
+                          .id("text-container")
+                          .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(0.f))
+                          .contentSize(scrollSize.width - LINE_NUMBER_WIDTH, 0.f)
+                          .anchorPoint(0.f, 1.f)
+                          .pos(LINE_NUMBER_WIDTH, scrollSize.height)
+                          .parent(m_scrollLayer->m_contentLayer);
 
     m_lineNumContainer = Build<CCNode>::create()
-        .id("line-num-container")
-        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(0.f))
-        .contentSize(LINE_NUMBER_WIDTH, 0.f)
-        .anchorPoint(0.f, 1.f)
-        .pos(4.f, scrollSize.height)
-        .parent(m_scrollLayer->m_contentLayer);
+                             .id("line-num-container")
+                             .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false)->setGap(0.f))
+                             .contentSize(LINE_NUMBER_WIDTH, 0.f)
+                             .anchorPoint(0.f, 1.f)
+                             .pos(4.f, scrollSize.height)
+                             .parent(m_scrollLayer->m_contentLayer);
 
     this->setFontSize(0.5f);
 
     return true;
 }
 
-void CodeEditor::setContent(CStr content) {
+void CodeEditor::setContent(CStr content)
+{
     m_textBuffer.clear();
 
     for (char c : std::string_view{content}) {
         if (c == '\t') {
-            for (size_t i = 0; i < 4; i++) m_textBuffer.push_back(' ');
+            for (size_t i = 0; i < 4; i++)
+                m_textBuffer.push_back(' ');
         } else {
             m_textBuffer.push_back(c);
         }
@@ -80,27 +85,32 @@ void CodeEditor::setContent(CStr content) {
     this->updateFromBuffer();
 }
 
-void CodeEditor::updateFromBuffer() {
+void CodeEditor::updateFromBuffer()
+{
     this->updateState(false);
 }
 
-void CodeEditor::setFontSize(float scale) {
+void CodeEditor::setFontSize(float scale)
+{
     m_textScale = scale;
 
-    if (m_cursor) m_cursor->removeFromParent();
+    if (m_cursor)
+        m_cursor->removeFromParent();
 
     auto lsize = getEstimateLetterSize(scale);
     m_cursor = Build(CCLayerColor::create({255, 255, 255, 255}, 1.f, lsize.height + 1.f))
-        .opacity(0)
-        .ignoreAnchorPointForPos(false)
-        .anchorPoint(0.5f, 0.5f)
-        .pos(m_cursorUiPos)
-        .parent(m_scrollLayer->m_contentLayer);
+                   .opacity(0)
+                   .ignoreAnchorPointForPos(false)
+                   .anchorPoint(0.5f, 0.5f)
+                   .pos(m_cursorUiPos)
+                   .parent(m_scrollLayer->m_contentLayer);
 
     this->updateState(true);
 }
 
-void CodeEditor::splitStringInto(std::string_view str, std::vector<Label*>& labels, CCNode* container, BMFontAlignment alignment, uint8_t opacity) {
+void CodeEditor::splitStringInto(std::string_view str, std::vector<Label *> &labels, CCNode *container,
+                                 BMFontAlignment alignment, uint8_t opacity)
+{
     size_t curIdx = 0;
 
     auto addOne = [&](std::string_view s) {
@@ -140,10 +150,10 @@ void CodeEditor::splitStringInto(std::string_view str, std::vector<Label*>& labe
 
     container->setContentHeight(totalHeight * (double)m_textScale);
     container->updateLayout();
-
 }
 
-void CodeEditor::updateState(bool recreate) {
+void CodeEditor::updateState(bool recreate)
+{
     if (recreate) {
         m_textContainer->removeAllChildren();
         m_lineNumContainer->removeAllChildren();
@@ -198,18 +208,21 @@ void CodeEditor::updateState(bool recreate) {
     m_textContainer->setPositionY(yPos);
 }
 
-void CodeEditor::setCursorPos(size_t pos) {
+void CodeEditor::setCursorPos(size_t pos)
+{
     m_cursorPos = pos;
 }
 
-void CodeEditor::setCursorUiPos(CCPoint pos) {
+void CodeEditor::setCursorUiPos(CCPoint pos)
+{
     return; // TODO
     m_cursorUiPos = pos;
     m_cursor->setPosition(pos);
     m_cursor->setVisible(true);
 }
 
-bool CodeEditor::ccTouchBegan(cocos2d::CCTouch *pTouch, cocos2d::CCEvent *pEvent) {
+bool CodeEditor::ccTouchBegan(cocos2d::CCTouch *pTouch, cocos2d::CCEvent *pEvent)
+{
     // TODO, i dont want to continue struggling here
     return false;
 
@@ -232,23 +245,25 @@ bool CodeEditor::ccTouchBegan(cocos2d::CCTouch *pTouch, cocos2d::CCEvent *pEvent
     return true;
 }
 
-void CodeEditor::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) {
+void CodeEditor::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) {}
 
-}
-
-void CodeEditor::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent) {
+void CodeEditor::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent)
+{
     m_activeTouch = false;
 }
 
-void CodeEditor::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent) {
+void CodeEditor::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent)
+{
     m_activeTouch = false;
 }
 
-std::pair<size_t, cocos2d::CCPoint> CodeEditor::touchPosToBufferPos(CCPoint pos) {
+std::pair<size_t, cocos2d::CCPoint> CodeEditor::touchPosToBufferPos(CCPoint pos)
+{
     // currently pos is the space of the entire code editor, we want to convert it so that
     // 0,0 becomes the bottom left of the code label (assuming code is large enough to get to the bottom)
     pos = pos - CCPoint{TEXT_PAD + LINE_NUMBER_WIDTH, TEXT_PAD};
-    if (pos.x < 0 || pos.y < 0) return {-1, {}};
+    if (pos.x < 0 || pos.y < 0)
+        return {-1, {}};
 
     auto cl = m_scrollLayer->m_contentLayer;
     float scrollAmount = cl->getPositionY(); // positive when scrolling down (content moves up)
@@ -276,7 +291,7 @@ std::pair<size_t, cocos2d::CCPoint> CodeEditor::touchPosToBufferPos(CCPoint pos)
 
     // TODO: this logic really could be improved
     // find the closest character
-    CCSprite* spr = nullptr;
+    CCSprite *spr = nullptr;
     float distance = 99999999.f;
 
     for (auto label : m_textLabels) {
@@ -308,7 +323,8 @@ std::pair<size_t, cocos2d::CCPoint> CodeEditor::touchPosToBufferPos(CCPoint pos)
     return {};
 }
 
-CodeEditor* CodeEditor::create(CCSize size) {
+CodeEditor *CodeEditor::create(CCSize size)
+{
     auto ret = new CodeEditor;
     if (ret->init(size)) {
         ret->autorelease();
@@ -319,4 +335,4 @@ CodeEditor* CodeEditor::create(CCSize size) {
     return nullptr;
 }
 
-}
+} // namespace globed

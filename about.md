@@ -18,13 +18,13 @@ As a sign of appreciation, you will get a nice <ca>purple</c> name and a badge i
 
 ## Features
 
-* Real-time multiplayer
-* Available for all platforms supported by Geode: Windows, Android, MacOS and iOS
-* 2-player mode for beating 2P levels together over the internet
-* Other fun modes, such as Death Link, Collision, Switcheroo
-* In-game communication via voice chat and emotes
-* Public & private rooms
-* Completely free and open-source, with ability to host your own server
+- Real-time multiplayer
+- Available for all platforms supported by Geode: Windows, Android, MacOS and iOS
+- 2-player mode for beating 2P levels together over the internet
+- Other fun modes, such as Death Link, Collision, Switcheroo
+- In-game communication via voice chat and emotes
+- Public & private rooms
+- Completely free and open-source, with ability to host your own server
 
 ## Hosting a server
 
@@ -34,22 +34,22 @@ See the [Server Hosting](https://github.com/GlobedGD/globed2/blob/main/docs/serv
 
 Globed is made by:
 
-* [dank_meme](user:9735891) - owner and main developer
-* [ItzKiba](user:4569963) - artist, developer
-* [Dasshu](user:1975253) - artist
-* [TechStudent10](user:20284359) - developer
-* [ninXout](user:7479054) - developer
+- [dank_meme](user:9735891) - owner and main developer
+- [ItzKiba](user:4569963) - artist, developer
+- [Dasshu](user:1975253) - artist
+- [TechStudent10](user:20284359) - developer
+- [ninXout](user:7479054) - developer
 
 and the rest of our awesome [contributors](https://github.com/GlobedGD/globed2/graphs/contributors)!
 
 Special thanks:
 
-* [availax](user:1621348) - for co-creating the mod and helping with everything for a long time
-* [MathieuAR](user:3759035) - for providing us server hosting
-* [HJfod](user:104257) - for making [our website](https://globed.dev)
-* [alk1m123](user:11535118) - for working together for EditorCollab interoperability
-* [Alphalaneous](user:1139015) - for making the DeathLink mod and allowing us to take their idea and implement it in Globed
-* [Rifct](user:8927557) - for helping with some assets
-* [ConfiG](user:807756) - for hosting a relay server in Russia
-* [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - for making Geode
-* Server staff and supporters - for helping in shaping this mod to be what it is today :)
+- [availax](user:1621348) - for co-creating the mod and helping with everything for a long time
+- [MathieuAR](user:3759035) - for providing us server hosting
+- [HJfod](user:104257) - for making [our website](https://globed.dev)
+- [alk1m123](user:11535118) - for working together for EditorCollab interoperability
+- [Alphalaneous](user:1139015) - for making the DeathLink mod and allowing us to take their idea and implement it in Globed
+- [Rifct](user:8927557) - for helping with some assets
+- [ConfiG](user:807756) - for hosting a relay server in Russia
+- [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - for making Geode
+- Server staff and supporters - for helping in shaping this mod to be what it is today :)

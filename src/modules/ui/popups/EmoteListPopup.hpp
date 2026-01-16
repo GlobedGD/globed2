@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ui/misc/Sliders.hpp>
-#include <ui/BasePopup.hpp>
 #include <cue/ListNode.hpp>
+#include <ui/BasePopup.hpp>
+#include <ui/misc/Sliders.hpp>
 #include <vector>
 
 namespace globed {
@@ -21,26 +21,26 @@ private:
 
     std::vector<uint32_t> m_favoriteEmoteIds;
 
-    cocos2d::CCMenu* m_emoteMenu;
-    cocos2d::CCMenu* m_favoriteEmotesMenu;
+    cocos2d::CCMenu *m_emoteMenu;
+    cocos2d::CCMenu *m_favoriteEmotesMenu;
 
-    CCMenuItemSpriteExtra* m_clearFavoriteBtn;
+    CCMenuItemSpriteExtra *m_clearFavoriteBtn;
 
-    cue::ListNode* m_list;
-    cue::ListNode* m_bottomList;
+    cue::ListNode *m_list;
+    cue::ListNode *m_bottomList;
 
-    CCMenuItemSpriteExtra* m_submitBtn;
-    ButtonSprite* m_submitBtnSpr;
+    CCMenuItemSpriteExtra *m_submitBtn;
+    ButtonSprite *m_submitBtnSpr;
 
-    CCMenuItemSpriteExtra* m_leftPageBtn;
-    CCMenuItemSpriteExtra* m_rightPageBtn;
+    CCMenuItemSpriteExtra *m_leftPageBtn;
+    CCMenuItemSpriteExtra *m_rightPageBtn;
 
-    cocos2d::CCLabelBMFont* m_pageLabel;
+    cocos2d::CCLabelBMFont *m_pageLabel;
 
-    cocos2d::extension::CCScale9Sprite* m_favoriteHighlight;
-    cocos2d::CCLabelBMFont* m_favoriteInfoLabel;
+    cocos2d::extension::CCScale9Sprite *m_favoriteHighlight;
+    cocos2d::CCLabelBMFont *m_favoriteInfoLabel;
 
-    cue::Slider* m_volumeSlider;
+    cue::Slider *m_volumeSlider;
 
     bool setup() override;
     void onSubmitBtn();
@@ -52,4 +52,4 @@ private:
     void setFavorite(uint32_t emoteSlot, uint32_t id);
 };
 
-}
+} // namespace globed

@@ -13,4 +13,4 @@ struct UserPermissions {
     bool canNameRooms;
 };
 
-}
+} // namespace globed

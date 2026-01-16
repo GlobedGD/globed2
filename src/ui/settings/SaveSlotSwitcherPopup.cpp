@@ -11,13 +11,14 @@ using namespace geode::prelude;
 namespace globed {
 
 const CCSize SaveSlotSwitcherPopup::POPUP_SIZE = {360.f, 280.f};
-static const CCSize LIST_SIZE = { 306.f, 210.f };
+static const CCSize LIST_SIZE = {306.f, 210.f};
 static constexpr float CELL_HEIGHT = 36.f;
 
 namespace {
 class Cell : public CCNode {
 public:
-    static Cell* create(SaveSlotMeta meta, SaveSlotSwitcherPopup* popup) {
+    static Cell *create(SaveSlotMeta meta, SaveSlotSwitcherPopup *popup)
+    {
         auto ret = new Cell;
         ret->m_meta = std::move(meta);
         ret->m_popup = popup;
@@ -33,9 +34,10 @@ public:
 
 private:
     SaveSlotMeta m_meta;
-    SaveSlotSwitcherPopup* m_popup;
+    SaveSlotSwitcherPopup *m_popup;
 
-    bool init() {
+    bool init()
+    {
         CCNode::init();
 
         this->setContentSize({LIST_SIZE.width, CELL_HEIGHT});
@@ -46,30 +48,30 @@ private:
             .pos(8.f, CELL_HEIGHT / 2.f)
             .parent(this);
 
-        auto btnMenu = Build<CCMenu>::create()
-            .layout(RowLayout::create()
-                        ->setAxisReverse(true)
-                        ->setAxisAlignment(AxisAlignment::End)
-                        ->setGap(3.f))
-            .contentSize(this->getContentSize() + CCSize{-16.f, 0.f})
-            .pos(this->getContentSize() / 2.f)
-            .parent(this)
-            .collect();
+        auto btnMenu =
+            Build<CCMenu>::create()
+                .layout(RowLayout::create()->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End)->setGap(3.f))
+                .contentSize(this->getContentSize() + CCSize{-16.f, 0.f})
+                .pos(this->getContentSize() / 2.f)
+                .parent(this)
+                .collect();
 
         // button for switching to the slot
         auto texture = m_meta.active ? "GJ_selectSongOnBtn_001.png" : "GJ_playBtn2_001.png";
 
-        auto switchBtn = Build<CCSprite>::createSpriteName(texture)
-            .with([&](auto btn) { cue::rescaleToMatch(btn, {CELL_HEIGHT * 0.75f, CELL_HEIGHT * 0.75f}); })
-            .intoMenuItem([this](auto) {
-                if (m_meta.active) return;
+        auto switchBtn =
+            Build<CCSprite>::createSpriteName(texture)
+                .with([&](auto btn) { cue::rescaleToMatch(btn, {CELL_HEIGHT * 0.75f, CELL_HEIGHT * 0.75f}); })
+                .intoMenuItem([this](auto) {
+                    if (m_meta.active)
+                        return;
 
-                SettingsManager::get().switchToSaveSlot(m_meta.id);
-                m_popup->refreshList();
-                m_popup->invokeSwitchCallback();
-            })
-            .parent(btnMenu)
-            .collect();
+                    SettingsManager::get().switchToSaveSlot(m_meta.id);
+                    m_popup->refreshList();
+                    m_popup->invokeSwitchCallback();
+                })
+                .parent(btnMenu)
+                .collect();
 
         // button for renaming the slot
         Build(CircleButtonSprite::createWithSprite("pencil.png"_spr))
@@ -82,7 +84,8 @@ private:
                 popup->setDefaultText(m_meta.name);
                 popup->setCommonFilter(CommonFilter::Any);
                 popup->setCallback([this](InputPopupOutcome outcome) {
-                    if (outcome.cancelled) return;
+                    if (outcome.cancelled)
+                        return;
 
                     log::debug("bruh renaming save slot {} to {}", m_meta.id, outcome.text);
                     SettingsManager::get().renameSaveSlot(m_meta.id, outcome.text);
@@ -108,14 +111,13 @@ private:
         return true;
     }
 };
-}
+} // namespace
 
-bool SaveSlotSwitcherPopup::setup() {
+bool SaveSlotSwitcherPopup::setup()
+{
     this->setTitle("Setting Profiles");
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE))
-        .pos(this->fromCenter(0.f, -15.f))
-        .parent(m_mainLayer);
+    m_list = Build(cue::ListNode::create(LIST_SIZE)).pos(this->fromCenter(0.f, -15.f)).parent(m_mainLayer);
     m_list->setJustify(cue::Justify::Center);
 
     this->refreshList(true);
@@ -123,32 +125,33 @@ bool SaveSlotSwitcherPopup::setup() {
     return true;
 }
 
-void SaveSlotSwitcherPopup::refreshList(bool scrollToTop) {
+void SaveSlotSwitcherPopup::refreshList(bool scrollToTop)
+{
     auto slots = SettingsManager::get().getSaveSlots();
     auto scpos = m_list->getScrollPos();
 
     m_list->clear();
 
-    for (auto& slot : slots) {
+    for (auto &slot : slots) {
         m_list->addCell(Cell::create(std::move(slot), this));
     }
 
     auto plusBtn = Build<CCSprite>::createSpriteName("GJ_plusBtn_001.png")
-        .with([&](auto btn) { cue::rescaleToMatch(btn, CCSize{CELL_HEIGHT, CELL_HEIGHT}); })
-        .intoMenuItem([this] {
-            SettingsManager::get().createSaveSlot();
-            this->refreshList();
-        })
-        .scaleMult(1.1f)
-        .collect();
+                       .with([&](auto btn) { cue::rescaleToMatch(btn, CCSize{CELL_HEIGHT, CELL_HEIGHT}); })
+                       .intoMenuItem([this] {
+                           SettingsManager::get().createSaveSlot();
+                           this->refreshList();
+                       })
+                       .scaleMult(1.1f)
+                       .collect();
 
     auto menu = Build<CCMenu>::create()
-        .contentSize(plusBtn->getScaledContentSize())
-        .ignoreAnchorPointForPos(false)
-        .intoNewChild(plusBtn)
-        .pos(plusBtn->getScaledContentSize() / 2.f)
-        .intoParent()
-        .collect();
+                    .contentSize(plusBtn->getScaledContentSize())
+                    .ignoreAnchorPointForPos(false)
+                    .intoNewChild(plusBtn)
+                    .pos(plusBtn->getScaledContentSize() / 2.f)
+                    .intoParent()
+                    .collect();
 
     m_list->addCell(menu);
 
@@ -159,10 +162,11 @@ void SaveSlotSwitcherPopup::refreshList(bool scrollToTop) {
     }
 }
 
-void SaveSlotSwitcherPopup::invokeSwitchCallback() {
+void SaveSlotSwitcherPopup::invokeSwitchCallback()
+{
     if (m_callback) {
         m_callback();
     }
 }
 
-}
+} // namespace globed

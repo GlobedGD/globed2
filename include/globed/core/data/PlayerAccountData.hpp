@@ -9,4 +9,4 @@ struct PlayerAccountData {
     std::string username;
 };
 
-}
+} // namespace globed

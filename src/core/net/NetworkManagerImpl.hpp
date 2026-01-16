@@ -1,29 +1,29 @@
 #pragma once
 
+#include "ConnectionLogger.hpp"
 #include <globed/audio/EncodedAudioFrame.hpp>
 #include <globed/core/SessionId.hpp>
-#include <globed/core/data/PlayerState.hpp>
-#include <globed/core/data/RoomSettings.hpp>
-#include <globed/core/data/UserRole.hpp>
 #include <globed/core/data/AdminLogs.hpp>
 #include <globed/core/data/Event.hpp>
-#include <globed/core/data/PunishReasons.hpp>
 #include <globed/core/data/FeaturedLevel.hpp>
+#include <globed/core/data/PlayerState.hpp>
+#include <globed/core/data/PunishReasons.hpp>
+#include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/data/UserPermissions.hpp>
+#include <globed/core/data/UserRole.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/util/FunctionQueue.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
-#include "ConnectionLogger.hpp"
 
+#include "data/generated.hpp"
+#include <Geode/Result.hpp>
 #include <arc/runtime/Runtime.hpp>
 #include <arc/sync/mpsc.hpp>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
-#include <std23/function_ref.h>
-#include "data/generated.hpp"
 #include <qunet/Connection.hpp>
 #include <qunet/Log.hpp>
-#include <Geode/Result.hpp>
+#include <std23/function_ref.h>
 #include <typeindex>
 
 namespace globed {
@@ -39,7 +39,7 @@ struct GameServer {
     std::string name;
     std::string region;
     uint32_t lastLatency = -1; // millis
-    uint32_t avgLatency = -1; // millis
+    uint32_t avgLatency = -1;  // millis
     uint32_t sentPings = 0;
     asp::time::Instant lastPingTime = asp::time::Instant::now();
 
@@ -62,10 +62,10 @@ struct WorkerState {
     arc::mpsc::Receiver<std::pair<std::string, qn::PingResult>> pingResultRx;
     qn::ConnectionState prevCentralState{qn::ConnectionState::Disconnected};
 
-    WorkerState(
-        decltype(pingResultTx) tx,
-        decltype(pingResultRx) rx
-    ) : pingResultTx(std::move(tx)), pingResultRx(std::move(rx)) {}
+    WorkerState(decltype(pingResultTx) tx, decltype(pingResultRx) rx)
+        : pingResultTx(std::move(tx)), pingResultRx(std::move(rx))
+    {
+    }
 };
 
 struct GameWorkerState {
@@ -105,8 +105,8 @@ struct ConnectionInfo {
     PunishReasons m_punishReasons{};
     bool m_authorizedModerator;
 
-
-    void startedAuth() {
+    void startedAuth()
+    {
         m_authenticating = true;
         m_triedAuthAt = asp::time::Instant::now();
     }
@@ -114,37 +114,44 @@ struct ConnectionInfo {
 
 struct GLOBED_DLL LockedConnInfo {
 public:
-    LockedConnInfo(asp::MutexGuard<std::optional<ConnectionInfo>, false>&& guard) : _guard(std::move(guard)) {}
-    LockedConnInfo(const LockedConnInfo&) = delete;
-    LockedConnInfo& operator=(const LockedConnInfo&) = delete;
-    LockedConnInfo(LockedConnInfo&&) = default;
-    LockedConnInfo& operator=(LockedConnInfo&&) = default;
+    LockedConnInfo(asp::MutexGuard<std::optional<ConnectionInfo>, false> &&guard) : _guard(std::move(guard)) {}
+    LockedConnInfo(const LockedConnInfo &) = delete;
+    LockedConnInfo &operator=(const LockedConnInfo &) = delete;
+    LockedConnInfo(LockedConnInfo &&) = default;
+    LockedConnInfo &operator=(LockedConnInfo &&) = default;
 
-    operator bool() const {
+    operator bool() const
+    {
         return _guard->has_value();
     }
 
-    ConnectionInfo& operator*() {
+    ConnectionInfo &operator*()
+    {
         this->check();
         return **_guard;
     }
 
-    ConnectionInfo* operator->() {
+    ConnectionInfo *operator->()
+    {
         this->check();
         return &**_guard;
     }
 
-    void unlock() {
+    void unlock()
+    {
         _guard.unlock();
     }
 
-    void relock() {
+    void relock()
+    {
         _guard.relock();
     }
 
-    void check() {
+    void check()
+    {
         GLOBED_DEBUG_ASSERT(_guard->has_value());
     }
+
 private:
     asp::MutexGuard<std::optional<ConnectionInfo>, false> _guard;
 };
@@ -154,7 +161,7 @@ public:
     NetworkManagerImpl();
     ~NetworkManagerImpl();
 
-    static NetworkManagerImpl& get();
+    static NetworkManagerImpl &get();
 
     void shutdown();
 
@@ -189,7 +196,7 @@ public:
 
     /// Returns the stored moderator password or an empty string if not connected or no password is stored
     std::string getStoredModPassword();
-    void storeModPassword(const std::string& pw);
+    void storeModPassword(const std::string &pw);
 
     /// Returns the tickrate to the connected game server, or 0 if not connected
     uint32_t getGameTickrate();
@@ -216,22 +223,22 @@ public:
     bool hasViewedFeaturedLevel();
     void setViewedFeaturedLevel();
 
-    void logQunetMessage(qn::log::Level level, const std::string& msg);
-    void logArcMessage(arc::LogLevel level, const std::string& msg);
+    void logQunetMessage(qn::log::Level level, const std::string &msg);
+    void logArcMessage(arc::LogLevel level, const std::string &msg);
 
     // Message sending functions
 
     // Central server
     void sendUpdateUserSettings();
     void sendRoomStateCheck();
-    void sendRequestRoomPlayers(const std::string& nameFilter);
-    void sendRequestGlobalPlayerList(const std::string& nameFilter);
+    void sendRequestRoomPlayers(const std::string &nameFilter);
+    void sendRequestGlobalPlayerList(const std::string &nameFilter);
     void sendRequestLevelList();
-    void sendRequestPlayerCounts(const std::vector<uint64_t>& sessions);
+    void sendRequestPlayerCounts(const std::vector<uint64_t> &sessions);
     void sendRequestPlayerCounts(std::span<const uint64_t> sessions);
     void sendRequestPlayerCounts(std::span<const SessionId> sessions);
     void sendRequestPlayerCounts(uint64_t session);
-    void sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings);
+    void sendCreateRoom(const std::string &name, uint32_t passcode, const RoomSettings &settings);
     void sendJoinRoom(uint32_t id, uint32_t passcode = 0);
     void sendJoinRoomByToken(uint64_t token);
     void sendLeaveRoom();
@@ -242,7 +249,7 @@ public:
     void sendUpdateTeam(uint16_t teamId, cocos2d::ccColor4B color);
     void sendGetTeamMembers();
     void sendRoomOwnerAction(RoomOwnerActionType type, int target = 0);
-    void sendUpdateRoomSettings(const RoomSettings& settings);
+    void sendUpdateRoomSettings(const RoomSettings &settings);
     void sendInvitePlayer(int32_t player);
     void sendUpdatePinnedLevel(uint64_t sid);
     void sendFetchCredits();
@@ -251,82 +258,69 @@ public:
     void sendDiscordLinkConfirm(int64_t id, bool confirm);
     void sendGetFeaturedList(uint32_t page);
     void sendGetFeaturedLevel();
-    void sendSendFeaturedLevel(
-        int32_t levelId,
-        const std::string& levelName,
-        int32_t authorId,
-        const std::string& authorName,
-        uint8_t rateTier,
-        const std::string& note,
-        bool queue
-    );
-    void sendNoticeReply(int32_t recipientId, const std::string& message);
+    void sendSendFeaturedLevel(int32_t levelId, const std::string &levelName, int32_t authorId,
+                               const std::string &authorName, uint8_t rateTier, const std::string &note, bool queue);
+    void sendNoticeReply(int32_t recipientId, const std::string &message);
 
-    void sendAdminNotice(const std::string& message, const std::string& user, int roomId, int levelId, bool canReply, bool showSender);
-    void sendAdminNoticeEveryone(const std::string& message);
-    void sendAdminLogin(const std::string& password);
-    void sendAdminKick(int32_t accountId, const std::string& message);
-    void sendAdminFetchUser(const std::string& query);
+    void sendAdminNotice(const std::string &message, const std::string &user, int roomId, int levelId, bool canReply,
+                         bool showSender);
+    void sendAdminNoticeEveryone(const std::string &message);
+    void sendAdminLogin(const std::string &password);
+    void sendAdminKick(int32_t accountId, const std::string &message);
+    void sendAdminFetchUser(const std::string &query);
     void sendAdminFetchMods();
     void sendAdminSetWhitelisted(int32_t accountId, bool whitelisted);
     void sendAdminCloseRoom(uint32_t roomId);
-    void sendAdminFetchLogs(const FetchLogsFilters& filters);
-    void sendAdminBan(int32_t accountId, const std::string& reason, int64_t expiresAt);
+    void sendAdminFetchLogs(const FetchLogsFilters &filters);
+    void sendAdminBan(int32_t accountId, const std::string &reason, int64_t expiresAt);
     void sendAdminUnban(int32_t accountId);
-    void sendAdminRoomBan(int32_t accountId, const std::string& reason, int64_t expiresAt);
+    void sendAdminRoomBan(int32_t accountId, const std::string &reason, int64_t expiresAt);
     void sendAdminRoomUnban(int32_t accountId);
-    void sendAdminMute(int32_t accountId, const std::string& reason, int64_t expiresAt);
+    void sendAdminMute(int32_t accountId, const std::string &reason, int64_t expiresAt);
     void sendAdminUnmute(int32_t accountId);
-    void sendAdminEditRoles(int32_t accountId, const std::vector<uint8_t>& roles);
-    void sendAdminSetPassword(int32_t accountId, const std::string& password);
-    void sendAdminUpdateUser(int32_t accountId, const std::string& username, int16_t cube, uint16_t color1, uint16_t color2, uint16_t glowColor);
+    void sendAdminEditRoles(int32_t accountId, const std::vector<uint8_t> &roles);
+    void sendAdminSetPassword(int32_t accountId, const std::string &password);
+    void sendAdminUpdateUser(int32_t accountId, const std::string &username, int16_t cube, uint16_t color1,
+                             uint16_t color2, uint16_t glowColor);
 
     // Both servers
     void sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab = false);
     void sendLeaveSession();
 
     // Game server
-    void sendPlayerState(
-        const PlayerState& state,
-        const std::vector<int>& dataRequests,
-        cocos2d::CCPoint cameraCenter,
-        float cameraRadius
-    );
-    void queueLevelScript(const std::vector<EmbeddedScript>& scripts);
-    void sendLevelScript(const std::vector<EmbeddedScript>& scripts);
-    void queueGameEvent(OutEvent&& event);
-    void sendVoiceData(const EncodedAudioFrame& frame);
+    void sendPlayerState(const PlayerState &state, const std::vector<int> &dataRequests, cocos2d::CCPoint cameraCenter,
+                         float cameraRadius);
+    void queueLevelScript(const std::vector<EmbeddedScript> &scripts);
+    void sendLevelScript(const std::vector<EmbeddedScript> &scripts);
+    void queueGameEvent(OutEvent &&event);
+    void sendVoiceData(const EncodedAudioFrame &frame);
     void sendQuickChat(uint32_t id);
-
 
     /// Listeners
 
     template <typename T>
     [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]
-    MessageListener<T> listen(ListenerFn<T> callback) {
+    MessageListener<T> listen(ListenerFn<T> callback)
+    {
         auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
-            delete static_cast<MessageListenerImpl<T>*>(ptr);
-        });
+        this->addListener(
+            typeid(T), listener, (void *)+[](void *ptr) { delete static_cast<MessageListenerImpl<T> *>(ptr); });
         return MessageListener<T>(listener);
     }
 
-    template <typename T>
-    MessageListenerImpl<T>* listenGlobal(ListenerFn<T> callback) {
+    template <typename T> MessageListenerImpl<T> *listenGlobal(ListenerFn<T> callback)
+    {
         auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
-            delete static_cast<MessageListenerImpl<T>*>(ptr);
-        });
+        this->addListener(
+            typeid(T), listener, (void *)+[](void *ptr) { delete static_cast<MessageListenerImpl<T> *>(ptr); });
         return listener;
     }
 
-    void addListener(const std::type_info& ty, void* listener, void* dtor);
-    void removeListener(const std::type_info& ty, void* listener);
+    void addListener(const std::type_info &ty, void *listener, void *dtor);
+    void removeListener(const std::type_info &ty, void *listener);
 
 private:
-    enum AuthKind {
-        Utoken, Argon, Plain
-    };
+    enum AuthKind { Utoken, Argon, Plain };
 
     std::shared_ptr<arc::Runtime> m_runtime;
     std::shared_ptr<qn::Connection> m_centralConn, m_gameConn;
@@ -344,27 +338,29 @@ private:
     std::atomic<bool> m_manualDisconnect{false};
 
     // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
-    asp::Mutex<std::unordered_map<std::type_index, std::vector<std::pair<void*, void*>>>, true> m_listeners;
+    asp::Mutex<std::unordered_map<std::type_index, std::vector<std::pair<void *, void *>>>, true> m_listeners;
 
     arc::Future<> asyncInit();
 
     LockedConnInfo connInfo() const;
 
-    Result<> onCentralDataReceived(CentralMessage::Reader& msg);
-    Result<> onGameDataReceived(GameMessage::Reader& msg);
+    Result<> onCentralDataReceived(CentralMessage::Reader &msg);
+    Result<> onGameDataReceived(GameMessage::Reader &msg);
 
     arc::Future<> threadWorkerLoop();
     arc::Future<> threadGameWorkerLoop();
-    void threadPingGameServers(LockedConnInfo& info);
-    void threadMaybeResendOwnData(LockedConnInfo& info);
+    void threadPingGameServers(LockedConnInfo &info);
+    void threadMaybeResendOwnData(LockedConnInfo &info);
     arc::Future<> threadTryAuth();
     arc::Future<> threadSetupLogger(bool central);
     void threadFlushLogger(bool central);
 
-    void sendCentralAuth(AuthKind kind, const std::string& token = "");
-    Result<> sendMessageToConnection(qn::Connection& conn, std::optional<ConnectionLogger>& logger, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed);
-    void sendToCentral(std23::function_ref<void(CentralMessage::Builder&)>&& func);
-    void sendToGame(std23::function_ref<void(GameMessage::Builder&)>&& func, bool reliable = true, bool uncompressed = false);
+    void sendCentralAuth(AuthKind kind, const std::string &token = "");
+    Result<> sendMessageToConnection(qn::Connection &conn, std::optional<ConnectionLogger> &logger,
+                                     capnp::MallocMessageBuilder &msg, bool reliable, bool uncompressed);
+    void sendToCentral(std23::function_ref<void(CentralMessage::Builder &)> &&func);
+    void sendToGame(std23::function_ref<void(GameMessage::Builder &)> &&func, bool reliable = true,
+                    bool uncompressed = false);
 
     // Returns the user token for the current central server
     std::optional<std::string> getUToken();
@@ -380,16 +376,17 @@ private:
     void onGameStateChanged(qn::ConnectionState state);
 
     void abortConnection(std::string reason, bool silent = false);
-    void handleSuccessfulLogin(LockedConnInfo& info);
+    void handleSuccessfulLogin(LockedConnInfo &info);
     void handleLoginFailed(schema::main::LoginFailedReason reason);
     void showDisconnectCause(bool reconnecting, bool wasConnected);
 
-    void joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, SessionId id, bool platformer, bool editorCollab);
+    void joinSessionWith(LockedConnInfo &info, std::string_view serverUrl, SessionId id, bool platformer,
+                         bool editorCollab);
     void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false, bool editorCollab = false);
     void sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab);
 
-    template <typename T>
-    void invokeListeners(T&& message) {
+    template <typename T> void invokeListeners(T &&message)
+    {
         auto listenersLock = m_listeners.lock();
         auto listeners = listenersLock->find(typeid(std::decay_t<T>));
 
@@ -397,8 +394,8 @@ private:
         bool hasThreadUnsafe = false;
 
         if (listeners != listenersLock->end()) {
-            for (auto& [listener, _] : listeners->second) {
-                auto impl = static_cast<MessageListenerImpl<T>*>(listener);
+            for (auto &[listener, _] : listeners->second) {
+                auto impl = static_cast<MessageListenerImpl<T> *>(listener);
 
                 if (!impl->isThreadSafe()) {
                     hasThreadUnsafe = true;
@@ -418,8 +415,8 @@ private:
     }
 
     /// Like `invokeListeners`, but does not check for thread safety and invokes the listeners directly.
-    template <typename T>
-    void invokeUnchecked(T&& message) {
+    template <typename T> void invokeUnchecked(T &&message)
+    {
         auto listenersLock = m_listeners.lock();
         auto listeners = listenersLock->find(typeid(T));
 
@@ -428,8 +425,8 @@ private:
             return;
         }
 
-        for (auto& [listener, _] : listeners->second) {
-            auto impl = static_cast<MessageListenerImpl<T>*>(listener);
+        for (auto &[listener, _] : listeners->second) {
+            auto impl = static_cast<MessageListenerImpl<T> *>(listener);
 
             if (impl->invoke(message) == ListenerResult::Stop) {
                 break;
@@ -438,4 +435,4 @@ private:
     }
 };
 
-}
+} // namespace globed

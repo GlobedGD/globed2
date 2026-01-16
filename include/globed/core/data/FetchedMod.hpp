@@ -11,4 +11,4 @@ struct FetchedMod {
     uint16_t glowColor;
 };
 
-}
+} // namespace globed

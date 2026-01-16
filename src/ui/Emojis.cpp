@@ -2,18 +2,20 @@
 
 namespace globed {
 
-std::optional<std::string_view> translateEmoji(std::string_view name) {
-    auto& map = getEmojiTranslationMap();
+std::optional<std::string_view> translateEmoji(std::string_view name)
+{
+    auto &map = getEmojiTranslationMap();
     auto it = map.find(name);
     if (it != map.end()) {
-        return std::string_view{(const char*)it->second.data(), it->second.size()};
+        return std::string_view{(const char *)it->second.data(), it->second.size()};
     }
 
     return std::nullopt;
 }
 
-void translateEmojiString(std::string& str) {
-    auto& map = getEmojiTranslationMap();
+void translateEmojiString(std::string &str)
+{
+    auto &map = getEmojiTranslationMap();
 
     auto it = str.begin();
 
@@ -40,8 +42,9 @@ void translateEmojiString(std::string& str) {
     }
 }
 
-bool containsEmoji(std::string_view str) {
-    auto& map = getEmojiTranslationMap();
+bool containsEmoji(std::string_view str)
+{
+    auto &map = getEmojiTranslationMap();
 
     auto it = str.begin();
     while (it != str.end()) {
@@ -70,15 +73,15 @@ bool containsEmoji(std::string_view str) {
 // Converter - taken from
 // https://github.com/EclipseMenu/EclipseMenu/blob/3a6094b5de6ca478d7c375f29375477a3869be78/src/modules/gui/cocos/nodes/FallbackBMFont.cpp#L58
 
-template <size_t N>
-struct EmojiToHexConverter {
+template <size_t N> struct EmojiToHexConverter {
     static constexpr size_t length = N - 1;
     static constexpr size_t modIdSize = sizeof(GEODE_MOD_ID) - 1;
 
     char32_t value[length]{};
     char filename[modIdSize + (length * 6 + 4)]{};
 
-    constexpr EmojiToHexConverter(char32_t const (&str)[N]) {
+    constexpr EmojiToHexConverter(char32_t const (&str)[N])
+    {
         std::copy_n(str, N - 1, value);
 
         constexpr char hex[] = "0123456789abcdef";
@@ -102,12 +105,17 @@ struct EmojiToHexConverter {
                 continue;
             }
 
-            if (c >= 0x10000) filename[index++] = hex[(c >> 16) & 0xF];
-            if (c >= 0x1000) filename[index++] = hex[(c >> 12) & 0xF];
-            if (c >= 0x100) filename[index++] = hex[(c >> 8) & 0xF];
-            if (c >= 0x10) filename[index++] = hex[(c >> 4) & 0xF];
+            if (c >= 0x10000)
+                filename[index++] = hex[(c >> 16) & 0xF];
+            if (c >= 0x1000)
+                filename[index++] = hex[(c >> 12) & 0xF];
+            if (c >= 0x100)
+                filename[index++] = hex[(c >> 8) & 0xF];
+            if (c >= 0x10)
+                filename[index++] = hex[(c >> 4) & 0xF];
             filename[index++] = hex[c & 0xF];
-            if (i < length - 1) filename[index++] = '-';
+            if (i < length - 1)
+                filename[index++] = '-';
         }
 
         // add the extension
@@ -118,14 +126,15 @@ struct EmojiToHexConverter {
     }
 };
 
-template <EmojiToHexConverter S>
-constexpr std::pair<std::u32string_view, const char*> operator""_emoji() {
-    return { std::u32string_view(S.value, S.length), S.filename };
+template <EmojiToHexConverter S> constexpr std::pair<std::u32string_view, const char *> operator""_emoji()
+{
+    return {std::u32string_view(S.value, S.length), S.filename};
 }
 
-const Label::EmojiMap* getEmojiMap() {
+const Label::EmojiMap *getEmojiMap()
+{
     static const Label::EmojiMap map = {
-// ## BEGIN CODEGEN 1
+        // ## BEGIN CODEGEN 1
         U"\U0001f1e8\U0001f1e6"_emoji,
         U"\U0001f1ec\U0001f1e7"_emoji,
         U"\U0001f1f5\U0001f1f1"_emoji,
@@ -415,423 +424,1636 @@ const Label::EmojiMap* getEmojiMap() {
         U"\U0000274c"_emoji,
         U"\U00002764"_emoji,
         U"\U00002b50"_emoji,
-// ## END CODEGEN 1
+        // ## END CODEGEN 1
     };
 
     return &map;
 }
 
-const std::unordered_map<std::string_view, std::u8string_view>& getEmojiTranslationMap() {
+const std::unordered_map<std::string_view, std::u8string_view> &getEmojiTranslationMap()
+{
     static const std::unordered_map<std::string_view, std::u8string_view> map = {
-// ## BEGIN CODEGEN 2
-        { "flag_ca", u8"\xf0\x9f\x87\xa8\xf0\x9f\x87\xa6", },
-        { "flag_gb", u8"\xf0\x9f\x87\xac\xf0\x9f\x87\xa7", },
-        { "flag_pl", u8"\xf0\x9f\x87\xb5\xf0\x9f\x87\xb1", },
-        { "flag_ua", u8"\xf0\x9f\x87\xba\xf0\x9f\x87\xa6", },
-        { "flag_us", u8"\xf0\x9f\x87\xba\xf0\x9f\x87\xb8", },
-        { "rainbow", u8"\xf0\x9f\x8c\x88", },
-        { "earth_americas", u8"\xf0\x9f\x8c\x8e", },
-        { "globe_with_meridians", u8"\xf0\x9f\x8c\x90", },
-        { "new_moon_with_face", u8"\xf0\x9f\x8c\x9a", },
-        { "new_moon_face", u8"\xf0\x9f\x8c\x9a", },
-        { "full_moon_with_face", u8"\xf0\x9f\x8c\x9d", },
-        { "sun_with_face", u8"\xf0\x9f\x8c\x9e", },
-        { "cactus", u8"\xf0\x9f\x8c\xb5", },
-        { "apple", u8"\xf0\x9f\x8d\x8e", },
-        { "red_apple", u8"\xf0\x9f\x8d\x8e", },
-        { "hamburger", u8"\xf0\x9f\x8d\x94", },
-        { "pizza", u8"\xf0\x9f\x8d\x95", },
-        { "ice_cream", u8"\xf0\x9f\x8d\xa8", },
-        { "doughnut", u8"\xf0\x9f\x8d\xa9", },
-        { "cake", u8"\xf0\x9f\x8d\xb0", },
-        { "shortcake", u8"\xf0\x9f\x8d\xb0", },
-        { "popcorn", u8"\xf0\x9f\x8d\xbf", },
-        { "ribbon", u8"\xf0\x9f\x8e\x80", },
-        { "gift", u8"\xf0\x9f\x8e\x81", },
-        { "wrapped_gift", u8"\xf0\x9f\x8e\x81", },
-        { "birthday", u8"\xf0\x9f\x8e\x82", },
-        { "birthday_cake", u8"\xf0\x9f\x8e\x82", },
-        { "jack_o_lantern", u8"\xf0\x9f\x8e\x83", },
-        { "christmas_tree", u8"\xf0\x9f\x8e\x84", },
-        { "santa", u8"\xf0\x9f\x8e\x85", },
-        { "santa_claus", u8"\xf0\x9f\x8e\x85", },
-        { "tada", u8"\xf0\x9f\x8e\x89", },
-        { "party_popper", u8"\xf0\x9f\x8e\x89", },
-        { "8ball", u8"\xf0\x9f\x8e\xb1", },
-        { "basketball", u8"\xf0\x9f\x8f\x80", },
-        { "person_running", u8"\xf0\x9f\x8f\x83", },
-        { "runner", u8"\xf0\x9f\x8f\x83", },
-        { "medal", u8"\xf0\x9f\x8f\x85", },
-        { "sports_medal", u8"\xf0\x9f\x8f\x85", },
-        { "trophy", u8"\xf0\x9f\x8f\x86", },
-        { "football", u8"\xf0\x9f\x8f\x88", },
-        { "person_golfing", u8"\xf0\x9f\x8f\x8c", },
-        { "golfer", u8"\xf0\x9f\x8f\x8c", },
-        { "hockey", u8"\xf0\x9f\x8f\x92", },
-        { "ice_hockey", u8"\xf0\x9f\x8f\x92", },
-        { "ping_pong", u8"\xf0\x9f\x8f\x93", },
-        { "table_tennis", u8"\xf0\x9f\x8f\x93", },
-        { "rainbow_flag", u8"\xf0\x9f\x8f\xb3\xe2\x80\x8d\xf0\x9f\x8c\x88", },
-        { "gay_pride_flag", u8"\xf0\x9f\x8f\xb3\xe2\x80\x8d\xf0\x9f\x8c\x88", },
-        { "transgender_flag", u8"\xf0\x9f\x8f\xb3\xe2\x80\x8d\xe2\x9a\xa7", },
-        { "pirate_flag", u8"\xf0\x9f\x8f\xb4\xe2\x80\x8d\xe2\x98\xa0", },
-        { "elephant", u8"\xf0\x9f\x90\x98", },
-        { "octopus", u8"\xf0\x9f\x90\x99", },
-        { "fish", u8"\xf0\x9f\x90\x9f", },
-        { "turtle", u8"\xf0\x9f\x90\xa2", },
-        { "hatching_chick", u8"\xf0\x9f\x90\xa3", },
-        { "cat", u8"\xf0\x9f\x90\xb1", },
-        { "cat_face", u8"\xf0\x9f\x90\xb1", },
-        { "whale", u8"\xf0\x9f\x90\xb3", },
-        { "horse", u8"\xf0\x9f\x90\xb4", },
-        { "horse_face", u8"\xf0\x9f\x90\xb4", },
-        { "dog", u8"\xf0\x9f\x90\xb6", },
-        { "dog_face", u8"\xf0\x9f\x90\xb6", },
-        { "pig", u8"\xf0\x9f\x90\xb7", },
-        { "pig_face", u8"\xf0\x9f\x90\xb7", },
-        { "frog", u8"\xf0\x9f\x90\xb8", },
-        { "eyes", u8"\xf0\x9f\x91\x80", },
-        { "point_up_2", u8"\xf0\x9f\x91\x86", },
-        { "point_down", u8"\xf0\x9f\x91\x87", },
-        { "point_left", u8"\xf0\x9f\x91\x88", },
-        { "point_right", u8"\xf0\x9f\x91\x89", },
-        { "punch", u8"\xf0\x9f\x91\x8a", },
-        { "oncoming_fist", u8"\xf0\x9f\x91\x8a", },
-        { "wave", u8"\xf0\x9f\x91\x8b", },
-        { "waving_hand", u8"\xf0\x9f\x91\x8b", },
-        { "ok_hand", u8"\xf0\x9f\x91\x8c", },
-        { "thumbsup", u8"\xf0\x9f\x91\x8d", },
-        { "+1", u8"\xf0\x9f\x91\x8d", },
-        { "thumbup", u8"\xf0\x9f\x91\x8d", },
-        { "thumbs_up", u8"\xf0\x9f\x91\x8d", },
-        { "thumbsdown", u8"\xf0\x9f\x91\x8e", },
-        { "-1", u8"\xf0\x9f\x91\x8e", },
-        { "thumbdown", u8"\xf0\x9f\x91\x8e", },
-        { "thumbs_down", u8"\xf0\x9f\x91\x8e", },
-        { "clap", u8"\xf0\x9f\x91\x8f", },
-        { "open_hands", u8"\xf0\x9f\x91\x90", },
-        { "crown", u8"\xf0\x9f\x91\x91", },
-        { "baby", u8"\xf0\x9f\x91\xb6", },
-        { "ghost", u8"\xf0\x9f\x91\xbb", },
-        { "alien", u8"\xf0\x9f\x91\xbd", },
-        { "imp", u8"\xf0\x9f\x91\xbf", },
-        { "gem", u8"\xf0\x9f\x92\x8e", },
-        { "gem_stone", u8"\xf0\x9f\x92\x8e", },
-        { "broken_heart", u8"\xf0\x9f\x92\x94", },
-        { "heartpulse", u8"\xf0\x9f\x92\x97", },
-        { "growing_heart", u8"\xf0\x9f\x92\x97", },
-        { "blue_heart", u8"\xf0\x9f\x92\x99", },
-        { "green_heart", u8"\xf0\x9f\x92\x9a", },
-        { "yellow_heart", u8"\xf0\x9f\x92\x9b", },
-        { "purple_heart", u8"\xf0\x9f\x92\x9c", },
-        { "gift_heart", u8"\xf0\x9f\x92\x9d", },
-        { "anger", u8"\xf0\x9f\x92\xa2", },
-        { "bomb", u8"\xf0\x9f\x92\xa3", },
-        { "boom", u8"\xf0\x9f\x92\xa5", },
-        { "collision", u8"\xf0\x9f\x92\xa5", },
-        { "muscle", u8"\xf0\x9f\x92\xaa", },
-        { "flexed_biceps", u8"\xf0\x9f\x92\xaa", },
-        { "100", u8"\xf0\x9f\x92\xaf", },
-        { "package", u8"\xf0\x9f\x93\xa6", },
-        { "mailbox", u8"\xf0\x9f\x93\xab", },
-        { "mailbox_with_mail", u8"\xf0\x9f\x93\xac", },
-        { "camera_with_flash", u8"\xf0\x9f\x93\xb8", },
-        { "twisted_rightwards_arrows", u8"\xf0\x9f\x94\x80", },
-        { "repeat", u8"\xf0\x9f\x94\x81", },
-        { "lock", u8"\xf0\x9f\x94\x92", },
-        { "locked", u8"\xf0\x9f\x94\x92", },
-        { "unlock", u8"\xf0\x9f\x94\x93", },
-        { "unlocked", u8"\xf0\x9f\x94\x93", },
-        { "bell", u8"\xf0\x9f\x94\x94", },
-        { "no_bell", u8"\xf0\x9f\x94\x95", },
-        { "end", u8"\xf0\x9f\x94\x9a", },
-        { "end_arrow", u8"\xf0\x9f\x94\x9a", },
-        { "fire", u8"\xf0\x9f\x94\xa5", },
-        { "flame", u8"\xf0\x9f\x94\xa5", },
-        { "hand_splayed", u8"\xf0\x9f\x96\x90", },
-        { "raised_hand_with_fingers_splayed", u8"\xf0\x9f\x96\x90", },
-        { "middle_finger", u8"\xf0\x9f\x96\x95", },
-        { "reversed_hand_with_middle_finger_extended", u8"\xf0\x9f\x96\x95", },
-        { "black_heart", u8"\xf0\x9f\x96\xa4", },
-        { "speaking_head", u8"\xf0\x9f\x97\xa3", },
-        { "speaking_head_in_silhouette", u8"\xf0\x9f\x97\xa3", },
-        { "moyai", u8"\xf0\x9f\x97\xbf", },
-        { "moai", u8"\xf0\x9f\x97\xbf", },
-        { "grinning", u8"\xf0\x9f\x98\x80", },
-        { "grinning_face", u8"\xf0\x9f\x98\x80", },
-        { "grin", u8"\xf0\x9f\x98\x81", },
-        { "joy", u8"\xf0\x9f\x98\x82", },
-        { "smiley", u8"\xf0\x9f\x98\x83", },
-        { "smile", u8"\xf0\x9f\x98\x84", },
-        { "sweat_smile", u8"\xf0\x9f\x98\x85", },
-        { "laughing", u8"\xf0\x9f\x98\x86", },
-        { "satisfied", u8"\xf0\x9f\x98\x86", },
-        { "innocent", u8"\xf0\x9f\x98\x87", },
-        { "smiling_imp", u8"\xf0\x9f\x98\x88", },
-        { "wink", u8"\xf0\x9f\x98\x89", },
-        { "winking_face", u8"\xf0\x9f\x98\x89", },
-        { "blush", u8"\xf0\x9f\x98\x8a", },
-        { "yum", u8"\xf0\x9f\x98\x8b", },
-        { "relieved", u8"\xf0\x9f\x98\x8c", },
-        { "relieved_face", u8"\xf0\x9f\x98\x8c", },
-        { "heart_eyes", u8"\xf0\x9f\x98\x8d", },
-        { "sunglasses", u8"\xf0\x9f\x98\x8e", },
-        { "smirk", u8"\xf0\x9f\x98\x8f", },
-        { "smirking_face", u8"\xf0\x9f\x98\x8f", },
-        { "neutral_face", u8"\xf0\x9f\x98\x90", },
-        { "expressionless", u8"\xf0\x9f\x98\x91", },
-        { "unamused", u8"\xf0\x9f\x98\x92", },
-        { "unamused_face", u8"\xf0\x9f\x98\x92", },
-        { "sweat", u8"\xf0\x9f\x98\x93", },
-        { "pensive", u8"\xf0\x9f\x98\x94", },
-        { "pensive_face", u8"\xf0\x9f\x98\x94", },
-        { "confused", u8"\xf0\x9f\x98\x95", },
-        { "confused_face", u8"\xf0\x9f\x98\x95", },
-        { "confounded", u8"\xf0\x9f\x98\x96", },
-        { "kissing", u8"\xf0\x9f\x98\x97", },
-        { "kissing_face", u8"\xf0\x9f\x98\x97", },
-        { "kissing_smiling_eyes", u8"\xf0\x9f\x98\x99", },
-        { "kissing_closed_eyes", u8"\xf0\x9f\x98\x9a", },
-        { "stuck_out_tongue_winking_eye", u8"\xf0\x9f\x98\x9c", },
-        { "disappointed", u8"\xf0\x9f\x98\x9e", },
-        { "worried", u8"\xf0\x9f\x98\x9f", },
-        { "worried_face", u8"\xf0\x9f\x98\x9f", },
-        { "angry", u8"\xf0\x9f\x98\xa0", },
-        { "angry_face", u8"\xf0\x9f\x98\xa0", },
-        { "rage", u8"\xf0\x9f\x98\xa1", },
-        { "pouting_face", u8"\xf0\x9f\x98\xa1", },
-        { "cry", u8"\xf0\x9f\x98\xa2", },
-        { "crying_face", u8"\xf0\x9f\x98\xa2", },
-        { "persevere", u8"\xf0\x9f\x98\xa3", },
-        { "triumph", u8"\xf0\x9f\x98\xa4", },
-        { "disappointed_relieved", u8"\xf0\x9f\x98\xa5", },
-        { "frowning", u8"\xf0\x9f\x98\xa6", },
-        { "anguished", u8"\xf0\x9f\x98\xa7", },
-        { "fearful", u8"\xf0\x9f\x98\xa8", },
-        { "fearful_face", u8"\xf0\x9f\x98\xa8", },
-        { "weary", u8"\xf0\x9f\x98\xa9", },
-        { "weary_face", u8"\xf0\x9f\x98\xa9", },
-        { "sleepy", u8"\xf0\x9f\x98\xaa", },
-        { "sleepy_face", u8"\xf0\x9f\x98\xaa", },
-        { "tired_face", u8"\xf0\x9f\x98\xab", },
-        { "grimacing", u8"\xf0\x9f\x98\xac", },
-        { "sob", u8"\xf0\x9f\x98\xad", },
-        { "face_exhaling", u8"\xf0\x9f\x98\xae\xe2\x80\x8d\xf0\x9f\x92\xa8", },
-        { "open_mouth", u8"\xf0\x9f\x98\xae", },
-        { "hushed", u8"\xf0\x9f\x98\xaf", },
-        { "hushed_face", u8"\xf0\x9f\x98\xaf", },
-        { "cold_sweat", u8"\xf0\x9f\x98\xb0", },
-        { "scream", u8"\xf0\x9f\x98\xb1", },
-        { "astonished", u8"\xf0\x9f\x98\xb2", },
-        { "flushed", u8"\xf0\x9f\x98\xb3", },
-        { "flushed_face", u8"\xf0\x9f\x98\xb3", },
-        { "sleeping", u8"\xf0\x9f\x98\xb4", },
-        { "sleeping_face", u8"\xf0\x9f\x98\xb4", },
-        { "face_with_spiral_eyes", u8"\xf0\x9f\x98\xb5\xe2\x80\x8d\xf0\x9f\x92\xab", },
-        { "dizzy_face", u8"\xf0\x9f\x98\xb5", },
-        { "face_in_clouds", u8"\xf0\x9f\x98\xb6\xe2\x80\x8d\xf0\x9f\x8c\xab", },
-        { "no_mouth", u8"\xf0\x9f\x98\xb6", },
-        { "mask", u8"\xf0\x9f\x98\xb7", },
-        { "smile_cat", u8"\xf0\x9f\x98\xb8", },
-        { "joy_cat", u8"\xf0\x9f\x98\xb9", },
-        { "smiley_cat", u8"\xf0\x9f\x98\xba", },
-        { "grinning_cat", u8"\xf0\x9f\x98\xba", },
-        { "heart_eyes_cat", u8"\xf0\x9f\x98\xbb", },
-        { "smirk_cat", u8"\xf0\x9f\x98\xbc", },
-        { "kissing_cat", u8"\xf0\x9f\x98\xbd", },
-        { "pouting_cat", u8"\xf0\x9f\x98\xbe", },
-        { "crying_cat_face", u8"\xf0\x9f\x98\xbf", },
-        { "crying_cat", u8"\xf0\x9f\x98\xbf", },
-        { "scream_cat", u8"\xf0\x9f\x99\x80", },
-        { "weary_cat", u8"\xf0\x9f\x99\x80", },
-        { "slight_frown", u8"\xf0\x9f\x99\x81", },
-        { "slightly_frowning_face", u8"\xf0\x9f\x99\x81", },
-        { "head_shaking_horizontally", u8"\xf0\x9f\x99\x82\xe2\x80\x8d\xe2\x86\x94", },
-        { "head_shaking_vertically", u8"\xf0\x9f\x99\x82\xe2\x80\x8d\xe2\x86\x95", },
-        { "slight_smile", u8"\xf0\x9f\x99\x82", },
-        { "slightly_smiling_face", u8"\xf0\x9f\x99\x82", },
-        { "upside_down", u8"\xf0\x9f\x99\x83", },
-        { "upside_down_face", u8"\xf0\x9f\x99\x83", },
-        { "rolling_eyes", u8"\xf0\x9f\x99\x84", },
-        { "face_with_rolling_eyes", u8"\xf0\x9f\x99\x84", },
-        { "person_gesturing_no", u8"\xf0\x9f\x99\x85", },
-        { "no_good", u8"\xf0\x9f\x99\x85", },
-        { "person_raising_hand", u8"\xf0\x9f\x99\x8b", },
-        { "raising_hand", u8"\xf0\x9f\x99\x8b", },
-        { "raised_hands", u8"\xf0\x9f\x99\x8c", },
-        { "raising_hands", u8"\xf0\x9f\x99\x8c", },
-        { "pray", u8"\xf0\x9f\x99\x8f", },
-        { "folded_hands", u8"\xf0\x9f\x99\x8f", },
-        { "red_car", u8"\xf0\x9f\x9a\x97", },
-        { "automobile", u8"\xf0\x9f\x9a\x97", },
-        { "blue_car", u8"\xf0\x9f\x9a\x99", },
-        { "tractor", u8"\xf0\x9f\x9a\x9c", },
-        { "door", u8"\xf0\x9f\x9a\xaa", },
-        { "no_entry_sign", u8"\xf0\x9f\x9a\xab", },
-        { "prohibited", u8"\xf0\x9f\x9a\xab", },
-        { "pinched_fingers", u8"\xf0\x9f\xa4\x8c", },
-        { "white_heart", u8"\xf0\x9f\xa4\x8d", },
-        { "brown_heart", u8"\xf0\x9f\xa4\x8e", },
-        { "pinching_hand", u8"\xf0\x9f\xa4\x8f", },
-        { "zipper_mouth", u8"\xf0\x9f\xa4\x90", },
-        { "zipper_mouth_face", u8"\xf0\x9f\xa4\x90", },
-        { "money_mouth", u8"\xf0\x9f\xa4\x91", },
-        { "money_mouth_face", u8"\xf0\x9f\xa4\x91", },
-        { "thermometer_face", u8"\xf0\x9f\xa4\x92", },
-        { "face_with_thermometer", u8"\xf0\x9f\xa4\x92", },
-        { "nerd", u8"\xf0\x9f\xa4\x93", },
-        { "nerd_face", u8"\xf0\x9f\xa4\x93", },
-        { "thinking", u8"\xf0\x9f\xa4\x94", },
-        { "thinking_face", u8"\xf0\x9f\xa4\x94", },
-        { "head_bandage", u8"\xf0\x9f\xa4\x95", },
-        { "face_with_head_bandage", u8"\xf0\x9f\xa4\x95", },
-        { "robot", u8"\xf0\x9f\xa4\x96", },
-        { "robot_face", u8"\xf0\x9f\xa4\x96", },
-        { "hugging", u8"\xf0\x9f\xa4\x97", },
-        { "hugging_face", u8"\xf0\x9f\xa4\x97", },
-        { "metal", u8"\xf0\x9f\xa4\x98", },
-        { "sign_of_the_horns", u8"\xf0\x9f\xa4\x98", },
-        { "call_me", u8"\xf0\x9f\xa4\x99", },
-        { "call_me_hand", u8"\xf0\x9f\xa4\x99", },
-        { "raised_back_of_hand", u8"\xf0\x9f\xa4\x9a", },
-        { "back_of_hand", u8"\xf0\x9f\xa4\x9a", },
-        { "left_facing_fist", u8"\xf0\x9f\xa4\x9b", },
-        { "left_fist", u8"\xf0\x9f\xa4\x9b", },
-        { "right_facing_fist", u8"\xf0\x9f\xa4\x9c", },
-        { "right_fist", u8"\xf0\x9f\xa4\x9c", },
-        { "handshake", u8"\xf0\x9f\xa4\x9d", },
-        { "shaking_hands", u8"\xf0\x9f\xa4\x9d", },
-        { "fingers_crossed", u8"\xf0\x9f\xa4\x9e", },
-        { "hand_with_index_and_middle_finger_crossed", u8"\xf0\x9f\xa4\x9e", },
-        { "love_you_gesture", u8"\xf0\x9f\xa4\x9f", },
-        { "cowboy", u8"\xf0\x9f\xa4\xa0", },
-        { "face_with_cowboy_hat", u8"\xf0\x9f\xa4\xa0", },
-        { "clown", u8"\xf0\x9f\xa4\xa1", },
-        { "clown_face", u8"\xf0\x9f\xa4\xa1", },
-        { "rofl", u8"\xf0\x9f\xa4\xa3", },
-        { "rolling_on_the_floor_laughing", u8"\xf0\x9f\xa4\xa3", },
-        { "drooling_face", u8"\xf0\x9f\xa4\xa4", },
-        { "drool", u8"\xf0\x9f\xa4\xa4", },
-        { "person_facepalming", u8"\xf0\x9f\xa4\xa6", },
-        { "face_palm", u8"\xf0\x9f\xa4\xa6", },
-        { "facepalm", u8"\xf0\x9f\xa4\xa6", },
-        { "sneezing_face", u8"\xf0\x9f\xa4\xa7", },
-        { "sneeze", u8"\xf0\x9f\xa4\xa7", },
-        { "face_with_raised_eyebrow", u8"\xf0\x9f\xa4\xa8", },
-        { "star_struck", u8"\xf0\x9f\xa4\xa9", },
-        { "zany_face", u8"\xf0\x9f\xa4\xaa", },
-        { "shushing_face", u8"\xf0\x9f\xa4\xab", },
-        { "face_with_symbols_over_mouth", u8"\xf0\x9f\xa4\xac", },
-        { "face_with_hand_over_mouth", u8"\xf0\x9f\xa4\xad", },
-        { "exploding_head", u8"\xf0\x9f\xa4\xaf", },
-        { "palms_up_together", u8"\xf0\x9f\xa4\xb2", },
-        { "mrs_claus", u8"\xf0\x9f\xa4\xb6", },
-        { "mother_christmas", u8"\xf0\x9f\xa4\xb6", },
-        { "person_shrugging", u8"\xf0\x9f\xa4\xb7", },
-        { "shrug", u8"\xf0\x9f\xa4\xb7", },
-        { "person_doing_cartwheel", u8"\xf0\x9f\xa4\xb8", },
-        { "cartwheel", u8"\xf0\x9f\xa4\xb8", },
-        { "wilted_rose", u8"\xf0\x9f\xa5\x80", },
-        { "wilted_flower", u8"\xf0\x9f\xa5\x80", },
-        { "champagne_glass", u8"\xf0\x9f\xa5\x82", },
-        { "clinking_glass", u8"\xf0\x9f\xa5\x82", },
-        { "first_place", u8"\xf0\x9f\xa5\x87", },
-        { "first_place_medal", u8"\xf0\x9f\xa5\x87", },
-        { "second_place", u8"\xf0\x9f\xa5\x88", },
-        { "second_place_medal", u8"\xf0\x9f\xa5\x88", },
-        { "third_place", u8"\xf0\x9f\xa5\x89", },
-        { "third_place_medal", u8"\xf0\x9f\xa5\x89", },
-        { "croissant", u8"\xf0\x9f\xa5\x90", },
-        { "bacon", u8"\xf0\x9f\xa5\x93", },
-        { "potato", u8"\xf0\x9f\xa5\x94", },
-        { "carrot", u8"\xf0\x9f\xa5\x95", },
-        { "french_bread", u8"\xf0\x9f\xa5\x96", },
-        { "baguette_bread", u8"\xf0\x9f\xa5\x96", },
-        { "egg", u8"\xf0\x9f\xa5\x9a", },
-        { "peanuts", u8"\xf0\x9f\xa5\x9c", },
-        { "shelled_peanut", u8"\xf0\x9f\xa5\x9c", },
-        { "pancakes", u8"\xf0\x9f\xa5\x9e", },
-        { "sandwich", u8"\xf0\x9f\xa5\xaa", },
-        { "smiling_face_with_3_hearts", u8"\xf0\x9f\xa5\xb0", },
-        { "yawning_face", u8"\xf0\x9f\xa5\xb1", },
-        { "smiling_face_with_tear", u8"\xf0\x9f\xa5\xb2", },
-        { "partying_face", u8"\xf0\x9f\xa5\xb3", },
-        { "woozy_face", u8"\xf0\x9f\xa5\xb4", },
-        { "cold_face", u8"\xf0\x9f\xa5\xb6", },
-        { "disguised_face", u8"\xf0\x9f\xa5\xb8", },
-        { "face_holding_back_tears", u8"\xf0\x9f\xa5\xb9", },
-        { "pleading_face", u8"\xf0\x9f\xa5\xba", },
-        { "turkey", u8"\xf0\x9f\xa6\x83", },
-        { "gorilla", u8"\xf0\x9f\xa6\x8d", },
-        { "hippopotamus", u8"\xf0\x9f\xa6\x9b", },
-        { "mammoth", u8"\xf0\x9f\xa6\xa3", },
-        { "orangutan", u8"\xf0\x9f\xa6\xa7", },
-        { "person_standing", u8"\xf0\x9f\xa7\x8d", },
-        { "deaf_person", u8"\xf0\x9f\xa7\x8f", },
-        { "face_with_monocle", u8"\xf0\x9f\xa7\x90", },
-        { "orange_heart", u8"\xf0\x9f\xa7\xa1", },
-        { "billed_cap", u8"\xf0\x9f\xa7\xa2", },
-        { "bricks", u8"\xf0\x9f\xa7\xb1", },
-        { "brick", u8"\xf0\x9f\xa7\xb1", },
-        { "magnet", u8"\xf0\x9f\xa7\xb2", },
-        { "light_blue_heart", u8"\xf0\x9f\xa9\xb5", },
-        { "grey_heart", u8"\xf0\x9f\xa9\xb6", },
-        { "pink_heart", u8"\xf0\x9f\xa9\xb7", },
-        { "ringed_planet", u8"\xf0\x9f\xaa\x90", },
-        { "ladder", u8"\xf0\x9f\xaa\x9c", },
-        { "melting_face", u8"\xf0\x9f\xab\xa0", },
-        { "saluting_face", u8"\xf0\x9f\xab\xa1", },
-        { "face_with_open_eyes_and_hand_over_mouth", u8"\xf0\x9f\xab\xa2", },
-        { "face_with_peeking_eye", u8"\xf0\x9f\xab\xa3", },
-        { "face_with_diagonal_mouth", u8"\xf0\x9f\xab\xa4", },
-        { "face_with_bags_under_eyes", u8"\xf0\x9f\xab\xa9", },
-        { "exhausted_face", u8"\xf0\x9f\xab\xa9", },
-        { "exhausted", u8"\xf0\x9f\xab\xa9", },
-        { "hand_with_index_finger_and_thumb_crossed", u8"\xf0\x9f\xab\xb0", },
-        { "rightwards_hand", u8"\xf0\x9f\xab\xb1", },
-        { "leftwards_hand", u8"\xf0\x9f\xab\xb2", },
-        { "palm_down_hand", u8"\xf0\x9f\xab\xb3", },
-        { "palm_up_hand", u8"\xf0\x9f\xab\xb4", },
-        { "index_pointing_at_the_viewer", u8"\xf0\x9f\xab\xb5", },
-        { "heart_hands", u8"\xf0\x9f\xab\xb6", },
-        { "leftwards_pushing_hand", u8"\xf0\x9f\xab\xb7", },
-        { "rightwards_pushing_hand", u8"\xf0\x9f\xab\xb8", },
-        { "bangbang", u8"\xe2\x80\xbc", },
-        { "interrobang", u8"\xe2\x81\x89", },
-        { "point_up", u8"\xe2\x98\x9d", },
-        { "skull_crossbones", u8"\xe2\x98\xa0", },
-        { "skull_and_crossbones", u8"\xe2\x98\xa0", },
-        { "frowning2", u8"\xe2\x98\xb9", },
-        { "white_frowning_face", u8"\xe2\x98\xb9", },
-        { "frowning_face", u8"\xe2\x98\xb9", },
-        { "relaxed", u8"\xe2\x98\xba", },
-        { "smiling_face", u8"\xe2\x98\xba", },
-        { "warning", u8"\xe2\x9a\xa0", },
-        { "zap", u8"\xe2\x9a\xa1", },
-        { "high_voltage", u8"\xe2\x9a\xa1", },
-        { "soccer", u8"\xe2\x9a\xbd", },
-        { "soccer_ball", u8"\xe2\x9a\xbd", },
-        { "actual_football", u8"\xe2\x9a\xbd", },
-        { "baseball", u8"\xe2\x9a\xbe", },
-        { "snowman", u8"\xe2\x9b\x84", },
-        { "pick", u8"\xe2\x9b\x8f", },
-        { "white_check_mark", u8"\xe2\x9c\x85", },
-        { "fist", u8"\xe2\x9c\x8a", },
-        { "raised_fist", u8"\xe2\x9c\x8a", },
-        { "raised_hand", u8"\xe2\x9c\x8b", },
-        { "v", u8"\xe2\x9c\x8c", },
-        { "victory_hand", u8"\xe2\x9c\x8c", },
-        { "writing_hand", u8"\xe2\x9c\x8d", },
-        { "sparkles", u8"\xe2\x9c\xa8", },
-        { "x", u8"\xe2\x9d\x8c", },
-        { "cross_mark", u8"\xe2\x9d\x8c", },
-        { "heart", u8"\xe2\x9d\xa4", },
-        { "red_heart", u8"\xe2\x9d\xa4", },
-        { "star", u8"\xe2\xad\x90", },
-// ## END CODEGEN 2
+        // ## BEGIN CODEGEN 2
+        {
+            "flag_ca",
+            u8"\xf0\x9f\x87\xa8\xf0\x9f\x87\xa6",
+        },
+        {
+            "flag_gb",
+            u8"\xf0\x9f\x87\xac\xf0\x9f\x87\xa7",
+        },
+        {
+            "flag_pl",
+            u8"\xf0\x9f\x87\xb5\xf0\x9f\x87\xb1",
+        },
+        {
+            "flag_ua",
+            u8"\xf0\x9f\x87\xba\xf0\x9f\x87\xa6",
+        },
+        {
+            "flag_us",
+            u8"\xf0\x9f\x87\xba\xf0\x9f\x87\xb8",
+        },
+        {
+            "rainbow",
+            u8"\xf0\x9f\x8c\x88",
+        },
+        {
+            "earth_americas",
+            u8"\xf0\x9f\x8c\x8e",
+        },
+        {
+            "globe_with_meridians",
+            u8"\xf0\x9f\x8c\x90",
+        },
+        {
+            "new_moon_with_face",
+            u8"\xf0\x9f\x8c\x9a",
+        },
+        {
+            "new_moon_face",
+            u8"\xf0\x9f\x8c\x9a",
+        },
+        {
+            "full_moon_with_face",
+            u8"\xf0\x9f\x8c\x9d",
+        },
+        {
+            "sun_with_face",
+            u8"\xf0\x9f\x8c\x9e",
+        },
+        {
+            "cactus",
+            u8"\xf0\x9f\x8c\xb5",
+        },
+        {
+            "apple",
+            u8"\xf0\x9f\x8d\x8e",
+        },
+        {
+            "red_apple",
+            u8"\xf0\x9f\x8d\x8e",
+        },
+        {
+            "hamburger",
+            u8"\xf0\x9f\x8d\x94",
+        },
+        {
+            "pizza",
+            u8"\xf0\x9f\x8d\x95",
+        },
+        {
+            "ice_cream",
+            u8"\xf0\x9f\x8d\xa8",
+        },
+        {
+            "doughnut",
+            u8"\xf0\x9f\x8d\xa9",
+        },
+        {
+            "cake",
+            u8"\xf0\x9f\x8d\xb0",
+        },
+        {
+            "shortcake",
+            u8"\xf0\x9f\x8d\xb0",
+        },
+        {
+            "popcorn",
+            u8"\xf0\x9f\x8d\xbf",
+        },
+        {
+            "ribbon",
+            u8"\xf0\x9f\x8e\x80",
+        },
+        {
+            "gift",
+            u8"\xf0\x9f\x8e\x81",
+        },
+        {
+            "wrapped_gift",
+            u8"\xf0\x9f\x8e\x81",
+        },
+        {
+            "birthday",
+            u8"\xf0\x9f\x8e\x82",
+        },
+        {
+            "birthday_cake",
+            u8"\xf0\x9f\x8e\x82",
+        },
+        {
+            "jack_o_lantern",
+            u8"\xf0\x9f\x8e\x83",
+        },
+        {
+            "christmas_tree",
+            u8"\xf0\x9f\x8e\x84",
+        },
+        {
+            "santa",
+            u8"\xf0\x9f\x8e\x85",
+        },
+        {
+            "santa_claus",
+            u8"\xf0\x9f\x8e\x85",
+        },
+        {
+            "tada",
+            u8"\xf0\x9f\x8e\x89",
+        },
+        {
+            "party_popper",
+            u8"\xf0\x9f\x8e\x89",
+        },
+        {
+            "8ball",
+            u8"\xf0\x9f\x8e\xb1",
+        },
+        {
+            "basketball",
+            u8"\xf0\x9f\x8f\x80",
+        },
+        {
+            "person_running",
+            u8"\xf0\x9f\x8f\x83",
+        },
+        {
+            "runner",
+            u8"\xf0\x9f\x8f\x83",
+        },
+        {
+            "medal",
+            u8"\xf0\x9f\x8f\x85",
+        },
+        {
+            "sports_medal",
+            u8"\xf0\x9f\x8f\x85",
+        },
+        {
+            "trophy",
+            u8"\xf0\x9f\x8f\x86",
+        },
+        {
+            "football",
+            u8"\xf0\x9f\x8f\x88",
+        },
+        {
+            "person_golfing",
+            u8"\xf0\x9f\x8f\x8c",
+        },
+        {
+            "golfer",
+            u8"\xf0\x9f\x8f\x8c",
+        },
+        {
+            "hockey",
+            u8"\xf0\x9f\x8f\x92",
+        },
+        {
+            "ice_hockey",
+            u8"\xf0\x9f\x8f\x92",
+        },
+        {
+            "ping_pong",
+            u8"\xf0\x9f\x8f\x93",
+        },
+        {
+            "table_tennis",
+            u8"\xf0\x9f\x8f\x93",
+        },
+        {
+            "rainbow_flag",
+            u8"\xf0\x9f\x8f\xb3\xe2\x80\x8d\xf0\x9f\x8c\x88",
+        },
+        {
+            "gay_pride_flag",
+            u8"\xf0\x9f\x8f\xb3\xe2\x80\x8d\xf0\x9f\x8c\x88",
+        },
+        {
+            "transgender_flag",
+            u8"\xf0\x9f\x8f\xb3\xe2\x80\x8d\xe2\x9a\xa7",
+        },
+        {
+            "pirate_flag",
+            u8"\xf0\x9f\x8f\xb4\xe2\x80\x8d\xe2\x98\xa0",
+        },
+        {
+            "elephant",
+            u8"\xf0\x9f\x90\x98",
+        },
+        {
+            "octopus",
+            u8"\xf0\x9f\x90\x99",
+        },
+        {
+            "fish",
+            u8"\xf0\x9f\x90\x9f",
+        },
+        {
+            "turtle",
+            u8"\xf0\x9f\x90\xa2",
+        },
+        {
+            "hatching_chick",
+            u8"\xf0\x9f\x90\xa3",
+        },
+        {
+            "cat",
+            u8"\xf0\x9f\x90\xb1",
+        },
+        {
+            "cat_face",
+            u8"\xf0\x9f\x90\xb1",
+        },
+        {
+            "whale",
+            u8"\xf0\x9f\x90\xb3",
+        },
+        {
+            "horse",
+            u8"\xf0\x9f\x90\xb4",
+        },
+        {
+            "horse_face",
+            u8"\xf0\x9f\x90\xb4",
+        },
+        {
+            "dog",
+            u8"\xf0\x9f\x90\xb6",
+        },
+        {
+            "dog_face",
+            u8"\xf0\x9f\x90\xb6",
+        },
+        {
+            "pig",
+            u8"\xf0\x9f\x90\xb7",
+        },
+        {
+            "pig_face",
+            u8"\xf0\x9f\x90\xb7",
+        },
+        {
+            "frog",
+            u8"\xf0\x9f\x90\xb8",
+        },
+        {
+            "eyes",
+            u8"\xf0\x9f\x91\x80",
+        },
+        {
+            "point_up_2",
+            u8"\xf0\x9f\x91\x86",
+        },
+        {
+            "point_down",
+            u8"\xf0\x9f\x91\x87",
+        },
+        {
+            "point_left",
+            u8"\xf0\x9f\x91\x88",
+        },
+        {
+            "point_right",
+            u8"\xf0\x9f\x91\x89",
+        },
+        {
+            "punch",
+            u8"\xf0\x9f\x91\x8a",
+        },
+        {
+            "oncoming_fist",
+            u8"\xf0\x9f\x91\x8a",
+        },
+        {
+            "wave",
+            u8"\xf0\x9f\x91\x8b",
+        },
+        {
+            "waving_hand",
+            u8"\xf0\x9f\x91\x8b",
+        },
+        {
+            "ok_hand",
+            u8"\xf0\x9f\x91\x8c",
+        },
+        {
+            "thumbsup",
+            u8"\xf0\x9f\x91\x8d",
+        },
+        {
+            "+1",
+            u8"\xf0\x9f\x91\x8d",
+        },
+        {
+            "thumbup",
+            u8"\xf0\x9f\x91\x8d",
+        },
+        {
+            "thumbs_up",
+            u8"\xf0\x9f\x91\x8d",
+        },
+        {
+            "thumbsdown",
+            u8"\xf0\x9f\x91\x8e",
+        },
+        {
+            "-1",
+            u8"\xf0\x9f\x91\x8e",
+        },
+        {
+            "thumbdown",
+            u8"\xf0\x9f\x91\x8e",
+        },
+        {
+            "thumbs_down",
+            u8"\xf0\x9f\x91\x8e",
+        },
+        {
+            "clap",
+            u8"\xf0\x9f\x91\x8f",
+        },
+        {
+            "open_hands",
+            u8"\xf0\x9f\x91\x90",
+        },
+        {
+            "crown",
+            u8"\xf0\x9f\x91\x91",
+        },
+        {
+            "baby",
+            u8"\xf0\x9f\x91\xb6",
+        },
+        {
+            "ghost",
+            u8"\xf0\x9f\x91\xbb",
+        },
+        {
+            "alien",
+            u8"\xf0\x9f\x91\xbd",
+        },
+        {
+            "imp",
+            u8"\xf0\x9f\x91\xbf",
+        },
+        {
+            "gem",
+            u8"\xf0\x9f\x92\x8e",
+        },
+        {
+            "gem_stone",
+            u8"\xf0\x9f\x92\x8e",
+        },
+        {
+            "broken_heart",
+            u8"\xf0\x9f\x92\x94",
+        },
+        {
+            "heartpulse",
+            u8"\xf0\x9f\x92\x97",
+        },
+        {
+            "growing_heart",
+            u8"\xf0\x9f\x92\x97",
+        },
+        {
+            "blue_heart",
+            u8"\xf0\x9f\x92\x99",
+        },
+        {
+            "green_heart",
+            u8"\xf0\x9f\x92\x9a",
+        },
+        {
+            "yellow_heart",
+            u8"\xf0\x9f\x92\x9b",
+        },
+        {
+            "purple_heart",
+            u8"\xf0\x9f\x92\x9c",
+        },
+        {
+            "gift_heart",
+            u8"\xf0\x9f\x92\x9d",
+        },
+        {
+            "anger",
+            u8"\xf0\x9f\x92\xa2",
+        },
+        {
+            "bomb",
+            u8"\xf0\x9f\x92\xa3",
+        },
+        {
+            "boom",
+            u8"\xf0\x9f\x92\xa5",
+        },
+        {
+            "collision",
+            u8"\xf0\x9f\x92\xa5",
+        },
+        {
+            "muscle",
+            u8"\xf0\x9f\x92\xaa",
+        },
+        {
+            "flexed_biceps",
+            u8"\xf0\x9f\x92\xaa",
+        },
+        {
+            "100",
+            u8"\xf0\x9f\x92\xaf",
+        },
+        {
+            "package",
+            u8"\xf0\x9f\x93\xa6",
+        },
+        {
+            "mailbox",
+            u8"\xf0\x9f\x93\xab",
+        },
+        {
+            "mailbox_with_mail",
+            u8"\xf0\x9f\x93\xac",
+        },
+        {
+            "camera_with_flash",
+            u8"\xf0\x9f\x93\xb8",
+        },
+        {
+            "twisted_rightwards_arrows",
+            u8"\xf0\x9f\x94\x80",
+        },
+        {
+            "repeat",
+            u8"\xf0\x9f\x94\x81",
+        },
+        {
+            "lock",
+            u8"\xf0\x9f\x94\x92",
+        },
+        {
+            "locked",
+            u8"\xf0\x9f\x94\x92",
+        },
+        {
+            "unlock",
+            u8"\xf0\x9f\x94\x93",
+        },
+        {
+            "unlocked",
+            u8"\xf0\x9f\x94\x93",
+        },
+        {
+            "bell",
+            u8"\xf0\x9f\x94\x94",
+        },
+        {
+            "no_bell",
+            u8"\xf0\x9f\x94\x95",
+        },
+        {
+            "end",
+            u8"\xf0\x9f\x94\x9a",
+        },
+        {
+            "end_arrow",
+            u8"\xf0\x9f\x94\x9a",
+        },
+        {
+            "fire",
+            u8"\xf0\x9f\x94\xa5",
+        },
+        {
+            "flame",
+            u8"\xf0\x9f\x94\xa5",
+        },
+        {
+            "hand_splayed",
+            u8"\xf0\x9f\x96\x90",
+        },
+        {
+            "raised_hand_with_fingers_splayed",
+            u8"\xf0\x9f\x96\x90",
+        },
+        {
+            "middle_finger",
+            u8"\xf0\x9f\x96\x95",
+        },
+        {
+            "reversed_hand_with_middle_finger_extended",
+            u8"\xf0\x9f\x96\x95",
+        },
+        {
+            "black_heart",
+            u8"\xf0\x9f\x96\xa4",
+        },
+        {
+            "speaking_head",
+            u8"\xf0\x9f\x97\xa3",
+        },
+        {
+            "speaking_head_in_silhouette",
+            u8"\xf0\x9f\x97\xa3",
+        },
+        {
+            "moyai",
+            u8"\xf0\x9f\x97\xbf",
+        },
+        {
+            "moai",
+            u8"\xf0\x9f\x97\xbf",
+        },
+        {
+            "grinning",
+            u8"\xf0\x9f\x98\x80",
+        },
+        {
+            "grinning_face",
+            u8"\xf0\x9f\x98\x80",
+        },
+        {
+            "grin",
+            u8"\xf0\x9f\x98\x81",
+        },
+        {
+            "joy",
+            u8"\xf0\x9f\x98\x82",
+        },
+        {
+            "smiley",
+            u8"\xf0\x9f\x98\x83",
+        },
+        {
+            "smile",
+            u8"\xf0\x9f\x98\x84",
+        },
+        {
+            "sweat_smile",
+            u8"\xf0\x9f\x98\x85",
+        },
+        {
+            "laughing",
+            u8"\xf0\x9f\x98\x86",
+        },
+        {
+            "satisfied",
+            u8"\xf0\x9f\x98\x86",
+        },
+        {
+            "innocent",
+            u8"\xf0\x9f\x98\x87",
+        },
+        {
+            "smiling_imp",
+            u8"\xf0\x9f\x98\x88",
+        },
+        {
+            "wink",
+            u8"\xf0\x9f\x98\x89",
+        },
+        {
+            "winking_face",
+            u8"\xf0\x9f\x98\x89",
+        },
+        {
+            "blush",
+            u8"\xf0\x9f\x98\x8a",
+        },
+        {
+            "yum",
+            u8"\xf0\x9f\x98\x8b",
+        },
+        {
+            "relieved",
+            u8"\xf0\x9f\x98\x8c",
+        },
+        {
+            "relieved_face",
+            u8"\xf0\x9f\x98\x8c",
+        },
+        {
+            "heart_eyes",
+            u8"\xf0\x9f\x98\x8d",
+        },
+        {
+            "sunglasses",
+            u8"\xf0\x9f\x98\x8e",
+        },
+        {
+            "smirk",
+            u8"\xf0\x9f\x98\x8f",
+        },
+        {
+            "smirking_face",
+            u8"\xf0\x9f\x98\x8f",
+        },
+        {
+            "neutral_face",
+            u8"\xf0\x9f\x98\x90",
+        },
+        {
+            "expressionless",
+            u8"\xf0\x9f\x98\x91",
+        },
+        {
+            "unamused",
+            u8"\xf0\x9f\x98\x92",
+        },
+        {
+            "unamused_face",
+            u8"\xf0\x9f\x98\x92",
+        },
+        {
+            "sweat",
+            u8"\xf0\x9f\x98\x93",
+        },
+        {
+            "pensive",
+            u8"\xf0\x9f\x98\x94",
+        },
+        {
+            "pensive_face",
+            u8"\xf0\x9f\x98\x94",
+        },
+        {
+            "confused",
+            u8"\xf0\x9f\x98\x95",
+        },
+        {
+            "confused_face",
+            u8"\xf0\x9f\x98\x95",
+        },
+        {
+            "confounded",
+            u8"\xf0\x9f\x98\x96",
+        },
+        {
+            "kissing",
+            u8"\xf0\x9f\x98\x97",
+        },
+        {
+            "kissing_face",
+            u8"\xf0\x9f\x98\x97",
+        },
+        {
+            "kissing_smiling_eyes",
+            u8"\xf0\x9f\x98\x99",
+        },
+        {
+            "kissing_closed_eyes",
+            u8"\xf0\x9f\x98\x9a",
+        },
+        {
+            "stuck_out_tongue_winking_eye",
+            u8"\xf0\x9f\x98\x9c",
+        },
+        {
+            "disappointed",
+            u8"\xf0\x9f\x98\x9e",
+        },
+        {
+            "worried",
+            u8"\xf0\x9f\x98\x9f",
+        },
+        {
+            "worried_face",
+            u8"\xf0\x9f\x98\x9f",
+        },
+        {
+            "angry",
+            u8"\xf0\x9f\x98\xa0",
+        },
+        {
+            "angry_face",
+            u8"\xf0\x9f\x98\xa0",
+        },
+        {
+            "rage",
+            u8"\xf0\x9f\x98\xa1",
+        },
+        {
+            "pouting_face",
+            u8"\xf0\x9f\x98\xa1",
+        },
+        {
+            "cry",
+            u8"\xf0\x9f\x98\xa2",
+        },
+        {
+            "crying_face",
+            u8"\xf0\x9f\x98\xa2",
+        },
+        {
+            "persevere",
+            u8"\xf0\x9f\x98\xa3",
+        },
+        {
+            "triumph",
+            u8"\xf0\x9f\x98\xa4",
+        },
+        {
+            "disappointed_relieved",
+            u8"\xf0\x9f\x98\xa5",
+        },
+        {
+            "frowning",
+            u8"\xf0\x9f\x98\xa6",
+        },
+        {
+            "anguished",
+            u8"\xf0\x9f\x98\xa7",
+        },
+        {
+            "fearful",
+            u8"\xf0\x9f\x98\xa8",
+        },
+        {
+            "fearful_face",
+            u8"\xf0\x9f\x98\xa8",
+        },
+        {
+            "weary",
+            u8"\xf0\x9f\x98\xa9",
+        },
+        {
+            "weary_face",
+            u8"\xf0\x9f\x98\xa9",
+        },
+        {
+            "sleepy",
+            u8"\xf0\x9f\x98\xaa",
+        },
+        {
+            "sleepy_face",
+            u8"\xf0\x9f\x98\xaa",
+        },
+        {
+            "tired_face",
+            u8"\xf0\x9f\x98\xab",
+        },
+        {
+            "grimacing",
+            u8"\xf0\x9f\x98\xac",
+        },
+        {
+            "sob",
+            u8"\xf0\x9f\x98\xad",
+        },
+        {
+            "face_exhaling",
+            u8"\xf0\x9f\x98\xae\xe2\x80\x8d\xf0\x9f\x92\xa8",
+        },
+        {
+            "open_mouth",
+            u8"\xf0\x9f\x98\xae",
+        },
+        {
+            "hushed",
+            u8"\xf0\x9f\x98\xaf",
+        },
+        {
+            "hushed_face",
+            u8"\xf0\x9f\x98\xaf",
+        },
+        {
+            "cold_sweat",
+            u8"\xf0\x9f\x98\xb0",
+        },
+        {
+            "scream",
+            u8"\xf0\x9f\x98\xb1",
+        },
+        {
+            "astonished",
+            u8"\xf0\x9f\x98\xb2",
+        },
+        {
+            "flushed",
+            u8"\xf0\x9f\x98\xb3",
+        },
+        {
+            "flushed_face",
+            u8"\xf0\x9f\x98\xb3",
+        },
+        {
+            "sleeping",
+            u8"\xf0\x9f\x98\xb4",
+        },
+        {
+            "sleeping_face",
+            u8"\xf0\x9f\x98\xb4",
+        },
+        {
+            "face_with_spiral_eyes",
+            u8"\xf0\x9f\x98\xb5\xe2\x80\x8d\xf0\x9f\x92\xab",
+        },
+        {
+            "dizzy_face",
+            u8"\xf0\x9f\x98\xb5",
+        },
+        {
+            "face_in_clouds",
+            u8"\xf0\x9f\x98\xb6\xe2\x80\x8d\xf0\x9f\x8c\xab",
+        },
+        {
+            "no_mouth",
+            u8"\xf0\x9f\x98\xb6",
+        },
+        {
+            "mask",
+            u8"\xf0\x9f\x98\xb7",
+        },
+        {
+            "smile_cat",
+            u8"\xf0\x9f\x98\xb8",
+        },
+        {
+            "joy_cat",
+            u8"\xf0\x9f\x98\xb9",
+        },
+        {
+            "smiley_cat",
+            u8"\xf0\x9f\x98\xba",
+        },
+        {
+            "grinning_cat",
+            u8"\xf0\x9f\x98\xba",
+        },
+        {
+            "heart_eyes_cat",
+            u8"\xf0\x9f\x98\xbb",
+        },
+        {
+            "smirk_cat",
+            u8"\xf0\x9f\x98\xbc",
+        },
+        {
+            "kissing_cat",
+            u8"\xf0\x9f\x98\xbd",
+        },
+        {
+            "pouting_cat",
+            u8"\xf0\x9f\x98\xbe",
+        },
+        {
+            "crying_cat_face",
+            u8"\xf0\x9f\x98\xbf",
+        },
+        {
+            "crying_cat",
+            u8"\xf0\x9f\x98\xbf",
+        },
+        {
+            "scream_cat",
+            u8"\xf0\x9f\x99\x80",
+        },
+        {
+            "weary_cat",
+            u8"\xf0\x9f\x99\x80",
+        },
+        {
+            "slight_frown",
+            u8"\xf0\x9f\x99\x81",
+        },
+        {
+            "slightly_frowning_face",
+            u8"\xf0\x9f\x99\x81",
+        },
+        {
+            "head_shaking_horizontally",
+            u8"\xf0\x9f\x99\x82\xe2\x80\x8d\xe2\x86\x94",
+        },
+        {
+            "head_shaking_vertically",
+            u8"\xf0\x9f\x99\x82\xe2\x80\x8d\xe2\x86\x95",
+        },
+        {
+            "slight_smile",
+            u8"\xf0\x9f\x99\x82",
+        },
+        {
+            "slightly_smiling_face",
+            u8"\xf0\x9f\x99\x82",
+        },
+        {
+            "upside_down",
+            u8"\xf0\x9f\x99\x83",
+        },
+        {
+            "upside_down_face",
+            u8"\xf0\x9f\x99\x83",
+        },
+        {
+            "rolling_eyes",
+            u8"\xf0\x9f\x99\x84",
+        },
+        {
+            "face_with_rolling_eyes",
+            u8"\xf0\x9f\x99\x84",
+        },
+        {
+            "person_gesturing_no",
+            u8"\xf0\x9f\x99\x85",
+        },
+        {
+            "no_good",
+            u8"\xf0\x9f\x99\x85",
+        },
+        {
+            "person_raising_hand",
+            u8"\xf0\x9f\x99\x8b",
+        },
+        {
+            "raising_hand",
+            u8"\xf0\x9f\x99\x8b",
+        },
+        {
+            "raised_hands",
+            u8"\xf0\x9f\x99\x8c",
+        },
+        {
+            "raising_hands",
+            u8"\xf0\x9f\x99\x8c",
+        },
+        {
+            "pray",
+            u8"\xf0\x9f\x99\x8f",
+        },
+        {
+            "folded_hands",
+            u8"\xf0\x9f\x99\x8f",
+        },
+        {
+            "red_car",
+            u8"\xf0\x9f\x9a\x97",
+        },
+        {
+            "automobile",
+            u8"\xf0\x9f\x9a\x97",
+        },
+        {
+            "blue_car",
+            u8"\xf0\x9f\x9a\x99",
+        },
+        {
+            "tractor",
+            u8"\xf0\x9f\x9a\x9c",
+        },
+        {
+            "door",
+            u8"\xf0\x9f\x9a\xaa",
+        },
+        {
+            "no_entry_sign",
+            u8"\xf0\x9f\x9a\xab",
+        },
+        {
+            "prohibited",
+            u8"\xf0\x9f\x9a\xab",
+        },
+        {
+            "pinched_fingers",
+            u8"\xf0\x9f\xa4\x8c",
+        },
+        {
+            "white_heart",
+            u8"\xf0\x9f\xa4\x8d",
+        },
+        {
+            "brown_heart",
+            u8"\xf0\x9f\xa4\x8e",
+        },
+        {
+            "pinching_hand",
+            u8"\xf0\x9f\xa4\x8f",
+        },
+        {
+            "zipper_mouth",
+            u8"\xf0\x9f\xa4\x90",
+        },
+        {
+            "zipper_mouth_face",
+            u8"\xf0\x9f\xa4\x90",
+        },
+        {
+            "money_mouth",
+            u8"\xf0\x9f\xa4\x91",
+        },
+        {
+            "money_mouth_face",
+            u8"\xf0\x9f\xa4\x91",
+        },
+        {
+            "thermometer_face",
+            u8"\xf0\x9f\xa4\x92",
+        },
+        {
+            "face_with_thermometer",
+            u8"\xf0\x9f\xa4\x92",
+        },
+        {
+            "nerd",
+            u8"\xf0\x9f\xa4\x93",
+        },
+        {
+            "nerd_face",
+            u8"\xf0\x9f\xa4\x93",
+        },
+        {
+            "thinking",
+            u8"\xf0\x9f\xa4\x94",
+        },
+        {
+            "thinking_face",
+            u8"\xf0\x9f\xa4\x94",
+        },
+        {
+            "head_bandage",
+            u8"\xf0\x9f\xa4\x95",
+        },
+        {
+            "face_with_head_bandage",
+            u8"\xf0\x9f\xa4\x95",
+        },
+        {
+            "robot",
+            u8"\xf0\x9f\xa4\x96",
+        },
+        {
+            "robot_face",
+            u8"\xf0\x9f\xa4\x96",
+        },
+        {
+            "hugging",
+            u8"\xf0\x9f\xa4\x97",
+        },
+        {
+            "hugging_face",
+            u8"\xf0\x9f\xa4\x97",
+        },
+        {
+            "metal",
+            u8"\xf0\x9f\xa4\x98",
+        },
+        {
+            "sign_of_the_horns",
+            u8"\xf0\x9f\xa4\x98",
+        },
+        {
+            "call_me",
+            u8"\xf0\x9f\xa4\x99",
+        },
+        {
+            "call_me_hand",
+            u8"\xf0\x9f\xa4\x99",
+        },
+        {
+            "raised_back_of_hand",
+            u8"\xf0\x9f\xa4\x9a",
+        },
+        {
+            "back_of_hand",
+            u8"\xf0\x9f\xa4\x9a",
+        },
+        {
+            "left_facing_fist",
+            u8"\xf0\x9f\xa4\x9b",
+        },
+        {
+            "left_fist",
+            u8"\xf0\x9f\xa4\x9b",
+        },
+        {
+            "right_facing_fist",
+            u8"\xf0\x9f\xa4\x9c",
+        },
+        {
+            "right_fist",
+            u8"\xf0\x9f\xa4\x9c",
+        },
+        {
+            "handshake",
+            u8"\xf0\x9f\xa4\x9d",
+        },
+        {
+            "shaking_hands",
+            u8"\xf0\x9f\xa4\x9d",
+        },
+        {
+            "fingers_crossed",
+            u8"\xf0\x9f\xa4\x9e",
+        },
+        {
+            "hand_with_index_and_middle_finger_crossed",
+            u8"\xf0\x9f\xa4\x9e",
+        },
+        {
+            "love_you_gesture",
+            u8"\xf0\x9f\xa4\x9f",
+        },
+        {
+            "cowboy",
+            u8"\xf0\x9f\xa4\xa0",
+        },
+        {
+            "face_with_cowboy_hat",
+            u8"\xf0\x9f\xa4\xa0",
+        },
+        {
+            "clown",
+            u8"\xf0\x9f\xa4\xa1",
+        },
+        {
+            "clown_face",
+            u8"\xf0\x9f\xa4\xa1",
+        },
+        {
+            "rofl",
+            u8"\xf0\x9f\xa4\xa3",
+        },
+        {
+            "rolling_on_the_floor_laughing",
+            u8"\xf0\x9f\xa4\xa3",
+        },
+        {
+            "drooling_face",
+            u8"\xf0\x9f\xa4\xa4",
+        },
+        {
+            "drool",
+            u8"\xf0\x9f\xa4\xa4",
+        },
+        {
+            "person_facepalming",
+            u8"\xf0\x9f\xa4\xa6",
+        },
+        {
+            "face_palm",
+            u8"\xf0\x9f\xa4\xa6",
+        },
+        {
+            "facepalm",
+            u8"\xf0\x9f\xa4\xa6",
+        },
+        {
+            "sneezing_face",
+            u8"\xf0\x9f\xa4\xa7",
+        },
+        {
+            "sneeze",
+            u8"\xf0\x9f\xa4\xa7",
+        },
+        {
+            "face_with_raised_eyebrow",
+            u8"\xf0\x9f\xa4\xa8",
+        },
+        {
+            "star_struck",
+            u8"\xf0\x9f\xa4\xa9",
+        },
+        {
+            "zany_face",
+            u8"\xf0\x9f\xa4\xaa",
+        },
+        {
+            "shushing_face",
+            u8"\xf0\x9f\xa4\xab",
+        },
+        {
+            "face_with_symbols_over_mouth",
+            u8"\xf0\x9f\xa4\xac",
+        },
+        {
+            "face_with_hand_over_mouth",
+            u8"\xf0\x9f\xa4\xad",
+        },
+        {
+            "exploding_head",
+            u8"\xf0\x9f\xa4\xaf",
+        },
+        {
+            "palms_up_together",
+            u8"\xf0\x9f\xa4\xb2",
+        },
+        {
+            "mrs_claus",
+            u8"\xf0\x9f\xa4\xb6",
+        },
+        {
+            "mother_christmas",
+            u8"\xf0\x9f\xa4\xb6",
+        },
+        {
+            "person_shrugging",
+            u8"\xf0\x9f\xa4\xb7",
+        },
+        {
+            "shrug",
+            u8"\xf0\x9f\xa4\xb7",
+        },
+        {
+            "person_doing_cartwheel",
+            u8"\xf0\x9f\xa4\xb8",
+        },
+        {
+            "cartwheel",
+            u8"\xf0\x9f\xa4\xb8",
+        },
+        {
+            "wilted_rose",
+            u8"\xf0\x9f\xa5\x80",
+        },
+        {
+            "wilted_flower",
+            u8"\xf0\x9f\xa5\x80",
+        },
+        {
+            "champagne_glass",
+            u8"\xf0\x9f\xa5\x82",
+        },
+        {
+            "clinking_glass",
+            u8"\xf0\x9f\xa5\x82",
+        },
+        {
+            "first_place",
+            u8"\xf0\x9f\xa5\x87",
+        },
+        {
+            "first_place_medal",
+            u8"\xf0\x9f\xa5\x87",
+        },
+        {
+            "second_place",
+            u8"\xf0\x9f\xa5\x88",
+        },
+        {
+            "second_place_medal",
+            u8"\xf0\x9f\xa5\x88",
+        },
+        {
+            "third_place",
+            u8"\xf0\x9f\xa5\x89",
+        },
+        {
+            "third_place_medal",
+            u8"\xf0\x9f\xa5\x89",
+        },
+        {
+            "croissant",
+            u8"\xf0\x9f\xa5\x90",
+        },
+        {
+            "bacon",
+            u8"\xf0\x9f\xa5\x93",
+        },
+        {
+            "potato",
+            u8"\xf0\x9f\xa5\x94",
+        },
+        {
+            "carrot",
+            u8"\xf0\x9f\xa5\x95",
+        },
+        {
+            "french_bread",
+            u8"\xf0\x9f\xa5\x96",
+        },
+        {
+            "baguette_bread",
+            u8"\xf0\x9f\xa5\x96",
+        },
+        {
+            "egg",
+            u8"\xf0\x9f\xa5\x9a",
+        },
+        {
+            "peanuts",
+            u8"\xf0\x9f\xa5\x9c",
+        },
+        {
+            "shelled_peanut",
+            u8"\xf0\x9f\xa5\x9c",
+        },
+        {
+            "pancakes",
+            u8"\xf0\x9f\xa5\x9e",
+        },
+        {
+            "sandwich",
+            u8"\xf0\x9f\xa5\xaa",
+        },
+        {
+            "smiling_face_with_3_hearts",
+            u8"\xf0\x9f\xa5\xb0",
+        },
+        {
+            "yawning_face",
+            u8"\xf0\x9f\xa5\xb1",
+        },
+        {
+            "smiling_face_with_tear",
+            u8"\xf0\x9f\xa5\xb2",
+        },
+        {
+            "partying_face",
+            u8"\xf0\x9f\xa5\xb3",
+        },
+        {
+            "woozy_face",
+            u8"\xf0\x9f\xa5\xb4",
+        },
+        {
+            "cold_face",
+            u8"\xf0\x9f\xa5\xb6",
+        },
+        {
+            "disguised_face",
+            u8"\xf0\x9f\xa5\xb8",
+        },
+        {
+            "face_holding_back_tears",
+            u8"\xf0\x9f\xa5\xb9",
+        },
+        {
+            "pleading_face",
+            u8"\xf0\x9f\xa5\xba",
+        },
+        {
+            "turkey",
+            u8"\xf0\x9f\xa6\x83",
+        },
+        {
+            "gorilla",
+            u8"\xf0\x9f\xa6\x8d",
+        },
+        {
+            "hippopotamus",
+            u8"\xf0\x9f\xa6\x9b",
+        },
+        {
+            "mammoth",
+            u8"\xf0\x9f\xa6\xa3",
+        },
+        {
+            "orangutan",
+            u8"\xf0\x9f\xa6\xa7",
+        },
+        {
+            "person_standing",
+            u8"\xf0\x9f\xa7\x8d",
+        },
+        {
+            "deaf_person",
+            u8"\xf0\x9f\xa7\x8f",
+        },
+        {
+            "face_with_monocle",
+            u8"\xf0\x9f\xa7\x90",
+        },
+        {
+            "orange_heart",
+            u8"\xf0\x9f\xa7\xa1",
+        },
+        {
+            "billed_cap",
+            u8"\xf0\x9f\xa7\xa2",
+        },
+        {
+            "bricks",
+            u8"\xf0\x9f\xa7\xb1",
+        },
+        {
+            "brick",
+            u8"\xf0\x9f\xa7\xb1",
+        },
+        {
+            "magnet",
+            u8"\xf0\x9f\xa7\xb2",
+        },
+        {
+            "light_blue_heart",
+            u8"\xf0\x9f\xa9\xb5",
+        },
+        {
+            "grey_heart",
+            u8"\xf0\x9f\xa9\xb6",
+        },
+        {
+            "pink_heart",
+            u8"\xf0\x9f\xa9\xb7",
+        },
+        {
+            "ringed_planet",
+            u8"\xf0\x9f\xaa\x90",
+        },
+        {
+            "ladder",
+            u8"\xf0\x9f\xaa\x9c",
+        },
+        {
+            "melting_face",
+            u8"\xf0\x9f\xab\xa0",
+        },
+        {
+            "saluting_face",
+            u8"\xf0\x9f\xab\xa1",
+        },
+        {
+            "face_with_open_eyes_and_hand_over_mouth",
+            u8"\xf0\x9f\xab\xa2",
+        },
+        {
+            "face_with_peeking_eye",
+            u8"\xf0\x9f\xab\xa3",
+        },
+        {
+            "face_with_diagonal_mouth",
+            u8"\xf0\x9f\xab\xa4",
+        },
+        {
+            "face_with_bags_under_eyes",
+            u8"\xf0\x9f\xab\xa9",
+        },
+        {
+            "exhausted_face",
+            u8"\xf0\x9f\xab\xa9",
+        },
+        {
+            "exhausted",
+            u8"\xf0\x9f\xab\xa9",
+        },
+        {
+            "hand_with_index_finger_and_thumb_crossed",
+            u8"\xf0\x9f\xab\xb0",
+        },
+        {
+            "rightwards_hand",
+            u8"\xf0\x9f\xab\xb1",
+        },
+        {
+            "leftwards_hand",
+            u8"\xf0\x9f\xab\xb2",
+        },
+        {
+            "palm_down_hand",
+            u8"\xf0\x9f\xab\xb3",
+        },
+        {
+            "palm_up_hand",
+            u8"\xf0\x9f\xab\xb4",
+        },
+        {
+            "index_pointing_at_the_viewer",
+            u8"\xf0\x9f\xab\xb5",
+        },
+        {
+            "heart_hands",
+            u8"\xf0\x9f\xab\xb6",
+        },
+        {
+            "leftwards_pushing_hand",
+            u8"\xf0\x9f\xab\xb7",
+        },
+        {
+            "rightwards_pushing_hand",
+            u8"\xf0\x9f\xab\xb8",
+        },
+        {
+            "bangbang",
+            u8"\xe2\x80\xbc",
+        },
+        {
+            "interrobang",
+            u8"\xe2\x81\x89",
+        },
+        {
+            "point_up",
+            u8"\xe2\x98\x9d",
+        },
+        {
+            "skull_crossbones",
+            u8"\xe2\x98\xa0",
+        },
+        {
+            "skull_and_crossbones",
+            u8"\xe2\x98\xa0",
+        },
+        {
+            "frowning2",
+            u8"\xe2\x98\xb9",
+        },
+        {
+            "white_frowning_face",
+            u8"\xe2\x98\xb9",
+        },
+        {
+            "frowning_face",
+            u8"\xe2\x98\xb9",
+        },
+        {
+            "relaxed",
+            u8"\xe2\x98\xba",
+        },
+        {
+            "smiling_face",
+            u8"\xe2\x98\xba",
+        },
+        {
+            "warning",
+            u8"\xe2\x9a\xa0",
+        },
+        {
+            "zap",
+            u8"\xe2\x9a\xa1",
+        },
+        {
+            "high_voltage",
+            u8"\xe2\x9a\xa1",
+        },
+        {
+            "soccer",
+            u8"\xe2\x9a\xbd",
+        },
+        {
+            "soccer_ball",
+            u8"\xe2\x9a\xbd",
+        },
+        {
+            "actual_football",
+            u8"\xe2\x9a\xbd",
+        },
+        {
+            "baseball",
+            u8"\xe2\x9a\xbe",
+        },
+        {
+            "snowman",
+            u8"\xe2\x9b\x84",
+        },
+        {
+            "pick",
+            u8"\xe2\x9b\x8f",
+        },
+        {
+            "white_check_mark",
+            u8"\xe2\x9c\x85",
+        },
+        {
+            "fist",
+            u8"\xe2\x9c\x8a",
+        },
+        {
+            "raised_fist",
+            u8"\xe2\x9c\x8a",
+        },
+        {
+            "raised_hand",
+            u8"\xe2\x9c\x8b",
+        },
+        {
+            "v",
+            u8"\xe2\x9c\x8c",
+        },
+        {
+            "victory_hand",
+            u8"\xe2\x9c\x8c",
+        },
+        {
+            "writing_hand",
+            u8"\xe2\x9c\x8d",
+        },
+        {
+            "sparkles",
+            u8"\xe2\x9c\xa8",
+        },
+        {
+            "x",
+            u8"\xe2\x9d\x8c",
+        },
+        {
+            "cross_mark",
+            u8"\xe2\x9d\x8c",
+        },
+        {
+            "heart",
+            u8"\xe2\x9d\xa4",
+        },
+        {
+            "red_heart",
+            u8"\xe2\x9d\xa4",
+        },
+        {
+            "star",
+            u8"\xe2\xad\x90",
+        },
+        // ## END CODEGEN 2
     };
 
     return map;
 }
 
-}
+} // namespace globed

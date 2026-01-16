@@ -20,7 +20,7 @@ import sys
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
 QUNET_VERSION = "6fe8bbc"
-SERVER_SHARED_VERSION = "6282374"
+SERVER_SHARED_VERSION = "e963766"
 CUE_VERSION = "ae3ee0b"
 
 if sys.version_info < (3, 12):
@@ -288,7 +288,7 @@ def main(build: Build):
 
     ## Add cmake dependencies ##
 
-    build.add_cpm_dep("capnproto/capnproto", "v1.2.0", {
+    build.add_cpm_dep("capnproto/capnproto", "v1.3.0", {
         "CAPNP_LITE": "ON",
         "BUILD_TESTING": "OFF",
         "WITH_FIBERS": "OFF",
@@ -302,7 +302,7 @@ def main(build: Build):
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
     build.add_cpm_dep("GlobedGD/argon", "3a5b83e")
-    build.add_cpm_dep("Prevter/sinaps", "2541d6d")
+    build.add_cpm_dep("Prevter/sinaps", "b9c3434")
     build.add_cpm_dep("Prevter/AdvancedLabel", "d78d7f82", link_name="advanced_label")
 
     if gc.voice:

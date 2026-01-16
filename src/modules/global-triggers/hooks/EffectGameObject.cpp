@@ -9,31 +9,35 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void HookedEffectGameObject::triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno) {
+void HookedEffectGameObject::triggerObject(GJBaseGameLayer *layer, int idk, gd::vector<int> const *idunno)
+{
     if (m_collectibleIsPickupItem && globed::isWritableCustomItem(m_itemID)) {
-        CounterChange change{(uint32_t) m_itemID, m_subtractCount ? -1 : 1, CounterChangeType::Add};
+        CounterChange change{(uint32_t)m_itemID, m_subtractCount ? -1 : 1, CounterChangeType::Add};
         GlobalTriggersModule::get().queueCounterChange(change);
     } else if (!globed::isReadonlyCustomItem(m_itemID)) {
         EffectGameObject::triggerObject(layer, idk, idunno);
     }
 }
 
-// EffectGameObject::getSaveString patch cmp 9999 to INT_MAX to avoid checks on saving the level (item edit trigger would break otherwise)
-$on_mod(Loaded) {
+// EffectGameObject::getSaveString patch cmp 9999 to INT_MAX to avoid checks on saving the level (item edit trigger
+// would break otherwise)
+$on_mod(Loaded)
+{
 #ifndef GEODE_IS_WINDOWS
-# error "EffectGameObject::getSaveString patch unimplemented for this platform"
+#error "EffectGameObject::getSaveString patch unimplemented for this platform"
 #else
 
-    auto doPatch = +[](uint8_t* offset) -> void {
+    auto doPatch = +[](uint8_t *offset) -> void {
         auto patch = Mod::get()->patch(offset, {0x3d, 0xff, 0xff, 0xff, 0x7f});
         if (!patch) {
-            log::error("Failed to apply patch for EffectGameObject::getSaveString at offset {}: {}", fmt::ptr(offset - geode::base::get()), patch.unwrapErr());
+            log::error("Failed to apply patch for EffectGameObject::getSaveString at offset {}: {}",
+                       fmt::ptr(offset - geode::base::get()), patch.unwrapErr());
         } else {
             GlobalTriggersModule::get().claimPatch(patch.unwrap());
         }
     };
 
-    auto funcStart = PATCH_EGO_GETSAVESTRING_START.addr<uint8_t*>();
+    auto funcStart = PATCH_EGO_GETSAVESTRING_START.addr<uint8_t *>();
     auto offset1 = sinaps::find<"3d 0f 27 00 00">(funcStart, 0x100);
 
     if (offset1 != -1) {
@@ -52,4 +56,4 @@ $on_mod(Loaded) {
 #endif
 }
 
-}
+} // namespace globed

@@ -1,12 +1,12 @@
 #pragma once
 
+#include "../CounterChange.hpp"
+#include "../GlobalTriggersModule.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
 #include <globed/config.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/net/MessageListener.hpp>
-#include "../GlobalTriggersModule.hpp"
-#include "../CounterChange.hpp"
 
 namespace globed {
 
@@ -19,23 +19,20 @@ struct GLOBED_MODIFY_ATTR GTriggersGJBGL : geode::Modify<GTriggersGJBGL, GJBaseG
         bool m_firstPacket = true;
     };
 
-    static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(GlobalTriggersModule::get(), self,
-            "GJBaseGameLayer::activateItemEditTrigger",
-            // "GJBaseGameLayer::activateItemCompareTrigger",
-            "GJBaseGameLayer::getItemValue",
-        );
+    static void onModify(auto &self)
+    {
+        GLOBED_CLAIM_HOOKS(GlobalTriggersModule::get(), self, "GJBaseGameLayer::activateItemEditTrigger",
+                           // "GJBaseGameLayer::activateItemCompareTrigger",
+                           "GJBaseGameLayer::getItemValue", );
     }
 
-    static GTriggersGJBGL* get(GJBaseGameLayer* base = nullptr);
+    static GTriggersGJBGL *get(GJBaseGameLayer *base = nullptr);
 
-    std::optional<int> activateItemEditTriggerReimpl(ItemTriggerGameObject* obj);
+    std::optional<int> activateItemEditTriggerReimpl(ItemTriggerGameObject *obj);
 
-    $override
-    void activateItemEditTrigger(ItemTriggerGameObject* obj);
+    $override void activateItemEditTrigger(ItemTriggerGameObject *obj);
 
-    $override
-    double getItemValue(int a, int b);
+    $override double getItemValue(int a, int b);
 
     void postInit();
     void registerListener();
@@ -47,10 +44,10 @@ struct GLOBED_MODIFY_ATTR GTriggersGJBGL : geode::Modify<GTriggersGJBGL, GJBaseG
 
     void updateItems(float dt);
 
-    void handleEvent(const InEvent& event);
-    void applyCounterChange(const CounterChange& change);
+    void handleEvent(const InEvent &event);
+    void applyCounterChange(const CounterChange &change);
 
     void updateCustomItem(int itemId, int value);
 };
 
-}
+} // namespace globed

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <globed/prelude.hpp>
 #include "AudioEncoder.hpp"
+#include <globed/prelude.hpp>
 
 namespace globed {
 
@@ -13,13 +13,13 @@ struct GLOBED_DLL EncodedAudioFrame {
     EncodedAudioFrame(size_t capacity);
     ~EncodedAudioFrame();
 
-    EncodedAudioFrame(const EncodedAudioFrame&) = default;
-    EncodedAudioFrame& operator=(const EncodedAudioFrame& other) = default;
-    EncodedAudioFrame(EncodedAudioFrame&& other) noexcept = default;
-    EncodedAudioFrame& operator=(EncodedAudioFrame&&) noexcept = default;
+    EncodedAudioFrame(const EncodedAudioFrame &) = default;
+    EncodedAudioFrame &operator=(const EncodedAudioFrame &other) = default;
+    EncodedAudioFrame(EncodedAudioFrame &&other) noexcept = default;
+    EncodedAudioFrame &operator=(EncodedAudioFrame &&) noexcept = default;
 
     // adds this audio frame to the list
-    Result<> pushOpusFrame(const EncodedOpusData& frame);
+    Result<> pushOpusFrame(const EncodedOpusData &frame);
 
     // set the capacity of the audio frame, in individual opus frames
     void setCapacity(size_t frames);
@@ -29,11 +29,11 @@ struct GLOBED_DLL EncodedAudioFrame {
     size_t capacity() const;
 
     // extract all frames
-    const std::vector<EncodedOpusData>& getFrames() const;
+    const std::vector<EncodedOpusData> &getFrames() const;
 
 protected:
     std::vector<EncodedOpusData> m_frames;
     size_t m_capacity;
 };
 
-}
+} // namespace globed

@@ -15,10 +15,10 @@ public:
     void forceClose();
 
 protected:
-    cue::LoadingCircle* m_circle;
+    cue::LoadingCircle *m_circle;
 
     bool setup() override;
-    void onClose(cocos2d::CCObject*) override;
+    void onClose(cocos2d::CCObject *) override;
 };
 
-}
+} // namespace globed

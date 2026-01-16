@@ -1,7 +1,7 @@
 #pragma once
 
-#include <globed/prelude.hpp>
 #include <Geode/Geode.hpp>
+#include <globed/prelude.hpp>
 
 namespace globed {
 
@@ -13,7 +13,7 @@ struct PlayerStatusFlags {
     bool editing;
     float loudness;
 
-    bool operator==(const PlayerStatusFlags& other) const = default;
+    bool operator==(const PlayerStatusFlags &other) const = default;
 };
 
 class GLOBED_DLL PlayerStatusIcons : public CCNode {
@@ -22,13 +22,13 @@ public:
     GLOBED_NOCOPY(PlayerStatusIcons);
     GLOBED_NOMOVE(PlayerStatusIcons);
 
-    void updateStatus(const PlayerStatusFlags& flags, bool force = false);
+    void updateStatus(const PlayerStatusFlags &flags, bool force = false);
     void setOpacity(unsigned char opacity);
 
-    static PlayerStatusIcons* create(unsigned char opacity);
+    static PlayerStatusIcons *create(unsigned char opacity);
 
 private:
-    CCNode* m_iconWrapper = nullptr;
+    CCNode *m_iconWrapper = nullptr;
     PlayerStatusFlags m_flags;
     float m_nameScale = 0.f;
     unsigned char m_opacity = 255;
@@ -36,4 +36,4 @@ private:
     bool init(unsigned char opacity);
 };
 
-}
+} // namespace globed

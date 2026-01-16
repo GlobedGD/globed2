@@ -1,6 +1,6 @@
 #include "GJEffectManager.hpp"
-#include <core/hooks/GJBaseGameLayer.hpp>
 #include "../Ids.hpp"
+#include <core/hooks/GJBaseGameLayer.hpp>
 
 using namespace geode::prelude;
 
@@ -8,7 +8,8 @@ static bool g_dontUpdateCountTriggers = false;
 
 namespace globed {
 
-int HookedGJEffectManager::countForItem(int itemId) {
+int HookedGJEffectManager::countForItem(int itemId)
+{
     if (!isCustomItem(itemId)) {
         itemId = std::clamp(itemId, 0, 9999);
         return m_itemCountMap[itemId];
@@ -17,11 +18,13 @@ int HookedGJEffectManager::countForItem(int itemId) {
     return this->countForCustomItem(itemId);
 }
 
-int HookedGJEffectManager::countForCustomItem(int itemId) {
+int HookedGJEffectManager::countForCustomItem(int itemId)
+{
     return m_fields->m_customItems[itemId];
 }
 
-void HookedGJEffectManager::updateCountForItem(int itemId, int value) {
+void HookedGJEffectManager::updateCountForItem(int itemId, int value)
+{
     if (isWritableCustomItem(itemId)) {
         this->updateCountForCustomItem(itemId, value);
     } else {
@@ -29,8 +32,9 @@ void HookedGJEffectManager::updateCountForItem(int itemId, int value) {
     }
 }
 
-bool HookedGJEffectManager::updateCountForCustomItem(int itemId, int value) {
-    auto& fields = *m_fields.self();
+bool HookedGJEffectManager::updateCountForCustomItem(int itemId, int value)
+{
+    auto &fields = *m_fields.self();
 
     int prev = fields.m_customItems[itemId];
     fields.m_customItems[itemId] = value;
@@ -48,17 +52,19 @@ bool HookedGJEffectManager::updateCountForCustomItem(int itemId, int value) {
         return ret;
     }
 
-    auto& actions = m_countTriggerActions.at(itemId);
+    auto &actions = m_countTriggerActions.at(itemId);
 
-    auto comparator = value < prev
-        ? [](const CountTriggerAction& a, const CountTriggerAction& b){ return b.m_targetCount < a.m_targetCount; }
-        : [](const CountTriggerAction& a, const CountTriggerAction& b){ return a.m_targetCount < b.m_targetCount; };
+    auto comparator = value < prev ? [](const CountTriggerAction &a,
+                                        const CountTriggerAction &b) { return b.m_targetCount < a.m_targetCount; }
+                                   : [](const CountTriggerAction &a, const CountTriggerAction &b) {
+                                         return a.m_targetCount < b.m_targetCount;
+                                     };
 
     // yeah whatever you say robby
     std::sort(actions.begin(), actions.end(), comparator);
 
-    for (size_t i = 0; i < actions.size(); ) {
-        auto& action = actions[i];
+    for (size_t i = 0; i < actions.size();) {
+        auto &action = actions[i];
 
         if (action.m_previousCount == value) {
             i++;
@@ -69,7 +75,7 @@ bool HookedGJEffectManager::updateCountForCustomItem(int itemId, int value) {
         int prevCount = action.m_previousCount;
         action.m_previousCount = value;
 
-        auto stuff = [&]{
+        auto stuff = [&] {
             auto unkVecInt = action.m_remapKeys;
             bool unk10 = action.m_activateGroup;
             int unk14 = action.m_triggerUniqueID;
@@ -102,8 +108,9 @@ bool HookedGJEffectManager::updateCountForCustomItem(int itemId, int value) {
             stuff();
         }
 
-        // log::debug("Action: 0 = {}, 4 = {}, 8 = {}, c = {}, 10 = {}, 14 = {}, 18 = {}, 1c = {}, set = {}", action.m_unk0, action.m_unk4, action.m_unk8, action.m_unkc, action.m_unk10, action.m_unk14, action.m_unk18, action.m_unk1c, action.m_unkVecInt);
-        // m_triggerEffectDelegate->toggleGroupTriggered(id)
+        // log::debug("Action: 0 = {}, 4 = {}, 8 = {}, c = {}, 10 = {}, 14 = {}, 18 = {}, 1c = {}, set = {}",
+        // action.m_unk0, action.m_unk4, action.m_unk8, action.m_unkc, action.m_unk10, action.m_unk14, action.m_unk18,
+        // action.m_unk1c, action.m_unkVecInt); m_triggerEffectDelegate->toggleGroupTriggered(id)
 
         if (multiActivate) {
             i++;
@@ -113,11 +120,12 @@ bool HookedGJEffectManager::updateCountForCustomItem(int itemId, int value) {
     return ret;
 }
 
-void HookedGJEffectManager::reset() {
+void HookedGJEffectManager::reset()
+{
     GJEffectManager::reset();
 
     // dont actually reset
     // m_fields->m_customItems.clear();
 }
 
-}
+} // namespace globed

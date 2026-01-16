@@ -1,12 +1,12 @@
-#include <globed/core/game/RemotePlayer.hpp>
-#include <globed/core/SettingsManager.hpp>
-#include <globed/core/RoomManager.hpp>
-#include <globed/audio/AudioManager.hpp>
-#include <globed/util/gd.hpp>
-#include <core/hooks/GJBaseGameLayer.hpp>
+#include <core/CoreImpl.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/game/SettingCache.hpp>
-#include <core/CoreImpl.hpp>
+#include <core/hooks/GJBaseGameLayer.hpp>
+#include <globed/audio/AudioManager.hpp>
+#include <globed/core/RoomManager.hpp>
+#include <globed/core/SettingsManager.hpp>
+#include <globed/core/game/RemotePlayer.hpp>
+#include <globed/util/gd.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -15,7 +15,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode) : m_state(), m_parentNode(parentNode) {
+RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer *gameLayer, CCNode *parentNode)
+    : m_state(), m_parentNode(parentNode)
+{
     m_state.accountId = playerId;
     m_localPlayer = playerId == 0;
 
@@ -45,17 +47,17 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
     if (!gameLayer->m_isEditor) {
         if (plat && globed::setting<bool>("core.level.progress-indicators-plat")) {
             m_progArrow = Build<ProgressArrow>::create()
-                .zOrder(2)
-                .id(fmt::format("remote-player-progress-{}"_spr, playerId))
-                .parent(gameLayer);
+                              .zOrder(2)
+                              .id(fmt::format("remote-player-progress-{}"_spr, playerId))
+                              .parent(gameLayer);
 
         } else if (!plat && globed::setting<bool>("core.level.progress-indicators")) {
             auto gjbgl = GlobedGJBGL::get(gameLayer);
 
             m_progIcon = Build<ProgressIcon>::create()
-                .zOrder(2)
-                .id(fmt::format("remote-player-progress-{}"_spr, playerId))
-                .parent(gjbgl->m_fields->m_progressBarContainer);
+                             .zOrder(2)
+                             .id(fmt::format("remote-player-progress-{}"_spr, playerId))
+                             .parent(gjbgl->m_fields->m_progressBarContainer);
 
             if (playerId == 0) {
                 m_progIcon->updateIcons(globed::getPlayerIcons());
@@ -65,7 +67,8 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
     }
 }
 
-RemotePlayer::~RemotePlayer() {
+RemotePlayer::~RemotePlayer()
+{
     cue::resetNode(m_progArrow);
     cue::resetNode(m_progIcon);
 
@@ -75,7 +78,9 @@ RemotePlayer::~RemotePlayer() {
     m_player2->removeFromParent();
 }
 
-void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState, const OutFlags& flags, bool forceHide) {
+void RemotePlayer::update(const PlayerState &state, const GameCameraState &camState, const OutFlags &flags,
+                          bool forceHide)
+{
     forceHide = forceHide || m_forceHide;
 
     bool hideIcon = forceHide;
@@ -105,8 +110,9 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
 
     // update progress icons
 
-    auto shownOrHide = [&](auto* node, auto&& onShown) {
-        if (!node) return;
+    auto shownOrHide = [&](auto *node, auto &&onShown) {
+        if (!node)
+            return;
         if (hideMisc) {
             node->setVisible(false);
         } else {
@@ -115,13 +121,10 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
         }
     };
 
-    shownOrHide(m_progIcon, [&] {
-        m_progIcon->updatePosition(state.progress(), state.isPracticing);
-    });
+    shownOrHide(m_progIcon, [&] { m_progIcon->updatePosition(state.progress(), state.isPracticing); });
 
-    shownOrHide(m_progArrow, [&] {
-        m_progArrow->updatePosition(camState, m_player1->getLastPosition(), state.progress());
-    });
+    shownOrHide(m_progArrow,
+                [&] { m_progArrow->updatePosition(camState, m_player1->getLastPosition(), state.progress()); });
 
     // if the player just died, handle death
     if (flags.death) {
@@ -150,29 +153,35 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
     }
 }
 
-void RemotePlayer::handleDeath(const PlayerDeath& death) {
+void RemotePlayer::handleDeath(const PlayerDeath &death)
+{
     if (globed::setting<bool>("core.player.death-effects")) {
         m_player1->playDeathEffect();
     }
 }
 
-void RemotePlayer::handleSpiderTp(const SpiderTeleportData& tp, bool p1) {
+void RemotePlayer::handleSpiderTp(const SpiderTeleportData &tp, bool p1)
+{
     p1 ? m_player1->handleSpiderTp(tp) : m_player2->handleSpiderTp(tp);
 }
 
-bool RemotePlayer::isDataInitialized() const {
+bool RemotePlayer::isDataInitialized() const
+{
     return m_dataInitialized;
 }
 
-bool RemotePlayer::isDataOutdated() const {
+bool RemotePlayer::isDataOutdated() const
+{
     return m_dataOutdated;
 }
 
-bool RemotePlayer::isTeamInitialized() const {
+bool RemotePlayer::isTeamInitialized() const
+{
     return m_teamId.has_value();
 }
 
-void RemotePlayer::initData(const PlayerDisplayData& data, bool outdated, uint16_t teamId) {
+void RemotePlayer::initData(const PlayerDisplayData &data, bool outdated, uint16_t teamId)
+{
     m_dataInitialized = true;
     m_dataOutdated = outdated;
     m_data = data;
@@ -187,18 +196,22 @@ void RemotePlayer::initData(const PlayerDisplayData& data, bool outdated, uint16
         .glowColor = data.icons.glowColor.asIdx(),
     };
 
-    if (m_progArrow) m_progArrow->updateIcons(ci);
-    if (m_progIcon) m_progIcon->updateIcons(ci);
+    if (m_progArrow)
+        m_progArrow->updateIcons(ci);
+    if (m_progIcon)
+        m_progIcon->updateIcons(ci);
 }
 
-void RemotePlayer::updateTeam(uint16_t teamId) {
+void RemotePlayer::updateTeam(uint16_t teamId)
+{
     m_teamId = teamId;
     m_player1->updateTeam(teamId);
     m_player2->updateTeam(teamId);
 }
 
-bool RemotePlayer::isTeammate(bool whatWhenNoTeams) {
-    auto& rm = RoomManager::get();
+bool RemotePlayer::isTeammate(bool whatWhenNoTeams)
+{
+    auto &rm = RoomManager::get();
 
     if (!rm.getSettings().teams) {
         return whatWhenNoTeams;
@@ -207,49 +220,60 @@ bool RemotePlayer::isTeammate(bool whatWhenNoTeams) {
     return m_teamId.has_value() && *m_teamId == rm.getCurrentTeamId();
 }
 
-void RemotePlayer::setForceHide(bool hide) {
+void RemotePlayer::setForceHide(bool hide)
+{
     m_forceHide = hide;
 }
 
-VisualPlayer* RemotePlayer::player1() {
+VisualPlayer *RemotePlayer::player1()
+{
     return m_player1;
 }
 
-VisualPlayer* RemotePlayer::player2() {
+VisualPlayer *RemotePlayer::player2()
+{
     return m_player2;
 }
 
-PlayerDisplayData& RemotePlayer::displayData() {
+PlayerDisplayData &RemotePlayer::displayData()
+{
     return m_data;
 }
 
-int RemotePlayer::id() const {
+int RemotePlayer::id() const
+{
     return m_data.accountId ?: m_state.accountId;
 }
 
-bool RemotePlayer::isLocal() const {
+bool RemotePlayer::isLocal() const
+{
     return m_localPlayer;
 }
 
-bool RemotePlayer::isPlayer1Culled() {
+bool RemotePlayer::isPlayer1Culled()
+{
     return m_player1Culled;
 }
 
-bool RemotePlayer::isPlayer2Culled() {
+bool RemotePlayer::isPlayer2Culled()
+{
     return m_player2Culled;
 }
 
-void RemotePlayer::stopVoiceStream() {
+void RemotePlayer::stopVoiceStream()
+{
     if (m_voiceStream) {
         m_voiceStream->stop();
     }
 }
 
-VoiceStream* RemotePlayer::getVoiceStream() {
+VoiceStream *RemotePlayer::getVoiceStream()
+{
     return m_voiceStream.get();
 }
 
-void RemotePlayer::playVoiceData(const EncodedAudioFrame& frame) {
+void RemotePlayer::playVoiceData(const EncodedAudioFrame &frame)
+{
     if (!m_voiceStream) {
         auto res = VoiceStream::create(weak_from_this());
         if (!res) {
@@ -272,4 +296,4 @@ void RemotePlayer::playVoiceData(const EncodedAudioFrame& frame) {
     }
 }
 
-}
+} // namespace globed

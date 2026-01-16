@@ -1,6 +1,6 @@
 #include "ModNoticeSetupPopup.hpp"
-#include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <globed/core/PopupManager.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -9,55 +9,63 @@ using namespace geode::prelude;
 
 namespace {
 namespace btn {
-    constexpr int User = 1;
-    constexpr int Room = 2;
-    constexpr int Level = 3;
-    constexpr int Global = 4;
-}
-}
+constexpr int User = 1;
+constexpr int Room = 2;
+constexpr int Level = 3;
+constexpr int Global = 4;
+} // namespace btn
+} // namespace
 
 namespace globed {
 
 const CCSize ModNoticeSetupPopup::POPUP_SIZE = {320.f, 200.f};
 
-bool ModNoticeSetupPopup::setup() {
+bool ModNoticeSetupPopup::setup()
+{
     this->setTitle("Send Notice");
 
-    m_messageInput = Build<TextInput>::create(270.f, "Message", "chatFont.fnt")
-        .pos(this->fromCenter(0.f, 44.f))
-        .parent(m_mainLayer);
+    m_messageInput =
+        Build<TextInput>::create(270.f, "Message", "chatFont.fnt").pos(this->fromCenter(0.f, 44.f)).parent(m_mainLayer);
     m_messageInput->setCommonFilter(CommonFilter::Any);
 
     auto checkboxMenu = Build<CCMenu>::create()
-        .layout(RowLayout::create()->setAutoScale(false))
-        .anchorPoint(0.5f, 0.5f)
-        .ignoreAnchorPointForPos(false)
-        .contentSize(262.f, 52.f)
-        .id("checkbox-menu")
-        .pos(this->fromCenter(0.f, 12.f))
-        .parent(m_mainLayer)
-        .collect();
+                            .layout(RowLayout::create()->setAutoScale(false))
+                            .anchorPoint(0.5f, 0.5f)
+                            .ignoreAnchorPointForPos(false)
+                            .contentSize(262.f, 52.f)
+                            .id("checkbox-menu")
+                            .pos(this->fromCenter(0.f, 12.f))
+                            .parent(m_mainLayer)
+                            .collect();
 
-    auto addCheckbox = [&](CCMenuItemToggler*& store, int mode) {
-        Build(CCMenuItemExt::createTogglerWithStandardSprites(0.5f, [this, mode](auto toggler) {
-            bool on = !toggler->isOn();
-            this->onSelectMode(mode, on);
-        }))
+    auto addCheckbox = [&](CCMenuItemToggler *&store, int mode) {
+        Build(CCMenuItemExt::createTogglerWithStandardSprites(0.5f,
+                                                              [this, mode](auto toggler) {
+                                                                  bool on = !toggler->isOn();
+                                                                  this->onSelectMode(mode, on);
+                                                              }))
             .store(store)
             .parent(checkboxMenu);
 
-        const char* text;
+        const char *text;
         switch (mode) {
-            case btn::User: text = "User"; break;
-            case btn::Room: text = "Room"; break;
-            case btn::Level: text = "Level"; break;
-            case btn::Global: text = "Everyone"; break;
-            default: text = "Unknown";
+        case btn::User:
+            text = "User";
+            break;
+        case btn::Room:
+            text = "Room";
+            break;
+        case btn::Level:
+            text = "Level";
+            break;
+        case btn::Global:
+            text = "Everyone";
+            break;
+        default:
+            text = "Unknown";
         }
 
-        Build<CCLabelBMFont>::create(text, "bigFont.fnt")
-            .limitLabelWidth(50.f, 0.4f, 0.2f)
-            .parent(checkboxMenu);
+        Build<CCLabelBMFont>::create(text, "bigFont.fnt").limitLabelWidth(50.f, 0.4f, 0.2f).parent(checkboxMenu);
     };
 
     addCheckbox(m_userCheckbox, btn::User);
@@ -66,47 +74,41 @@ bool ModNoticeSetupPopup::setup() {
     addCheckbox(m_globalCheckbox, btn::Global);
     checkboxMenu->updateLayout();
 
-    cue::attachBackground(checkboxMenu, cue::BackgroundOptions {
-        .verticalPadding = 5.f
-    });
+    cue::attachBackground(checkboxMenu, cue::BackgroundOptions{.verticalPadding = 5.f});
 
     auto inputsLayout = RowLayout::create()->setAutoScale(false)->setGap(8.f);
     inputsLayout->ignoreInvisibleChildren(true);
 
     m_inputsContainer = Build<CCMenu>::create()
-        .layout(inputsLayout)
-        .anchorPoint(0.5f, 0.5f)
-        .ignoreAnchorPointForPos(false)
-        .contentSize(270.f, 50.f)
-        .pos(this->fromCenter(0.f, -20.f))
-        .parent(m_mainLayer)
-        .collect();
+                            .layout(inputsLayout)
+                            .anchorPoint(0.5f, 0.5f)
+                            .ignoreAnchorPointForPos(false)
+                            .contentSize(270.f, 50.f)
+                            .pos(this->fromCenter(0.f, -20.f))
+                            .parent(m_mainLayer)
+                            .collect();
 
-    Build<TextInput>::create(140.f, "Username / ID", "chatFont.fnt")
-        .parent(m_inputsContainer)
-        .store(m_userInput);
+    Build<TextInput>::create(140.f, "Username / ID", "chatFont.fnt").parent(m_inputsContainer).store(m_userInput);
 
-    Build<TextInput>::create(80.f, "Room ID", "chatFont.fnt")
-        .parent(m_inputsContainer)
-        .store(m_roomInput);
+    Build<TextInput>::create(80.f, "Room ID", "chatFont.fnt").parent(m_inputsContainer).store(m_roomInput);
 
-    Build<TextInput>::create(80.f, "Level ID", "chatFont.fnt")
-        .parent(m_inputsContainer)
-        .store(m_levelInput);
+    Build<TextInput>::create(80.f, "Level ID", "chatFont.fnt").parent(m_inputsContainer).store(m_levelInput);
 
-    Build(CCMenuItemExt::createTogglerWithStandardSprites(0.5f, [this](CCMenuItemToggler* toggler) {
-        bool on = !toggler->isOn();
+    Build(CCMenuItemExt::createTogglerWithStandardSprites(0.5f,
+                                                          [this](CCMenuItemToggler *toggler) {
+                                                              bool on = !toggler->isOn();
 
-        // if can reply is on, it forces show sender to be on as well
-        if (on) {
-            m_showSenderCheckbox->toggle(true);
-            m_showSenderCheckbox->setEnabled(false);
-            m_showSenderCheckbox->setColor({150, 150, 150});
-        } else {
-            m_showSenderCheckbox->setEnabled(true);
-            m_showSenderCheckbox->setColor({255, 255, 255});
-        }
-    }))
+                                                              // if can reply is on, it forces show sender to be on as
+                                                              // well
+                                                              if (on) {
+                                                                  m_showSenderCheckbox->toggle(true);
+                                                                  m_showSenderCheckbox->setEnabled(false);
+                                                                  m_showSenderCheckbox->setColor({150, 150, 150});
+                                                              } else {
+                                                                  m_showSenderCheckbox->setEnabled(true);
+                                                                  m_showSenderCheckbox->setColor({255, 255, 255});
+                                                              }
+                                                          }))
         .parent(m_inputsContainer)
         .store(m_canReplyCheckbox);
 
@@ -117,16 +119,15 @@ bool ModNoticeSetupPopup::setup() {
 
     Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.7f)
         .scale(0.85f)
-        .intoMenuItem([this] {
-            this->submit();
-        })
+        .intoMenuItem([this] { this->submit(); })
         .scaleMult(1.1f)
         .pos(this->fromBottom(27.f))
         .parent(m_buttonMenu);
 
     // show sender
 
-    Build(CCMenuItemExt::createTogglerWithStandardSprites(0.7f, +[](CCMenuItemToggler* toggler) {}))
+    Build(CCMenuItemExt::createTogglerWithStandardSprites(
+              0.7f, +[](CCMenuItemToggler *toggler) {}))
         .parent(m_buttonMenu)
         .pos(this->fromBottom({60.f, 27.f}))
         .store(m_showSenderCheckbox);
@@ -143,7 +144,8 @@ bool ModNoticeSetupPopup::setup() {
     return true;
 }
 
-void ModNoticeSetupPopup::setupUser(int accountId) {
+void ModNoticeSetupPopup::setupUser(int accountId)
+{
     this->onSelectMode(btn::User, true);
 
     if (accountId != 0) {
@@ -151,7 +153,8 @@ void ModNoticeSetupPopup::setupUser(int accountId) {
     }
 }
 
-void ModNoticeSetupPopup::submit() {
+void ModNoticeSetupPopup::submit()
+{
     bool everyone = m_globalCheckbox->isOn();
     bool user = m_userCheckbox->isOn();
     bool room = m_roomCheckbox->isOn();
@@ -195,22 +198,20 @@ void ModNoticeSetupPopup::submit() {
         globed::confirmPopup(
             "Confirm",
             "This action will send a <cy>notice</c> to ALL USERS on the server. Are you sure you want to proceed?",
-            "Cancel",
-            "Send",
-            [text = std::move(text)](FLAlertLayer*) {
-                NetworkManagerImpl::get().sendAdminNoticeEveryone(text);
-            }
-        );
+            "Cancel", "Send",
+            [text = std::move(text)](FLAlertLayer *) { NetworkManagerImpl::get().sendAdminNoticeEveryone(text); });
 
         return;
     }
 
-    NetworkManagerImpl::get().sendAdminNotice(text, userQuery, roomId, levelId, m_canReplyCheckbox->isOn(), m_showSenderCheckbox->isOn());
+    NetworkManagerImpl::get().sendAdminNotice(text, userQuery, roomId, levelId, m_canReplyCheckbox->isOn(),
+                                              m_showSenderCheckbox->isOn());
 
     globed::toastSuccess("Notice sent successfully!");
 }
 
-void ModNoticeSetupPopup::onSelectMode(int mode, bool on) {
+void ModNoticeSetupPopup::onSelectMode(int mode, bool on)
+{
     m_userInput->setVisible(false);
     m_canReplyCheckbox->setVisible(false);
     m_canReplyLabel->setVisible(false);
@@ -251,4 +252,4 @@ void ModNoticeSetupPopup::onSelectMode(int mode, bool on) {
     m_inputsContainer->updateLayout();
 }
 
-}
+} // namespace globed

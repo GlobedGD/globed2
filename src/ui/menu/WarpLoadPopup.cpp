@@ -8,24 +8,26 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const cocos2d::CCSize WarpLoadPopup::POPUP_SIZE = { 180.f, 80.f };
+const cocos2d::CCSize WarpLoadPopup::POPUP_SIZE = {180.f, 80.f};
 
-WarpLoadPopup::~WarpLoadPopup() {
-    auto* glm = GameLevelManager::sharedState();
+WarpLoadPopup::~WarpLoadPopup()
+{
+    auto *glm = GameLevelManager::sharedState();
     glm->m_levelDownloadDelegate = nullptr;
     glm->m_levelManagerDelegate = nullptr;
 }
 
-bool WarpLoadPopup::setup(int levelId, bool openLevel, bool replaceScene) {
+bool WarpLoadPopup::setup(int levelId, bool openLevel, bool replaceScene)
+{
     this->setTitle("Loading Level");
     m_levelId = levelId;
     m_openLevel = openLevel;
     m_replaceScene = replaceScene;
 
     m_statusLabel = Build<CCLabelBMFont>::create("Fetching level data..", "bigFont.fnt")
-        .pos(this->fromTop(50.f))
-        .scale(0.35f)
-        .parent(m_mainLayer);
+                        .pos(this->fromTop(50.f))
+                        .scale(0.35f)
+                        .parent(m_mainLayer);
 
     globed::getOnlineLevel(levelId, [this](auto level) {
         if (!level) {
@@ -42,11 +44,13 @@ bool WarpLoadPopup::setup(int levelId, bool openLevel, bool replaceScene) {
     return !m_finished;
 }
 
-void WarpLoadPopup::onClose(cocos2d::CCObject* obj) {
+void WarpLoadPopup::onClose(cocos2d::CCObject *obj)
+{
     BasePopup::onClose(obj);
 }
 
-void WarpLoadPopup::onLoadedMeta(GJGameLevel* level) {
+void WarpLoadPopup::onLoadedMeta(GJGameLevel *level)
+{
     if (!level->m_levelString.empty()) {
         // assume the level is already downloaded
         this->onLoadedData(level);
@@ -64,18 +68,21 @@ void WarpLoadPopup::onLoadedMeta(GJGameLevel* level) {
 
 // Stage 2, level download
 
-void WarpLoadPopup::levelDownloadFinished(GJGameLevel* level) {
+void WarpLoadPopup::levelDownloadFinished(GJGameLevel *level)
+{
     globed::reorderDownloadedLevel(level);
     this->onLoadedData(level);
 }
 
-void WarpLoadPopup::levelDownloadFailed(int p0) {
+void WarpLoadPopup::levelDownloadFailed(int p0)
+{
     this->onClose(this);
     globed::alertFormat("Error", "Failed to download the level (error code {})", p0);
     m_finished = true;
 }
 
-void WarpLoadPopup::onLoadedData(GJGameLevel* level) {
+void WarpLoadPopup::onLoadedData(GJGameLevel *level)
+{
     bool open = m_openLevel;
     bool replace = m_replaceScene;
     bool shown = this->getParent() != nullptr;
@@ -94,7 +101,6 @@ void WarpLoadPopup::onLoadedData(GJGameLevel* level) {
         auto layer = LevelInfoLayer::create(level, false);
         replace ? globed::replaceScene(layer) : globed::pushScene(layer);
     }
-
 }
 
-}
+} // namespace globed

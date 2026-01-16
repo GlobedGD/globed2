@@ -1,9 +1,9 @@
 #include "GJBaseGameLayer.hpp"
-#include <globed/util/gd.hpp>
-#include <globed/core/RoomManager.hpp>
 #include <core/CoreImpl.hpp>
 #include <core/PreloadManager.hpp>
 #include <core/patches.hpp>
+#include <globed/core/RoomManager.hpp>
+#include <globed/util/gd.hpp>
 
 #include <Geode/modify/PlayLayer.hpp>
 
@@ -18,16 +18,18 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         std::optional<bool> m_oldShowProgressBar;
     };
 
-    GlobedGJBGL* asBase() {
+    GlobedGJBGL *asBase()
+    {
         return GlobedGJBGL::get(this);
     }
 
-    static void onModify(auto& self) {
-        (void) self.setHookPriority("PlayLayer::destroyPlayer", 0x500000);
+    static void onModify(auto &self)
+    {
+        (void)self.setHookPriority("PlayLayer::destroyPlayer", 0x500000);
     }
 
-    $override
-    bool init(GJGameLevel* level, bool a, bool b) {
+    $override bool init(GJGameLevel *level, bool a, bool b)
+    {
         auto gjbgl = this->asBase();
         gjbgl->setupPreInit(level, false);
 
@@ -37,16 +39,17 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
             gm->m_showProgressBar = true;
         }
 
-        if (!PlayLayer::init(level, a, b)) return false;
+        if (!PlayLayer::init(level, a, b))
+            return false;
 
         gjbgl->setupPostInit();
 
         return true;
     }
 
-    $override
-    void onQuit() {
-        auto& fields = *m_fields.self();
+    $override void onQuit()
+    {
+        auto &fields = *m_fields.self();
         if (fields.m_oldShowProgressBar) {
             GameManager::get()->m_showProgressBar = *fields.m_oldShowProgressBar;
         }
@@ -55,13 +58,13 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         PlayLayer::onQuit();
     }
 
-    $override
-    void setupHasCompleted() {
+    $override void setupHasCompleted()
+    {
         // This function calls `GameManager::loadDeathEffect` (inlined on windows),
         // which unloads the current death effect (this interferes with our preloading mechanism).
         // Override it and temporarily set death effect to 0, to prevent it from being unloaded.
 
-        auto& pm = PreloadManager::get();
+        auto &pm = PreloadManager::get();
         if (pm.deathEffectsLoaded()) {
             auto gm = globed::cachedSingleton<GameManager>();
             int effect = gm->m_playerDeathEffect;
@@ -83,7 +86,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         // progress bar indicators
         auto gjbgl = GlobedGJBGL::get(this);
         if (gjbgl->active()) {
-            auto& fields = *gjbgl->m_fields.self();
+            auto &fields = *gjbgl->m_fields.self();
 
             if (fields.m_progressBarContainer && !fields.m_progressBarContainer->getParent() && m_progressBar) {
                 m_progressBar->addChild(fields.m_progressBarContainer);
@@ -91,15 +94,15 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         }
     }
 
-    $override
-    void destroyPlayer(PlayerObject* player, GameObject* obj) {
+    $override void destroyPlayer(PlayerObject *player, GameObject *obj)
+    {
         bool active = this->asBase()->active();
         if (!active) {
             PlayLayer::destroyPlayer(player, obj);
             return;
         }
 
-        auto& rm = RoomManager::get();
+        auto &rm = RoomManager::get();
 
         bool overrideReset = !rm.isInGlobal();
         bool oldReset = overrideReset ? gameVariable(GameVariable::FastRespawn) : false;
@@ -121,16 +124,16 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
 
         if (patch) {
             if (GlobedGJBGL::get()->isSafeMode()) {
-                (void) patch->enable();
+                (void)patch->enable();
             } else {
-                (void) patch->disable();
+                (void)patch->disable();
             }
         }
 
         PlayLayer::destroyPlayer(player, obj);
 
         if (patch && patch->isEnabled()) {
-            (void) patch->disable();
+            (void)patch->disable();
         }
 #else
         PlayLayer::destroyPlayer(player, obj);
@@ -145,11 +148,12 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         }
     }
 
-    $override
-    void resetLevel() {
+    $override void resetLevel()
+    {
         PlayLayer::resetLevel();
 
-        if (!m_fields->m_setupWasCompleted) return;
+        if (!m_fields->m_setupWasCompleted)
+            return;
 
         // log::debug("Respawned after {}", g_diedAt.elapsed().toString());
 
@@ -160,17 +164,18 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         }
     }
 
-    $override
-    void fullReset() {
+    $override void fullReset()
+    {
         PlayLayer::fullReset();
 
         auto gjbgl = GlobedGJBGL::get(this);
         gjbgl->resetSafeMode();
     }
 
-    $override
-    void showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
-        // doesn't actually change any progress but this stops the NEW BEST popup from showing up while cheating/jumping to a player
+    $override void showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5)
+    {
+        // doesn't actually change any progress but this stops the NEW BEST popup from showing up while cheating/jumping
+        // to a player
         if (!GlobedGJBGL::get(this)->isSafeMode()) {
             PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
             m_fields->m_showedNewBest = true;
@@ -178,4 +183,4 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
     }
 };
 
-}
+} // namespace globed

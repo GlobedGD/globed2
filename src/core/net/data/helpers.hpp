@@ -1,30 +1,27 @@
 #pragma once
 
 #include "generated.hpp"
-#include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/data/Messages.hpp>
+#include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/data/UserRole.hpp>
 #include <globed/util/assert.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
 
-#include <qunet/buffers/ByteReader.hpp>
 #include <capnp/compat/std-iterator.h>
+#include <qunet/buffers/ByteReader.hpp>
 
 namespace globed::data {
 
 /// Color conversion
 
-inline uint32_t encodeColor4(cocos2d::ccColor4B color) {
-    return (
-        (uint32_t)color.r << 24
-        | (uint32_t)color.g << 16
-        | (uint32_t)color.b << 8
-        | (uint32_t)color.a
-    );
+inline uint32_t encodeColor4(cocos2d::ccColor4B color)
+{
+    return ((uint32_t)color.r << 24 | (uint32_t)color.g << 16 | (uint32_t)color.b << 8 | (uint32_t)color.a);
 }
 
-inline cocos2d::ccColor4B decodeColor4(uint32_t color) {
-    return cocos2d::ccColor4B {
+inline cocos2d::ccColor4B decodeColor4(uint32_t color)
+{
+    return cocos2d::ccColor4B{
         .r = uint8_t(color >> 24),
         .g = uint8_t(color >> 16),
         .b = uint8_t(color >> 8),
@@ -32,39 +29,37 @@ inline cocos2d::ccColor4B decodeColor4(uint32_t color) {
     };
 }
 
-template <typename CxxS, typename CapnpW>
-struct Encode {
-    static void encode(const CxxS&, CapnpW&&) {
+template <typename CxxS, typename CapnpW> struct Encode {
+    static void encode(const CxxS &, CapnpW &&)
+    {
         static_assert(std::is_void_v<CxxS>, "encode not implemented for this type");
     }
 };
 
-template <typename CxxS, typename CapnpR>
-struct Decode {
-    static std::optional<CxxS> decodeOpt(const CapnpR&) {
+template <typename CxxS, typename CapnpR> struct Decode {
+    static std::optional<CxxS> decodeOpt(const CapnpR &)
+    {
         static_assert(std::is_void_v<CxxS>, "decode not implemented for this type");
     }
 };
 
-template <typename CxxS, typename CapnpW>
-static void encode(const CxxS& s, CapnpW&& w) {
+template <typename CxxS, typename CapnpW> static void encode(const CxxS &s, CapnpW &&w)
+{
     Encode<CxxS, CapnpW>::encode(s, std::forward<CapnpW>(w));
 }
 
-template <typename CxxS, typename CapnpR>
-static std::optional<CxxS> decodeOpt(const CapnpR& r) {
+template <typename CxxS, typename CapnpR> static std::optional<CxxS> decodeOpt(const CapnpR &r)
+{
     return Decode<CxxS, std::decay_t<CapnpR>>::decodeOpt(r);
 }
-template <typename CxxS, typename CapnpR>
-static CxxS decodeUnchecked(const CapnpR& r) {
+template <typename CxxS, typename CapnpR> static CxxS decodeUnchecked(const CapnpR &r)
+{
     return std::move(*decodeOpt<CxxS, CapnpR>(r));
 }
 
-template <typename A>
-struct ExtractFnArg;
+template <typename A> struct ExtractFnArg;
 
-template <typename Z>
-struct ExtractFnArg<void(Z)> {
+template <typename Z> struct ExtractFnArg<void(Z)> {
     using type = Z;
 };
 
@@ -72,27 +67,28 @@ struct ExtractFnArg<void(Z)> {
 /// For example: `const int& x` -> `const int&`
 #define EXTRACT_EXPR_TYPE(expr) ExtractFnArg<void(expr)>::type
 
-#define $implEncodeInner(cxxt, wrt) \
-    template <typename Y> \
-    struct Encode<std::decay_t<EXTRACT_EXPR_TYPE(cxxt)>, Y> { \
-        using Wrt = std::decay_t<EXTRACT_EXPR_TYPE(wrt)>; \
-        static void encode(std::decay_t<EXTRACT_EXPR_TYPE(cxxt)> _zencodeInnervar, Y&& y) { encodeInner(_zencodeInnervar, y); } \
-        static void encodeInner(cxxt, wrt); \
-    }; \
-    template <typename Y> \
-    void Encode<std::decay_t<EXTRACT_EXPR_TYPE(cxxt)>, Y>::encodeInner(cxxt, wrt)
+#define $implEncodeInner(cxxt, wrt)                                                                                    \
+    template <typename Y> struct Encode<std::decay_t<EXTRACT_EXPR_TYPE(cxxt)>, Y> {                                    \
+        using Wrt = std::decay_t<EXTRACT_EXPR_TYPE(wrt)>;                                                              \
+        static void encode(std::decay_t<EXTRACT_EXPR_TYPE(cxxt)> _zencodeInnervar, Y &&y)                              \
+        {                                                                                                              \
+            encodeInner(_zencodeInnervar, y);                                                                          \
+        }                                                                                                              \
+        static void encodeInner(cxxt, wrt);                                                                            \
+    };                                                                                                                 \
+    template <typename Y> void Encode<std::decay_t<EXTRACT_EXPR_TYPE(cxxt)>, Y>::encodeInner(cxxt, wrt)
 
-#define $implDecodeInner(cxxt, rt) \
-    template <> \
-    struct Decode<cxxt, std::decay_t<EXTRACT_EXPR_TYPE(rt)>> { \
-        static std::optional<cxxt> decodeOpt(rt); \
-    }; \
+#define $implDecodeInner(cxxt, rt)                                                                                     \
+    template <> struct Decode<cxxt, std::decay_t<EXTRACT_EXPR_TYPE(rt)>> {                                             \
+        static std::optional<cxxt> decodeOpt(rt);                                                                      \
+    };                                                                                                                 \
     inline std::optional<cxxt> Decode<cxxt, std::decay_t<EXTRACT_EXPR_TYPE(rt)>>::decodeOpt(rt)
 
 #define $implEncode(cxxt, wrt) $implEncodeInner(cxxt, ::globed::schema::wrt)
 #define $implDecode(cxxt, rt) $implDecodeInner(cxxt, const ::globed::schema::rt)
 
-$implEncode(const PlayerState& state, game::PlayerData::Builder& data) {
+$implEncode(const PlayerState &state, game::PlayerData::Builder &data)
+{
     data.setAccountId(state.accountId);
     data.setTimestamp(state.timestamp);
     data.setFrameNumber(state.frameNumber);
@@ -153,7 +149,8 @@ $implEncode(const PlayerState& state, game::PlayerData::Builder& data) {
     }
 }
 
-$implDecode(PlayerState, game::PlayerData::Reader& reader) {
+$implDecode(PlayerState, game::PlayerData::Reader &reader)
+{
     PlayerState out{};
     out.accountId = reader.getAccountId();
     out.timestamp = reader.getTimestamp();
@@ -167,7 +164,7 @@ $implDecode(PlayerState, game::PlayerData::Reader& reader) {
     out.isEditorBuilding = reader.getIsEditorBuilding();
     out.isLastDeathReal = reader.getIsLastDeathReal();
 
-    auto initPlayer = [](auto&& src, PlayerObjectData& dst) {
+    auto initPlayer = [](auto &&src, PlayerObjectData &dst) {
         dst.position.x = src.getPositionX();
         dst.position.y = src.getPositionY();
         dst.rotation = src.getRotation();
@@ -235,7 +232,8 @@ $implDecode(PlayerState, game::PlayerData::Reader& reader) {
 
 // Icon data
 
-$implEncode(const PlayerIconData& icons, shared::PlayerIconData::Builder& data) {
+$implEncode(const PlayerIconData &icons, shared::PlayerIconData::Builder &data)
+{
     data.setCube(icons.cube);
     data.setShip(icons.ship);
     data.setBall(icons.ball);
@@ -253,7 +251,8 @@ $implEncode(const PlayerIconData& icons, shared::PlayerIconData::Builder& data) 
     data.setShipTrail(icons.shipTrail);
 }
 
-$implDecode(PlayerIconData, shared::PlayerIconData::Reader& reader) {
+$implDecode(PlayerIconData, shared::PlayerIconData::Reader &reader)
+{
     PlayerIconData out{};
     out.cube = reader.getCube();
     out.ship = reader.getShip();
@@ -275,7 +274,8 @@ $implDecode(PlayerIconData, shared::PlayerIconData::Reader& reader) {
 
 // Room settings
 
-$implEncode(const RoomSettings& settings, main::RoomSettings::Builder& data) {
+$implEncode(const RoomSettings &settings, main::RoomSettings::Builder &data)
+{
     data.setServerId(settings.serverId);
     data.setPlayerLimit(settings.playerLimit);
     data.setFasterReset(settings.fasterReset);
@@ -292,7 +292,8 @@ $implEncode(const RoomSettings& settings, main::RoomSettings::Builder& data) {
     data.setSwitcheroo(settings.switcheroo);
 }
 
-$implDecode(RoomSettings, main::RoomSettings::Reader& reader) {
+$implDecode(RoomSettings, main::RoomSettings::Reader &reader)
+{
     RoomSettings out{};
     out.serverId = reader.getServerId();
     out.playerLimit = reader.getPlayerLimit();
@@ -313,16 +314,15 @@ $implDecode(RoomSettings, main::RoomSettings::Reader& reader) {
 
 /// Multi color
 
-inline std::optional<MultiColor> decodeMultiColor(capnp::Data::Reader data) {
-    if (data.size() == 0) return std::nullopt;
+inline std::optional<MultiColor> decodeMultiColor(capnp::Data::Reader data)
+{
+    if (data.size() == 0)
+        return std::nullopt;
 
     auto mc = MultiColor::decode({data.begin(), data.size()});
     if (!mc) {
-        geode::log::warn(
-            "Failed to decode multicolor '{}': {}",
-            globed::hexEncode(data.begin(), data.size()),
-            mc.unwrapErr()
-        );
+        geode::log::warn("Failed to decode multicolor '{}': {}", globed::hexEncode(data.begin(), data.size()),
+                         mc.unwrapErr());
 
         return std::nullopt;
     } else {
@@ -332,7 +332,8 @@ inline std::optional<MultiColor> decodeMultiColor(capnp::Data::Reader data) {
 
 // Display data
 
-$implDecode(PlayerDisplayData, shared::PlayerDisplayData::Reader& reader) {
+$implDecode(PlayerDisplayData, shared::PlayerDisplayData::Reader &reader)
+{
     PlayerDisplayData out{};
     out.accountId = reader.getAccountId();
 
@@ -373,7 +374,8 @@ $implDecode(PlayerDisplayData, shared::PlayerDisplayData::Reader& reader) {
 
 // Account data
 
-$implDecode(PlayerAccountData, main::PlayerAccountData::Reader& reader) {
+$implDecode(PlayerAccountData, main::PlayerAccountData::Reader &reader)
+{
     PlayerAccountData out{};
     out.accountId = reader.getAccountId();
     out.userId = reader.getUserId();
@@ -383,7 +385,8 @@ $implDecode(PlayerAccountData, main::PlayerAccountData::Reader& reader) {
 
 // Minimal room player
 
-$implDecode(MinimalRoomPlayer, main::MinimalRoomPlayer::Reader& reader) {
+$implDecode(MinimalRoomPlayer, main::MinimalRoomPlayer::Reader &reader)
+{
     MinimalRoomPlayer out{};
     out.cube = reader.getCube();
     out.color1 = reader.getColor1();
@@ -393,7 +396,8 @@ $implDecode(MinimalRoomPlayer, main::MinimalRoomPlayer::Reader& reader) {
     return out;
 }
 
-$implDecode(MinimalRoomPlayer, main::RoomPlayer::Reader& reader) {
+$implDecode(MinimalRoomPlayer, main::RoomPlayer::Reader &reader)
+{
     MinimalRoomPlayer out{};
     out.cube = reader.getCube();
     out.color1 = reader.getColor1();
@@ -405,7 +409,8 @@ $implDecode(MinimalRoomPlayer, main::RoomPlayer::Reader& reader) {
 
 // Room player
 
-$implDecode(RoomPlayer, main::RoomPlayer::Reader& reader) {
+$implDecode(RoomPlayer, main::RoomPlayer::Reader &reader)
+{
     RoomPlayer out{decodeUnchecked<MinimalRoomPlayer>(reader)};
     out.session = SessionId(reader.getSession());
     out.teamId = reader.getTeamId();
@@ -427,7 +432,8 @@ $implDecode(RoomPlayer, main::RoomPlayer::Reader& reader) {
 
 // Room state
 
-$implDecode(msg::RoomStateMessage, main::RoomStateMessage::Reader& reader) {
+$implDecode(msg::RoomStateMessage, main::RoomStateMessage::Reader &reader)
+{
     msg::RoomStateMessage out{};
     out.roomId = reader.getRoomId();
     out.roomOwner = reader.getRoomOwner();
@@ -449,7 +455,7 @@ $implDecode(msg::RoomStateMessage, main::RoomStateMessage::Reader& reader) {
     out.teams.reserve(teams.size());
 
     for (auto team : teams) {
-        out.teams.push_back(RoomTeam {
+        out.teams.push_back(RoomTeam{
             .color = decodeColor4(team),
         });
     }
@@ -457,7 +463,8 @@ $implDecode(msg::RoomStateMessage, main::RoomStateMessage::Reader& reader) {
     return out;
 }
 
-$implDecode(msg::RoomPlayersMessage, main::RoomPlayersMessage::Reader& reader) {
+$implDecode(msg::RoomPlayersMessage, main::RoomPlayersMessage::Reader &reader)
+{
     msg::RoomPlayersMessage out{};
 
     auto players = reader.getPlayers();
@@ -470,7 +477,8 @@ $implDecode(msg::RoomPlayersMessage, main::RoomPlayersMessage::Reader& reader) {
     return out;
 }
 
-$implDecode(msg::RoomJoinFailedMessage, main::RoomJoinFailedMessage::Reader& reader) {
+$implDecode(msg::RoomJoinFailedMessage, main::RoomJoinFailedMessage::Reader &reader)
+{
     using enum schema::main::RoomJoinFailedReason;
 
     msg::RoomJoinFailedMessage out{};
@@ -481,7 +489,8 @@ $implDecode(msg::RoomJoinFailedMessage, main::RoomJoinFailedMessage::Reader& rea
 
 // Room create failed
 
-$implDecode(msg::RoomCreateFailedMessage, main::RoomCreateFailedMessage::Reader& reader) {
+$implDecode(msg::RoomCreateFailedMessage, main::RoomCreateFailedMessage::Reader &reader)
+{
     using enum schema::main::RoomCreateFailedReason;
 
     msg::RoomCreateFailedMessage out{};
@@ -492,7 +501,8 @@ $implDecode(msg::RoomCreateFailedMessage, main::RoomCreateFailedMessage::Reader&
 
 // Room listing
 
-$implDecode(msg::RoomListMessage, main::RoomListMessage::Reader& reader) {
+$implDecode(msg::RoomListMessage, main::RoomListMessage::Reader &reader)
+{
     msg::RoomListMessage out{};
     out.page = reader.getPage();
     out.total = reader.getTotal();
@@ -518,7 +528,8 @@ $implDecode(msg::RoomListMessage, main::RoomListMessage::Reader& reader) {
 
 // Level data
 
-$implDecode(msg::LevelDataMessage, game::LevelDataMessage::Reader& reader) {
+$implDecode(msg::LevelDataMessage, game::LevelDataMessage::Reader &reader)
+{
     auto players = reader.getPlayers();
     auto ddatas = reader.getDisplayDatas();
     auto eventData = reader.getEventData();
@@ -560,15 +571,17 @@ $implDecode(msg::LevelDataMessage, game::LevelDataMessage::Reader& reader) {
 
 /// Script logs
 
-$implDecode(msg::ScriptLogsMessage, game::ScriptLogsMessage::Reader& reader) {
+$implDecode(msg::ScriptLogsMessage, game::ScriptLogsMessage::Reader &reader)
+{
     std::vector<std::string> logs = {reader.getLogs().begin(), reader.getLogs().end()};
 
-    return msg::ScriptLogsMessage { std::move(logs), reader.getRamUsage() };
+    return msg::ScriptLogsMessage{std::move(logs), reader.getRamUsage()};
 }
 
 /// Voice broadcast
 
-$implDecode(msg::VoiceBroadcastMessage, game::VoiceBroadcastMessage::Reader& reader) {
+$implDecode(msg::VoiceBroadcastMessage, game::VoiceBroadcastMessage::Reader &reader)
+{
     EncodedAudioFrame out{};
     int user = reader.getAccountId();
 
@@ -578,16 +591,17 @@ $implDecode(msg::VoiceBroadcastMessage, game::VoiceBroadcastMessage::Reader& rea
 
         auto data = std::make_shared<uint8_t[]>(size);
         std::memcpy(data.get(), ptr, size);
-        (void) out.pushOpusFrame({ .data = std::move(data), .size = size });
+        (void)out.pushOpusFrame({.data = std::move(data), .size = size});
     }
 
-    return msg::VoiceBroadcastMessage { .accountId = user, .frame = std::move(out) };
+    return msg::VoiceBroadcastMessage{.accountId = user, .frame = std::move(out)};
 }
 
 /// Quick chat broadcast
 
-$implDecode(msg::QuickChatBroadcastMessage, game::QuickChatBroadcastMessage::Reader& reader) {
-    return msg::QuickChatBroadcastMessage {
+$implDecode(msg::QuickChatBroadcastMessage, game::QuickChatBroadcastMessage::Reader &reader)
+{
+    return msg::QuickChatBroadcastMessage{
         .accountId = reader.getAccountId(),
         .quickChatId = reader.getId(),
     };
@@ -595,7 +609,8 @@ $implDecode(msg::QuickChatBroadcastMessage, game::QuickChatBroadcastMessage::Rea
 
 /// User role
 
-inline std::optional<UserRole> decodeUserRole(const schema::shared::UserRole::Reader& reader, size_t idx) {
+inline std::optional<UserRole> decodeUserRole(const schema::shared::UserRole::Reader &reader, size_t idx)
+{
     UserRole role{};
     role.id = idx;
     role.stringId = reader.getStringId();
@@ -611,11 +626,13 @@ inline std::optional<UserRole> decodeUserRole(const schema::shared::UserRole::Re
     return role;
 }
 
-static FeatureTier decodeFeatureTier(uint8_t tier) {
+static FeatureTier decodeFeatureTier(uint8_t tier)
+{
     return (FeatureTier)std::clamp<uint8_t>(tier, 0, 2);
 }
 
-inline std::optional<ExtendedUserData> decodeExtendedUserData(const schema::main::ExtendedUserData::Reader& reader) {
+inline std::optional<ExtendedUserData> decodeExtendedUserData(const schema::main::ExtendedUserData::Reader &reader)
+{
     ExtendedUserData out{};
 
     if (reader.hasNewToken()) {
@@ -631,7 +648,6 @@ inline std::optional<ExtendedUserData> decodeExtendedUserData(const schema::main
         out.nameColor = decodeMultiColor(reader.getNameColor());
     }
 
-
     out.permissions.isModerator = reader.getIsModerator();
     out.permissions.canMute = reader.getCanMute();
     out.permissions.canBan = reader.getCanBan();
@@ -644,7 +660,8 @@ inline std::optional<ExtendedUserData> decodeExtendedUserData(const schema::main
     return out;
 }
 
-$implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
+$implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader &reader)
+{
     msg::CentralLoginOkMessage msg{};
 
     if (reader.hasAllRoles()) {
@@ -688,7 +705,8 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
 
 // Banned
 
-$implDecode(msg::BannedMessage, main::BannedMessage::Reader& reader) {
+$implDecode(msg::BannedMessage, main::BannedMessage::Reader &reader)
+{
     msg::BannedMessage out{};
     out.reason = reader.getReason();
     out.expiresAt = reader.getExpiresAt();
@@ -697,7 +715,8 @@ $implDecode(msg::BannedMessage, main::BannedMessage::Reader& reader) {
 
 // Muted
 
-$implDecode(msg::MutedMessage, main::MutedMessage::Reader& reader) {
+$implDecode(msg::MutedMessage, main::MutedMessage::Reader &reader)
+{
     msg::MutedMessage out{};
     out.reason = reader.getReason();
     out.expiresAt = reader.getExpiresAt();
@@ -706,7 +725,8 @@ $implDecode(msg::MutedMessage, main::MutedMessage::Reader& reader) {
 
 // Room banned
 
-$implDecode(msg::RoomBannedMessage, main::RoomBannedMessage::Reader& reader) {
+$implDecode(msg::RoomBannedMessage, main::RoomBannedMessage::Reader &reader)
+{
     msg::RoomBannedMessage out{};
     out.reason = reader.getReason();
     out.expiresAt = reader.getExpiresAt();
@@ -715,7 +735,8 @@ $implDecode(msg::RoomBannedMessage, main::RoomBannedMessage::Reader& reader) {
 
 /// Team creation result
 
-$implDecode(msg::TeamCreationResultMessage, main::TeamCreationResultMessage::Reader& reader) {
+$implDecode(msg::TeamCreationResultMessage, main::TeamCreationResultMessage::Reader &reader)
+{
     msg::TeamCreationResultMessage out{};
 
     out.success = reader.getSuccess();
@@ -726,7 +747,8 @@ $implDecode(msg::TeamCreationResultMessage, main::TeamCreationResultMessage::Rea
 
 /// Team changed
 
-$implDecode(msg::TeamChangedMessage, main::TeamChangedMessage::Reader& reader) {
+$implDecode(msg::TeamChangedMessage, main::TeamChangedMessage::Reader &reader)
+{
     msg::TeamChangedMessage out{};
     out.teamId = reader.getTeamId();
     return out;
@@ -734,7 +756,8 @@ $implDecode(msg::TeamChangedMessage, main::TeamChangedMessage::Reader& reader) {
 
 /// Team members
 
-$implDecode(msg::TeamMembersMessage, main::TeamMembersMessage::Reader& reader) {
+$implDecode(msg::TeamMembersMessage, main::TeamMembersMessage::Reader &reader)
+{
     msg::TeamMembersMessage out{};
 
     auto members = reader.getMembers();
@@ -756,14 +779,15 @@ $implDecode(msg::TeamMembersMessage, main::TeamMembersMessage::Reader& reader) {
 
 /// Teams updated message
 
-$implDecode(msg::TeamsUpdatedMessage, main::TeamsUpdatedMessage::Reader& reader) {
+$implDecode(msg::TeamsUpdatedMessage, main::TeamsUpdatedMessage::Reader &reader)
+{
     msg::TeamsUpdatedMessage out{};
 
     auto teams = reader.getTeams();
     out.teams.reserve(teams.size());
 
     for (auto team : teams) {
-        out.teams.push_back(RoomTeam {
+        out.teams.push_back(RoomTeam{
             .color = decodeColor4(team),
         });
     }
@@ -773,14 +797,16 @@ $implDecode(msg::TeamsUpdatedMessage, main::TeamsUpdatedMessage::Reader& reader)
 
 /// UserDataChangedMessage
 
-$implDecode(msg::UserDataChangedMessage, main::UserDataChangedMessage::Reader& reader) {
+$implDecode(msg::UserDataChangedMessage, main::UserDataChangedMessage::Reader &reader)
+{
     auto ud = decodeExtendedUserData(reader.getUserData());
     return ud ? std::optional{msg::UserDataChangedMessage{std::move(*ud)}} : std::nullopt;
 }
 
 /// Player counts message
 
-$implDecode(msg::PlayerCountsMessage, main::PlayerCountsMessage::Reader& reader) {
+$implDecode(msg::PlayerCountsMessage, main::PlayerCountsMessage::Reader &reader)
+{
     msg::PlayerCountsMessage out{};
 
     auto counts = reader.getCounts();
@@ -798,7 +824,8 @@ $implDecode(msg::PlayerCountsMessage, main::PlayerCountsMessage::Reader& reader)
 
 /// Global players message
 
-$implDecode(msg::GlobalPlayersMessage, main::GlobalPlayersMessage::Reader& reader) {
+$implDecode(msg::GlobalPlayersMessage, main::GlobalPlayersMessage::Reader &reader)
+{
     msg::GlobalPlayersMessage out{};
 
     auto players = reader.getPlayers();
@@ -813,7 +840,8 @@ $implDecode(msg::GlobalPlayersMessage, main::GlobalPlayersMessage::Reader& reade
 
 /// Level list message
 
-$implDecode(msg::LevelListMessage, main::LevelListMessage::Reader& reader) {
+$implDecode(msg::LevelListMessage, main::LevelListMessage::Reader &reader)
+{
     msg::LevelListMessage out{};
 
     auto counts = reader.getPlayerCounts();
@@ -831,7 +859,8 @@ $implDecode(msg::LevelListMessage, main::LevelListMessage::Reader& reader) {
 
 /// Credits user
 
-$implDecode(CreditsUser, main::CreditsUser::Reader& reader) {
+$implDecode(CreditsUser, main::CreditsUser::Reader &reader)
+{
     CreditsUser out{};
 
     out.accountId = reader.getAccountId();
@@ -848,7 +877,8 @@ $implDecode(CreditsUser, main::CreditsUser::Reader& reader) {
 
 /// Credits
 
-$implDecode(msg::CreditsMessage, main::CreditsMessage::Reader& reader) {
+$implDecode(msg::CreditsMessage, main::CreditsMessage::Reader &reader)
+{
     msg::CreditsMessage out{};
 
     out.unavailable = reader.getUnavailable();
@@ -879,7 +909,8 @@ $implDecode(msg::CreditsMessage, main::CreditsMessage::Reader& reader) {
 
 /// Discord link stae
 
-$implDecode(msg::DiscordLinkStateMessage, main::DiscordLinkStateMessage::Reader& reader) {
+$implDecode(msg::DiscordLinkStateMessage, main::DiscordLinkStateMessage::Reader &reader)
+{
     msg::DiscordLinkStateMessage out{};
     out.id = reader.getId();
     out.username = reader.getUsername();
@@ -889,7 +920,8 @@ $implDecode(msg::DiscordLinkStateMessage, main::DiscordLinkStateMessage::Reader&
 
 /// Discord link attempt
 
-$implDecode(msg::DiscordLinkAttemptMessage, main::DiscordLinkAttemptMessage::Reader& reader) {
+$implDecode(msg::DiscordLinkAttemptMessage, main::DiscordLinkAttemptMessage::Reader &reader)
+{
     msg::DiscordLinkAttemptMessage out{};
     out.id = reader.getId();
     out.username = reader.getUsername();
@@ -899,7 +931,8 @@ $implDecode(msg::DiscordLinkAttemptMessage, main::DiscordLinkAttemptMessage::Rea
 
 /// Featured level
 
-$implDecode(msg::FeaturedLevelMessage, main::FeaturedLevelMessage::Reader& reader) {
+$implDecode(msg::FeaturedLevelMessage, main::FeaturedLevelMessage::Reader &reader)
+{
     msg::FeaturedLevelMessage out{};
     FeaturedLevelMeta flm{};
     flm.levelId = reader.getLevelId();
@@ -915,13 +948,14 @@ $implDecode(msg::FeaturedLevelMessage, main::FeaturedLevelMessage::Reader& reade
 
 /// Featured list
 
-$implDecode(msg::FeaturedListMessage, main::FeaturedListMessage::Reader& reader) {
+$implDecode(msg::FeaturedListMessage, main::FeaturedListMessage::Reader &reader)
+{
     msg::FeaturedListMessage out{};
     auto levelIds = reader.getLevelIds();
     auto rateTiers = reader.getRateTiers();
 
     for (size_t i = 0; i < std::min(levelIds.size(), rateTiers.size()); i++) {
-        out.levels.push_back(FeaturedLevelMeta {
+        out.levels.push_back(FeaturedLevelMeta{
             .levelId = levelIds[i],
             .rateTier = decodeFeatureTier(rateTiers[i]),
         });
@@ -934,7 +968,8 @@ $implDecode(msg::FeaturedListMessage, main::FeaturedListMessage::Reader& reader)
 
 /// Invited
 
-$implDecode(msg::InvitedMessage, main::InvitedMessage::Reader& reader) {
+$implDecode(msg::InvitedMessage, main::InvitedMessage::Reader &reader)
+{
     msg::InvitedMessage out{};
     out.token = reader.getToken();
 
@@ -948,15 +983,15 @@ $implDecode(msg::InvitedMessage, main::InvitedMessage::Reader& reader) {
 
 /// Invite token created
 
-$implDecode(msg::InviteTokenCreatedMessage, main::InviteTokenCreatedMessage::Reader& reader) {
-    return msg::InviteTokenCreatedMessage {
-        .token = reader.getToken()
-    };
+$implDecode(msg::InviteTokenCreatedMessage, main::InviteTokenCreatedMessage::Reader &reader)
+{
+    return msg::InviteTokenCreatedMessage{.token = reader.getToken()};
 }
 
 /// User punishment
 
-$implDecode(UserPunishment, main::UserPunishment::Reader& reader) {
+$implDecode(UserPunishment, main::UserPunishment::Reader &reader)
+{
     UserPunishment out{};
     out.issuedBy = reader.getIssuedBy();
     out.issuedAt = reader.getIssuedAt();
@@ -967,7 +1002,8 @@ $implDecode(UserPunishment, main::UserPunishment::Reader& reader) {
 
 /// Admin fetch response message
 
-$implDecode(msg::AdminFetchResponseMessage, main::AdminFetchResponseMessage::Reader& reader) {
+$implDecode(msg::AdminFetchResponseMessage, main::AdminFetchResponseMessage::Reader &reader)
+{
     msg::AdminFetchResponseMessage out{};
 
     out.accountId = reader.getAccountId();
@@ -993,7 +1029,8 @@ $implDecode(msg::AdminFetchResponseMessage, main::AdminFetchResponseMessage::Rea
 
 /// Fetched mod
 
-$implDecode(FetchedMod, main::FetchedMod::Reader& reader) {
+$implDecode(FetchedMod, main::FetchedMod::Reader &reader)
+{
     FetchedMod out{};
     out.accountId = reader.getAccountId();
     out.username = reader.getUsername();
@@ -1006,7 +1043,8 @@ $implDecode(FetchedMod, main::FetchedMod::Reader& reader) {
 
 /// Admin fetch mods response message
 
-$implDecode(msg::AdminFetchModsResponseMessage, main::AdminFetchModsResponseMessage::Reader& reader) {
+$implDecode(msg::AdminFetchModsResponseMessage, main::AdminFetchModsResponseMessage::Reader &reader)
+{
     msg::AdminFetchModsResponseMessage out{};
 
     auto users = reader.getUsers();
@@ -1021,7 +1059,8 @@ $implDecode(msg::AdminFetchModsResponseMessage, main::AdminFetchModsResponseMess
 
 /// Admin audit log
 
-$implDecode(AdminAuditLog, main::AuditLog::Reader& reader) {
+$implDecode(AdminAuditLog, main::AuditLog::Reader &reader)
+{
     AdminAuditLog out{};
 
     out.id = reader.getId();
@@ -1037,7 +1076,8 @@ $implDecode(AdminAuditLog, main::AuditLog::Reader& reader) {
 
 /// Admin fetch logs response message
 
-$implDecode(msg::AdminLogsResponseMessage, main::AdminLogsResponseMessage::Reader& reader) {
+$implDecode(msg::AdminLogsResponseMessage, main::AdminLogsResponseMessage::Reader &reader)
+{
     msg::AdminLogsResponseMessage out{};
 
     auto accs = reader.getAccounts();
@@ -1059,7 +1099,8 @@ $implDecode(msg::AdminLogsResponseMessage, main::AdminLogsResponseMessage::Reade
 
 // Admin punishment reasons message
 
-$implDecode(msg::AdminPunishmentReasonsMessage, main::AdminPunishmentReasonsMessage::Reader& reader) {
+$implDecode(msg::AdminPunishmentReasonsMessage, main::AdminPunishmentReasonsMessage::Reader &reader)
+{
     PunishReasons out{};
 
     auto banReasons = reader.getBan();
@@ -1071,16 +1112,17 @@ $implDecode(msg::AdminPunishmentReasonsMessage, main::AdminPunishmentReasonsMess
     auto roomBanReasons = reader.getRoomBan();
     out.roomBanReasons = {roomBanReasons.begin(), roomBanReasons.end()};
 
-    return msg::AdminPunishmentReasonsMessage{ std::move(out) };
+    return msg::AdminPunishmentReasonsMessage{std::move(out)};
 }
 
 /// Send level script message
 
-$implEncode(const std::vector<EmbeddedScript>& scripts, game::SendLevelScriptMessage::Builder& out) {
+$implEncode(const std::vector<EmbeddedScript> &scripts, game::SendLevelScriptMessage::Builder &out)
+{
     auto outscr = out.initScripts(scripts.size());
 
     for (size_t i = 0; i < scripts.size(); i++) {
-        auto& script = scripts[i];
+        auto &script = scripts[i];
         auto scr = outscr[i];
         scr.setContent(script.content);
         scr.setFilename(script.filename);
@@ -1091,4 +1133,4 @@ $implEncode(const std::vector<EmbeddedScript>& scripts, game::SendLevelScriptMes
     }
 }
 
-}
+} // namespace globed::data

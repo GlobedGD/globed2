@@ -14,19 +14,19 @@ public:
     static const cocos2d::CCSize POPUP_SIZE;
 
 private:
-    cue::ListNode* m_list;
+    cue::ListNode *m_list;
     std::optional<MessageListener<msg::GlobalPlayersMessage>> m_listener;
-    CCMenu* m_rightSideMenu;
-    CCMenuItemSpriteExtra* m_searchBtn;
-    CCMenuItemSpriteExtra* m_clearSearchBtn;
+    CCMenu *m_rightSideMenu;
+    CCMenuItemSpriteExtra *m_searchBtn;
+    CCMenuItemSpriteExtra *m_clearSearchBtn;
     std::string m_filter;
 
     bool setup() override;
-    void onLoaded(const std::vector<MinimalRoomPlayer>& players);
+    void onLoaded(const std::vector<MinimalRoomPlayer> &players);
 
     void refresh();
     void promptFilter();
     void setFilter(std::string_view filter);
 };
 
-}
+} // namespace globed

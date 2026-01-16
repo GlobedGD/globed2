@@ -6,9 +6,10 @@ namespace globed {
 
 ScriptingUIModule::ScriptingUIModule() {}
 
-void ScriptingUIModule::onModuleInit() {
+void ScriptingUIModule::onModuleInit()
+{
     log::info("Scripting UI module initialized");
     this->setAutoEnableMode(AutoEnableMode::Launch);
 }
 
-}
+} // namespace globed

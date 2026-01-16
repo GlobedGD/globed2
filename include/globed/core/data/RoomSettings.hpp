@@ -20,9 +20,10 @@ struct RoomSettings {
     bool deathlink = false;
     bool switcheroo = false;
 
-    inline bool needsSafeMode() const {
+    inline bool needsSafeMode() const
+    {
         return this->collision || this->twoPlayerMode || this->switcheroo;
     }
 };
 
-}
+} // namespace globed

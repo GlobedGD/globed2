@@ -1,13 +1,14 @@
 #include "CoreImpl.hpp"
-#include <globed/core/SettingsManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <globed/core/SettingsManager.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
-CoreImpl::CoreImpl() {
-    m_loginOkListener = NetworkManagerImpl::get().listenGlobal<msg::CentralLoginOkMessage>([this](const auto& msg) {
+CoreImpl::CoreImpl()
+{
+    m_loginOkListener = NetworkManagerImpl::get().listenGlobal<msg::CentralLoginOkMessage>([this](const auto &msg) {
         this->onServerConnected();
         return ListenerResult::Continue;
     });
@@ -15,7 +16,8 @@ CoreImpl::CoreImpl() {
 
 CoreImpl::~CoreImpl() {}
 
-Result<> CoreImpl::addModule(std::shared_ptr<Module> mod) {
+Result<> CoreImpl::addModule(std::shared_ptr<Module> mod)
+{
     if (this->findModule(mod->id())) {
         return Err("Module with ID '{}' is already registered", mod->id());
     }
@@ -25,8 +27,9 @@ Result<> CoreImpl::addModule(std::shared_ptr<Module> mod) {
     return Ok();
 }
 
-Module* CoreImpl::findModule(std::string_view id) {
-    for (auto& mod : m_modules) {
+Module *CoreImpl::findModule(std::string_view id)
+{
+    for (auto &mod : m_modules) {
         if (mod->id() == id) {
             return mod.get();
         }
@@ -35,97 +38,85 @@ Module* CoreImpl::findModule(std::string_view id) {
     return nullptr;
 }
 
-void CoreImpl::onLaunch() {
+void CoreImpl::onLaunch()
+{
     log::debug("Enabling Launch modules");
 
-    this->enableIf([](const Module& mod) {
-        return mod.m_autoEnableMode == AutoEnableMode::Launch;
-    });
+    this->enableIf([](const Module &mod) { return mod.m_autoEnableMode == AutoEnableMode::Launch; });
 
     // Disallow adding any new settings
     SettingsManager::get().freeze();
 }
 
-void CoreImpl::onServerConnected() {
+void CoreImpl::onServerConnected()
+{
     log::debug("Enabling Server modules");
 
-    this->enableIf([](const Module& mod) {
-        return mod.m_autoEnableMode == AutoEnableMode::Server;
-    });
+    this->enableIf([](const Module &mod) { return mod.m_autoEnableMode == AutoEnableMode::Server; });
 }
 
-void CoreImpl::onServerDisconnected() {
+void CoreImpl::onServerDisconnected()
+{
     log::debug("Disabling Server and Level modules");
 
-    this->disableIf([](const Module& mod) {
+    this->disableIf([](const Module &mod) {
         return mod.m_autoEnableMode == AutoEnableMode::Server || mod.m_autoEnableMode == AutoEnableMode::Level;
     });
 }
 
-void CoreImpl::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
+void CoreImpl::onJoinLevel(GlobedGJBGL *gjbgl, GJGameLevel *level, bool editor)
+{
     log::debug("Enabling Level modules");
-    this->enableIf([](const Module& mod) {
-        return mod.m_autoEnableMode == AutoEnableMode::Level;
-    });
+    this->enableIf([](const Module &mod) { return mod.m_autoEnableMode == AutoEnableMode::Level; });
 
-    this->forEachEnabled([&](Module& mod) {
-        mod.onJoinLevel(gjbgl, level, editor);
-    });
+    this->forEachEnabled([&](Module &mod) { mod.onJoinLevel(gjbgl, level, editor); });
 }
 
-void CoreImpl::onJoinLevelPostInit(GlobedGJBGL* gjbgl) {
-    this->forEachEnabled([&](Module& mod) {
-        mod.onJoinLevelPostInit(gjbgl);
-    });
+void CoreImpl::onJoinLevelPostInit(GlobedGJBGL *gjbgl)
+{
+    this->forEachEnabled([&](Module &mod) { mod.onJoinLevelPostInit(gjbgl); });
 }
 
-void CoreImpl::onLeaveLevel(GlobedGJBGL* gjbgl, bool editor) {
+void CoreImpl::onLeaveLevel(GlobedGJBGL *gjbgl, bool editor)
+{
     log::debug("Disabling Level modules");
-    this->disableIf([](const Module& mod) {
-        return mod.m_autoEnableMode == AutoEnableMode::Level;
-    });
+    this->disableIf([](const Module &mod) { return mod.m_autoEnableMode == AutoEnableMode::Level; });
 
-    this->forEachEnabled([&](Module& mod) {
-        mod.onLeaveLevel(gjbgl, editor);
-    });
+    this->forEachEnabled([&](Module &mod) { mod.onLeaveLevel(gjbgl, editor); });
 }
 
-void CoreImpl::onPlayerJoin(GlobedGJBGL* gjbgl, int accountId) {
-    this->forEachEnabled([&](Module& mod) {
-        mod.onPlayerJoin(gjbgl, accountId);
-    });
+void CoreImpl::onPlayerJoin(GlobedGJBGL *gjbgl, int accountId)
+{
+    this->forEachEnabled([&](Module &mod) { mod.onPlayerJoin(gjbgl, accountId); });
 }
 
-void CoreImpl::onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {
-    this->forEachEnabled([&](Module& mod) {
-        mod.onPlayerLeave(gjbgl, accountId);
-    });
+void CoreImpl::onPlayerLeave(GlobedGJBGL *gjbgl, int accountId)
+{
+    this->forEachEnabled([&](Module &mod) { mod.onPlayerLeave(gjbgl, accountId); });
 }
 
-void CoreImpl::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) {
-    this->forEachEnabled([&](Module& mod) {
-        mod.onPlayerDeath(gjbgl, player, death);
-    });
+void CoreImpl::onPlayerDeath(GlobedGJBGL *gjbgl, RemotePlayer *player, const PlayerDeath &death)
+{
+    this->forEachEnabled([&](Module &mod) { mod.onPlayerDeath(gjbgl, player, death); });
 }
 
-void CoreImpl::onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {
-    this->forEachEnabled([&](Module& mod) {
-        mod.onUserlistSetup(container, accountId, myself, popup);
-    });
+void CoreImpl::onUserlistSetup(cocos2d::CCNode *container, int accountId, bool myself, UserListPopup *popup)
+{
+    this->forEachEnabled([&](Module &mod) { mod.onUserlistSetup(container, accountId, myself, popup); });
 }
 
-bool CoreImpl::shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) {
+bool CoreImpl::shouldSpeedUpNewBest(GlobedGJBGL *gjbgl)
+{
     bool should = false;
 
-    this->forEachEnabled([&](Module& mod) {
-        should = mod.shouldSpeedUpNewBest(gjbgl) || should;
-    });
+    this->forEachEnabled([&](Module &mod) { should = mod.shouldSpeedUpNewBest(gjbgl) || should; });
 
     return should;
 }
 
-void CoreImpl::enableIf(std23::function_ref<bool(Module&)>&& func) {
-    for (auto& mod : m_modules) {
+void CoreImpl::enableIf(std23::function_ref<bool(Module &)> &&func)
+{
+    for (auto &mod : m_modules) {
         if (func(*mod)) {
             if (auto err = mod->enable().err()) {
                 log::warn("Module '{}' failed to enable: {}", mod->id(), err);
@@ -134,8 +125,9 @@ void CoreImpl::enableIf(std23::function_ref<bool(Module&)>&& func) {
     }
 }
 
-void CoreImpl::disableIf(std23::function_ref<bool(Module&)>&& func) {
-    for (auto& mod : m_modules) {
+void CoreImpl::disableIf(std23::function_ref<bool(Module &)> &&func)
+{
+    for (auto &mod : m_modules) {
         if (func(*mod)) {
             if (auto err = mod->disable().err()) {
                 log::warn("Module '{}' failed to disable: {}", mod->id(), err);
@@ -144,12 +136,13 @@ void CoreImpl::disableIf(std23::function_ref<bool(Module&)>&& func) {
     }
 }
 
-void CoreImpl::forEachEnabled(std23::function_ref<void(Module&)>&& func) {
-    for (auto& mod : m_modules) {
+void CoreImpl::forEachEnabled(std23::function_ref<void(Module &)> &&func)
+{
+    for (auto &mod : m_modules) {
         if (mod->m_enabled) {
             func(*mod);
         }
     }
 }
 
-}
+} // namespace globed

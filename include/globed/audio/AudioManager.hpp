@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EncodedAudioFrame.hpp"
 #include "AudioSampleQueue.hpp"
+#include "EncodedAudioFrame.hpp"
 #include "sound/AudioSource.hpp"
 #include <globed/prelude.hpp>
 
@@ -47,7 +47,7 @@ public:
     std::optional<AudioRecordingDevice> getRecordingDevice(int deviceId);
 
     // get the current active record device
-    const std::optional<AudioRecordingDevice>& getRecordingDevice();
+    const std::optional<AudioRecordingDevice> &getRecordingDevice();
 
     // get if the recording device is set
     bool isRecordingDeviceSet();
@@ -65,8 +65,8 @@ public:
     // start recording the voice and call the callback whenever new data is ready.
     // same rules apply as with `startRecording`, except the callback includes raw PCM samples,
     // and is called much more often.
-    Result<> startRecordingEncoded(std23::move_only_function<void(const EncodedAudioFrame&)>&& encodedCallback);
-    Result<> startRecordingRaw(std23::move_only_function<void(const float*, size_t)>&& rawCallback);
+    Result<> startRecordingEncoded(std23::move_only_function<void(const EncodedAudioFrame &)> &&encodedCallback);
+    Result<> startRecordingRaw(std23::move_only_function<void(const float *, size_t)> &&rawCallback);
     // tell the audio thread to stop recording
     void stopRecording();
     // tell the audio thread to stop recording, don't call the callback with leftover data
@@ -78,7 +78,10 @@ public:
 
     void resumePassiveRecording();
     void pausePassiveRecording();
-    inline bool isPassiveRecording() { return m_recordingPassiveActive; }
+    inline bool isPassiveRecording()
+    {
+        return m_recordingPassiveActive;
+    }
 
     /* Playback API */
 
@@ -98,20 +101,20 @@ public:
     /* Misc */
 
     // play a sound and return the channel associated with it
-    Result<FMOD::Channel*> playSound(FMOD::Sound* sound);
+    Result<FMOD::Channel *> playSound(FMOD::Sound *sound);
 
     // create a sound from raw PCM data
-    Result<FMOD::Sound*> createSound(const float* pcm, size_t samples, int sampleRate = VOICE_TARGET_SAMPLERATE);
+    Result<FMOD::Sound *> createSound(const float *pcm, size_t samples, int sampleRate = VOICE_TARGET_SAMPLERATE);
     // create a sound from a filepath
-    Result<FMOD::Sound*> createSound(const std::filesystem::path& path);
+    Result<FMOD::Sound *> createSound(const std::filesystem::path &path);
 
     void setActiveRecordingDevice(int deviceId);
-    void setActiveRecordingDevice(const AudioRecordingDevice& device);
+    void setActiveRecordingDevice(const AudioRecordingDevice &device);
 
     void toggleLoopbacksAllowed(bool allowed);
 
     // get the cached system
-    FMOD::System* getSystem();
+    FMOD::System *getSystem();
 
     Result<> mapError(FMOD_RESULT result);
 
@@ -127,28 +130,28 @@ private:
     asp::AtomicBool m_recordingRaw = false;
     asp::AtomicBool m_recordingPassive = false;
     asp::AtomicBool m_recordingPassiveActive = false;
-    FMOD::Sound* m_recordSound = nullptr;
+    FMOD::Sound *m_recordSound = nullptr;
     size_t m_recordChunkSize = 0;
-    std23::move_only_function<void(const EncodedAudioFrame&)> m_callback;
-    std23::move_only_function<void(const float*, size_t)> m_rawCallback;
+    std23::move_only_function<void(const EncodedAudioFrame &)> m_callback;
+    std23::move_only_function<void(const float *, size_t)> m_rawCallback;
     AudioSampleQueue m_recordQueue;
     unsigned int m_recordLastPosition = 0;
     EncodedAudioFrame m_recordFrame;
     AudioEncoder m_encoder;
-    FMOD::System* m_system = nullptr;
+    FMOD::System *m_system = nullptr;
 
     /* thread */
     asp::AtomicBool m_thrSleeping = true;
-    asp::Thread<AudioManager*> m_thread;
+    asp::Thread<AudioManager *> m_thread;
 
-    void audioThreadFunc(decltype(m_thread)::StopToken&);
+    void audioThreadFunc(decltype(m_thread)::StopToken &);
     Result<> audioThreadWork();
 
     Result<> startRecordingInternal();
     void internalStopRecording(bool ignoreErrors = false);
     void recordInvokeCallback();
-    void recordInvokeRawCallback(const float* pcm, size_t samples);
-    float calculateVolume(AudioSource& src, const CCPoint& playerPos, bool voiceProximity);
+    void recordInvokeRawCallback(const float *pcm, size_t samples);
+    float calculateVolume(AudioSource &src, const CCPoint &playerPos, bool voiceProximity);
 
     /* playback */
     std::unordered_set<std::shared_ptr<AudioSource>> m_playbackSources;
@@ -158,4 +161,4 @@ private:
     bool m_deafen = false;
 };
 
-}
+} // namespace globed

@@ -8,21 +8,15 @@ namespace globed {
 /// The sound may either follow the target player or remain static at the position it was created at.
 class GLOBED_DLL PlayerSound : public Sound {
 public:
-    PlayerSound(FMOD::Sound* sound, std::weak_ptr<RemotePlayer> player, CCPoint position);
+    PlayerSound(FMOD::Sound *sound, std::weak_ptr<RemotePlayer> player, CCPoint position);
 
     /// Creates a sound from the given path, returns error on failure.
-    static Result<std::shared_ptr<PlayerSound>> create(
-        const std::filesystem::path& path,
-        std::shared_ptr<RemotePlayer> player,
-        bool paused = false
-    );
+    static Result<std::shared_ptr<PlayerSound>> create(const std::filesystem::path &path,
+                                                       std::shared_ptr<RemotePlayer> player, bool paused = false);
 
     /// Creates a sound from the given path, returns error on failure.
-    static Result<std::shared_ptr<PlayerSound>> create(
-        const char* path,
-        std::shared_ptr<RemotePlayer> player,
-        bool paused = false
-    );
+    static Result<std::shared_ptr<PlayerSound>> create(const char *path, std::shared_ptr<RemotePlayer> player,
+                                                       bool paused = false);
 
     std::optional<CCPoint> getPosition() const override;
     bool isPlaying() const override;
@@ -44,4 +38,4 @@ private:
     bool m_global = false;
 };
 
-}
+} // namespace globed

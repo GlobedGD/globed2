@@ -5,25 +5,16 @@ namespace globed {
 
 class EnumSettingCell : public ButtonSettingCell {
 public:
-    static EnumSettingCell* create(
-        CStr key,
-        CStr name,
-        CStr desc,
-        std::vector<std::pair<CStr, int>> options,
-        cocos2d::CCSize cellSize
-    );
+    static EnumSettingCell *create(CStr key, CStr name, CStr desc, std::vector<std::pair<CStr, int>> options,
+                                   cocos2d::CCSize cellSize);
 
     template <typename E>
-    static EnumSettingCell* create(
-        CStr key,
-        CStr name,
-        CStr desc,
-        std::vector<std::pair<CStr, E>> options,
-        cocos2d::CCSize cellSize
-    ) {
+    static EnumSettingCell *create(CStr key, CStr name, CStr desc, std::vector<std::pair<CStr, E>> options,
+                                   cocos2d::CCSize cellSize)
+    {
         std::vector<std::pair<CStr, int>> intOptions;
         intOptions.reserve(options.size());
-        for (auto& option : options) {
+        for (auto &option : options) {
             intOptions.emplace_back(option.first, static_cast<int>(option.second));
         }
         return create(key, name, desc, std::move(intOptions), cellSize);
@@ -39,4 +30,4 @@ protected:
     void pickNext();
 };
 
-}
+} // namespace globed

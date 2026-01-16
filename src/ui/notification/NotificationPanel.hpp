@@ -4,17 +4,17 @@
 #include <globed/core/net/MessageListener.hpp>
 
 #include <Geode/Geode.hpp>
-#include <queue>
 #include <asp/time/SystemTime.hpp>
+#include <queue>
 
 namespace globed {
 
 class NotificationPanel : public cocos2d::CCNode {
 public:
-    static NotificationPanel* get();
+    static NotificationPanel *get();
 
-    void queueInviteNotification(const msg::InvitedMessage& msg);
-    void queueNotification(CCNode* notif);
+    void queueInviteNotification(const msg::InvitedMessage &msg);
+    void queueNotification(CCNode *notif);
     void onNotificationRemoved();
 
 private:
@@ -26,7 +26,7 @@ private:
 
     bool init() override;
     void update(float dt) override;
-    void slideInNotification(CCNode* notif);
+    void slideInNotification(CCNode *notif);
 };
 
-}
+} // namespace globed

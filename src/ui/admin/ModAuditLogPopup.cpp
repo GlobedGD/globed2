@@ -2,9 +2,9 @@
 #include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
-#include <cue/PlayerIcon.hpp>
-#include <asp/time/SystemTime.hpp>
 #include <asp/iter.hpp>
+#include <asp/time/SystemTime.hpp>
+#include <cue/PlayerIcon.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -19,29 +19,30 @@ static constexpr float USER_WIDTH = 155.f;
 
 struct ActionType {
     std::string_view id;
-    const char* iconSprite;
-    const char* name;
+    const char *iconSprite;
+    const char *name;
 };
 
 constexpr static auto ACTION_TYPES = std::to_array<ActionType>({
-    ActionType{ "", "icon-person.png"_spr, "Everything" },
-    ActionType{ "kick", "button-admin-kick.png"_spr, "Kick" },
-    ActionType{ "notice", "button-admin-notice.png"_spr, "Notice" },
-    ActionType{ "ban", "button-admin-ban.png"_spr, "Ban" },
-    ActionType{ "editban", "button-admin-ban.png"_spr, "Edit ban" },
-    ActionType{ "unban", "button-admin-unban.png"_spr, "Unban" },
-    ActionType{ "mute", "button-admin-mute.png"_spr, "Mute" },
-    ActionType{ "editmute", "button-admin-mute.png"_spr, "Edit mute" },
-    ActionType{ "unmute", "button-admin-unmute.png"_spr, "Unmute" },
-    ActionType{ "roomban", "button-admin-room-ban.png"_spr, "Room ban" },
-    ActionType{ "editroomban", "button-admin-room-ban.png"_spr, "Edit room ban" },
-    ActionType{ "roomunban", "button-admin-room-unban.png"_spr, "Room unban" },
-    ActionType{ "editroles", "role-mod.png"_spr, "Edit roles" },
-    ActionType{ "editpassword", "button-admin-password.png"_spr, "Edit password" },
+    ActionType{"", "icon-person.png"_spr, "Everything"},
+    ActionType{"kick", "button-admin-kick.png"_spr, "Kick"},
+    ActionType{"notice", "button-admin-notice.png"_spr, "Notice"},
+    ActionType{"ban", "button-admin-ban.png"_spr, "Ban"},
+    ActionType{"editban", "button-admin-ban.png"_spr, "Edit ban"},
+    ActionType{"unban", "button-admin-unban.png"_spr, "Unban"},
+    ActionType{"mute", "button-admin-mute.png"_spr, "Mute"},
+    ActionType{"editmute", "button-admin-mute.png"_spr, "Edit mute"},
+    ActionType{"unmute", "button-admin-unmute.png"_spr, "Unmute"},
+    ActionType{"roomban", "button-admin-room-ban.png"_spr, "Room ban"},
+    ActionType{"editroomban", "button-admin-room-ban.png"_spr, "Edit room ban"},
+    ActionType{"roomunban", "button-admin-room-unban.png"_spr, "Room unban"},
+    ActionType{"editroles", "role-mod.png"_spr, "Edit roles"},
+    ActionType{"editpassword", "button-admin-password.png"_spr, "Edit password"},
 });
 
-const ActionType* findActionType(std::string_view id) {
-    for (auto& a : ACTION_TYPES) {
+const ActionType *findActionType(std::string_view id)
+{
+    for (auto &a : ACTION_TYPES) {
         if (a.id == id) {
             return &a;
         }
@@ -52,7 +53,8 @@ const ActionType* findActionType(std::string_view id) {
 
 class ActionTypeCell : public CCNode {
 public:
-    static ActionTypeCell* create(const ActionType& type) {
+    static ActionTypeCell *create(const ActionType &type)
+    {
         auto ret = new ActionTypeCell;
         ret->init(type);
         ret->autorelease();
@@ -60,8 +62,10 @@ public:
     }
 
 private:
-    bool init(const ActionType& type) {
-        if (!CCNode::init()) return false;
+    bool init(const ActionType &type)
+    {
+        if (!CCNode::init())
+            return false;
 
         this->setContentSize({TYPE_WIDTH, TYPE_HEIGHT});
 
@@ -82,16 +86,18 @@ private:
 
 class ModCell : public CCNode {
 public:
-    static ModCell* create(const FetchedMod& mod) {
+    static ModCell *create(const FetchedMod &mod)
+    {
         auto ret = new ModCell;
         ret->init(mod);
         ret->autorelease();
         return ret;
     }
 
-    static ModCell* createNone() {
+    static ModCell *createNone()
+    {
         auto ret = new ModCell;
-        ret->init(FetchedMod { .accountId = 0 });
+        ret->init(FetchedMod{.accountId = 0});
         ret->autorelease();
         return ret;
     }
@@ -99,8 +105,10 @@ public:
     int m_accountId;
 
 private:
-    bool init(const FetchedMod& mod) {
-        if (!CCNode::init()) return false;
+    bool init(const FetchedMod &mod)
+    {
+        if (!CCNode::init())
+            return false;
 
         m_accountId = mod.accountId;
 
@@ -114,13 +122,8 @@ private:
                 .parent(this);
         } else {
             // boring ui
-            Build(cue::PlayerIcon::create(
-                IconType::Cube,
-                mod.cube,
-                mod.color1,
-                mod.color2,
-                mod.glowColor == NO_GLOW ? -1 : (int)mod.glowColor
-            ))
+            Build(cue::PlayerIcon::create(IconType::Cube, mod.cube, mod.color1, mod.color2,
+                                          mod.glowColor == NO_GLOW ? -1 : (int)mod.glowColor))
                 .with([&](auto spr) { cue::rescaleToMatch(spr, USER_HEIGHT * 0.8f); })
                 .pos(12.f, USER_HEIGHT / 2.f)
                 .parent(this);
@@ -142,7 +145,8 @@ public:
     static inline const float HEIGHT = 48.f;
     static inline const float EXPANDED_HEIGHT = 100.f;
 
-    static LogCell* create(const AdminAuditLog& log, const PlayerAccountData& issuer, const PlayerAccountData& target) {
+    static LogCell *create(const AdminAuditLog &log, const PlayerAccountData &issuer, const PlayerAccountData &target)
+    {
         auto ret = new LogCell;
         if (ret->init(log, issuer, target)) {
             ret->autorelease();
@@ -154,20 +158,22 @@ public:
     }
 
 private:
-    CCNode* m_collapsedContainer;
+    CCNode *m_collapsedContainer;
 
-    bool init(const AdminAuditLog& log, const PlayerAccountData& issuer, const PlayerAccountData& target) {
-        if (!CCMenu::init()) return false;
+    bool init(const AdminAuditLog &log, const PlayerAccountData &issuer, const PlayerAccountData &target)
+    {
+        if (!CCMenu::init())
+            return false;
 
         this->ignoreAnchorPointForPosition(false);
         this->setContentSize({WIDTH, HEIGHT});
 
         m_collapsedContainer = Build<CCMenu>::create()
-            .ignoreAnchorPointForPos(false)
-            .anchorPoint(0.f, 0.f)
-            .pos(0.f, 0.f)
-            .contentSize(WIDTH, HEIGHT)
-            .parent(this);
+                                   .ignoreAnchorPointForPos(false)
+                                   .anchorPoint(0.f, 0.f)
+                                   .pos(0.f, 0.f)
+                                   .contentSize(WIDTH, HEIGHT)
+                                   .parent(this);
 
         auto action = findActionType(log.type);
         if (!action) {
@@ -185,7 +191,6 @@ private:
             .pos(20.f, HEIGHT / 2.f - 2.f)
             .parent(m_collapsedContainer);
 
-
         std::string_view targetStr;
 
         if (log.type == "notice" && log.targetId == 0) {
@@ -194,7 +199,8 @@ private:
             targetStr = target.username;
         }
 
-        Build<CCLabelBMFont>::create(fmt::format("{} by {} for {}", action->name, issuer.username, targetStr).c_str(), "goldFont.fnt")
+        Build<CCLabelBMFont>::create(fmt::format("{} by {} for {}", action->name, issuer.username, targetStr).c_str(),
+                                     "goldFont.fnt")
             .limitLabelWidth(280.f, 0.55f, 0.1f)
             .anchorPoint(0.f, 0.5f)
             .pos(40.f, HEIGHT * 0.75f + 1.f)
@@ -202,36 +208,32 @@ private:
 
         std::string msgStr;
 
-            bool isPunishment =
-            log.type == "kick"
-            || log.type == "mute"
-            || log.type == "editmute"
-            || log.type == "ban"
-            || log.type == "editban"
-            || log.type == "roomban"
-            || log.type == "editroomban";
+        bool isPunishment = log.type == "kick" || log.type == "mute" || log.type == "editmute" || log.type == "ban" ||
+                            log.type == "editban" || log.type == "roomban" || log.type == "editroomban";
 
-        bool isUnpunishment =
-            log.type == "unmute"
-            || log.type == "unban"
-            || log.type == "roomunban";
+        bool isUnpunishment = log.type == "unmute" || log.type == "unban" || log.type == "roomunban";
 
         if (isPunishment) {
             msgStr = fmt::format("Reason: {}", log.message);
         } else if (log.type == "editroles") {
             auto added = asp::iter::split(log.message, ',')
-                .filterMap([](const auto& sv) { return sv.starts_with('+') ? std::optional{sv.substr(1)} : std::nullopt; })
-                .collect();
+                             .filterMap([](const auto &sv) {
+                                 return sv.starts_with('+') ? std::optional{sv.substr(1)} : std::nullopt;
+                             })
+                             .collect();
             auto removed = asp::iter::split(log.message, ',')
-                .filterMap([](const auto& sv) { return sv.starts_with('-') ? std::optional{sv.substr(1)} : std::nullopt; })
-                .collect();
+                               .filterMap([](const auto &sv) {
+                                   return sv.starts_with('-') ? std::optional{sv.substr(1)} : std::nullopt;
+                               })
+                               .collect();
 
             if (added.size()) {
                 msgStr += fmt::format("Added: {}", fmt::join(added, ", "));
             }
 
             if (removed.size()) {
-                if (!added.empty()) msgStr += "; ";
+                if (!added.empty())
+                    msgStr += "; ";
                 msgStr += fmt::format("Removed: {}", fmt::join(removed, ", "));
             }
         }
@@ -277,7 +279,8 @@ private:
         return true;
     }
 
-    void expand(bool expanded) {
+    void expand(bool expanded)
+    {
         this->setContentHeight(expanded ? EXPANDED_HEIGHT : HEIGHT);
         m_collapsedContainer->setPositionY(expanded ? EXPANDED_HEIGHT - HEIGHT : 0.f);
 
@@ -285,8 +288,9 @@ private:
     }
 };
 
-bool ModAuditLogPopup::setup(FetchLogsFilters filters) {
-    ccColor4B bg{ 105, 61, 31, 255 };
+bool ModAuditLogPopup::setup(FetchLogsFilters filters)
+{
+    ccColor4B bg{105, 61, 31, 255};
     m_filters = std::move(filters);
 
     m_loadingCircle = cue::LoadingCircle::create();
@@ -294,16 +298,16 @@ bool ModAuditLogPopup::setup(FetchLogsFilters filters) {
     m_loadingCircle->setZOrder(5);
 
     m_typeDropdown = Build(cue::DropdownNode::create(bg, TYPE_WIDTH, TYPE_HEIGHT, 130.f))
-        .zOrder(11)
-        .anchorPoint(0.5f, 1.f)
-        .pos(this->fromTopLeft(90.f, 20.f))
-        .parent(m_mainLayer);
+                         .zOrder(11)
+                         .anchorPoint(0.5f, 1.f)
+                         .pos(this->fromTopLeft(90.f, 20.f))
+                         .parent(m_mainLayer);
 
-    for (auto& type : ACTION_TYPES) {
+    for (auto &type : ACTION_TYPES) {
         m_typeDropdown->addCell(ActionTypeCell::create(type));
     }
 
-    m_typeDropdown->setCallback([this](size_t idx, CCNode* cell) {
+    m_typeDropdown->setCallback([this](size_t idx, CCNode *cell) {
         m_filters.type = ACTION_TYPES[idx].id;
         this->refetch();
     });
@@ -311,33 +315,32 @@ bool ModAuditLogPopup::setup(FetchLogsFilters filters) {
     // user dropdown
 
     m_userDropdown = Build(cue::DropdownNode::create(bg, USER_WIDTH, USER_HEIGHT, 130.f))
-        .zOrder(11)
-        .anchorPoint(0.5f, 1.f)
-        .pos(this->fromTopRight(90.f, 20.f))
-        .parent(m_mainLayer);
+                         .zOrder(11)
+                         .anchorPoint(0.5f, 1.f)
+                         .pos(this->fromTopRight(90.f, 20.f))
+                         .parent(m_mainLayer);
 
     m_userDropdown->addCell(ModCell::createNone());
 
-    m_userDropdown->setCallback([this](size_t idx, CCNode* cell) {
-        m_filters.issuer = static_cast<ModCell*>(cell)->m_accountId;
+    m_userDropdown->setCallback([this](size_t idx, CCNode *cell) {
+        m_filters.issuer = static_cast<ModCell *>(cell)->m_accountId;
         this->refetch();
     });
 
     // log list
 
-    m_list = Build(cue::ListNode::create({LogCell::WIDTH, 200.f}))
-        .pos(this->fromCenter(0.f, -15.f))
-        .parent(m_mainLayer);
+    m_list =
+        Build(cue::ListNode::create({LogCell::WIDTH, 200.f})).pos(this->fromCenter(0.f, -15.f)).parent(m_mainLayer);
     m_list->setAutoUpdate(false);
 
     // fetch users
-    auto& nm = NetworkManagerImpl::get();
-    m_modsListener = nm.listen<msg::AdminFetchModsResponseMessage>([this](const auto& msg) {
+    auto &nm = NetworkManagerImpl::get();
+    m_modsListener = nm.listen<msg::AdminFetchModsResponseMessage>([this](const auto &msg) {
         this->populateMods(msg.users);
         return ListenerResult::Continue;
     });
 
-    m_logsListener = nm.listen<msg::AdminLogsResponseMessage>([this](const auto& msg) {
+    m_logsListener = nm.listen<msg::AdminLogsResponseMessage>([this](const auto &msg) {
         this->populateLogs(msg.logs, msg.users);
         return ListenerResult::Continue;
     });
@@ -348,30 +351,28 @@ bool ModAuditLogPopup::setup(FetchLogsFilters filters) {
     return true;
 }
 
-void ModAuditLogPopup::populateMods(const std::vector<FetchedMod>& mods) {
-    for (auto& mod : mods) {
+void ModAuditLogPopup::populateMods(const std::vector<FetchedMod> &mods)
+{
+    for (auto &mod : mods) {
         m_userDropdown->addCell(ModCell::create(mod));
     }
 }
 
-void ModAuditLogPopup::populateLogs(const std::vector<AdminAuditLog>& logs, const std::vector<PlayerAccountData>& users) {
+void ModAuditLogPopup::populateLogs(const std::vector<AdminAuditLog> &logs, const std::vector<PlayerAccountData> &users)
+{
     m_loadReqs--;
     m_loadingCircle->fadeOut();
 
     m_list->clear();
 
-    for (const auto& log : logs) {
-        const PlayerAccountData* issuer = nullptr;
-        const PlayerAccountData* target = nullptr;
+    for (const auto &log : logs) {
+        const PlayerAccountData *issuer = nullptr;
+        const PlayerAccountData *target = nullptr;
 
-        static PlayerAccountData INVALID_DATA {
-            .accountId = 0,
-            .userId = 0,
-            .username = "Unknown"
-        };
+        static PlayerAccountData INVALID_DATA{.accountId = 0, .userId = 0, .username = "Unknown"};
 
         // locate the issuer and target
-        for (const auto& user : users) {
+        for (const auto &user : users) {
             if (user.accountId == log.accountId) {
                 issuer = &user;
             }
@@ -380,7 +381,8 @@ void ModAuditLogPopup::populateLogs(const std::vector<AdminAuditLog>& logs, cons
                 target = &user;
             }
 
-            if (issuer && target) break;
+            if (issuer && target)
+                break;
         }
 
         m_list->addCell(LogCell::create(log, issuer ? *issuer : INVALID_DATA, target ? *target : INVALID_DATA));
@@ -389,19 +391,21 @@ void ModAuditLogPopup::populateLogs(const std::vector<AdminAuditLog>& logs, cons
     m_list->updateLayout();
 }
 
-void ModAuditLogPopup::refetch() {
+void ModAuditLogPopup::refetch()
+{
     m_loadReqs++;
 
     if (m_loadReqs == 1) {
         m_loadingCircle->fadeIn();
     }
 
-    auto& nm = NetworkManagerImpl::get();
+    auto &nm = NetworkManagerImpl::get();
     nm.sendAdminFetchLogs(m_filters);
 }
 
-ModAuditLogPopup* ModAuditLogPopup::create(FetchLogsFilters filters) {
+ModAuditLogPopup *ModAuditLogPopup::create(FetchLogsFilters filters)
+{
     return BasePopup::create(std::move(filters));
 }
 
-}
+} // namespace globed

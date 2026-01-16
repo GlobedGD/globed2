@@ -1,54 +1,49 @@
 #pragma once
 
-#include <globed/prelude.hpp>
+#include <globed/core/data/Messages.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/net/NetworkManager.hpp>
-#include <globed/core/data/Messages.hpp>
+#include <globed/prelude.hpp>
 #include <ui/BaseLayer.hpp>
 
-#include <Geode/Geode.hpp>
-#include <cue/ListNode.hpp>
-#include <asp/time/Instant.hpp>
 #include <AdvancedLabel.hpp>
+#include <Geode/Geode.hpp>
+#include <asp/time/Instant.hpp>
+#include <cue/ListNode.hpp>
 
 namespace globed {
 
-enum class MenuState {
-    None,
-    Disconnected,
-    Connecting,
-    Connected
-};
+enum class MenuState { None, Disconnected, Connecting, Connected };
 
 class GlobedMenuLayer : public BaseLayer {
 public:
-    static GlobedMenuLayer* create();
+    static GlobedMenuLayer *create();
 
     void onServerModified();
 
 private:
-    CCMenu* m_connectMenu;
-    CCScale9Sprite* m_connectMenuBg;
-    CCMenuItemSpriteExtra* m_editServerButton;
-    CCLabelBMFont* m_serverNameLabel;
-    CCMenuItemSpriteExtra* m_connectButton;
-    CCLabelBMFont* m_connStateLabel;
-    CCNode* m_connStateContainer;
-    CCMenuItemSpriteExtra* m_cancelConnButton;
+    CCMenu *m_connectMenu;
+    CCScale9Sprite *m_connectMenuBg;
+    CCMenuItemSpriteExtra *m_editServerButton;
+    CCLabelBMFont *m_serverNameLabel;
+    CCMenuItemSpriteExtra *m_connectButton;
+    CCLabelBMFont *m_connStateLabel;
+    CCNode *m_connStateContainer;
+    CCMenuItemSpriteExtra *m_cancelConnButton;
     MenuState m_state = MenuState::None;
     ConnectionState m_lastConnState;
 
-    CCNode* m_playerListMenu;
-    cue::ListNode* m_playerList;
-    Label* m_roomNameLabel;
-    CCMenuItemSpriteExtra* m_roomNameButton;
-    CCMenu* m_roomButtonsMenu;
-    CCMenu* m_rightSideMenu = nullptr;
-    CCMenu* m_leftSideMenu = nullptr;
-    CCMenu* m_farLeftMenu = nullptr;
-    CCMenu* m_farRightMenu = nullptr;
-    CCMenuItemSpriteExtra* m_searchBtn = nullptr;
-    CCMenuItemSpriteExtra* m_clearSearchBtn = nullptr;
+    CCNode *m_playerListMenu;
+    cue::ListNode *m_playerList;
+    Label *m_roomNameLabel;
+    CCMenuItemSpriteExtra *m_roomNameButton;
+    CCMenu *m_roomButtonsMenu;
+    CCMenu *m_rightSideMenu = nullptr;
+    CCMenu *m_leftSideMenu = nullptr;
+    CCMenu *m_farLeftMenu = nullptr;
+    CCMenu *m_farRightMenu = nullptr;
+    CCMenuItemSpriteExtra *m_searchBtn = nullptr;
+    CCMenuItemSpriteExtra *m_clearSearchBtn = nullptr;
     std::optional<MessageListener<msg::RoomStateMessage>> m_roomStateListener;
     std::optional<MessageListener<msg::RoomPlayersMessage>> m_roomPlayersListener;
     std::optional<MessageListener<msg::PinnedLevelUpdatedMessage>> m_pinnedListener;
@@ -71,12 +66,14 @@ private:
     void handleDebugKey(cocos2d::enumKeyCodes key);
     void keyBackClicked() override;
     void onEnter() override;
-    bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
+    bool ccTouchBegan(cocos2d::CCTouch *touch, cocos2d::CCEvent *event) override;
 
-    void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings);
-    void updateRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings);
-    void updatePlayerList(const std::vector<RoomPlayer>& players);
-    bool trySoftRefresh(const std::vector<RoomPlayer>& players);
+    void initNewRoom(uint32_t id, const std::string &name, const std::vector<RoomPlayer> &players, size_t playerCount,
+                     const RoomSettings &settings);
+    void updateRoom(uint32_t id, const std::string &name, const std::vector<RoomPlayer> &players, size_t playerCount,
+                    const RoomSettings &settings);
+    void updatePlayerList(const std::vector<RoomPlayer> &players);
+    bool trySoftRefresh(const std::vector<RoomPlayer> &players);
     void softRefreshAll();
     void softRefreshSelf();
     void initRoomButtons();
@@ -86,7 +83,7 @@ private:
     void requestRoomState();
     bool shouldAutoRefresh(float dt);
     std::vector<geode::Ref<CCMenuItemSpriteExtra>> createCommonButtons();
-    void reloadWithFilter(const std::string& filter);
+    void reloadWithFilter(const std::string &filter);
 
     void addPinnedLevelCell();
     void removePinnedLevelCell();
@@ -94,4 +91,4 @@ private:
     void onSettings();
 };
 
-}
+} // namespace globed

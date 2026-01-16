@@ -9,8 +9,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void HookedLevelCell::updatePlayerCount(int count, bool inLists) {
-    auto& fields = *m_fields.self();
+void HookedLevelCell::updatePlayerCount(int count, bool inLists)
+{
+    auto &fields = *m_fields.self();
 
     if (!fields.m_playerCountIcon || !fields.m_playerCountLabel) {
         float xPos = 0.f;
@@ -29,18 +30,18 @@ void HookedLevelCell::updatePlayerCount(int count, bool inLists) {
         }
 
         fields.m_playerCountLabel = Build<CCLabelBMFont>::create("", "goldFont.fnt")
-            .scale(0.4f)
-            .anchorPoint(1.f, 0.5f)
-            .pos(xPos, yPos)
-            .parent(this)
-            .id("player-count-label"_spr);
+                                        .scale(0.4f)
+                                        .anchorPoint(1.f, 0.5f)
+                                        .pos(xPos, yPos)
+                                        .parent(this)
+                                        .id("player-count-label"_spr);
 
         fields.m_playerCountIcon = Build<CCSprite>::create("icon-person.png"_spr)
-            .scale(iconScale)
-            .anchorPoint(1.f, 0.5f)
-            .pos(xPos, yPos)
-            .parent(this)
-            .id("player-count-icon"_spr);
+                                       .scale(iconScale)
+                                       .anchorPoint(1.f, 0.5f)
+                                       .pos(xPos, yPos)
+                                       .parent(this)
+                                       .id("player-count-icon"_spr);
     }
 
     if (!fields.m_playerCountLabel || !fields.m_playerCountLabel) {
@@ -66,8 +67,9 @@ void HookedLevelCell::updatePlayerCount(int count, bool inLists) {
     }
 }
 
-void HookedLevelCell::setGlobedFeature(FeatureTier tier) {
-    auto& fields = *m_fields.self();
+void HookedLevelCell::setGlobedFeature(FeatureTier tier)
+{
+    auto &fields = *m_fields.self();
     fields.m_rateTier = tier;
 
     if (auto diff = globed::findDifficultySprite(this)) {
@@ -76,4 +78,4 @@ void HookedLevelCell::setGlobedFeature(FeatureTier tier) {
     }
 }
 
-}
+} // namespace globed

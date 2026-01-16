@@ -1,12 +1,12 @@
 #pragma once
 
-#include <globed/config.hpp>
-#include <globed/util/singleton.hpp>
-#include <globed/util/assert.hpp>
 #include "ValueManager.hpp"
+#include <globed/config.hpp>
+#include <globed/util/assert.hpp>
+#include <globed/util/singleton.hpp>
 
-#include <Geode/utils/terminate.hpp>
 #include <Geode/loader/Log.hpp>
+#include <Geode/utils/terminate.hpp>
 #include <std23/move_only_function.h>
 
 namespace globed {
@@ -21,28 +21,26 @@ enum class InvitesFrom : int {
 
 // Settings implementation
 
-template <typename T>
-class SettingAccessor {
+template <typename T> class SettingAccessor {
 public:
     SettingAccessor(std::string_view key);
 
     operator T() const;
     T value() const;
 
-    SettingAccessor& operator=(T value);
+    SettingAccessor &operator=(T value);
 
 private:
     uint64_t hash;
     std::string_view key;
 };
 
-template <typename T>
-class NoHashHasher;
+template <typename T> class NoHashHasher;
 
-template <>
-class NoHashHasher<uint64_t> {
+template <> class NoHashHasher<uint64_t> {
 public:
-    size_t operator()(uint64_t key) const {
+    size_t operator()(uint64_t key) const
+    {
         return key;
     }
 };
@@ -55,16 +53,16 @@ struct SaveSlotMeta {
 
 class GLOBED_DLL SettingsManager : public SingletonBase<SettingsManager> {
 public:
-    using Validator = std23::move_only_function<bool(const matjson::Value&)>;
-    using ListenCallback = std23::move_only_function<void(const matjson::Value&)>;
+    using Validator = std23::move_only_function<bool(const matjson::Value &)>;
+    using ListenCallback = std23::move_only_function<void(const matjson::Value &)>;
 
-    template <typename T>
-    SettingAccessor<T> setting(std::string_view key) {
+    template <typename T> SettingAccessor<T> setting(std::string_view key)
+    {
         return SettingAccessor<T>(key);
     }
 
-    template <typename T>
-    T getSettingRaw(uint64_t hash) {
+    template <typename T> T getSettingRaw(uint64_t hash)
+    {
         if (!this->hasSetting(hash)) {
             // internal error, means we used a wrong id somewhere
             throw std::runtime_error(fmt::format("setting not found with hash {}", hash));
@@ -83,12 +81,13 @@ public:
             return *res;
         } else {
             // no default either, this is a serious error
-            geode::utils::terminate(fmt::format("setting with hash {} has no default value or the default value is of an invalid type", hash));
+            geode::utils::terminate(fmt::format(
+                "setting with hash {} has no default value or the default value is of an invalid type", hash));
         }
     }
 
-    template <typename T>
-    void setSettingRaw(uint64_t hash, T&& value) {
+    template <typename T> void setSettingRaw(uint64_t hash, T &&value)
+    {
         if (!this->hasSetting(hash)) {
             // internal error, means we used a wrong id somewhere
             geode::utils::terminate(fmt::format("setting not found with hash {}", hash));
@@ -98,7 +97,8 @@ public:
         auto it = m_validators.find(hash);
         if (it != m_validators.end()) {
             if (!it->second(val)) {
-                geode::log::warn("Failed to save setting {}, validation failed: {}", m_fullKeys[hash], val.dump(matjson::NO_INDENTATION));
+                geode::log::warn("Failed to save setting {}, validation failed: {}", m_fullKeys[hash],
+                                 val.dump(matjson::NO_INDENTATION));
                 return;
             }
         }
@@ -106,7 +106,7 @@ public:
         m_settings[hash] = val;
         auto callbacksIt = m_callbacks.find(hash);
         if (callbacksIt != m_callbacks.end()) {
-            for (auto& cb : callbacksIt->second) {
+            for (auto &cb : callbacksIt->second) {
                 cb(val);
             }
         }
@@ -117,7 +117,7 @@ public:
             m_saveSlots.emplace_back(matjson::Value::object());
         }
 
-        auto& slot = m_saveSlots[m_activeSaveSlot];
+        auto &slot = m_saveSlots[m_activeSaveSlot];
         slot.set(m_fullKeys[hash], std::move(val));
     }
 
@@ -127,33 +127,18 @@ public:
 
     /// Registers a new setting. This cannot be called after the SettingsManager is frozen,
     /// which happens at the end of the loading phase when the core is initialized.
-    void registerSetting(
-        std::string_view key,
-        matjson::Value defaultVal
-    );
+    void registerSetting(std::string_view key, matjson::Value defaultVal);
 
-    void registerValidator(
-        std::string_view key,
-        Validator func
-    );
+    void registerValidator(std::string_view key, Validator func);
 
-    void registerLimits(
-        std::string_view key,
-        matjson::Value min,
-        matjson::Value max
-    );
+    void registerLimits(std::string_view key, matjson::Value min, matjson::Value max);
 
-    bool listenForChangesRaw(
-        std::string_view key,
-        std23::move_only_function<void(const matjson::Value&)> callback
-    );
+    bool listenForChangesRaw(std::string_view key, std23::move_only_function<void(const matjson::Value &)> callback);
 
     template <typename T>
-    bool listenForChanges(
-        std::string_view key,
-        std23::move_only_function<void(const T&)> callback
-    ) {
-        return this->listenForChangesRaw(key, [cb = std::move(callback)](const matjson::Value& value) mutable {
+    bool listenForChanges(std::string_view key, std23::move_only_function<void(const T &)> callback)
+    {
+        return this->listenForChangesRaw(key, [cb = std::move(callback)](const matjson::Value &value) mutable {
             if (auto res = value.as<T>()) {
                 cb(*res);
             }
@@ -162,10 +147,8 @@ public:
 
     /// This will throw if the setting is not found or of the wrong type
     template <typename T>
-    T getAndListenForChanges(
-        std::string_view key,
-        std23::move_only_function<void(const T&)> callback
-    ) {
+    T getAndListenForChanges(std::string_view key, std23::move_only_function<void(const T &)> callback)
+    {
         if (this->listenForChanges<T>(key, std::move(callback))) {
             return this->setting<T>(key);
         }
@@ -184,7 +167,10 @@ public:
     void deleteSaveSlot(size_t id);
     void createSaveSlot();
     void switchToSaveSlot(size_t id);
-    inline size_t getActiveSaveSlot() const { return m_activeSaveSlot; }
+    inline size_t getActiveSaveSlot() const
+    {
+        return m_activeSaveSlot;
+    }
 
     bool isPlayerBlacklisted(int id);
     bool isPlayerWhitelisted(int id);
@@ -198,8 +184,7 @@ public:
 private:
     friend class SingletonBase;
     friend class CoreImpl;
-    template <typename T>
-    friend class SettingAccessor;
+    template <typename T> friend class SettingAccessor;
 
     bool m_frozen = false;
     std::unordered_map<uint64_t, matjson::Value, NoHashHasher<uint64_t>> m_settings;
@@ -231,25 +216,27 @@ private:
     static uint64_t keyHash(std::string_view key);
 };
 
-template <typename T>
-SettingAccessor<T> setting(std::string_view key) {
+template <typename T> SettingAccessor<T> setting(std::string_view key)
+{
     return SettingsManager::get().setting<T>(key);
 }
 
 template <typename T>
-SettingAccessor<T>::SettingAccessor(std::string_view key) : hash(SettingsManager::keyHash(key)), key(key) {}
+SettingAccessor<T>::SettingAccessor(std::string_view key) : hash(SettingsManager::keyHash(key)), key(key)
+{
+}
 
-template <typename T>
-SettingAccessor<T>::operator T() const {
+template <typename T> SettingAccessor<T>::operator T() const
+{
     return this->value();
 }
 
-template <typename T>
-T SettingAccessor<T>::value() const {
+template <typename T> T SettingAccessor<T>::value() const
+{
 #ifdef GLOBED_DEBUG
     try {
         return SettingsManager::get().getSettingRaw<T>(hash);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         geode::log::error("Invalid setting '{}': {}", key, e.what());
         throw;
     }
@@ -258,12 +245,12 @@ T SettingAccessor<T>::value() const {
 #endif
 }
 
-template <typename T>
-SettingAccessor<T>& SettingAccessor<T>::operator=(T value) {
+template <typename T> SettingAccessor<T> &SettingAccessor<T>::operator=(T value)
+{
 #ifdef GLOBED_DEBUG
     try {
         SettingsManager::get().setSettingRaw<T>(hash, std::move(value));
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         geode::log::error("Invalid setting '{}': {}", key, e.what());
         throw;
     }
@@ -273,4 +260,4 @@ SettingAccessor<T>& SettingAccessor<T>::operator=(T value) {
     return *this;
 }
 
-}
+} // namespace globed

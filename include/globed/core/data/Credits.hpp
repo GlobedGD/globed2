@@ -20,4 +20,4 @@ struct CreditsCategory {
     std::vector<CreditsUser> users;
 };
 
-}
+} // namespace globed

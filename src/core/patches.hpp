@@ -3,16 +3,15 @@
 
 namespace globed {
 
-template <uintptr_t Version, uintptr_t Offset, bool Cocos = false>
-struct PatchDef {
-    template <auto = 0>
-    operator uintptr_t() const {
+template <uintptr_t Version, uintptr_t Offset, bool Cocos = false> struct PatchDef {
+    template <auto = 0> operator uintptr_t() const
+    {
         static_assert(Version == GEODE_COMP_GD_VERSION, "Patch must be updated to a new version!");
         return Offset;
     }
 
-    template <typename Ty = void*>
-    Ty addr() const {
+    template <typename Ty = void *> Ty addr() const
+    {
         static_assert(Version == GEODE_COMP_GD_VERSION, "Patch must be updated to a new version!");
 #ifdef GEODE_IS_WINDOWS
         if constexpr (Cocos) {
@@ -55,4 +54,4 @@ constexpr inline PatchDef<0, 0> PATCH_EGO_GETSAVESTRING_START;
 
 #undef DefPatch
 
-}
+} // namespace globed

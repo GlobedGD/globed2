@@ -1,9 +1,9 @@
 #pragma once
 
+#include <globed/util/singleton.hpp>
 #include <matjson.hpp>
 #include <matjson/reflect.hpp>
 #include <matjson/std.hpp>
-#include <globed/util/singleton.hpp>
 
 namespace globed {
 
@@ -17,13 +17,13 @@ class GLOBED_DLL ServerManager : public SingletonBase<ServerManager> {
     ServerManager();
 
 public:
-    CentralServerData& getServer(size_t index);
-    CentralServerData& getActiveServer();
-    std::vector<CentralServerData>& getAllServers();
+    CentralServerData &getServer(size_t index);
+    CentralServerData &getActiveServer();
+    std::vector<CentralServerData> &getAllServers();
     size_t getActiveIndex();
     void switchTo(size_t index);
     void deleteServer(size_t index);
-    void addServer(CentralServerData&& data);
+    void addServer(CentralServerData &&data);
     void commit();
 
     bool isOfficialServerActive();
@@ -39,4 +39,4 @@ private:
     void reload();
 };
 
-}
+} // namespace globed
