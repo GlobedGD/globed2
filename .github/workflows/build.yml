@@ -79,16 +79,18 @@ jobs:
     needs: package
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v6
         with:
           path: './artifacts/'
 
       - uses: andelf/nightly-release@main
+        permissions: write-all
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: nightly
           name: 'Development Release'
+          prerelease: true
           body: |
             This is a nightly release for commit ${{ github.sha }}. It may be unstable and contain bugs, so use at your own risk.
           files: |
