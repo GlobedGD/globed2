@@ -61,6 +61,7 @@ jobs:
     name: Package builds
     runs-on: ubuntu-latest
     needs: build
+    permissions: write-all
 
     steps:
       - name: Combine builds
@@ -73,27 +74,24 @@ jobs:
           name: globed-build-output
           path: ${{ steps.build.outputs.build-output }}
 
-  release:
-    name: Create nightly release
-    runs-on: ubuntu-latest
-    needs: package
-    permissions: write-all
+      - name: Get latest release tag
+        id: getrelease
+        run: echo "tag=$(curl -s https://api.github.com/repos/${{ github.event.repository.full_name }}/releases/latest | jq -r .tag_name)" >> $GITHUB_OUTPUT
 
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: './artifacts/'
-
-      - uses: andelf/nightly-release@main
+      - name: Create nightly release
+        uses: andelf/nightly-release@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: nightly
           name: 'Development Release'
-          prerelease: true
           body: |
-            This is a nightly release for commit ${{ github.sha }}. It may be unstable and contain bugs, so use at your own risk.
+            This is a nightly build of Globed for commit ${{ github.sha }} (${{ github.event.head_commit.message }}).
+
+            > **Note:** this build might not be stable and may contain issues, use at your own risk!
+
+            Changes since the last release: ${{ github.event.repository.html_url }}/compare/${{ steps.get_latest_release.outputs.tag }}...nightly
           files: |
-            ./artifacts/globed-build-output/*.geode
-            ./artifacts/globed-build-output/*.pdb
-            ./artifacts/globed-build-output/*.sym
+            ${{ steps.build.outputs.build-output }}/*.geode
+            ${{ steps.build.outputs.build-output }}/*.pdb
+            ${{ steps.build.outputs.build-output }}/*.sym
