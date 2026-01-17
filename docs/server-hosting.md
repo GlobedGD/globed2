@@ -292,6 +292,7 @@ icon = "role-supporter.png"
 
 # See description in central server's core.toml
 memory_usage = 3
+compression_level = 3
 
 # URL and password of the central server to connect to
 central_server_url = ""
