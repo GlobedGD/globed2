@@ -37,6 +37,7 @@ class GlobedConfig:
     quic: bool = True
     advanced_dns: bool = True
     update_check: bool = False
+    ignore_geode_mismatch: bool = False
     github_token: str = ""
 
     modules: set[str] = field(default_factory=set)
@@ -70,6 +71,7 @@ class GlobedConfig:
             out.quic = get_or(build, "quic", out.quic)
             out.advanced_dns = get_or(build, "advanced_dns", out.advanced_dns)
             out.update_check = get_or(build, "update_check", out.debug) # enabled by default in debug
+            out.ignore_geode_mismatch = get_or(build, "ignore_geode_mismatch", out.ignore_geode_mismatch)
 
             modules = get_or(build, "modules", [])
             for mod in modules:
@@ -173,7 +175,8 @@ def main(build: Build):
     if config.is_clang_cl or not config.is_clang:
         fatal_error("Clang-cl and MSVC are not supported, Globed can only be built with Clang")
 
-    build.verify_sdk_at_least(REQUIRED_GEODE_VERSION)
+    if not gc.ignore_geode_mismatch:
+        build.verify_sdk_at_least(REQUIRED_GEODE_VERSION)
 
     # Reconfigure when certain files change
     build.reconfigure_if_changed(config.project_dir / "config.toml")
