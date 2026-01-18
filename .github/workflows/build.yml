@@ -53,13 +53,14 @@ jobs:
           export-symbols: true
           combine: true
           target: ${{ matrix.config.target }}
-          # sccache is broken on macOS, so use no cache there :(
+          # sccache is broken on macos, so use no cache there :(
           ccache-variant: ${{ matrix.config.os != 'macos-latest' && 'sccache' || '' }}
 
   package:
     name: Package builds
     runs-on: ubuntu-latest
     needs: build
+    permissions: write-all
 
     steps:
       - name: Combine builds
@@ -69,5 +70,27 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v6
         with:
-          name: Globed Build Output
+          name: globed-build-output
           path: ${{ steps.build.outputs.build-output }}
+
+      - name: Get latest release tag
+        id: getrelease
+        run: echo "tag=$(curl -s https://api.github.com/repos/${{ github.event.repository.full_name }}/releases/latest | jq -r .tag_name)" >> $GITHUB_OUTPUT
+
+      - name: Create nightly release
+        uses: andelf/nightly-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly
+          name: "Development Release"
+          body: |
+            This is a nightly build of Globed for commit ${{ github.sha }} (${{ github.event.head_commit.message }}).
+
+            > **Note:** this build might not be stable and may contain issues, use at your own risk!
+
+            Changes since the last release: ${{ github.event.repository.html_url }}/compare/${{ steps.getrelease.outputs.tag }}...nightly
+          files: |
+            ${{ steps.build.outputs.build-output }}/*.geode
+            ${{ steps.build.outputs.build-output }}/*.pdb
+            ${{ steps.build.outputs.build-output }}/*.sym
