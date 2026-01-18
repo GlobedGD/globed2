@@ -51,6 +51,10 @@ bool HookedMenuLayer::init() {
 }
 
 void HookedMenuLayer::checkButton(float) {
+    this->recreateButton();
+}
+
+void HookedMenuLayer::recreateButton() {
     auto& fields = *m_fields.self();
 
     bool active = NetworkManager::get().getConnectionState() == ConnectionState::Connected;
@@ -58,10 +62,6 @@ void HookedMenuLayer::checkButton(float) {
     if (active == fields.btnActive) return;
     fields.btnActive = active;
 
-    this->recreateButton();
-}
-
-void HookedMenuLayer::recreateButton() {
     CCNode* parent = nullptr;
     CCPoint pos;
 
@@ -78,28 +78,30 @@ void HookedMenuLayer::recreateButton() {
         return;
     }
 
-    auto makeSprite = [this]() -> CCNode* {
-        if (false) {
-            return CCSprite::createWithSpriteFrameName("GJ_reportBtn_001.png");
-        } else {
-            return CircleButtonSprite::createWithSprite(
-                "globed-gold-icon.png"_spr,
-                1.f,
-                m_fields->btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
-                CircleBaseSize::MediumAlt
-            );
+    auto makeSprite = [&]() -> CCNode* {
+        CCNode* spr = CircleButtonSprite::createWithSprite(
+            "globed-gold-icon.png"_spr,
+            1.f,
+            active ? CircleBaseColor::Cyan : CircleBaseColor::Green,
+            CircleBaseSize::MediumAlt
+        );
+
+        if (!spr) {
+            spr = CCSprite::createWithSpriteFrameName("GJ_reportBtn_001.png");
         }
+
+        return spr;
     };
 
-    if (!m_fields->btn) {
-        m_fields->btn = Build<CCNode>(makeSprite())
+    if (!fields.btn) {
+        fields.btn = Build<CCNode>(makeSprite())
             .intoMenuItem(this, menu_selector(HookedMenuLayer::onGlobedButton))
             .zOrder(5) // force it to be at the end of the layout for consistency
             .id("main-menu-button"_spr)
             .parent(parent)
             .collect();
     } else {
-        m_fields->btn->setNormalImage(makeSprite());
+        fields.btn->setNormalImage(makeSprite());
     }
 
     parent->updateLayout();

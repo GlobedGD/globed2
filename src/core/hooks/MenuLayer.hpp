@@ -8,7 +8,7 @@ namespace globed {
 
 struct GLOBED_DLL HookedMenuLayer : geode::Modify<HookedMenuLayer, MenuLayer> {
     struct Fields {
-        bool btnActive = false;
+        std::optional<bool> btnActive;
         geode::Ref<CCMenuItemSpriteExtra> btn;
     };
 
