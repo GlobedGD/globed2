@@ -90,7 +90,7 @@ jobs:
 
             > **Note:** this build might not be stable and may contain issues, use at your own risk!
 
-            Changes since the last release: ${{ github.event.repository.html_url }}/compare/${{ steps.get_latest_release.outputs.tag }}...nightly
+            Changes since the last release: ${{ github.event.repository.html_url }}/compare/${{ steps.getrelease.outputs.tag }}...nightly
           files: |
             ${{ steps.build.outputs.build-output }}/*.geode
             ${{ steps.build.outputs.build-output }}/*.pdb
