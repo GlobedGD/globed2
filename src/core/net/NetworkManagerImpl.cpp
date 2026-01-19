@@ -358,6 +358,8 @@ Future<> NetworkManagerImpl::asyncInit() {
     m_centralConn->setQdbFolder(qdbPath);
     m_gameConn->setQdbFolder(qdbPath);
 
+    this->initializeTls();
+
     m_centralConn->setConnectionStateCallback([this](qn::ConnectionState state) {
         this->onCentralStateChanged(state);
     });
@@ -430,6 +432,33 @@ Future<> NetworkManagerImpl::asyncInit() {
             co_await self->threadGameWorkerLoop();
         }
     }(this));
+}
+
+void NetworkManagerImpl::initializeTls() {
+    // create insecure tls contexts, allow server to use self signed certs
+    qn::QuicTlsOptions qopts;
+    qn::TcpTlsOptions topts;
+    qopts.insecure = true;
+    topts.insecure = true;
+
+    auto qres = qn::QuicTlsContext::create(qopts);
+    auto tres = qn::TcpTlsContext::create(topts);
+
+    if (!qres) {
+        log::error("failed to create quic tls context: {}", qres.unwrapErr());
+    } else {
+        auto ctx = qres.unwrap();
+        m_centralConn->setQuicTlsContext(ctx);
+        m_gameConn->setQuicTlsContext(ctx);
+    }
+
+    if (!tres) {
+        log::error("failed to create tcp tls context: {}", tres.unwrapErr());
+    } else {
+        auto ctx = tres.unwrap();
+        m_centralConn->setTlsContext(ctx);
+        m_gameConn->setTlsContext(ctx);
+    }
 }
 
 Future<> NetworkManagerImpl::threadWorkerLoop() {
@@ -956,8 +985,6 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
 
     bool certVerification = globed::setting<bool>("core.dev.cert-verification");
     argon::setCertVerification(certVerification);
-    m_centralConn->setTlsCertVerification(certVerification);
-    m_gameConn->setTlsCertVerification(certVerification);
 
     g_argonData = argon::getGameAccountData();
     m_abortCause.lock()->first.clear();

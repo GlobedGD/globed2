@@ -19,7 +19,7 @@ import sys
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
-QUNET_VERSION = "f50d433"
+QUNET_VERSION = "8872e15"
 SERVER_SHARED_VERSION = "6282374"
 CUE_VERSION = "ae3ee0b"
 
@@ -299,6 +299,7 @@ def main(build: Build):
     build.add_cpm_dep("GlobedGD/server-shared", SERVER_SHARED_VERSION, link_name="ServerShared")
     build.add_cpm_dep("dankmeme01/qunet-cpp", QUNET_VERSION, {
         "QUNET_QUIC_SUPPORT": "ON" if gc.quic else "OFF",
+        "QUNET_TLS_SUPPORT": "ON",
         "QUNET_ADVANCED_DNS": "ON" if gc.advanced_dns else "OFF",
         "QUNET_DEBUG": "ON" if gc.debug else "OFF",
     }, link_name="qunet")

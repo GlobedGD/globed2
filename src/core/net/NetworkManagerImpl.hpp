@@ -353,6 +353,8 @@ private:
     Result<> onCentralDataReceived(CentralMessage::Reader& msg);
     Result<> onGameDataReceived(GameMessage::Reader& msg);
 
+    void initializeTls();
+
     arc::Future<> threadWorkerLoop();
     arc::Future<> threadGameWorkerLoop();
     void threadPingGameServers(LockedConnInfo& info);
