@@ -19,7 +19,7 @@ import sys
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
-QUNET_VERSION = "8872e15"
+QUNET_VERSION = "16881c0"
 SERVER_SHARED_VERSION = "6282374"
 CUE_VERSION = "ae3ee0b"
 
@@ -288,6 +288,8 @@ def main(build: Build):
         else:
             build.link_library(f"libs/bb/bb-{config.platform.platform_str(include_bit=True)}.a")
 
+    if gc.quic:
+        build.add_definition("GLOBED_QUIC_SUPPORT", "1")
 
     ## Add cmake dependencies ##
 

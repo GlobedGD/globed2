@@ -436,21 +436,10 @@ Future<> NetworkManagerImpl::asyncInit() {
 
 void NetworkManagerImpl::initializeTls() {
     // create insecure tls contexts, allow server to use self signed certs
-    qn::QuicTlsOptions qopts;
+
     qn::TcpTlsOptions topts;
-    qopts.insecure = true;
     topts.insecure = true;
-
-    auto qres = qn::QuicTlsContext::create(qopts);
     auto tres = qn::TcpTlsContext::create(topts);
-
-    if (!qres) {
-        log::error("failed to create quic tls context: {}", qres.unwrapErr());
-    } else {
-        auto ctx = qres.unwrap();
-        m_centralConn->setQuicTlsContext(ctx);
-        m_gameConn->setQuicTlsContext(ctx);
-    }
 
     if (!tres) {
         log::error("failed to create tcp tls context: {}", tres.unwrapErr());
@@ -459,6 +448,20 @@ void NetworkManagerImpl::initializeTls() {
         m_centralConn->setTlsContext(ctx);
         m_gameConn->setTlsContext(ctx);
     }
+
+#ifdef GLOBED_QUIC_SUPPORT
+    qn::QuicTlsOptions qopts;
+    qopts.insecure = true;
+    auto qres = qn::QuicTlsContext::create(qopts);
+
+    if (!qres) {
+        log::error("failed to create quic tls context: {}", qres.unwrapErr());
+    } else {
+        auto ctx = qres.unwrap();
+        m_centralConn->setQuicTlsContext(ctx);
+        m_gameConn->setQuicTlsContext(ctx);
+    }
+#endif
 }
 
 Future<> NetworkManagerImpl::threadWorkerLoop() {
