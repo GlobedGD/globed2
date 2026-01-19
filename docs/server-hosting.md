@@ -2,6 +2,26 @@
 
 A Globed server has two parts: a central server and a game server. This page will cover setting up and configuring both of them. You must have one central server that will handle all connections, and then one or multiple game servers to handle actual gameplay. Players are able to freely move between game servers and by default will prefer the one with the least latency.
 
+## Frequently asked questions
+
+**Please read this section before proceeding to [setup](#general-setup)**
+
+### How strong should my computer be?
+
+Globed server can run on any modern machine running Windows, Linux or MacOS (you must compile yourself for Mac). It uses relatively little RAM and CPU power when idle, and when there's active users it depends entirely on the amount of connected players. You likely will be able to handle a hundred or more players on any kind of multi-core system.
+
+Both servers have some settings that allow you to tweak buffer pools (higher/lower memory pre-allocation) and compression (trading cpu for lower bandwidth)
+
+### How can others connect?
+
+You must either **port forward**, use a VPN service like Radmin VPN or use a public tunnel like playit.gg. All of this is not covered by this guide, and is something you need to figure on your own.
+
+### What protocols does Globed use?
+
+By default, TCP and UDP are used for central server, while game server uses UDP primarily. Both servers support TCP, UDP and QUIC and all can be turned on/off through the configuration files.
+
+# General setup
+
 Both servers can be ran as executables or as a Docker container. Up-to-date information on running them can be found in their respective repositories: [central server](https://github.com/GlobedGD/central-server), [game server](https://github.com/GlobedGD/game-server). If you do not have a GitHub account, or for any other reason cannot find the GitHub Actions builds, we also publish server binaries for every [mod release](https://github.com/GlobedGD/globed2/releases/latest). These may be slightly out of date, as the server might be updated without a mod update, so prefer getting the builds from the server repository.
 
 The next sections assume that you have already successfully launched the server once. The central server does not require any pre-configuration, and if you launched it properly, it should greet you with the following message:
