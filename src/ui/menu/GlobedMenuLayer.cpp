@@ -476,6 +476,7 @@ bool GlobedMenuLayer::init() {
         return ListenerResult::Continue;
     });
 
+    this->initSideButtons();
     this->onServerModified();
 
     this->update(0.f);
