@@ -251,6 +251,9 @@ def main(build: Build):
     build.enable_mod_json_generation("mod.json.template")
     assert build.mod_json is not None # for type checkers
 
+    # allow any geode version, since we earlier verified that it's at least the required version
+    build.relax_geode_requirement()
+
     build.add_geode_dep("geode.node-ids", ">=v1.10.0")
 
     if 'scripting-ui' in gc.modules:

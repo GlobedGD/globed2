@@ -444,7 +444,7 @@ void NetworkManagerImpl::initializeTls() {
     if (!tres) {
         log::error("failed to create tcp tls context: {}", tres.unwrapErr());
     } else {
-        auto ctx = tres.unwrap();
+        auto ctx = std::move(tres).unwrap();
         m_centralConn->setTlsContext(ctx);
         m_gameConn->setTlsContext(ctx);
     }
