@@ -25,7 +25,7 @@ struct PairIntIntHash {
 };
 
 TextureQuality getTextureQuality();
-unsigned char* getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize);
+std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize);
 
 // An enum describing *where* are we preloading assets
 enum class PreloadContext {

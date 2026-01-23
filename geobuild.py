@@ -247,6 +247,9 @@ def main(build: Build):
         if config.platform.is_windows():
             build.add_definition("GLOBED_VOICE_CAN_TALK", "1")
 
+    # pugixml options
+    build.set_cache_variable("GEODE_CODEGEN_EXTRA_ARGS", "--skip-pugixml", force=True)
+
     # Add geode dependencies
     build.enable_mod_json_generation("mod.json.template")
     assert build.mod_json is not None # for type checkers
@@ -310,6 +313,7 @@ def main(build: Build):
     }, link_name="qunet")
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
+    build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static")
     build.add_cpm_dep("GlobedGD/argon", "3a5b83e")
     build.add_cpm_dep("Prevter/sinaps", "2541d6d")
     build.add_cpm_dep("Prevter/AdvancedLabel", "d78d7f82", link_name="advanced_label")

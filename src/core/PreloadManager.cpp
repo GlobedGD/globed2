@@ -4,8 +4,11 @@
 #include <globed/core/SettingsManager.hpp>
 #include <asp/fs.hpp>
 #include <asp/format.hpp>
+#include "spriteframes.hpp"
 
-#ifndef GEODE_IS_WINDOWS
+#ifdef GEODE_IS_WINDOWS
+# include <Windows.h>
+#else
 # include <sys/stat.h>
 #endif
 
@@ -14,24 +17,6 @@ using namespace geode::prelude;
 namespace fs = std::filesystem;
 
 namespace globed {
-
-// big hack to call a private cocos function
-namespace {
-    template <typename TC>
-    using priv_method_t = void(TC::*)(CCDictionary*, CCTexture2D*);
-
-    template <typename TC, priv_method_t<TC> func>
-    struct priv_caller {
-        friend void _addSpriteFramesWithDictionary(CCDictionary* p1, CCTexture2D* p2) {
-            auto* obj = CCSpriteFrameCache::sharedSpriteFrameCache();
-            (obj->*func)(p1, p2);
-        }
-    };
-
-    template struct priv_caller<CCSpriteFrameCache, &CCSpriteFrameCache::addSpriteFramesWithDictionary>;
-
-    void _addSpriteFramesWithDictionary(CCDictionary* p1, CCTexture2D* p2);
-}
 
 struct HookedFileUtils : public CCFileUtils {
     static HookedFileUtils& get() {
@@ -267,7 +252,7 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
             auto& state = itemStates[i];
 
             unsigned long filesize = 0;
-            std::unique_ptr<unsigned char[]> buffer{getFileDataThreadSafe(state.path.c_str(), "rb", &filesize)};
+            auto buffer = getFileDataThreadSafe(state.path.c_str(), "rb", &filesize);
 
             if (!buffer || filesize == 0) {
                 log::warn("PreloadManager: could not read file '{}'", state.path);
@@ -347,40 +332,36 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
             auto pathsv = std::string_view{state.path};
             std::string fullPlistPath = std::string(pathsv.substr(0, pathsv.find(".png"))) + ".plist";
 
-            // file reading is not thread safe on android, so we need to lock it
-
-            CCDictionary* dict;
-            {
-                GEODE_ANDROID(auto _lock = g_fileMutex.lock());
-
-                dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
-                if (!dict) {
-                    log::info("PreloadManager: dict is nullptr for {}, trying slower fallback option", fullPlistPath);
-
-                    std::string_view attemptedPlist = relativizeIconPath(fullPlistPath);
-
-                    auto fallbackPath = self.fullPathForFilename(attemptedPlist);
-                    log::info("PreloadManager: attempted fallback: {}", fallbackPath);
-                    dict = CCDictionary::createWithContentsOfFileThreadSafe(fallbackPath.c_str());
-                }
+            // read the file
+            unsigned long plistSize;
+            auto plistData = getFileDataThreadSafe(fullPlistPath.c_str(), "rb", &plistSize);
+            if (!plistData || plistSize == 0) {
+                log::info("PreloadManager: can't load {}, trying slower fallback option", fullPlistPath);
+                std::string_view attemptedPlist = relativizeIconPath(fullPlistPath);
+                auto fallbackPath = self.fullPathForFilename(attemptedPlist);
+                plistData = getFileDataThreadSafe(fallbackPath.c_str(), "rb", &plistSize);
             }
 
-            if (!dict) {
+            if (!plistData || plistSize == 0) {
                 log::warn("PreloadManager: failed to find the plist for '{}'", state.path);
 
                 // remove the texture from the cache
                 auto _lock = cocosLock.lock();
                 texCache->m_pTextures->removeObjectForKey(state.path);
                 return;
-            } else {
-                self.m_loadedFrames.lock()->insert(plistKey);
-
-                auto _lock = cocosLock.lock();
-                // hacky!
-                _addSpriteFramesWithDictionary(dict, state.texture);
             }
 
-            if (dict) dict->release(); // release after unlocking
+            self.m_loadedFrames.lock()->insert(plistKey);
+
+            auto res = parseSpriteFrames(plistData.get(), plistSize);
+            if (!res) {
+                log::warn("PreloadManager: failed to parse sprite frames for '{}': {}", state.path, res.unwrapErr());
+                return;
+            }
+            auto spf = std::move(res).unwrap();
+
+            auto _lock = cocosLock.lock();
+            addSpriteFrames(*spf, state.texture);
         });
     }
 
@@ -565,7 +546,6 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
     // we disregard CCFileUtils m_pFilenameLookupDict / getNewFilename() here,
     // no one uses it anyway fortunately
 
-    std::string fullpath;
     auto& searchPaths = fu.getSearchPaths();
 
     // we discard resolution directories here, since no one uses them
@@ -611,14 +591,49 @@ TextureQuality getTextureQuality() {
 }
 
 // TODO: maybe use AAssetManager again, need to compare
-unsigned char* getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize) {
-#ifndef GEODE_IS_ANDROID
-    auto fu = CCFileUtils::get();
-    return fu->getFileData(path, mode, outSize);
-#else
+std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize) {
+#ifdef GEODE_IS_WINDOWS
+    HANDLE file = CreateFileA(
+        path,
+        GENERIC_READ,
+        FILE_SHARE_READ,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        nullptr
+    );
+
+    if (file == INVALID_HANDLE_VALUE) {
+        if (outSize) *outSize = 0;
+        return nullptr;
+    }
+
+    LARGE_INTEGER filesize;
+    if (!GetFileSizeEx(file, &filesize)) {
+        CloseHandle(file);
+        if (outSize) *outSize = 0;
+        return nullptr;
+    }
+
+    auto buffer = std::make_unique<unsigned char[]>(filesize.QuadPart);
+    DWORD bytesRead;
+    if (!ReadFile(file, buffer.get(), filesize.QuadPart, &bytesRead, nullptr) || bytesRead != filesize.QuadPart) {
+        CloseHandle(file);
+        if (outSize) *outSize = 0;
+        return nullptr;
+    }
+
+    CloseHandle(file);
+    if (outSize) *outSize = filesize.QuadPart;
+    return buffer;
+
+#elif defined GEODE_IS_ANDROID
     auto fu = CCFileUtils::get();
     auto _lck = g_fileMutex.lock();
-    return fu->getFileData(path, mode, outSize);
+    return std::unique_ptr<unsigned char[]>(fu->getFileData(path, mode, outSize));
+#else
+    auto fu = CCFileUtils::get();
+    return std::unique_ptr<unsigned char[]>(fu->getFileData(path, mode, outSize));
 #endif
 }
 
