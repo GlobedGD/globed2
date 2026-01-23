@@ -326,7 +326,7 @@ void PopupManager::changedScene(CCScene* newScene) {
         }
 
         for (size_t i = 0; i < alertCount; i++) {
-            auto alert = alerts[i];
+            auto& alert = alerts[i];
             alert->removeFromParentAndCleanup(false);
         }
 

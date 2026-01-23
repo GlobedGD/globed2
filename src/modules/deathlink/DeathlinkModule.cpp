@@ -8,7 +8,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-DeathlinkModule::DeathlinkModule() {}
+DeathlinkModule::DeathlinkModule() = default;
 
 void DeathlinkModule::onModuleInit() {
     this->setAutoEnableMode(AutoEnableMode::Level);

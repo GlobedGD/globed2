@@ -38,6 +38,9 @@ public:
     }
 
 private:
+    friend Derived;
+    ModuleCrtpBase() = default;
+
     static inline std::shared_ptr<Derived> g_instance;
 
     // automatically initialize the module when the program starts

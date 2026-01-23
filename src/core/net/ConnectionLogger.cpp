@@ -9,7 +9,7 @@ using namespace arc;
 
 namespace globed {
 
-ConnectionLogger::ConnectionLogger() {}
+ConnectionLogger::ConnectionLogger() = default;
 
 ConnectionLogger::~ConnectionLogger() {
     // do not wait for task to finish

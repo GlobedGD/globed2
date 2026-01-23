@@ -40,7 +40,7 @@ struct ConstexprString {
 
 template <>
 struct ConstexprString<0> {
-    constexpr ConstexprString() {}
+    constexpr ConstexprString() = default;
 };
 
 }

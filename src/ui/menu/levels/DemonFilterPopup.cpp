@@ -76,7 +76,7 @@ bool DemonFilterPopup::setup(const LevelListLayer::Filters& filters) {
         .parent(difficultyMenu)
         .store(m_generalDemonButton);
 
-    for (auto [name, type] : std::initializer_list<std::tuple<const char*, Difficulty>>{
+    for (auto& [name, type] : std::initializer_list<std::tuple<const char*, Difficulty>>{
         {"difficulty_07_btn2_001.png", EasyDemon},
         {"difficulty_08_btn2_001.png", MediumDemon},
         {"difficulty_06_btn2_001.png", HardDemon},

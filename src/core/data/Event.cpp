@@ -116,6 +116,7 @@ Result<InEvent> InEvent::decode(ByteReader& reader) {
         MAP_TO(EVENT_2P_LINK_REQUEST, TwoPlayerLinkRequestEvent);
         MAP_TO(EVENT_2P_UNLINK, TwoPlayerUnlinkEvent);
         MAP_TO(EVENT_ACTIVE_PLAYER_SWITCH, ActivePlayerSwitchEvent);
+        default: break;
     }
 #undef MAP_TO
 
@@ -146,8 +147,7 @@ Result<> ScriptedEvent::encode(HeapByteWriter& writer) {
     uint8_t typeByte = 0;
     uint8_t shift = 7;
 
-    for (size_t i = 0; i < args.size(); i++) {
-        auto& arg = args[i];
+    for (auto& arg : args) {
         bool isFloat = std::holds_alternative<float>(arg);
 
         if (isFloat) {

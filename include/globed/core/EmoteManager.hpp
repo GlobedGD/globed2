@@ -30,8 +30,8 @@ protected:
     std::vector<uint32_t> m_sortedEmoteIds;
 
     friend class SingletonBase;
-    EmoteManager() {}
-    ~EmoteManager() {}
+    EmoteManager() = default;
+    ~EmoteManager() = default;
 };
 
 }

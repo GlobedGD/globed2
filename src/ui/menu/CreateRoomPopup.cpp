@@ -347,6 +347,7 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
         case TAG_TEAMS:          m_settings.teams = state; break;
         case TAG_AUTO_PINNING:   m_settings.manualPinning = !state; break;
         case TAG_SWITCHEROO:     m_settings.switcheroo = state; isSafeMode = true; break;
+        default: break;
     }
 
     if (isSafeMode && state && !globed::swapFlag("core.flags.seen-room-safe-mode-notice")) {
@@ -396,6 +397,8 @@ void CreateRoomPopup::handleMutuallyExclusive(int which) {
             disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
             disable(m_deathlinkBtn, m_settings.deathlink);
         } break;
+
+        default: break;
     }
 }
 

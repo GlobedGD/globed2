@@ -37,7 +37,7 @@ inline geode::Result<SpawnData> decodeSpawnData(qn::ByteReader& reader) {
     out.ordered = isOrdered;
 
     if (hasRemaps) {
-        auto pairCount = READER_UNWRAP(reader.readU8());
+        size_t pairCount = READER_UNWRAP(reader.readU8());
         // if (pairCount > 255) {
         //     return geode::Err("Too many remaps in spawn data");
         // }

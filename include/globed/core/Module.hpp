@@ -41,11 +41,11 @@ enum class AutoEnableMode {
 
 class GLOBED_DLL Module {
 public:
-    inline Module() : m_core(nullptr), m_autoEnableMode(AutoEnableMode::Default), m_enabled(false) {
+    inline Module() {
         std::fill(std::begin(_reserved), std::end(_reserved), 0);
     }
 
-    inline virtual ~Module() {}
+    inline virtual ~Module() = default;
 
     // Disable copying to prevent accidents
     Module(const Module&) = delete;
@@ -136,9 +136,9 @@ private:
     friend class Core;
     friend class CoreImpl;
 
-    Core* m_core;
-    AutoEnableMode m_autoEnableMode;
-    bool m_enabled;
+    Core* m_core = nullptr;
+    AutoEnableMode m_autoEnableMode = AutoEnableMode::Default;
+    bool m_enabled = false;
     std::vector<geode::Hook*> m_hooks;
     std::vector<geode::Patch*> m_patches;
 

@@ -49,10 +49,11 @@ public:
     GLOBED_DLL static Derived& get();
 #endif
 
-protected:
+private:
+    friend Derived;
     static inline bool destructed = false;
 
-    SingletonBase() {}
+    SingletonBase() = default;
     virtual ~SingletonBase() {
         destructed = true;
     }
@@ -78,8 +79,9 @@ public:
     GLOBED_DLL static Derived& get();
 #endif
 
-protected:
-    SingletonLeakBase() {}
+private:
+    friend Derived;
+    SingletonLeakBase() = default;
 };
 
 // This is like SingletonLeakBase but it is also a CCObject with optional update schedule
@@ -118,8 +120,9 @@ public:
     GLOBED_DLL static Derived& get();
 #endif
 
-protected:
-    SingletonNodeBase() {}
+private:
+    friend Derived;
+    SingletonNodeBase() = default;
 };
 
 // Singleton cache, for cocos/GD classes
