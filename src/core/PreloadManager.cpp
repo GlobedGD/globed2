@@ -1,8 +1,8 @@
 #include "PreloadManager.hpp"
 #include <globed/prelude.hpp>
-#include <globed/util/SpinLock.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <asp/fs.hpp>
+#include <asp/sync/SpinLock.hpp>
 #include <asp/format.hpp>
 #include "spriteframes.hpp"
 
@@ -205,7 +205,7 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
 
     log::debug("PreloadManager: loading batch of {} items", items.size());
 
-    static SpinLock cocosLock;
+    static asp::SpinLock<> cocosLock;
 
     auto texCache = CCTextureCache::get();
     auto sfCache = CCSpriteFrameCache::get();
