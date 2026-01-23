@@ -403,7 +403,7 @@ void LevelListLayer::finishLoading() {
 
     auto flevel = NetworkManagerImpl::get().getFeaturedLevel();
 
-    for (auto level : page) {
+    for (auto& level : page) {
         auto cell = static_cast<HookedLevelCell*>(new LevelCell("", 356.f, 90.f));
         cell->autorelease();
         cell->loadFromLevel(level);
@@ -533,7 +533,7 @@ bool LevelListLayer::isMatchingFilters(GJGameLevel* level) {
             rateTier = Unrated;
         }
 
-        if (std::find(tiers.begin(), tiers.end(), rateTier) == tiers.end()) {
+        if (!tiers.contains(rateTier)) {
             return false;
         }
     }

@@ -70,6 +70,7 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
     m_levelCell = new LevelCell(level->m_levelName.c_str(), this->getContentWidth(), HEIGHT);
     m_levelCell->autorelease();
     m_levelCell->m_compactView = useCompact;
+    m_levelCell->setUserObject("cvolton.compact_lists/skip-adjustment", CCBool::create(true));
     m_levelCell->loadFromLevel(level);
     m_levelCell->setContentSize({ this->getContentWidth(), HEIGHT });
     m_levelCell->setPosition({ 0.f, 0.f });
@@ -78,20 +79,8 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
         cvoltonID->setVisible(false);
     }
 
-    bool hasCompactListsMod = false;
-    if (auto mod = Loader::get()->getLoadedMod("cvolton.compact_lists")) {
-        // the mod seems to apply to levelcells unconditionally, doesnt check a setting
-        hasCompactListsMod = true;
-    } else {
-        auto lplace = m_levelCell->m_mainLayer->getChildByID("level-place");
-        if (lplace) {
-            auto xpos = lplace->getPositionX();
-            hasCompactListsMod = xpos < 0.f;
-        }
-    }
-
     // we are about to do .. mischievous things
-    if (useCompact && !hasCompactListsMod) {
+    if (useCompact) {
         float shift = 20.f;
 
         std::array toHide = {
