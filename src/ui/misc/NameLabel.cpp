@@ -282,8 +282,6 @@ void NameLabel::makeClickable(std23::move_only_function<void(CCMenuItemSpriteExt
 
 void NameLabel::setMultipleBadges(bool multiple) {
     m_multipleBadges = multiple;
-
-    // TODO (low) impl
 }
 
 void NameLabel::setShadowEnabled(bool enabled) {

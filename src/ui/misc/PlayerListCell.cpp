@@ -61,6 +61,7 @@ bool PlayerListCell::init(
         .collect();
 
     m_nameLabel->setPositionY(m_nameLabel->getPositionY() + 1.f);
+    m_nameLabel->setMultipleBadges(true);
 
     if (sud) {
         m_nameLabel->updateWithRoles(*sud);
