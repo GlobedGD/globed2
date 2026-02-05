@@ -5,16 +5,16 @@
 #include "LevelListLayer.hpp"
 
 #include <Geode/Geode.hpp>
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 
-class LevelFiltersPopup : public BasePopup<LevelFiltersPopup, LevelListLayer*> {
+class LevelFiltersPopup : public BasePopup {
 public:
     using Filters = LevelListLayer::Filters;
-    using Callback = std23::move_only_function<void(Filters)>;
+    using Callback = geode::Function<void(Filters)>;
 
-    static const cocos2d::CCSize POPUP_SIZE;
+    static LevelFiltersPopup* create(LevelListLayer* layer);
 
     void setCallback(Callback&& cb);
 
@@ -26,7 +26,7 @@ protected:
     CCMenuItemToggler* m_btnUncompleted;
     std::map<globed::Difficulty, CCMenuItemSpriteExtra*> diffButtons;
 
-    bool setup(LevelListLayer* layer) override;
+    bool init(LevelListLayer* layer);
     void onClose(cocos2d::CCObject*) override;
 };
 

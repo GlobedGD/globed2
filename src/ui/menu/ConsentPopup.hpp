@@ -2,17 +2,17 @@
 
 #include <globed/util/CStr.hpp>
 #include <ui/BasePopup.hpp>
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 
-using ConsentCallback = std23::move_only_function<void(bool)>;
+using ConsentCallback = geode::Function<void(bool)>;
 
-class ConsentPopup : public BasePopup<ConsentPopup> {
+class ConsentPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static ConsentPopup* create();
 
-    bool setup();
+    bool init();
     void setCallback(ConsentCallback&& cb);
 
 private:

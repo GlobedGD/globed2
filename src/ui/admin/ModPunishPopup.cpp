@@ -11,9 +11,9 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize ModPunishPopup::POPUP_SIZE { 350.f, 250.f };
+bool ModPunishPopup::init(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun) {
+    if (!BasePopup::init(350.f, 250.f)) return false;
 
-bool ModPunishPopup::setup(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun) {
     switch (type) {
         case UserPunishmentType::Ban: this->setTitle("Ban/Unban user"); break;
         case UserPunishmentType::RoomBan: this->setTitle("Room ban/unban user"); break;
@@ -424,6 +424,18 @@ void ModPunishPopup::stopWaiting(const msg::AdminResultMessage& msg) {
     if (m_callback) m_callback();
 
     this->onClose(nullptr);
+}
+
+ModPunishPopup* ModPunishPopup::create(
+    int accountId, UserPunishmentType type, std::optional<UserPunishment> punishment
+) {
+    auto ret = new ModPunishPopup();
+    if (ret->init(accountId, type, std::move(punishment))) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

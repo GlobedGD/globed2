@@ -14,13 +14,14 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize EmoteListPopup::POPUP_SIZE {360.f, 280.f};
 static constexpr CCSize LIST_SIZE = {280.f, 130.f};
 static constexpr float CELL_HEIGHT = 40.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
 const int EMOTES_PER_PAGE = 18;
 
-bool EmoteListPopup::setup() {
+bool EmoteListPopup::init() {
+    if (!BasePopup::init(360.f, 280.f)) return false;
+
     this->setTitle("Emotes");
     m_title->setPosition(this->fromTop(15.f));
 
@@ -446,6 +447,16 @@ void EmoteListPopup::loadFavoriteEmotesList() {
     }
 
     m_favoriteEmotesMenu->updateLayout();
+}
+
+EmoteListPopup* EmoteListPopup::create() {
+    auto ret = new EmoteListPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

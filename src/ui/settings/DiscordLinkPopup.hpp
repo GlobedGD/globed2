@@ -8,9 +8,9 @@
 
 namespace globed {
 
-class DiscordLinkPopup : public BasePopup<DiscordLinkPopup> {
+class DiscordLinkPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static DiscordLinkPopup* create();
 
 protected:
     cocos2d::CCNode* m_playerCard;
@@ -31,7 +31,7 @@ protected:
     std::optional<MessageListener<msg::DiscordLinkStateMessage>> m_stateListener;
     std::optional<MessageListener<msg::DiscordLinkAttemptMessage>> m_attemptListener;
 
-    bool setup() override;
+    bool init() override;
     void onClose(CCObject*) override;
 
     void onStateLoaded(uint64_t id, const std::string& username, const std::string& avatarUrl);

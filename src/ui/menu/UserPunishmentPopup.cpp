@@ -9,7 +9,7 @@ using namespace asp::time;
 
 namespace globed {
 
-bool UserPunishmentPopup::initCustomSize(const std::string& reason, int64_t expiresAt, bool isBan) {
+bool UserPunishmentPopup::init(const std::string& reason, int64_t expiresAt, bool isBan) {
     constexpr float WIDTH = 340.f;
     auto reasonText = fmt::format("Reason: {}", reason.empty() ? "No reason provided" : reason);
 
@@ -24,10 +24,10 @@ bool UserPunishmentPopup::initCustomSize(const std::string& reason, int64_t expi
 
     float taHeight = m_textArea->getScaledContentHeight();
 
-    return this->initAnchored(WIDTH, 120.f + taHeight);
-}
+    if (!BasePopup::init(WIDTH, 120.f + taHeight)) return false;
 
-bool UserPunishmentPopup::setup() {
+    // actual logic
+
     this->setTitle(m_isBan ? "You have been banned!" : "You have been muted!");
 
     Duration punishmentTime = SystemTime::fromUnix(m_expiresAt).until();
@@ -79,7 +79,7 @@ bool UserPunishmentPopup::setup() {
 
 UserPunishmentPopup* UserPunishmentPopup::create(const std::string& reason, int64_t expiresAt, bool isBan) {
     auto ret = new UserPunishmentPopup;
-    if (ret->initCustomSize(reason, expiresAt, isBan)) {
+    if (ret->init(reason, expiresAt, isBan)) {
         ret->autorelease();
         return ret;
     }

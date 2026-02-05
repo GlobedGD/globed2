@@ -10,12 +10,18 @@ using namespace geode::prelude;
 
 namespace globed {
 
-CCSize ModRoleModifyPopup::POPUP_SIZE {};
-
 static const auto ROLE_ICON_SIZE = BADGE_SIZE * 1.2f;
 static const float WIDTH_PER_ROLE = ROLE_ICON_SIZE.width + 3.f;
 
-bool ModRoleModifyPopup::setup(int32_t accountId, std::vector<uint8_t> roleIds) {
+bool ModRoleModifyPopup::init(int32_t accountId, std::vector<uint8_t> roleIds) {
+    auto ret = new ModRoleModifyPopup;
+    size_t allCnt = NetworkManagerImpl::get().getAllRoles().size();
+
+    float width = std::max(150.f, 50.f + allCnt * WIDTH_PER_ROLE);
+    float height = 120.f;
+
+    if (!BasePopup::init(width, height)) return false;
+
     m_accountId = accountId;
     m_roleIds = std::move(roleIds);
 
@@ -111,12 +117,13 @@ void ModRoleModifyPopup::stopWaiting(const msg::AdminResultMessage& msg) {
 }
 
 ModRoleModifyPopup* ModRoleModifyPopup::create(int32_t accountId, std::vector<uint8_t> roleIds) {
-    auto ret = new ModRoleModifyPopup;
-    size_t allCnt = NetworkManagerImpl::get().getAllRoles().size();
-
-    POPUP_SIZE = CCSize{std::max(150.f, 50.f + allCnt * WIDTH_PER_ROLE), 120.f};
-
-    return BasePopup::create(accountId, std::move(roleIds));
+    auto ret = new ModRoleModifyPopup();
+    if (ret->init(accountId, std::move(roleIds))) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

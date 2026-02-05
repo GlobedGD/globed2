@@ -5,9 +5,9 @@
 
 namespace globed {
 
-class RegionSelectPopup : public BasePopup<RegionSelectPopup> {
+class RegionSelectPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static RegionSelectPopup* create();
 
     static void showInfo();
     bool reloadList();
@@ -15,7 +15,7 @@ public:
 protected:
     cue::ListNode* m_list;
 
-    bool setup();
+    bool init();
     void softRefresh(float);
 };
 

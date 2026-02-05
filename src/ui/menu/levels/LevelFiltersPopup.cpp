@@ -7,9 +7,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize LevelFiltersPopup::POPUP_SIZE { 400.f, 280.f };
+bool LevelFiltersPopup::init(LevelListLayer* layer) {
+    if (!BasePopup::init(400.f, 280.f)) return false;
 
-bool LevelFiltersPopup::setup(LevelListLayer* layer) {
     using Difficulty = globed::Difficulty;
     using enum Difficulty;
 
@@ -320,6 +320,16 @@ void LevelFiltersPopup::setCallback(Callback&& cb) {
 void LevelFiltersPopup::onClose(CCObject*) {
     m_callback(m_filters);
     BasePopup::onClose(nullptr);
+}
+
+LevelFiltersPopup* LevelFiltersPopup::create(LevelListLayer* layer) {
+    auto ret = new LevelFiltersPopup;
+    if (ret->init(layer)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

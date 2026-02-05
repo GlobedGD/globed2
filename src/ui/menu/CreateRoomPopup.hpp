@@ -13,9 +13,9 @@ namespace globed {
 
 class LoadingPopup;
 
-class CreateRoomPopup : public BasePopup<CreateRoomPopup> {
+class CreateRoomPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static CreateRoomPopup* create();
 
 private:
     geode::TextInput* m_nameInput;
@@ -34,7 +34,7 @@ private:
     std::optional<MessageListener<msg::RoomBannedMessage>> m_bannedListener;
     LoadingPopup* m_loadingPopup = nullptr;
 
-    bool setup() override;
+    bool init() override;
     void onCheckboxToggled(cocos2d::CCObject*);
     void handleMutuallyExclusive(int activated);
     void setFollowerMode(bool enabled);

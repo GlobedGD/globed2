@@ -7,9 +7,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize DiscordLinkAttemptPopup::POPUP_SIZE { 300.f, 170.f};
+bool DiscordLinkAttemptPopup::init(uint64_t userId, const std::string& username, const std::string& avatarUrl) {
+    if (!BasePopup::init(300.f, 170.f)) return false;
 
-bool DiscordLinkAttemptPopup::setup(uint64_t userId, const std::string& username, const std::string& avatarUrl) {
     this->setTitle("Link Attempt");
     m_title->setPositionY(m_title->getPositionY() + 5.f);
 
@@ -17,7 +17,7 @@ bool DiscordLinkAttemptPopup::setup(uint64_t userId, const std::string& username
 
     auto card = Build<CCNode>::create()
         .anchorPoint(0.5f, 0.5f)
-        .contentSize(POPUP_SIZE.width * 0.7f, POPUP_SIZE.height * 0.7f)
+        .contentSize(m_size.width * 0.7f, m_size.height * 0.7f)
         .layout(RowLayout::create()->setAutoScale(false))
         .pos(this->fromCenter(0.f, 24.f))
         .parent(m_mainLayer)
@@ -43,7 +43,7 @@ bool DiscordLinkAttemptPopup::setup(uint64_t userId, const std::string& username
         .collect();
 
     auto nameLabel = Build<CCLabelBMFont>::create(username.c_str(), "goldFont.fnt")
-        .limitLabelWidth(POPUP_SIZE.width * 0.45f, 0.7f, 0.1f)
+        .limitLabelWidth(m_size.width * 0.45f, 0.7f, 0.1f)
         .parent(dataContainer);
 
     dataContainer->updateLayout();
@@ -55,7 +55,7 @@ bool DiscordLinkAttemptPopup::setup(uint64_t userId, const std::string& username
 
     Build<CCMenu>::create()
         .layout(RowLayout::create()->setAutoScale(false)->setGap(3.f))
-        .contentSize(POPUP_SIZE.width * 0.8f, 0.f)
+        .contentSize(m_size.width * 0.8f, 0.f)
         .pos(this->fromBottom(22.f))
         .parent(m_mainLayer)
         .child(
@@ -114,6 +114,16 @@ std::string convertAvatarUrl(const std::string& url) {
     utils::string::replaceIP(copy, ".gif", ".png");
 
     return copy;
+}
+
+DiscordLinkAttemptPopup* DiscordLinkAttemptPopup::create(uint64_t userId, const std::string& username, const std::string& avatarUrl) {
+    auto ret = new DiscordLinkAttemptPopup;
+    if (ret->init(userId, username, avatarUrl)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

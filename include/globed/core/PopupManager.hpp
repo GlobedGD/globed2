@@ -10,7 +10,7 @@
 
 class Label;
 
-namespace asp::time {
+namespace asp::inline time {
     class Duration; // to prevent leaking asp headers into the public interface
 }
 
@@ -88,7 +88,7 @@ public:
         const std::string& content,
         CStr btn1 = "Ok",
         CStr btn2 = nullptr,
-        std23::move_only_function<void (FLAlertLayer*, bool)> callback = {},
+        geode::Function<void (FLAlertLayer*, bool)> callback = {},
         float width = DEFAULT_WIDTH
     );
 
@@ -145,7 +145,7 @@ inline void quickPopup(
     const std::string& content,
     CStr btn1 = "Ok",
     CStr btn2 = nullptr,
-    std23::move_only_function<void (FLAlertLayer*, bool)> callback = {},
+    geode::Function<void (FLAlertLayer*, bool)> callback = {},
     float width = PopupManager::DEFAULT_WIDTH
 ) {
     PopupManager::get().quickPopup(
@@ -160,7 +160,7 @@ inline void confirmPopup(
     const std::string& content,
     CStr btn1 = "Cancel",
     CStr btn2 = "Ok",
-    std23::move_only_function<void (FLAlertLayer*)> callback = {},
+    geode::Function<void (FLAlertLayer*)> callback = {},
     float width = PopupManager::DEFAULT_WIDTH
 ) {
     auto cb = [cb = std::move(callback)](FLAlertLayer* alert, bool btn2) mutable {

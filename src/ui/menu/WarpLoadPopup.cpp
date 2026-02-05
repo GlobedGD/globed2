@@ -8,15 +8,15 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const cocos2d::CCSize WarpLoadPopup::POPUP_SIZE = { 180.f, 80.f };
-
 WarpLoadPopup::~WarpLoadPopup() {
     auto* glm = GameLevelManager::sharedState();
     glm->m_levelDownloadDelegate = nullptr;
     glm->m_levelManagerDelegate = nullptr;
 }
 
-bool WarpLoadPopup::setup(int levelId, bool openLevel, bool replaceScene) {
+bool WarpLoadPopup::init(int levelId, bool openLevel, bool replaceScene) {
+    if (!BasePopup::init(180.f, 80.f)) return false;
+
     this->setTitle("Loading Level");
     m_levelId = levelId;
     m_openLevel = openLevel;
@@ -57,7 +57,7 @@ void WarpLoadPopup::onLoadedMeta(GJGameLevel* level) {
     auto glm = GameLevelManager::get();
 
     glm->m_levelDownloadDelegate = this;
-    glm->downloadLevel(level->m_levelID, false);
+    glm->downloadLevel(level->m_levelID, false, 0);
 
     m_statusLabel->setString("Downloading level data..");
 }
@@ -94,7 +94,16 @@ void WarpLoadPopup::onLoadedData(GJGameLevel* level) {
         auto layer = LevelInfoLayer::create(level, false);
         replace ? globed::replaceScene(layer) : globed::pushScene(layer);
     }
+}
 
+WarpLoadPopup* WarpLoadPopup::create(int levelId, bool openLevel, bool replaceScene) {
+    auto ret = new WarpLoadPopup;
+    if (ret->init(levelId, openLevel, replaceScene)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

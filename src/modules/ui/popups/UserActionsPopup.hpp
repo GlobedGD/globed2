@@ -5,15 +5,15 @@
 
 namespace globed {
 
-class UserActionsPopup : public BasePopup<UserActionsPopup, int, CCArray*> {
+class UserActionsPopup : public BasePopup {
 public:
-    static const CCSize POPUP_SIZE;
+    static UserActionsPopup* create(int accountId, CCArray* buttons);
 
 private:
     Ref<CCMenu> m_buttons;
     int m_accountId;
 
-    bool setup(int accountId, CCArray* buttons) override;
+    bool init(int accountId, CCArray* buttons);
 };
 
 }

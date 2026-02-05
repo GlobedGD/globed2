@@ -275,7 +275,7 @@ void NameLabel::updateOpacity(unsigned char opacity) {
     }
 }
 
-void NameLabel::makeClickable(std23::move_only_function<void(CCMenuItemSpriteExtra*)> callback) {
+void NameLabel::makeClickable(geode::Function<void(CCMenuItemSpriteExtra*)> callback) {
     m_callback = std::move(callback);
     m_labelButton->setEnabled(true);
 }

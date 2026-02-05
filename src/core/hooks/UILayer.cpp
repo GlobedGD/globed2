@@ -12,7 +12,7 @@ struct GLOBED_MODIFY_ATTR HookedUILayer : geode::Modify<HookedUILayer, UILayer> 
         (void) self.setHookPriority("UILayer::handleKeypress", 999);
     }
 
-    void handleKeypress(enumKeyCodes p0, bool down) {
+    void handleKeypress(enumKeyCodes p0, bool down, double time) {
         auto gjbgl = GlobedGJBGL::get();
 
         if (p0 != KEY_None && p0 != KEY_Unknown) {
@@ -22,7 +22,7 @@ struct GLOBED_MODIFY_ATTR HookedUILayer : geode::Modify<HookedUILayer, UILayer> 
 
         if (gjbgl) gjbgl->m_fields->m_manualReset = true;
 
-        UILayer::handleKeypress(p0, down);
+        UILayer::handleKeypress(p0, down, time);
 
         if (gjbgl) gjbgl->m_fields->m_manualReset = false;
     }

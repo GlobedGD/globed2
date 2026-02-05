@@ -7,7 +7,7 @@
 
 #include <Geode/utils/terminate.hpp>
 #include <Geode/loader/Log.hpp>
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 
@@ -55,8 +55,8 @@ struct SaveSlotMeta {
 
 class GLOBED_DLL SettingsManager : public SingletonBase<SettingsManager> {
 public:
-    using Validator = std23::move_only_function<bool(const matjson::Value&)>;
-    using ListenCallback = std23::move_only_function<void(const matjson::Value&)>;
+    using Validator = geode::Function<bool(const matjson::Value&)>;
+    using ListenCallback = geode::Function<void(const matjson::Value&)>;
 
     template <typename T>
     SettingAccessor<T> setting(std::string_view key) {
@@ -145,13 +145,13 @@ public:
 
     bool listenForChangesRaw(
         std::string_view key,
-        std23::move_only_function<void(const matjson::Value&)> callback
+        geode::Function<void(const matjson::Value&)> callback
     );
 
     template <typename T>
     bool listenForChanges(
         std::string_view key,
-        std23::move_only_function<void(const T&)> callback
+        geode::Function<void(const T&)> callback
     ) {
         return this->listenForChangesRaw(key, [cb = std::move(callback)](const matjson::Value& value) mutable {
             if (auto res = value.as<T>()) {
@@ -164,7 +164,7 @@ public:
     template <typename T>
     T getAndListenForChanges(
         std::string_view key,
-        std23::move_only_function<void(const T&)> callback
+        geode::Function<void(const T&)> callback
     ) {
         if (this->listenForChanges<T>(key, std::move(callback))) {
             return this->setting<T>(key);

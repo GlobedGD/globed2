@@ -7,7 +7,7 @@
 #include <qunet/buffers/HeapByteWriter.hpp>
 #include <qunet/buffers/ByteReader.hpp>
 #include <Geode/Geode.hpp>
-#include <std23/function_ref.h>
+#include <Geode/utils/function.hpp>
 
 #define READER_UNWRAP(...) GEODE_UNWRAP((__VA_ARGS__).mapErr([&](auto&& err) { return err.message(); }));
 
@@ -18,7 +18,7 @@ public:
     ExtendedObjectBase();
 
 protected:
-    void encodePayload(std23::function_ref<bool(qn::HeapByteWriter&)>&& writefn);
+    void encodePayload(geode::FunctionRef<bool(qn::HeapByteWriter&)>&& writefn);
 
     inline static uint8_t computeChecksum(std::span<const uint8_t> data) {
         uint32_t sum = 0;

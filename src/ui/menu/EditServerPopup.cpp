@@ -7,9 +7,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize EditServerPopup::POPUP_SIZE { 380.f, 240.f };
+bool EditServerPopup::init(bool adding, const std::string& name, const std::string& url) {
+    if (!BasePopup::init(380.f, 240.f)) return false;
 
-bool EditServerPopup::setup(bool adding, const std::string& name, const std::string& url) {
     this->setTitle(adding ? "Add a new server" : "Edit server");
 
     Build<CCLabelBMFont>::create("Server Name", "bigFont.fnt")
@@ -66,6 +66,16 @@ bool EditServerPopup::setup(bool adding, const std::string& name, const std::str
 
 void EditServerPopup::setCallback(Callback&& fn) {
     m_callback = std::move(fn);
+}
+
+EditServerPopup* EditServerPopup::create(bool adding, const std::string& name, const std::string& url) {
+    auto ret = new EditServerPopup();
+    if (ret->init(adding, name, url)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

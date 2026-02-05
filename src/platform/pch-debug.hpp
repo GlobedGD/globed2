@@ -21,5 +21,5 @@
 #include <fmt/format.h>
 #include <Geode/loader/Log.hpp>
 #include <Geode/Result.hpp>
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 #include <core/net/data/generated.hpp>

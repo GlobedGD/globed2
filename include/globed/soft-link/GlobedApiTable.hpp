@@ -6,10 +6,8 @@
 #include "../core/data/Event.hpp"
 #include "../core/data/FeaturedLevel.hpp"
 
-#ifdef GLOBED_API_EXT_FUNCTIONS
-# include <std23/move_only_function.h>
-# include "../core/net/MessageListener.hpp"
-#endif
+#include <Geode/utils/function.hpp>
+#include "../core/net/MessageListener.hpp"
 
 #define API_TABLE_FN(...) GEODE_INVOKE(GEODE_CONCAT(API_TABLE_FN_, GEODE_NUMBER_OF_ARGS(__VA_ARGS__)), __VA_ARGS__)
 
@@ -62,7 +60,6 @@ struct NetSubtable : public FunctionTableSubcat<GlobedApiTable> {
     API_TABLE_FN(std::optional<FeaturedLevelMeta>, getFeaturedLevel);
     API_TABLE_FN(void, queueGameEvent, OutEvent&&);
 
-#ifdef GLOBED_API_EXT_FUNCTIONS
     API_TABLE_FN(void, addListener, const std::type_info&, void*, void*);
     API_TABLE_FN(void, removeListener, const std::type_info&, void*);
 
@@ -84,7 +81,6 @@ struct NetSubtable : public FunctionTableSubcat<GlobedApiTable> {
         });
         return listener;
     }
-#endif
 };
 
 struct GlobedApiTable : public FunctionTable {

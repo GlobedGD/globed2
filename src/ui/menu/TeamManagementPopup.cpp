@@ -10,8 +10,6 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize TeamManagementPopup::POPUP_SIZE = {300.f, 250.f};
-
 static constexpr float CELL_HEIGHT = 26.f;
 static constexpr float CELL_WIDTH = 260.f;
 
@@ -44,7 +42,7 @@ static ccColor4B getDefaultColor(size_t idx) {
     return colors[idx % count];
 }
 
-class TeamCell : public CCNode, public ColorPickPopupDelegate {
+class TeamCell : public CCNode {
 public:
     static TeamCell* create(const RoomTeam& team, size_t idx, TeamManagementPopup* popup) {
         auto ret = new TeamCell;
@@ -158,7 +156,11 @@ private:
 
     void openEditColor() {
         auto popup = ColorPickPopup::create(m_color);
-        popup->setDelegate(this);
+        popup->setCallback([this](auto color) {
+            m_color = color;
+            m_colorSprite->setColor(cue::into<ccColor3B>(color));
+            m_popup->updateTeamColor(m_idx, m_color);
+        });
         popup->show();
     }
 
@@ -185,15 +187,11 @@ private:
 
         m_rightContainer->updateLayout();
     }
-
-    void updateColor(ccColor4B const& color) override {
-        m_color = color;
-        m_colorSprite->setColor(cue::into<ccColor3B>(color));
-        m_popup->updateTeamColor(m_idx, m_color);
-    }
 };
 
-bool TeamManagementPopup::setup(int assigningFor) {
+bool TeamManagementPopup::init(int assigningFor) {
+    if (!BasePopup::init(300.f, 250.f)) return false;
+
     this->setTitle("Team Management");
     m_showPlus = RoomManager::get().isOwner() && !assigningFor;
     m_assigningFor = assigningFor;
@@ -372,6 +370,16 @@ void TeamManagementPopup::setLockedTeams(bool locked) {
 
     auto& nm = NetworkManagerImpl::get();
     nm.sendUpdateRoomSettings(settings);
+}
+
+TeamManagementPopup* TeamManagementPopup::create(int assigningFor) {
+    auto ret = new TeamManagementPopup;
+    if (ret->init(assigningFor)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

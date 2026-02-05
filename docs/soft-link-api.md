@@ -23,13 +23,6 @@ Completely optional, but the following line can be added to your `CMakeLists.txt
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/geode-deps/dankmeme.globed2/include)
 ```
 
-Additionally, to invoke any API methods that take in a function object, `nontype_functional` must be included in your project's cmake:
-
-```cmake
-CPMAddPackage("gh:zhihaoy/nontype_functional#bdb0987")
-target_link_libraries(${PROJECT_NAME} std23::nontype_functional)
-```
-
 ## Usage
 
 ```cpp

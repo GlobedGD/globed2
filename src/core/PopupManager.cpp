@@ -109,9 +109,9 @@ bool PopupRef::hasFields() const {
 
 // CustomFLAlert
 
-class CustomFLAlert : public BasePopup<CustomFLAlert, CStr, CStr, CStr, cocos2d::CCNode*> {
+class CustomFLAlert : public BasePopup {
 public:
-    using Callback = std23::move_only_function<void (FLAlertLayer*, bool)>;
+    using Callback = geode::Function<void (FLAlertLayer*, bool)>;
 
     static CustomFLAlert* create(CStr title, std::string_view content, CStr btn1, CStr btn2, float width);
 
@@ -122,11 +122,13 @@ public:
 private:
     Callback m_callback;
 
-    bool setup(CStr title, CStr btn1, CStr btn2, CCNode* content) override;
+    bool init(CCSize size, CStr title, CStr btn1, CStr btn2, CCNode* content);
     void onClick(bool btn2);
 };
 
-bool CustomFLAlert::setup(CStr title, CStr btn1, CStr btn2, CCNode* content) {
+bool CustomFLAlert::init(CCSize size, CStr title, CStr btn1, CStr btn2, CCNode* content) {
+    if (!BasePopup::init(size, "square01_001.png")) return false;
+
     m_closeBtn->setVisible(false);
 
     content->setPosition(m_size.width / 2.f, m_size.height / 2.f + 5.f);
@@ -198,7 +200,7 @@ CustomFLAlert* CustomFLAlert::create(
     float height = std::max<float>(size.height, 140.f);
 
     auto ret = new CustomFLAlert();
-    if (ret->initAnchored(width, height, title, btn1, btn2, label, "square01_001.png", {0.f, 0.f, 94.f, 94.f})) {
+    if (ret->init({width, height}, title, btn1, btn2, label)) {
         ret->autorelease();
         return ret;
     }
@@ -227,7 +229,7 @@ PopupRef PopupManager::quickPopup(
     const std::string& content,
     CStr btn1,
     CStr btn2,
-    std23::move_only_function<void (FLAlertLayer*, bool)> callback,
+    geode::Function<void (FLAlertLayer*, bool)> callback,
     float width
 ) {
     auto alert = CustomFLAlert::create(title, content, btn1, btn2.getOrNull(), width);

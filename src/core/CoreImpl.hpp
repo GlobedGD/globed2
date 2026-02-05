@@ -7,7 +7,7 @@
 #include <core/game/Interpolator.hpp>
 #include <memory>
 
-#include <std23/function_ref.h>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 
@@ -56,9 +56,9 @@ private:
     std::vector<std::shared_ptr<Module>> m_modules;
     std::optional<MessageListenerImpl<msg::CentralLoginOkMessage>*> m_loginOkListener;
 
-    void enableIf(std23::function_ref<bool(Module&)>&& func);
-    void disableIf(std23::function_ref<bool(Module&)>&& func);
-    void forEachEnabled(std23::function_ref<void(Module&)>&& func);
+    void enableIf(geode::FunctionRef<bool(Module&)>&& func);
+    void disableIf(geode::FunctionRef<bool(Module&)>&& func);
+    void forEachEnabled(geode::FunctionRef<void(Module&)>&& func);
 };
 
 }

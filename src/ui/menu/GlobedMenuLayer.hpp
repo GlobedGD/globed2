@@ -67,7 +67,7 @@ private:
     void update(float dt) override;
     void setMenuState(MenuState state, bool force = false);
 
-    void keyDown(cocos2d::enumKeyCodes key) override;
+    void keyDown(cocos2d::enumKeyCodes key, double timestamp) override;
     void handleDebugKey(cocos2d::enumKeyCodes key);
     void keyBackClicked() override;
     void onEnter() override;

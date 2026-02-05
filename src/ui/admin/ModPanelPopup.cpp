@@ -9,9 +9,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize ModPanelPopup::POPUP_SIZE { 300.f, 128.f };
+bool ModPanelPopup::init() {
+    if (!BasePopup::init(300.f, 128.f)) return false;
 
-bool ModPanelPopup::setup() {
     this->setTitle("Admin Panel");
     m_title->setPositionY(m_title->getPositionY() + 3.f);
 
@@ -71,6 +71,16 @@ bool ModPanelPopup::setup() {
     btnContainer->updateLayout();
 
     return true;
+}
+
+ModPanelPopup* ModPanelPopup::create() {
+    auto ret = new ModPanelPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

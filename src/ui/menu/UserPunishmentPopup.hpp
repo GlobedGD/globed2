@@ -5,10 +5,9 @@
 
 namespace globed {
 
-class UserPunishmentPopup : public BasePopup<UserPunishmentPopup> {
+class UserPunishmentPopup : public BasePopup {
 protected:
-    bool setup() override;
-    bool initCustomSize(const std::string& reason, int64_t expiresAt, bool isBan);
+    bool init(const std::string& reason, int64_t expiresAt, bool isBan);
 
 public:
     geode::SimpleTextArea* m_textArea = nullptr;

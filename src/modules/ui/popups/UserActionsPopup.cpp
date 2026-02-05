@@ -7,9 +7,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize UserActionsPopup::POPUP_SIZE {200.f, 90.f};
+bool UserActionsPopup::init(int accountId, CCArray* buttons) {
+    if (!BasePopup::init(200.f, 90.f)) return false;
 
-bool UserActionsPopup::setup(int accountId, CCArray* buttons) {
     m_accountId = accountId;
 
     auto& pcm = PlayerCacheManager::get();
@@ -29,6 +29,16 @@ bool UserActionsPopup::setup(int accountId, CCArray* buttons) {
     m_buttons->updateLayout();
 
     return true;
+}
+
+UserActionsPopup* UserActionsPopup::create(int accountId, CCArray* buttons) {
+    auto ret = new UserActionsPopup();
+    if (ret->init(accountId, buttons)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

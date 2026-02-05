@@ -11,7 +11,6 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize ServerListPopup::POPUP_SIZE { 340.f, 240.f };
 static constexpr CCSize LIST_SIZE  {290.f, 180.f };
 
 namespace {
@@ -101,7 +100,9 @@ private:
 
 }
 
-bool ServerListPopup::setup(GlobedMenuLayer* layer) {
+bool ServerListPopup::init(GlobedMenuLayer* layer) {
+    if (!BasePopup::init(340.f, 240.f)) return false;
+
     this->setTitle("Edit Servers");
 
     m_menuLayer = layer;
@@ -165,6 +166,16 @@ void ServerListPopup::reloadList() {
 
     // additionally force reload the main layer
     m_menuLayer->onServerModified();
+}
+
+ServerListPopup* ServerListPopup::create(GlobedMenuLayer* menuLayer) {
+    auto ret = new ServerListPopup;
+    if (ret->init(menuLayer)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

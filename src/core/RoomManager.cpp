@@ -1,6 +1,7 @@
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/actions.hpp>
+#include <globed/soft-link/Events.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
 #include <Geode/loader/Dispatch.hpp>
@@ -25,11 +26,9 @@ void RoomManager::joinLevel(int levelId, int author, bool platformer, bool edito
 }
 
 std::optional<SessionId> RoomManager::getEditorCollabId(GJGameLevel* level) {
-    using LevelIdEvent = DispatchEvent<GJGameLevel*, int64_t*>;
-
     int64_t id = level->m_levelID;
 
-    LevelIdEvent("dankmeme.globed2/setup-level-id", level, &id).post();
+    SetupLevelIdEvent().send(level, &id);
 
     if (id == level->m_levelID) {
         return std::nullopt;

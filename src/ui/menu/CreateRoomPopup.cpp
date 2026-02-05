@@ -13,7 +13,6 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize CreateRoomPopup::POPUP_SIZE = {420.f, 240.f};
 static constexpr int TAG_PRIVATE = 1021;
 static constexpr int TAG_CLOSED_INVITES = 1022;
 static constexpr int TAG_COLLISION = 1023;
@@ -23,7 +22,9 @@ static constexpr int TAG_TEAMS = 1026;
 static constexpr int TAG_AUTO_PINNING = 1027;
 static constexpr int TAG_SWITCHEROO = 1028;
 
-bool CreateRoomPopup::setup() {
+bool CreateRoomPopup::init() {
+    if (!BasePopup::init(420.f, 240.f)) return false;
+
     this->setID("create-room-popup"_spr);
     this->setTitle("Create Room", "goldFont.fnt", 1.0f);
 
@@ -34,7 +35,7 @@ bool CreateRoomPopup::setup() {
         .anchorPoint(0.f, 0.5f)
         .pos(this->centerLeft() + CCPoint{15.f, 10.f})
         .layout(ColumnLayout::create()->setAutoScale(false)->setGap(3.f))
-        .contentSize(0.f, POPUP_SIZE.height * 0.6f)
+        .contentSize(0.f, m_size.height * 0.6f)
         .parent(m_mainLayer)
         .collect();
 
@@ -66,7 +67,7 @@ bool CreateRoomPopup::setup() {
         .updateLayout()
         .intoParent() // into name-wrapper
         .parent(m_inputsWrapper)
-        .intoNewChild(TextInput::create(POPUP_SIZE.width * 0.515f, "", "chatFont.fnt"))
+        .intoNewChild(TextInput::create(m_size.width * 0.515f, "", "chatFont.fnt"))
         .with([&](TextInput* input) {
             input->setCommonFilter(CommonFilter::Any);
             input->setMaxCharCount(32);
@@ -92,7 +93,7 @@ bool CreateRoomPopup::setup() {
         .scale(0.35f)
         .intoParent()
         .parent(smallInputsWrapper)
-        .intoNewChild(TextInput::create(POPUP_SIZE.width * 0.25f, "", hidePass ? "bigFont.fnt" : "chatFont.fnt"))
+        .intoNewChild(TextInput::create(m_size.width * 0.25f, "", hidePass ? "bigFont.fnt" : "chatFont.fnt"))
         .with([&](TextInput* input) {
             input->setCommonFilter(CommonFilter::Uint);
             input->setMaxCharCount(11);
@@ -111,7 +112,7 @@ bool CreateRoomPopup::setup() {
         .scale(0.35f)
         .intoParent()
         .parent(smallInputsWrapper)
-        .intoNewChild(TextInput::create(POPUP_SIZE.width * 0.25f, "", "chatFont.fnt"))
+        .intoNewChild(TextInput::create(m_size.width * 0.25f, "", "chatFont.fnt"))
         .with([&](TextInput* input) {
             input->setCommonFilter(CommonFilter::Uint);
             input->setMaxCharCount(6);
@@ -125,7 +126,7 @@ bool CreateRoomPopup::setup() {
         .id("follower-wrapper")
         .zOrder(-1)
         .layout(RowLayout::create()->setAutoScale(false)->setGap(5.f))
-        .contentSize(POPUP_SIZE.width * 0.515f, 0.f)
+        .contentSize(m_size.width * 0.515f, 0.f)
         .parent(m_inputsWrapper);
     m_followerWrapper->setLayoutOptions(AxisLayoutOptions::create()->setNextGap(8.f));
 
@@ -222,7 +223,7 @@ bool CreateRoomPopup::setup() {
         .anchorPoint(1.f, 0.5f)
         .pos(this->centerRight() - CCPoint{15.f, 0.f})
         .layout(ColumnLayout::create()->setAxisReverse(true)->setGap(gap))
-        .contentSize(0.f, POPUP_SIZE.height * 0.65f)
+        .contentSize(0.f, m_size.height * 0.65f)
         .parent(m_mainLayer)
         .collect();
 
@@ -523,6 +524,16 @@ void CreateRoomPopup::stopWaiting(std::optional<std::string> failReason) {
     } else {
         this->onClose(nullptr);
     }
+}
+
+CreateRoomPopup* CreateRoomPopup::create() {
+    auto ret = new CreateRoomPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

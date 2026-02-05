@@ -10,7 +10,10 @@ namespace globed {
 class LoadingPopup;
 class RoomListingCell;
 
-class RoomListingPopup : public BasePopup<RoomListingPopup> {
+class RoomListingPopup : public BasePopup {
+public:
+    static RoomListingPopup* create();
+
 protected:
     friend class RoomListingCell;
     friend class BasePopup;
@@ -38,7 +41,7 @@ protected:
     uint32_t m_joinedRoomId = 0;
     uint64_t m_joinedRoomPasscode = 0;
 
-    bool setup() override;
+    bool init();
     void updateTitle(size_t roomCount);
     void onReload();
     void requestRooms();

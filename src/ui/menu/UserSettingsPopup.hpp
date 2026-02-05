@@ -8,15 +8,15 @@
 
 namespace globed {
 
-class UserSettingsPopup : public BasePopup<UserSettingsPopup> {
+class UserSettingsPopup : public BasePopup {
 public:
-    static const CCSize POPUP_SIZE;
+    static UserSettingsPopup* create();
 
 protected:
     CCMenu* m_menu = nullptr;
     bool m_modified = false;
 
-    bool setup() override;
+    bool init() override;
     void addButton(std::string_view key, const char* onSprite, const char* offSprite);
     void onClose(CCObject*) override;
 };

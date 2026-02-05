@@ -1,15 +1,14 @@
 #pragma once
 
 #include <ui/BasePopup.hpp>
-
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 
-class DiscordLinkAttemptPopup : public BasePopup<DiscordLinkAttemptPopup, uint64_t, const std::string&, const std::string&> {
+class DiscordLinkAttemptPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
-    using Callback = std23::move_only_function<void(bool)>;
+    static DiscordLinkAttemptPopup* create(uint64_t userId, const std::string& username, const std::string& avatarUrl);
+    using Callback = geode::Function<void(bool)>;
 
     void setCallback(Callback&& cb);
 
@@ -17,7 +16,7 @@ private:
     uint64_t m_userId;
     Callback m_callback;
 
-    bool setup(uint64_t, const std::string&, const std::string&) override;
+    bool init(uint64_t, const std::string&, const std::string&);
     void confirm(bool accept);
 };
 

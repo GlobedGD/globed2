@@ -9,9 +9,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize FeaturedPopup::POPUP_SIZE {420.f, 280.f};
+bool FeaturedPopup::init() {
+    if (!BasePopup::init(420.f, 280.f)) return false;
 
-bool FeaturedPopup::setup() {
     this->setID("daily-popup"_spr);
 
     auto& nm = NetworkManagerImpl::get();
@@ -101,6 +101,16 @@ bool FeaturedPopup::setup() {
         .parent(m_mainLayer);
 
     return true;
+}
+
+FeaturedPopup* FeaturedPopup::create() {
+    auto ret = new FeaturedPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

@@ -7,13 +7,15 @@ using namespace geode::prelude;
 
 namespace globed {
 
-struct GLOBED_MODIFY_ATTR HookedCCDirector : Modify<HookedCCDirector, CCDirector> {
-    $override
-    void purgeDirector() {
-        CCDirector::purgeDirector();
+    // TODO v5: use game event for this
+// struct GLOBED_MODIFY_ATTR HookedCCDirector : Modify<HookedCCDirector, CCDirector> {
+//     $override
+//     void purgeDirector() {
+//         CCDirector::purgeDirector();
 
-        NetworkManagerImpl::get().shutdown();
-    }
-};
+
+//         NetworkManagerImpl::get().shutdown();
+//     }
+// };
 
 }

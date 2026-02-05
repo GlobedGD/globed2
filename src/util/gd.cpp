@@ -234,7 +234,7 @@ PlayerDisplayData PlayerDisplayData::getOwn() {
 
 class Downloader : public SingletonNodeBase<Downloader>, LevelManagerDelegate {
 public:
-    using Callback = std23::move_only_function<void(geode::Ref<GJGameLevel>)>;
+    using Callback = geode::Function<void(geode::Ref<GJGameLevel>)>;
 
     void push(int level, Callback&& cb) {
         m_requests.push(Request{ level, std::move(cb) });

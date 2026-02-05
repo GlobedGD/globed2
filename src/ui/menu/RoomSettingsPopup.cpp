@@ -3,7 +3,7 @@
 #include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 
 using namespace geode::prelude;
 
@@ -16,7 +16,7 @@ static constexpr float CELL_HEIGHT = 28.f;
 namespace {
 class Cell : public CCMenu {
 public:
-    using Callback = std23::move_only_function<void(bool)>;
+    using Callback = geode::Function<void(bool)>;
 
     static Cell* create(CStr name, CStr desc, bool RoomSettings::* ptr, bool invert, Callback&& cb) {
         auto ret = new Cell;
@@ -116,7 +116,9 @@ CCNode* RoomSettingsPopup::makeCell(
     });
 }
 
-bool RoomSettingsPopup::setup() {
+bool RoomSettingsPopup::init() {
+    if (!BasePopup::init(POPUP_SIZE)) return false;
+
     this->setTitle("Room Settings");
 
     m_list = Build(cue::ListNode::create(LIST_SIZE))
@@ -184,6 +186,16 @@ void RoomSettingsPopup::reloadCheckboxes() {
     for (auto cell : m_list->iter<Cell>()) {
         cell->reload();
     }
+}
+
+RoomSettingsPopup* RoomSettingsPopup::create() {
+    auto ret = new RoomSettingsPopup;
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

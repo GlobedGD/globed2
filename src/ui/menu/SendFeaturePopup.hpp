@@ -6,9 +6,9 @@
 
 namespace globed {
 
-class SendFeaturePopup : public BasePopup<SendFeaturePopup, GJGameLevel*> {
+class SendFeaturePopup : public BasePopup {
 public:
-    static const CCSize POPUP_SIZE;
+    static SendFeaturePopup* create(GJGameLevel* level);
 
 private:
     GJGameLevel* m_level;
@@ -18,7 +18,7 @@ private:
 
     FeatureTier m_chosenTier;
 
-    bool setup(GJGameLevel* level);
+    bool init(GJGameLevel* level);
     void createDiffButton();
     void sendLevel(bool queue);
 };

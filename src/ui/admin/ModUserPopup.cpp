@@ -28,10 +28,11 @@ namespace { namespace btnorder {
 
 namespace globed {
 
-const CCSize ModUserPopup::POPUP_SIZE { 340.f, 210.f };
 constexpr static float btnScale = 0.85f;
 
-bool ModUserPopup::setup(int accountId) {
+bool ModUserPopup::init(int accountId) {
+    if (!BasePopup::init(340.f, 210.f)) return false;
+
     auto& nm = NetworkManagerImpl::get();
     m_listener = nm.listen<msg::AdminFetchResponseMessage>([this](const auto& msg) {
         this->onLoaded(msg);
@@ -446,6 +447,16 @@ void ModUserPopup::loadLevelsFinished(cocos2d::CCArray* levels, char const* key,
 
 void ModUserPopup::loadLevelsFailed(char const* key, int p1) {
     this->onUserInfoLoaded(Err("Failed to find the user.{}", p1 == 0 ? "" : fmt::format(" (error code {})", p1)));
+}
+
+ModUserPopup* ModUserPopup::create(int accountId) {
+    auto ret = new ModUserPopup();
+    if (ret->init(accountId)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

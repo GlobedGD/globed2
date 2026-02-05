@@ -9,9 +9,9 @@
 
 namespace globed {
 
-class InvitePopup : public BasePopup<InvitePopup> {
+class InvitePopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static InvitePopup* create();
 
 private:
     cue::ListNode* m_list;
@@ -21,7 +21,7 @@ private:
     CCMenuItemSpriteExtra* m_clearSearchBtn;
     std::string m_filter;
 
-    bool setup() override;
+    bool init() override;
     void onLoaded(const std::vector<MinimalRoomPlayer>& players);
 
     void refresh();

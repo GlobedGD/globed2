@@ -129,7 +129,9 @@ static std::string_view keyForCustomReasons(UserPunishmentType type) {
     return {};
 }
 
-bool ModPunishReasonsPopup::setup(UserPunishmentType type) {
+bool ModPunishReasonsPopup::init(UserPunishmentType type) {
+    if (!BasePopup::init(400.f, 260.f)) return false;
+
     m_type = type;
 
     auto allReasons = NetworkManagerImpl::get().getModPunishReasons();
@@ -298,6 +300,16 @@ void ModPunishReasonsPopup::commitDeleteReason(size_t index) {
 void ModPunishReasonsPopup::deleteCustomReason(size_t index) {
     this->commitDeleteReason(index);
     m_customList->removeCell(index);
+}
+
+ModPunishReasonsPopup* ModPunishReasonsPopup::create(UserPunishmentType type) {
+    auto ret = new ModPunishReasonsPopup;
+    if (ret->init(type)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

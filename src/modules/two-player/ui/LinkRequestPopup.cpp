@@ -12,9 +12,9 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize LinkRequestPopup::POPUP_SIZE { 270.f, 160.f };
+bool LinkRequestPopup::init(int accountId, UserListPopup* popup) {
+    if (!BasePopup::init(270.f, 160.f)) return false;
 
-bool LinkRequestPopup::setup(int accountId, UserListPopup* popup) {
     auto gjbgl = GlobedGJBGL::get();
     auto rp = gjbgl->getPlayer(accountId);
 
@@ -125,6 +125,16 @@ void LinkRequestPopup::onClose(CCObject* obj) {
     m_userListPopup->hardRefresh();
 
     BasePopup::onClose(obj);
+}
+
+LinkRequestPopup* LinkRequestPopup::create(int accountId, UserListPopup* popup) {
+    auto ret = new LinkRequestPopup();
+    if (ret->init(accountId, popup)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

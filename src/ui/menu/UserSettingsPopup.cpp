@@ -7,8 +7,6 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize UserSettingsPopup::POPUP_SIZE { 240.f, 120.f };
-
 static void onDescriptionClicked(std::string_view key) {
     if (key == "core.user.hide-in-levels") {
         globed::alertFormat("Hide in Levels", "When enabled, other players won't be able to see you in levels.");
@@ -21,7 +19,9 @@ static void onDescriptionClicked(std::string_view key) {
     }
 }
 
-bool UserSettingsPopup::setup() {
+bool UserSettingsPopup::init() {
+    if (!BasePopup::init(240.f, 120.f)) return false;
+
     this->setTitle("User Settings");
 
     m_menu = Build<CCMenu>::create()
@@ -92,6 +92,16 @@ void UserSettingsPopup::onClose(CCObject* o) {
     if (nm.isConnected()) {
         nm.sendUpdateUserSettings();
     }
+}
+
+UserSettingsPopup* UserSettingsPopup::create() {
+    auto ret = new UserSettingsPopup;
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

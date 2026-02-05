@@ -27,7 +27,7 @@ void ValueManager::eraseWithPrefix(std::string_view prefix) {
     });
 }
 
-void ValueManager::eraseMatching(std23::function_ref<bool(std::string_view)> predicate) {
+void ValueManager::eraseMatching(geode::FunctionRef<bool(std::string_view)> predicate) {
     auto& container = Mod::get()->getSaveContainer();
 
     std::vector<std::string> toErase;

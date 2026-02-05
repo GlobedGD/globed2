@@ -6,14 +6,14 @@
 
 namespace globed {
 
-class KeybindsPopup : public BasePopup<KeybindsPopup> {
+class KeybindsPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static KeybindsPopup* create();
 
 protected:
     cue::ListNode* m_list;
 
-    bool setup() override;
+    bool init() override;
 };
 
 }

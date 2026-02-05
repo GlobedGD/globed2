@@ -15,7 +15,7 @@ public:
 
     void loadLevel(int id);
 
-    inline void setUpdateCallback(std23::move_only_function<void()> callback) {
+    inline void setUpdateCallback(geode::Function<void()> callback) {
         m_updateCallback = std::move(callback);
     }
 
@@ -23,7 +23,7 @@ private:
     Ref<GJGameLevel> m_level;
     LevelCell* m_levelCell = nullptr;
     cue::LoadingCircle* m_circle = nullptr;
-    std23::move_only_function<void()> m_updateCallback;
+    geode::Function<void()> m_updateCallback;
     int m_lastLoaded = -1;
     bool m_collapsed = false;
 

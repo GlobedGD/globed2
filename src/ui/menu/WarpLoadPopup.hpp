@@ -5,9 +5,9 @@
 
 namespace globed {
 
-class WarpLoadPopup : public BasePopup<WarpLoadPopup, int, bool, bool>, public LevelDownloadDelegate {
+class WarpLoadPopup : public BasePopup, public LevelDownloadDelegate {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static WarpLoadPopup* create(int levelId, bool openLevel, bool replaceScene);
     ~WarpLoadPopup();
 
 private:
@@ -16,7 +16,7 @@ private:
     bool m_openLevel, m_replaceScene;
     bool m_finished = false;
 
-    bool setup(int levelId, bool openLevel, bool replaceScene) override;
+    bool init(int levelId, bool openLevel, bool replaceScene);
     void onClose(cocos2d::CCObject*) override;
 
     void onLoadedMeta(GJGameLevel* level);

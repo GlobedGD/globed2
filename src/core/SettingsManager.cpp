@@ -1,7 +1,7 @@
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/ValueManager.hpp>
 
-#include <std23/function_ref.h>
+#include <Geode/utils/function.hpp>
 #include <fmt/format.h>
 #include <asp/fs.hpp>
 #include <asp/iter.hpp>
@@ -182,7 +182,7 @@ void SettingsManager::loadSaveSlots() {
 }
 
 static std::optional<matjson::Value> migrateSlot(const matjson::Value& slot) {
-    using MapperFn = std23::function_ref<matjson::Value(const matjson::Value&)>;
+    using MapperFn = geode::FunctionRef<matjson::Value(const matjson::Value&)>;
 
     matjson::Value out;
 
@@ -635,7 +635,7 @@ void SettingsManager::registerLimits(
 
 bool SettingsManager::listenForChangesRaw(
     std::string_view key,
-    std23::move_only_function<void(const matjson::Value&)> callback
+    geode::Function<void(const matjson::Value&)> callback
 ) {
     auto hash = this->keyHash(key);
     if (!m_settings.contains(hash)) {

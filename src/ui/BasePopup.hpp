@@ -6,8 +6,7 @@
 
 namespace globed {
 
-template <typename Derived, typename... Args>
-class GLOBED_NOVTABLE BasePopup : public geode::Popup<Args...> {
+class GLOBED_NOVTABLE BasePopup : public geode::Popup {
 public:
     BasePopup() = default;
     BasePopup(const BasePopup&) = delete;
@@ -15,30 +14,19 @@ public:
     BasePopup(BasePopup&&) = delete;
     BasePopup& operator=(BasePopup&&) = delete;
 
-    template <typename... Args2>
-    static Derived* create(Args2&&... args) {
-        auto ret = new Derived();
-
-        if (ret->initAnchored(Derived::POPUP_SIZE.width, Derived::POPUP_SIZE.height, std::forward<Args2>(args)...)) {
-            if (cachedSingleton<GameManager>()->getGameVariable("0168")) {
-                ret->m_noElasticity = true;
-            }
-
-            ret->autorelease();
-            return ret;
-        }
-
-        delete ret;
-        return nullptr;
-    }
-
 protected:
-    bool setup(Args... args) override {
-        return true;
+    bool init(
+        float width, float height, char const* bg = "GJ_square01.png",
+        cocos2d::CCRect bgRect = {}
+    ) {
+        if (cachedSingleton<GameManager>()->getGameVariable("0168")) {
+            m_noElasticity = true;
+        }
+        return Popup::init(width, height, bg, bgRect);
     }
 
-    void keyBackClicked() override {
-        this->onClose(this);
+    bool init(cocos2d::CCSize size, char const* bg = "GJ_square01.png", cocos2d::CCRect bgRect = {}) {
+        return init(size.width, size.height, bg, bgRect);
     }
 
     // various helper methods for positioning ui elements

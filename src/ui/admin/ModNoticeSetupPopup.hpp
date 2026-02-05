@@ -4,9 +4,9 @@
 
 namespace globed {
 
-class ModNoticeSetupPopup : public BasePopup<ModNoticeSetupPopup> {
+class ModNoticeSetupPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static ModNoticeSetupPopup* create();
 
     void setupUser(int accountId);
 
@@ -24,7 +24,7 @@ protected:
     CCMenuItemToggler* m_showSenderCheckbox;
     cocos2d::CCLabelBMFont* m_canReplyLabel;
 
-    bool setup();
+    bool init();
     void onSelectMode(int mode, bool on);
     void submit();
 };

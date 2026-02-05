@@ -4,6 +4,7 @@
 #include <fmod_errors.h>
 
 using namespace asp::time;
+using enum std::memory_order;
 
 namespace globed {
 
@@ -88,13 +89,13 @@ void VoiceStream::readCallback(float* data, unsigned int neededSamples) {
     m_estimator.lock()->feedData(data, copied);
 
     if (copied != neededSamples) {
-        m_starving = true;
+        m_starving.store(true, relaxed);
         // fill the rest with the void to not repeat stuff
         for (size_t i = copied; i < neededSamples; i++) {
             data[i] = 0.0f;
         }
     } else {
-        m_starving = false;
+        m_starving.store(false, relaxed);
         m_lastPlaybackTime = Instant::now();
     }
 }
@@ -141,7 +142,7 @@ float VoiceStream::getVolume() const {
 }
 
 bool VoiceStream::isStarving() {
-    return m_starving;
+    return m_starving.load(relaxed);
 }
 
 }

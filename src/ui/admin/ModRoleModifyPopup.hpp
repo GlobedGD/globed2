@@ -6,15 +6,12 @@
 #include <ui/misc/LoadingPopup.hpp>
 
 #include <Geode/Geode.hpp>
-#include <std23/move_only_function.h>
 
 namespace globed {
 
-class ModRoleModifyPopup : public BasePopup<ModRoleModifyPopup, int32_t, std::vector<uint8_t>> {
+class ModRoleModifyPopup : public BasePopup {
 public:
-    using Callback = std23::move_only_function<void()>;
-
-    static cocos2d::CCSize POPUP_SIZE;
+    using Callback = geode::Function<void()>;
 
     static ModRoleModifyPopup* create(int32_t accountId, std::vector<uint8_t> roleIds);
     void setCallback(Callback&& cb);
@@ -27,7 +24,7 @@ private:
     std::optional<MessageListener<msg::AdminResultMessage>> m_listener;
     LoadingPopup* m_loadPopup = nullptr;
 
-    bool setup(int32_t accountId, std::vector<uint8_t> roleIds) override;
+    bool init(int32_t accountId, std::vector<uint8_t> roleIds);
     void submit();
 
     void startWaiting();

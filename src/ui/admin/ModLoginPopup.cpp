@@ -10,14 +10,14 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize ModLoginPopup::POPUP_SIZE { 280.f, 130.f };
+bool ModLoginPopup::init(geode::Function<void()> callback) {
+    if (!BasePopup::init(280.f, 130.f)) return false;
 
-bool ModLoginPopup::setup(std23::move_only_function<void()> callback) {
     m_callback = std::move(callback);
 
     this->setTitle("Mod Login");
 
-    Build<TextInput>::create(POPUP_SIZE.width * 0.75f, "Password", "bigFont.fnt")
+    Build<TextInput>::create(m_size.width * 0.75f, "Password", "bigFont.fnt")
         .pos(this->fromCenter(0.f, 20.f))
         .parent(m_mainLayer)
         .store(m_passwordInput);
@@ -98,6 +98,16 @@ void ModLoginPopup::stopWaiting(bool success) {
     }
 
     this->onClose(nullptr);
+}
+
+ModLoginPopup* ModLoginPopup::create(geode::Function<void()> callback) {
+    auto ret = new ModLoginPopup();
+    if (ret->init(std::move(callback))) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

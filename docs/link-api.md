@@ -14,16 +14,11 @@ First add Globed as a dependency in your mod's `mod.json`:
 }
 ```
 
-Then add the following lines in your mod's `CMakeLists.txt` (if you don't know where, just put them at the bottom or below `setup_geode_mod`):
+Then add the following line in your mod's `CMakeLists.txt` (if you don't know where, just put them at the bottom or below `setup_geode_mod`):
 
 ```cmake
-CPMAddPackage("gh:zhihaoy/nontype_functional#bdb0987")
-CPMAddPackage("gh:dankmeme01/asp2#05234957")
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/geode-deps/dankmeme.globed2/include)
-target_link_libraries(${PROJECT_NAME} PRIVATE std23::nontype_functional asp)
 ```
-
-(this is required because Geode has no way to know that Globed uses these libraries in its headers)
 
 ## Usage
 

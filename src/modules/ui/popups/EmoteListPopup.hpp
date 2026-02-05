@@ -7,9 +7,9 @@
 
 namespace globed {
 
-class EmoteListPopup : public BasePopup<EmoteListPopup> {
+class EmoteListPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static EmoteListPopup* create();
 
     uint32_t m_selectedEmoteId = -1;
     bool m_isFavoriteMode = false;
@@ -42,7 +42,7 @@ private:
 
     cue::Slider* m_volumeSlider;
 
-    bool setup() override;
+    bool init() override;
     void onSubmitBtn();
     void onEmoteBtn(uint32_t emoteId);
     void loadEmoteListPage(int page);

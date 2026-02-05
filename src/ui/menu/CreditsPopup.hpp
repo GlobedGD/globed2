@@ -8,15 +8,15 @@
 
 namespace globed {
 
-class CreditsPopup : public BasePopup<CreditsPopup> {
+class CreditsPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static CreditsPopup* create();
 
 protected:
     cue::ListNode* m_list;
     std::optional<MessageListener<msg::CreditsMessage>> m_listener;
 
-    bool setup() override;
+    bool init() override;
     void onLoaded(const std::vector<CreditsCategory>& categories);
 };
 

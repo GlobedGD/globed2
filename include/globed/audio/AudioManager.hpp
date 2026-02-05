@@ -65,8 +65,8 @@ public:
     // start recording the voice and call the callback whenever new data is ready.
     // same rules apply as with `startRecording`, except the callback includes raw PCM samples,
     // and is called much more often.
-    Result<> startRecordingEncoded(std23::move_only_function<void(const EncodedAudioFrame&)>&& encodedCallback);
-    Result<> startRecordingRaw(std23::move_only_function<void(const float*, size_t)>&& rawCallback);
+    Result<> startRecordingEncoded(geode::Function<void(const EncodedAudioFrame&)>&& encodedCallback);
+    Result<> startRecordingRaw(geode::Function<void(const float*, size_t)>&& rawCallback);
     // tell the audio thread to stop recording
     void stopRecording();
     // tell the audio thread to stop recording, don't call the callback with leftover data
@@ -118,19 +118,19 @@ public:
 private:
     /* devices */
     std::optional<AudioRecordingDevice> m_recordDevice;
-    asp::AtomicBool m_loopbacksAllowed = false;
+    std::atomic<bool> m_loopbacksAllowed = false;
 
     /* recording */
-    asp::AtomicBool m_recordActive = false;
-    asp::AtomicBool m_recordQueuedStop = false;
-    asp::AtomicBool m_recordQueuedHalt = false;
-    asp::AtomicBool m_recordingRaw = false;
-    asp::AtomicBool m_recordingPassive = false;
-    asp::AtomicBool m_recordingPassiveActive = false;
+    std::atomic<bool> m_recordActive = false;
+    std::atomic<bool> m_recordQueuedStop = false;
+    std::atomic<bool> m_recordQueuedHalt = false;
+    std::atomic<bool> m_recordingRaw = false;
+    std::atomic<bool> m_recordingPassive = false;
+    std::atomic<bool> m_recordingPassiveActive = false;
     FMOD::Sound* m_recordSound = nullptr;
     size_t m_recordChunkSize = 0;
-    std23::move_only_function<void(const EncodedAudioFrame&)> m_callback;
-    std23::move_only_function<void(const float*, size_t)> m_rawCallback;
+    geode::Function<void(const EncodedAudioFrame&)> m_callback;
+    geode::Function<void(const float*, size_t)> m_rawCallback;
     AudioSampleQueue m_recordQueue;
     unsigned int m_recordLastPosition = 0;
     EncodedAudioFrame m_recordFrame;
@@ -138,7 +138,7 @@ private:
     FMOD::System* m_system = nullptr;
 
     /* thread */
-    asp::AtomicBool m_thrSleeping = true;
+    std::atomic<bool> m_thrSleeping = true;
     asp::Thread<AudioManager*> m_thread;
 
     void audioThreadFunc(decltype(m_thread)::StopToken&);

@@ -6,10 +6,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool InputPopup::setup(const char* font) {
-    if (!BasePopup::setup(font)) {
-        return false;
-    }
+bool InputPopup::init(const char* font) {
+    if (!BasePopup::init(0.f, 0.f)) return false;
 
     m_input = TextInput::create(0.f, "", font);
     m_input->setCommonFilter(CommonFilter::Any);
@@ -76,7 +74,7 @@ void InputPopup::setDefaultText(const std::string& text) {
     m_defaultText = text;
 }
 
-void InputPopup::setCallback(std23::move_only_function<void(InputPopupOutcome)> callback) {
+void InputPopup::setCallback(geode::Function<void(InputPopupOutcome)> callback) {
     m_callback = std::move(callback);
 }
 
@@ -93,6 +91,17 @@ void InputPopup::onClose(cocos2d::CCObject*) {
     }
 
     Popup::onClose(nullptr);
+}
+
+InputPopup* InputPopup::create(geode::ZStringView font) {
+    auto ret = new InputPopup;
+    if (ret->init(font.c_str())) {
+        ret->autorelease();
+        return ret;
+    }
+
+    delete ret;
+    return nullptr;
 }
 
 }

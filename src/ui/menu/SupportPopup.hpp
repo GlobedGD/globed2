@@ -5,10 +5,8 @@
 
 namespace globed {
 
-class SupportPopup : public BasePopup<SupportPopup, cocos2d::CCSprite*> {
+class SupportPopup : public BasePopup {
 public:
-    static cocos2d::CCSize POPUP_SIZE;
-
     static SupportPopup* create();
 
 protected:
@@ -16,7 +14,7 @@ protected:
     cocos2d::CCSprite* m_ground;
     cocos2d::CCParticleSystemQuad* m_particles;
 
-    bool setup(cocos2d::CCSprite*) override;
+    bool init() override;
     void update(float dt) override;
     void kofiEnableParticlesCallback();
     void kofiEnableParticlesCallback2(float dt);

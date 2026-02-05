@@ -2,13 +2,13 @@
     "id": "dankmeme.globed2",
     "name": "Globed",
     "developer": "dankmeme",
-    "geode": "4.10.0",
-    "version": "v2.0.0-beta.9",
+    "geode": "5.0.0-alpha.1",
+    "version": "v2.0.0-beta.10",
     "gd": {
-        "win": "2.2074",
-        "android": "2.2074",
-        "mac": "2.2074",
-        "ios": "2.2074"
+        "win": "2.2081",
+        "android": "2.2081",
+        "mac": "2.2081",
+        "ios": "2.2081"
     },
     "description": "Feature-rich multiplayer mod",
     "dependencies": {},

@@ -9,7 +9,6 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize RegionSelectPopup::POPUP_SIZE { 370.f, 240.f };
 static constexpr CCSize LIST_SIZE { 330.f, 180.f };
 
 namespace {
@@ -143,7 +142,9 @@ private:
 
 }
 
-bool RegionSelectPopup::setup() {
+bool RegionSelectPopup::init() {
+    if (!BasePopup::init(370.f, 240.f)) return false;
+
     this->setTitle("Select Preferred Server");
 
     m_list = Build(cue::ListNode::create(LIST_SIZE))
@@ -231,6 +232,16 @@ void RegionSelectPopup::showInfo() {
         nullptr,
         410.f
     );
+}
+
+RegionSelectPopup* RegionSelectPopup::create() {
+    auto ret = new RegionSelectPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

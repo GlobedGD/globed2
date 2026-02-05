@@ -4,9 +4,9 @@
 
 namespace globed {
 
-class RoomUserControlsPopup : public BasePopup<RoomUserControlsPopup, int, std::string_view> {
+class RoomUserControlsPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static RoomUserControlsPopup* create(int accountId, std::string_view username);
 
 private:
     bool m_banned = false;
@@ -14,7 +14,7 @@ private:
     std::string m_username;
     int m_accountId;
 
-    bool setup(int id, std::string_view username);
+    bool init(int id, std::string_view username);
     void remakeButtons();
 };
 

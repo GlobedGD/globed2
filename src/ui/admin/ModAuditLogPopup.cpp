@@ -11,7 +11,9 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize ModAuditLogPopup::POPUP_SIZE = {380.f, 280.f};
+static constexpr float POPUP_WIDTH = 380.f;
+static constexpr float POPUP_HEIGHT = 280.f;
+
 static constexpr float TYPE_HEIGHT = 20.f;
 static constexpr float TYPE_WIDTH = 155.f;
 static constexpr float USER_HEIGHT = 20.f;
@@ -138,7 +140,7 @@ private:
 
 class LogCell : public CCMenu {
 public:
-    static inline const float WIDTH = ModAuditLogPopup::POPUP_SIZE.width * 0.9f;
+    static inline const float WIDTH = POPUP_WIDTH * 0.9f;
     static inline const float HEIGHT = 48.f;
     static inline const float EXPANDED_HEIGHT = 100.f;
 
@@ -285,7 +287,9 @@ private:
     }
 };
 
-bool ModAuditLogPopup::setup(FetchLogsFilters filters) {
+bool ModAuditLogPopup::init(FetchLogsFilters filters) {
+    if (!BasePopup::init(380.f, 280.f)) return false;
+
     ccColor4B bg{ 105, 61, 31, 255 };
     m_filters = std::move(filters);
 
@@ -401,7 +405,14 @@ void ModAuditLogPopup::refetch() {
 }
 
 ModAuditLogPopup* ModAuditLogPopup::create(FetchLogsFilters filters) {
-    return BasePopup::create(std::move(filters));
+    auto ret = new ModAuditLogPopup();
+    if (ret->init(filters)) {
+        ret->autorelease();
+        return ret;
+    }
+
+    delete ret;
+    return nullptr;
 }
 
 }

@@ -124,7 +124,7 @@ bool CoreImpl::shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) {
     return should;
 }
 
-void CoreImpl::enableIf(std23::function_ref<bool(Module&)>&& func) {
+void CoreImpl::enableIf(geode::FunctionRef<bool(Module&)>&& func) {
     for (auto& mod : m_modules) {
         if (func(*mod)) {
             if (auto err = mod->enable().err()) {
@@ -134,7 +134,7 @@ void CoreImpl::enableIf(std23::function_ref<bool(Module&)>&& func) {
     }
 }
 
-void CoreImpl::disableIf(std23::function_ref<bool(Module&)>&& func) {
+void CoreImpl::disableIf(geode::FunctionRef<bool(Module&)>&& func) {
     for (auto& mod : m_modules) {
         if (func(*mod)) {
             if (auto err = mod->disable().err()) {
@@ -144,7 +144,7 @@ void CoreImpl::disableIf(std23::function_ref<bool(Module&)>&& func) {
     }
 }
 
-void CoreImpl::forEachEnabled(std23::function_ref<void(Module&)>&& func) {
+void CoreImpl::forEachEnabled(geode::FunctionRef<void(Module&)>&& func) {
     for (auto& mod : m_modules) {
         if (mod->m_enabled) {
             func(*mod);

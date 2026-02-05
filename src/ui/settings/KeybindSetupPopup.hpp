@@ -1,15 +1,14 @@
 #pragma once
 
 #include <ui/BasePopup.hpp>
-
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 
-class KeybindSetupPopup : public BasePopup<KeybindSetupPopup, cocos2d::enumKeyCodes> {
+class KeybindSetupPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
-    using Callback = std23::move_only_function<void(cocos2d::enumKeyCodes)>;
+    static KeybindSetupPopup* create(cocos2d::enumKeyCodes key);
+    using Callback = geode::Function<void(cocos2d::enumKeyCodes)>;
 
     void setCallback(Callback&& cb);
 
@@ -19,8 +18,8 @@ protected:
     cocos2d::enumKeyCodes m_key, m_originalKey;
     bool m_valid = false;
 
-    bool setup(cocos2d::enumKeyCodes key) override;
-    void keyDown(cocos2d::enumKeyCodes keyCode) override;
+    bool init(cocos2d::enumKeyCodes key);
+    void keyDown(cocos2d::enumKeyCodes keyCode, double time) override;
 };
 
 }

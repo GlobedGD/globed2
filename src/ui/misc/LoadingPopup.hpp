@@ -6,18 +6,19 @@
 
 namespace globed {
 
-class LoadingPopup : public BasePopup<LoadingPopup> {
+class LoadingPopup : public BasePopup {
 public:
     using BasePopup::setTitle;
 
-    static const cocos2d::CCSize POPUP_SIZE;
+    static LoadingPopup* create();
+
     void setClosable(bool closable);
     void forceClose();
 
 protected:
     cue::LoadingCircle* m_circle;
 
-    bool setup() override;
+    bool init() override;
     void onClose(cocos2d::CCObject*) override;
 };
 

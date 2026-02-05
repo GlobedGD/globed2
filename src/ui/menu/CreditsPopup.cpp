@@ -10,10 +10,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize CreditsPopup::POPUP_SIZE {380.f, 260.f };
 static constexpr CCSize LIST_SIZE { 340.f, 200.f};
 
-// TODO: credits data
 static const std::vector<CreditsCategory>& defaultData();
 
 namespace {
@@ -171,7 +169,9 @@ private:
 };
 }
 
-bool CreditsPopup::setup() {
+bool CreditsPopup::init() {
+    if (!BasePopup::init(380.f, 260.f)) return false;
+
     this->setTitle("Credits");
 
     m_list = Build(cue::ListNode::create(LIST_SIZE))
@@ -236,6 +236,17 @@ void CreditsPopup::onLoaded(const std::vector<CreditsCategory>& categories) {
     }
     log::info("\n{}", out);
 }
+
+CreditsPopup* CreditsPopup::create() {
+    auto ret = new CreditsPopup;
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
+}
+
 
 static const std::vector<CreditsCategory>& defaultData() {
     static const std::vector<CreditsCategory> g_defaultData {

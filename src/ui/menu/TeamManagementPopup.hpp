@@ -9,9 +9,9 @@
 
 namespace globed {
 
-class TeamManagementPopup : public BasePopup<TeamManagementPopup, int> {
+class TeamManagementPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static TeamManagementPopup* create(int assigningFor);
 
 protected:
     friend class TeamCell;
@@ -24,7 +24,7 @@ protected:
     int m_assigningFor = 0;
     bool m_showPlus = false;
 
-    bool setup(int assigningFor);
+    bool init(int assigningFor);
     void startLoading();
     void onLoaded(const std::vector<RoomTeam>& teams);
     void onTeamCreated(bool success, uint16_t teamCount);

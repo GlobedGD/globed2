@@ -10,7 +10,6 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize SaveSlotSwitcherPopup::POPUP_SIZE = {360.f, 280.f};
 static const CCSize LIST_SIZE = { 306.f, 210.f };
 static constexpr float CELL_HEIGHT = 36.f;
 
@@ -110,7 +109,9 @@ private:
 };
 }
 
-bool SaveSlotSwitcherPopup::setup() {
+bool SaveSlotSwitcherPopup::init() {
+    if (!BasePopup::init(360.f, 280.f)) return false;
+
     this->setTitle("Setting Profiles");
 
     m_list = Build(cue::ListNode::create(LIST_SIZE))
@@ -163,6 +164,18 @@ void SaveSlotSwitcherPopup::invokeSwitchCallback() {
     if (m_callback) {
         m_callback();
     }
+}
+
+SaveSlotSwitcherPopup* SaveSlotSwitcherPopup::create() {
+    auto ret = new SaveSlotSwitcherPopup;
+
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+
+    delete ret;
+    return nullptr;
 }
 
 }

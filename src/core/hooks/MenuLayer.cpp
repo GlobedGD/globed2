@@ -32,8 +32,6 @@ static void initiateAutoConnect() {
 bool HookedMenuLayer::init() {
     if (!MenuLayer::init()) return false;
 
-    argon::initConfigLock();
-
     this->recreateButton();
 
     static bool invoked = false;

@@ -5,7 +5,7 @@
 #include <asp/sync/SpinLock.hpp>
 #include <asp/time/Duration.hpp>
 #include <asp/time/Instant.hpp>
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 #include <queue>
 
 namespace globed {
@@ -15,7 +15,7 @@ class GLOBED_DLL FunctionQueue : public SingletonNodeBase<FunctionQueue, true> {
     FunctionQueue() = default;
 
 public:
-    using Func = std23::move_only_function<void()>;
+    using Func = geode::Function<void()>;
     struct Queued {
         size_t expTick;
         mutable Func func; // xd priority queue funnies

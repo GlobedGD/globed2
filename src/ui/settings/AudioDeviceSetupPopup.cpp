@@ -81,7 +81,9 @@ private:
     }
 };
 
-bool AudioDeviceSetupPopup::setup() {
+bool AudioDeviceSetupPopup::init() {
+    if (!BasePopup::init(POPUP_SIZE)) return false;
+
     this->setID("AudioSetupPopup"_spr);
 
     auto menu = Build<CCMenu>::create()
@@ -262,6 +264,16 @@ void AudioDeviceSetupPopup::applyAudioDevice(int id) {
     vm.setActiveRecordingDevice(id);
 
     this->weakRefreshList();
+}
+
+AudioDeviceSetupPopup* AudioDeviceSetupPopup::create() {
+    auto ret = new AudioDeviceSetupPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

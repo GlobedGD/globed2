@@ -11,10 +11,11 @@
 
 namespace globed {
 
-class AudioDeviceSetupPopup : public BasePopup<AudioDeviceSetupPopup> {
+class AudioDeviceSetupPopup : public BasePopup {
 public:
     static constexpr CCSize POPUP_SIZE { 400.f, 260.f };
     static constexpr CCSize LIST_SIZE { 340.f, 180.f };
+    static AudioDeviceSetupPopup* create();
 
     void applyAudioDevice(int id);
 
@@ -26,7 +27,7 @@ private:
     VolumeEstimator m_estimator;
     std::shared_ptr<VoiceStream> m_stream;
 
-    bool setup() override;
+    bool init() override;
     void update(float) override;
     void onClose(cocos2d::CCObject*) override;
     void toggleButtons(bool recording);

@@ -10,9 +10,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize SendFeaturePopup::POPUP_SIZE{ 340.f, 190.f };
+bool SendFeaturePopup::init(GJGameLevel* level) {
+    if (!BasePopup::init(340.f, 190.f)) return false;
 
-bool SendFeaturePopup::setup(GJGameLevel* level) {
     m_level = level;
 
     this->setTitle("Globed: Send Level", "goldFont.fnt", 0.9f, 20.f);
@@ -32,14 +32,14 @@ bool SendFeaturePopup::setup(GJGameLevel* level) {
 
     this->createDiffButton();
 
-    m_noteInput = Build<TextInput>::create(POPUP_SIZE.width * 0.8f, "Notes", "chatFont.fnt")
+    m_noteInput = Build<TextInput>::create(m_size.width * 0.8f, "Notes", "chatFont.fnt")
         .pos(this->fromBottom(60.f))
         .parent(m_mainLayer);
     m_noteInput->setCommonFilter(CommonFilter::Any);
 
     auto* buttonMenu = Build<CCMenu>::create()
         .layout(RowLayout::create())
-        .contentSize(POPUP_SIZE.width * 0.8f, 50.f)
+        .contentSize(m_size.width * 0.8f, 50.f)
         .pos(this->fromBottom(27.f))
         .parent(m_mainLayer)
         .collect();
@@ -99,6 +99,16 @@ void SendFeaturePopup::createDiffButton() {
         })
 		.store(m_diffButton)
         .parent(m_menu);
+}
+
+SendFeaturePopup* SendFeaturePopup::create(GJGameLevel* level) {
+    auto ret = new SendFeaturePopup;
+    if (ret->init(level)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

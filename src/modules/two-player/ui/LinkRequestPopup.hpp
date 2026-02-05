@@ -8,9 +8,9 @@
 
 namespace globed {
 
-class LinkRequestPopup : public BasePopup<LinkRequestPopup, int, UserListPopup*> {
+class LinkRequestPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static LinkRequestPopup* create(int accountId, UserListPopup* popup);
 
 private:
     int m_accountId;
@@ -22,7 +22,7 @@ private:
     UserListPopup* m_userListPopup;
     bool m_waiting = false;
 
-    bool setup(int accountId, UserListPopup* popup) override;
+    bool init(int accountId, UserListPopup* popup);
     void link(bool p2);
     void update(float dt) override;
     void onClose(CCObject* obj) override;

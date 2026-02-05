@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cocos2d.h>
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 
@@ -13,7 +13,7 @@ public:
     void cancelTouch();
 
     /// Callback returns whether to swallow and consume this touch.
-    void setTouchCallback(std23::move_only_function<bool(bool within)> callback);
+    void setTouchCallback(geode::Function<bool(bool within)> callback);
 
     bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
     void ccTouchEnded(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
@@ -28,7 +28,7 @@ private:
         HeldCancelled
     };
     State m_state = State::None;
-    std23::move_only_function<bool(bool within)> m_touchCallback;
+    geode::Function<bool(bool within)> m_touchCallback;
 };
 
 }

@@ -39,7 +39,7 @@ bool NotificationPanel::init() {
 
     this->scheduleUpdate();
 
-    SceneManager::get()->keepAcrossScenes(this);
+    OverlayManager::get()->addChild(this);
 
     m_listener = NetworkManagerImpl::get().listen<msg::InvitedMessage>([this](const auto& msg) {
         if (!allowInvite(msg.invitedBy.accountId)) {

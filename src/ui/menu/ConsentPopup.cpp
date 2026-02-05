@@ -9,8 +9,6 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize ConsentPopup::POPUP_SIZE {400.f, 260.f};
-
 static constexpr auto RULES_DESC = "I agree to follow the <cg>Globed rules</c> while using the mod";
 static constexpr auto ARGON_DESC = "I accept the <cy>privacy policy</c> and allow <cj>Globed</c> to send a one-time message to verify my GD account";
 
@@ -58,7 +56,9 @@ We use [Argon](https://github.com/GlobedGD/argon) for verifying accounts. Argon 
 Globed may access other account data, for example your list of <cg>friends</c> or <cg>blocked users</c>. This data is <cr>never</c> logged anywhere, and is only used to provide <cj>in-game functionality</c>, such as <cy>invite or voice chat filtering</c>.
 )";
 
-bool ConsentPopup::setup() {
+bool ConsentPopup::init() {
+    if (!BasePopup::init(400.f, 260.f)) return false;
+
     this->setID("consent-popup"_spr);
     this->setTitle("Before you continue...");
 
@@ -183,7 +183,7 @@ bool ConsentPopup::setup() {
 }
 
 CCNode* ConsentPopup::createClause(CStr description, CStr popupTitle, std::string_view content, bool* accepted) {
-    float width = POPUP_SIZE.width * 0.9f;
+    float width = m_size.width * 0.9f;
     float textWidth = width - 64.f;
 
     auto container = Build<CCMenu>::create()
@@ -251,6 +251,16 @@ void ConsentPopup::onButton(bool accept) {
     }
 
     Popup::onClose(this);
+}
+
+ConsentPopup* ConsentPopup::create() {
+    auto ret = new ConsentPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

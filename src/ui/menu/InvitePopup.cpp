@@ -9,7 +9,6 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize InvitePopup::POPUP_SIZE { 420.f, 280.f };
 static constexpr CCSize LIST_SIZE { 336.f, 220.f };
 static constexpr float CELL_HEIGHT = 27.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
@@ -59,7 +58,9 @@ protected:
 
 }
 
-bool InvitePopup::setup() {
+bool InvitePopup::init() {
+    if (!BasePopup::init(420.f, 280.f)) return false;
+
     this->setTitle("Invite Players");
 
     m_list = Build(cue::ListNode::create(LIST_SIZE))
@@ -79,8 +80,8 @@ bool InvitePopup::setup() {
     m_rightSideMenu = Build<CCMenu>::create()
         .id("right-side-menu")
         .layout(colLayout)
-        .contentSize(POPUP_SIZE.width * 0.08f, POPUP_SIZE.height - 12.f)
-        .pos(POPUP_SIZE - CCSize{7.f, 8.f})
+        .contentSize(m_size.width * 0.08f, m_size.height - 12.f)
+        .pos(m_size - CCSize{7.f, 8.f})
         .anchorPoint(1.f, 1.f)
         .parent(m_mainLayer);
 
@@ -175,6 +176,16 @@ void InvitePopup::onLoaded(const std::vector<MinimalRoomPlayer>& players) {
     }
 
     m_list->updateLayout();
+}
+
+InvitePopup* InvitePopup::create() {
+    auto ret = new InvitePopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

@@ -4,9 +4,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const cocos2d::CCSize LoadingPopup::POPUP_SIZE = {160.f, 90.f};
-
-bool LoadingPopup::setup() {
+bool LoadingPopup::init() {
+    if (!BasePopup::init(160.f, 90.f)) return false;
     m_circle = cue::LoadingCircle::create();
     m_circle->addToLayer(m_mainLayer);
     m_circle->setPositionY(35.f);
@@ -31,6 +30,17 @@ void LoadingPopup::onClose(cocos2d::CCObject*) {
         m_circle->fadeOut();
         Popup::onClose(nullptr);
     }
+}
+
+LoadingPopup* LoadingPopup::create() {
+    auto ret = new LoadingPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+
+    delete ret;
+    return nullptr;
 }
 
 }

@@ -4,14 +4,14 @@
 
 namespace globed {
 
-class ModPanelPopup : public BasePopup<ModPanelPopup> {
+class ModPanelPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static ModPanelPopup* create();
 
 protected:
     geode::TextInput* m_queryInput;
 
-    bool setup();
+    bool init();
 };
 
 }

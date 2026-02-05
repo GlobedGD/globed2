@@ -20,7 +20,9 @@ const CCSize RoomListingPopup::LIST_SIZE = {375.f, 200.f};
 
 static std::vector<RoomListingInfo> makeFakeData();
 
-bool RoomListingPopup::setup() {
+bool RoomListingPopup::init() {
+    if (!BasePopup::init(POPUP_SIZE)) return false;
+
     this->updateTitle(0);
     this->setID("room-listing"_spr);
 
@@ -443,6 +445,16 @@ static std::vector<RoomListingInfo> makeFakeData() {
     }
 
     return rooms;
+}
+
+RoomListingPopup* RoomListingPopup::create() {
+    auto ret = new RoomListingPopup;
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

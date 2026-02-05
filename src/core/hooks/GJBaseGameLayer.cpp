@@ -33,7 +33,7 @@ namespace {
 
 class CustomSchedule : public CCObject {
 public:
-    using Fn = std23::move_only_function<void(globed::GlobedGJBGL*, float)>;
+    using Fn = geode::Function<void(globed::GlobedGJBGL*, float)>;
 
     static CustomSchedule* create(Fn&& fn, float interval, globed::GlobedGJBGL* gjbgl) {
         auto ret = new CustomSchedule;
@@ -970,11 +970,11 @@ void GlobedGJBGL::pauseVoiceRecording() {
 #endif
 }
 
-void GlobedGJBGL::customSchedule(const std::string& id, std23::move_only_function<void(GlobedGJBGL*, float)>&& f, float interval) {
+void GlobedGJBGL::customSchedule(const std::string& id, geode::Function<void(GlobedGJBGL*, float)>&& f, float interval) {
     this->customSchedule(id, interval, std::move(f));
 }
 
-void GlobedGJBGL::customSchedule(const std::string& id, float interval, std23::move_only_function<void(GlobedGJBGL*, float)>&& f) {
+void GlobedGJBGL::customSchedule(const std::string& id, float interval, geode::Function<void(GlobedGJBGL*, float)>&& f) {
     auto sched = CustomSchedule::create(std::move(f), interval, this);
     this->setUserObject(id, sched);
 }

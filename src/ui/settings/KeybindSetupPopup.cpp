@@ -7,9 +7,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize KeybindSetupPopup::POPUP_SIZE { 240.f, 200.f };
+bool KeybindSetupPopup::init(enumKeyCodes key) {
+    if (!BasePopup::init(240.f, 200.f)) return false;
 
-bool KeybindSetupPopup::setup(enumKeyCodes key) {
     this->setTitle("Set Keybind");
 
     m_originalKey = key;
@@ -42,12 +42,12 @@ bool KeybindSetupPopup::setup(enumKeyCodes key) {
         .pos(0.f, 0.f)
         .parent(m_mainLayer);
 
-    this->keyDown(m_originalKey);
+    this->keyDown(m_originalKey, 0.0);
 
     return true;
 }
 
-void KeybindSetupPopup::keyDown(enumKeyCodes keyCode) {
+void KeybindSetupPopup::keyDown(enumKeyCodes keyCode, double x) {
     if (keyCode == KEY_Escape) {
         this->onClose(this);
         return;
@@ -59,7 +59,7 @@ void KeybindSetupPopup::keyDown(enumKeyCodes keyCode) {
     }
 
     if (keyCode == KEY_Backspace) {
-        this->keyDown(KEY_None);
+        this->keyDown(KEY_None, x);
         return;
     }
 
@@ -76,11 +76,21 @@ void KeybindSetupPopup::keyDown(enumKeyCodes keyCode) {
         m_keybindLabel->setColor(ccColor3B{ 216, 216, 216 });
     }
 
-    m_keybindLabel->limitLabelWidth(POPUP_SIZE.width - 16.f, 0.75f, 0.5f);
+    m_keybindLabel->limitLabelWidth(m_size.width - 16.f, 0.75f, 0.5f);
 }
 
 void KeybindSetupPopup::setCallback(Callback&& cb) {
     m_callback = std::move(cb);
+}
+
+KeybindSetupPopup* KeybindSetupPopup::create(enumKeyCodes key) {
+    auto ret = new KeybindSetupPopup();
+    if (ret->init(key)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

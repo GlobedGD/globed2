@@ -12,10 +12,11 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize DiscordLinkPopup::POPUP_SIZE{280.f, 160.f};
 static constexpr CCSize ICON_SIZE {40.f, 40.f};
 
-bool DiscordLinkPopup::setup() {
+bool DiscordLinkPopup::init() {
+    if (!BasePopup::init(280.f, 160.f)) return false;
+
     this->setTitle("Link Discord Account");
 
     auto gam = GJAccountManager::get();
@@ -50,7 +51,7 @@ bool DiscordLinkPopup::setup() {
 
     m_playerCard = Build<CCNode>::create()
         .anchorPoint(0.5f, 0.5f)
-        .contentSize(POPUP_SIZE.width * 0.85f, POPUP_SIZE.height * 0.55f)
+        .contentSize(m_size.width * 0.85f, m_size.height * 0.55f)
         .layout(RowLayout::create()->setAutoScale(false))
         .pos(this->fromCenter(0.f, 8.f))
         .id("player-card")
@@ -75,7 +76,7 @@ bool DiscordLinkPopup::setup() {
         .collect();
 
     m_nameLabel = Build<CCLabelBMFont>::create(uname.c_str(), "goldFont.fnt")
-        .limitLabelWidth(POPUP_SIZE.width * 0.85f, 0.6f, 0.1f)
+        .limitLabelWidth(m_size.width * 0.85f, 0.6f, 0.1f)
         .id("name-label")
         .parent(m_dataContainer);
 
@@ -159,7 +160,7 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
     m_statusContainer->updateLayout();
 
     m_nameLabel->setString(username.c_str());
-    m_nameLabel->limitLabelWidth(POPUP_SIZE.width * 0.85f, 0.6f, 0.1f);
+    m_nameLabel->limitLabelWidth(m_size.width * 0.85f, 0.6f, 0.1f);
 
     cue::resetNode(m_idLabel);
     cue::resetNode(m_playerIcon);
@@ -214,6 +215,16 @@ void DiscordLinkPopup::startWaitingForRefresh() {
 
 void DiscordLinkPopup::requestState(float) {
     NetworkManagerImpl::get().sendGetDiscordLinkState();
+}
+
+DiscordLinkPopup* DiscordLinkPopup::create() {
+    auto ret = new DiscordLinkPopup;
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

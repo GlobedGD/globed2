@@ -8,7 +8,7 @@ void CancellableMenu::cancelTouch() {
     m_state = State::HeldPendingCancel;
 }
 
-void CancellableMenu::setTouchCallback(std23::move_only_function<bool(bool within)> callback) {
+void CancellableMenu::setTouchCallback(geode::Function<bool(bool within)> callback) {
     m_touchCallback = std::move(callback);
 }
 

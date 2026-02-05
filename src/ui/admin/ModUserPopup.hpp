@@ -9,9 +9,9 @@
 
 namespace globed {
 
-class ModUserPopup : public BasePopup<ModUserPopup, int>, public UserInfoDelegate, public LevelManagerDelegate {
+class ModUserPopup : public BasePopup, public UserInfoDelegate, public LevelManagerDelegate {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static ModUserPopup* create(int accountId);
 
     ~ModUserPopup();
 
@@ -45,7 +45,7 @@ protected:
     std::optional<Data> m_data;
     GJUserScore* m_score = nullptr;
 
-    bool setup(int accountId) override;
+    bool init(int accountId);
     void initUi();
     void recreateRoleButton();
     void createMuteAndBanButtons();

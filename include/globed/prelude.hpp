@@ -13,8 +13,8 @@
 #include "core/Constants.hpp"
 #include "core/actions.hpp"
 #include <Geode/Result.hpp>
-#include <std23/move_only_function.h>
-#include <std23/function_ref.h>
+#include <Geode/utils/function.hpp>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 

@@ -8,16 +8,17 @@
 
 #include <asp/time/Duration.hpp>
 #include <Geode/Geode.hpp>
-#include <std23/move_only_function.h>
 
 namespace globed {
 
 class ModUserPopup;
 
-class ModPunishPopup : public BasePopup<ModPunishPopup, int, UserPunishmentType, std::optional<UserPunishment>> {
+class ModPunishPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
-    using Callback = std23::move_only_function<void()>;
+    static ModPunishPopup* create(
+        int accountId, UserPunishmentType type, std::optional<UserPunishment> punishment
+    );
+    using Callback = geode::Function<void()>;
 
     void setCallback(Callback&& cb);
 
@@ -34,7 +35,7 @@ protected:
     std::optional<MessageListener<msg::AdminResultMessage>> m_listener;
     LoadingPopup* m_loadPopup = nullptr;
 
-    bool setup(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun) override;
+    bool init(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun);
     void setDuration(asp::time::Duration dur, bool inCallback = false);
     void setReason(const std::string& reason);
     void inputChanged();

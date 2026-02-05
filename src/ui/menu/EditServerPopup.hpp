@@ -1,13 +1,13 @@
 #pragma once
 #include <ui/BasePopup.hpp>
-
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 
-class EditServerPopup : public BasePopup<EditServerPopup, bool, const std::string&, const std::string&> {
+class EditServerPopup : public BasePopup {
 public:
-    using Callback = std23::move_only_function<void(const std::string& name, const std::string& url)>;
+    using Callback = geode::Function<void(const std::string& name, const std::string& url)>;
+    static EditServerPopup* create(bool, const std::string&, const std::string&);
 
     void setCallback(Callback&& fn);
 
@@ -19,7 +19,7 @@ protected:
     geode::TextInput* m_urlInput;
     Callback m_callback;
 
-    bool setup(bool, const std::string&, const std::string&) override;
+    bool init(bool, const std::string&, const std::string&);
 };
 
 }

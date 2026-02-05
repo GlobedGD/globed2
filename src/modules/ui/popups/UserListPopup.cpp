@@ -18,7 +18,6 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize UserListPopup::POPUP_SIZE {420.f, 280.f};
 static constexpr CCSize LIST_SIZE = {370.f, 200.f};
 static constexpr float CELL_HEIGHT = 26.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
@@ -328,7 +327,9 @@ protected:
 
 }
 
-bool UserListPopup::setup() {
+bool UserListPopup::init() {
+    if (!BasePopup::init(420.f, 280.f)) return false;
+
     this->setTitle("Players", "goldFont.fnt", 0.7f, 17.5f);
 
     m_noElasticity = true;
@@ -527,6 +528,16 @@ void UserListPopup::update(float dt) {
 
 void UserListPopup::onVolumeChanged(double value) {
     globed::setting<float>("core.audio.playback-volume") = value;
+}
+
+UserListPopup* UserListPopup::create() {
+    auto ret = new UserListPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

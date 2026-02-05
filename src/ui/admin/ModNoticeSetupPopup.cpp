@@ -18,9 +18,9 @@ namespace btn {
 
 namespace globed {
 
-const CCSize ModNoticeSetupPopup::POPUP_SIZE = {320.f, 200.f};
+bool ModNoticeSetupPopup::init() {
+    if (!BasePopup::init(320.f, 200.f)) return false;
 
-bool ModNoticeSetupPopup::setup() {
     this->setTitle("Send Notice");
 
     m_messageInput = Build<TextInput>::create(270.f, "Message", "chatFont.fnt")
@@ -249,6 +249,16 @@ void ModNoticeSetupPopup::onSelectMode(int mode, bool on) {
     }
 
     m_inputsContainer->updateLayout();
+}
+
+ModNoticeSetupPopup* ModNoticeSetupPopup::create() {
+    auto ret = new ModNoticeSetupPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

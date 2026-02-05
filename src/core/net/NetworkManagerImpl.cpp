@@ -150,63 +150,6 @@ struct CapnpExceptionHandler : public kj::ExceptionCallback {
     }
 };
 
-// Custom awaiter to bridge together geode tasks and arc futures
-template <typename T, typename P>
-struct GeodeTaskAwaiter : public arc::PollableBase<GeodeTaskAwaiter<T, P>, T> {
-    using GeodeTask = geode::Task<T, P>;
-
-    GeodeTaskAwaiter(GeodeTask task) : m_state(State::Init), m_task(std::move(task)) {}
-    GeodeTaskAwaiter(GeodeTaskAwaiter&&) = delete;
-    GeodeTaskAwaiter& operator=(GeodeTaskAwaiter&&) = delete;
-    GeodeTaskAwaiter(const GeodeTaskAwaiter&) = delete;
-    GeodeTaskAwaiter& operator=(const GeodeTaskAwaiter&) = delete;
-
-    std::optional<T> poll() {
-        switch (m_state) {
-            case State::Init: {
-                m_state = State::Waiting;
-                m_waker = ctx().cloneWaker();
-                m_listener.bind([this](GeodeTask::Event* event) mutable {
-                    if (T* result = event->getValue()) {
-                        // task finished
-                        m_output = std::move(*result);
-                        m_state = State::Done;
-                        m_waker->wake();
-                    } else if (event->isCancelled()) {
-                        // task was cancelled
-                        m_state = State::Done;
-                        m_waker->wake();
-                    }
-                });
-                m_listener.setFilter(m_task);
-            } break;
-
-            case State::Waiting: {
-                return std::nullopt;
-            } break;
-
-            case State::Done: {
-                auto out = std::move(m_output);
-                m_output.reset();
-                return out;
-            } break;
-        }
-
-        return std::nullopt;
-    }
-
-private:
-    enum class State {
-        Init,
-        Waiting,
-        Done,
-    } m_state;
-    GeodeTask m_task;
-    EventListener<GeodeTask> m_listener;
-    std::optional<T> m_output;
-    std::optional<Waker> m_waker;
-};
-
 static argon::AccountData g_argonData{};
 
 namespace globed {
@@ -214,9 +157,7 @@ namespace globed {
 const char* getIosTeamId();
 
 static Future<Result<std::string>> startArgonAuth() {
-    auto task = argon::startAuthWithAccount(g_argonData);
-    GeodeTaskAwaiter awaiter{task};
-    co_return co_await awaiter;
+    return argon::startAuth(g_argonData);
 }
 
 static void updateServers(ConnectionInfo& info, auto& newServers) {
@@ -258,19 +199,10 @@ WorkerState createWorkerState() {
     return WorkerState{std::move(tx), std::move(rx)};
 }
 
-NetworkManagerImpl::NetworkManagerImpl() : m_runtime(Runtime::create(2)), m_workerState(createWorkerState()) {
+NetworkManagerImpl::NetworkManagerImpl() : m_runtime(async::runtime().weakFromThis()), m_workerState(createWorkerState()) {
     m_hasSecure = bb_init();
 
-    m_runtime->setTerminateHandler([](const std::exception& e) {
-        utils::terminate(fmt::format(
-            "arc runtime terminated due to unhandled exception: {}",
-            e.what()
-        ));
-    });
-
-    m_runtime->spawn([](auto* self) -> arc::Future<> {
-        co_await self->asyncInit();
-    }(this));
+    async::spawn(this->asyncInit());
 }
 
 NetworkManagerImpl::~NetworkManagerImpl() {
@@ -295,23 +227,25 @@ void NetworkManagerImpl::shutdown() {
     m_gameConn->disconnect();
 
     // allow some short cleanup
-    (void) m_runtime->blockOn(
-        arc::timeout(
-            Duration::fromMillis(100),
-            [&](this auto self) -> arc::Future<> {
-                while (true) {
-                    auto cs = m_centralConn->state();
-                    auto gs = m_gameConn->state();
+    if (auto rt = m_runtime.upgrade()) {
+        (void) rt->blockOn(
+            arc::timeout(
+                Duration::fromMillis(100),
+                [&](this auto self) -> arc::Future<> {
+                    while (true) {
+                        auto cs = m_centralConn->state();
+                        auto gs = m_gameConn->state();
 
-                    if (cs == gs && cs == qn::ConnectionState::Disconnected) {
-                        break;
+                        if (cs == gs && cs == qn::ConnectionState::Disconnected) {
+                            break;
+                        }
+
+                        co_await notify.notified();
                     }
-
-                    co_await notify.notified();
-                }
-            }()
-        )
-    );
+                }()
+            )
+        );
+    }
 
     m_centralConn->destroy();
     m_gameConn->destroy();
@@ -322,8 +256,7 @@ void NetworkManagerImpl::shutdown() {
     m_gameLogger.reset();
     m_gameServerJoinTx.reset();
 
-    m_runtime->safeShutdown();
-    m_runtime.reset();
+    m_runtime = {};
 
     log::debug("network cleanup finished!");
 }
@@ -951,7 +884,7 @@ Result<> NetworkManagerImpl::sendMessageToConnection(
     return Ok();
 }
 
-void NetworkManagerImpl::sendToCentral(std23::function_ref<void(CentralMessage::Builder&)>&& func) {
+void NetworkManagerImpl::sendToCentral(geode::FunctionRef<void(CentralMessage::Builder&)>&& func) {
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<CentralMessage>();
     func(root);
@@ -963,7 +896,7 @@ void NetworkManagerImpl::sendToCentral(std23::function_ref<void(CentralMessage::
     }
 }
 
-void NetworkManagerImpl::sendToGame(std23::function_ref<void(GameMessage::Builder&)>&& func, bool reliable, bool uncompressed) {
+void NetworkManagerImpl::sendToGame(geode::FunctionRef<void(GameMessage::Builder&)>&& func, bool reliable, bool uncompressed) {
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<GameMessage>();
     func(root);

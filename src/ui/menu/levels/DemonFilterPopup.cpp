@@ -6,9 +6,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize DemonFilterPopup::POPUP_SIZE { 300.f, 114.f };
+bool DemonFilterPopup::init(const LevelListLayer::Filters& filters) {
+    if (!BasePopup::init(300.f, 114.f)) return false;
 
-bool DemonFilterPopup::setup(const LevelListLayer::Filters& filters) {
     using enum Difficulty;
 
     m_demonTypes = filters.demonDifficulty;
@@ -121,6 +121,16 @@ void DemonFilterPopup::onClose(CCObject* o) {
     if (m_callback) {
         m_callback(m_isFilteringGeneral || !m_demonTypes.empty(), std::move(m_demonTypes));
     }
+}
+
+DemonFilterPopup* DemonFilterPopup::create(const LevelListLayer::Filters& filters) {
+    auto ret = new DemonFilterPopup;
+    if (ret->init(filters)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

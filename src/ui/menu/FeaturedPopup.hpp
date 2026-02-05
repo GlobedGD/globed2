@@ -8,14 +8,14 @@
 
 namespace globed {
 
-class FeaturedPopup : public BasePopup<FeaturedPopup> {
+class FeaturedPopup : public BasePopup {
 public:
-    static const CCSize POPUP_SIZE;
+    static FeaturedPopup* create();
 
 private:
     FeaturedLevelCell* m_cell;
 
-    bool setup();
+    bool init();
 };
 
 }

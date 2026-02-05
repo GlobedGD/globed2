@@ -4,7 +4,7 @@
 #include <modules/scripting/objects/FireServerObject.hpp>
 
 #include <Geode/Geode.hpp>
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 

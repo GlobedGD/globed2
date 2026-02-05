@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
-#include <std23/move_only_function.h>
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 
@@ -11,14 +11,14 @@ class HoldableButton : public cocos2d::CCMenuItemSprite {
 public:
     static HoldableButton* create(
         cocos2d::CCSprite* sprite,
-        std23::move_only_function<void(HoldableButton*)> onClick,
-        std23::move_only_function<void(HoldableButton*)> onHold
+        geode::Function<void(HoldableButton*)> onClick,
+        geode::Function<void(HoldableButton*)> onHold
     );
 
     static HoldableButton* create(
         const char* spriteName,
-        std23::move_only_function<void(HoldableButton*)> onClick,
-        std23::move_only_function<void(HoldableButton*)> onHold
+        geode::Function<void(HoldableButton*)> onClick,
+        geode::Function<void(HoldableButton*)> onHold
     ) {
         return create(
             cocos2d::CCSprite::create(spriteName),
@@ -29,8 +29,8 @@ public:
 
     static HoldableButton* createWithSpriteFrameName(
         const char* spriteName,
-        std23::move_only_function<void(HoldableButton*)> onClick,
-        std23::move_only_function<void(HoldableButton*)> onHold
+        geode::Function<void(HoldableButton*)> onClick,
+        geode::Function<void(HoldableButton*)> onHold
     ) {
         return create(
             cocos2d::CCSprite::createWithSpriteFrameName(spriteName),
@@ -51,16 +51,16 @@ public:
     void setScaleMult(float mult);
 
 private:
-    std23::move_only_function<void(HoldableButton*)> m_onClick;
-    std23::move_only_function<void(HoldableButton*)> m_onHold;
+    geode::Function<void(HoldableButton*)> m_onClick;
+    geode::Function<void(HoldableButton*)> m_onHold;
     float m_holdThreshold = 0.5f;
     float m_scaleMult = 1.2f;
     bool m_shortHold = false;
 
     bool init(
         cocos2d::CCSprite* sprite,
-        std23::move_only_function<void(HoldableButton*)> onClick,
-        std23::move_only_function<void(HoldableButton*)> onHold
+        geode::Function<void(HoldableButton*)> onClick,
+        geode::Function<void(HoldableButton*)> onHold
     );
 
     void rescaleTo(float s);

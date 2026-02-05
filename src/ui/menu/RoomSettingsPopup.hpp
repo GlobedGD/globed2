@@ -9,15 +9,16 @@
 
 namespace globed {
 
-class RoomSettingsPopup : public BasePopup<RoomSettingsPopup> {
+class RoomSettingsPopup : public BasePopup {
 public:
     static const cocos2d::CCSize POPUP_SIZE;
     static const cocos2d::CCSize LIST_SIZE;
+    static RoomSettingsPopup* create();
 
 protected:
     cue::ListNode* m_list;
 
-    bool setup() override;
+    bool init() override;
 
     CCNode* makeCell(
         CStr name,

@@ -4,14 +4,15 @@
 #include <globed/core/data/UserPunishment.hpp>
 #include <ui/BasePopup.hpp>
 
+#include <Geode/utils/function.hpp>
 #include <cue/ListNode.hpp>
 
 namespace globed {
 
-class ModPunishReasonsPopup : public BasePopup<ModPunishReasonsPopup, UserPunishmentType> {
+class ModPunishReasonsPopup : public BasePopup {
 public:
-    static constexpr CCSize POPUP_SIZE { 400.f, 260.f };
-    using Callback = std23::move_only_function<void(const std::string&)>;
+    static ModPunishReasonsPopup* create(UserPunishmentType type);
+    using Callback = geode::Function<void(const std::string&)>;
 
     inline void setCallback(Callback&& cb) {
         m_callback = std::move(cb);
@@ -37,7 +38,7 @@ private:
     cue::ListNode* m_customList;
     UserPunishmentType m_type;
 
-    bool setup(UserPunishmentType type) override;
+    bool init(UserPunishmentType type);
     void toggleCustomReasons(bool custom);
     cue::ListNode* makeList(std::span<std::string> reasons, bool custom);
     std::vector<std::string> getCustomReasons();

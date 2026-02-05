@@ -9,7 +9,7 @@
 using namespace geode::prelude;
 
 namespace globed {
-const CCSize KeybindsPopup::POPUP_SIZE { 400.f, 280.f };
+
 static constexpr CCSize LIST_SIZE { 340.f, 220.f };
 static constexpr float CELL_HEIGHT = 26.f;
 
@@ -119,7 +119,9 @@ protected:
 };
 }
 
-bool KeybindsPopup::setup() {
+bool KeybindsPopup::init() {
+    if (!BasePopup::init(400.f, 280.f)) return false;
+
     this->setTitle("Keybind Settings");
 
     KeybindsManager::get().refreshBinds();
@@ -165,6 +167,16 @@ bool KeybindsPopup::setup() {
     EMOTE_CELL("7", "8")
 
     return true;
+}
+
+KeybindsPopup* KeybindsPopup::create() {
+    auto ret = new KeybindsPopup;
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

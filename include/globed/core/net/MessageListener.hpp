@@ -5,9 +5,7 @@
 #include <globed/core/data/PlayerDisplayData.hpp>
 
 #include <cstring>
-#ifdef GLOBED_API_EXT_FUNCTIONS
-# include <std23/move_only_function.h>
-#endif
+#include <Geode/utils/function.hpp>
 
 namespace globed {
 
@@ -19,7 +17,7 @@ enum class ListenerResult {
 };
 
 template <typename T>
-using ListenerFn = std23::move_only_function<ListenerResult (const T&)>;
+using ListenerFn = geode::Function<ListenerResult (const T&)>;
 
 struct MessageListenerImplBase {
     int m_priority = 0;

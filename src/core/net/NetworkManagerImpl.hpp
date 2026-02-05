@@ -19,11 +19,12 @@
 #include <arc/sync/mpsc.hpp>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
-#include <std23/function_ref.h>
+#include <Geode/utils/function.hpp>
 #include "data/generated.hpp"
 #include <qunet/Connection.hpp>
 #include <qunet/Log.hpp>
 #include <Geode/Result.hpp>
+#include <Geode/utils/async.hpp>
 #include <typeindex>
 
 namespace globed {
@@ -328,7 +329,7 @@ private:
         Utoken, Argon, Plain
     };
 
-    std::shared_ptr<arc::Runtime> m_runtime;
+    asp::WeakPtr<arc::Runtime> m_runtime;
     std::shared_ptr<qn::Connection> m_centralConn, m_gameConn;
     arc::Notify m_workerNotify, m_gameWorkerNotify;
     WorkerState m_workerState;
@@ -365,8 +366,8 @@ private:
 
     void sendCentralAuth(AuthKind kind, const std::string& token = "");
     Result<> sendMessageToConnection(qn::Connection& conn, std::optional<ConnectionLogger>& logger, capnp::MallocMessageBuilder& msg, bool reliable, bool uncompressed);
-    void sendToCentral(std23::function_ref<void(CentralMessage::Builder&)>&& func);
-    void sendToGame(std23::function_ref<void(GameMessage::Builder&)>&& func, bool reliable = true, bool uncompressed = false);
+    void sendToCentral(geode::FunctionRef<void(CentralMessage::Builder&)>&& func);
+    void sendToGame(geode::FunctionRef<void(GameMessage::Builder&)>&& func, bool reliable = true, bool uncompressed = false);
 
     // Returns the user token for the current central server
     std::optional<std::string> getUToken();

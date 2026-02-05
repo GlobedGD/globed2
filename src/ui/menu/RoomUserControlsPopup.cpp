@@ -12,9 +12,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize RoomUserControlsPopup::POPUP_SIZE{ 185.f, 90.f };
+bool RoomUserControlsPopup::init(int id, std::string_view username) {
+    if (!BasePopup::init(185.f, 90.f)) return false;
 
-bool RoomUserControlsPopup::setup(int id, std::string_view username) {
     m_username = username;
     m_accountId = id;
     this->setTitle("User room actions");
@@ -99,6 +99,16 @@ void RoomUserControlsPopup::remakeButtons() {
     }
 
     m_menu->updateLayout();
+}
+
+RoomUserControlsPopup* RoomUserControlsPopup::create(int accountId, std::string_view username) {
+    auto ret = new RoomUserControlsPopup;
+    if (ret->init(accountId, username)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

@@ -8,9 +8,9 @@
 
 namespace globed {
 
-class UserListPopup : public BasePopup<UserListPopup> {
+class UserListPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static UserListPopup* create();
 
     void hardRefresh();
 
@@ -21,7 +21,7 @@ private:
     asp::time::Instant m_lastKeystroke;
     bool m_needsFilterUpdate = false;
 
-    bool setup() override;
+    bool init() override;
     void update(float dt) override;
     void onVolumeChanged(double value);
 };

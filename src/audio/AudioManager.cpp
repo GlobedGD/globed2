@@ -13,6 +13,7 @@
 #include <asp/time/sleep.hpp>
 
 using namespace geode::prelude;
+using enum std::memory_order;
 namespace permission = geode::utils::permission;
 using permission::Permission;
 
@@ -149,7 +150,7 @@ std::optional<AudioRecordingDevice> AudioManager::getRecordingDevice(int deviceI
     device.id = deviceId;
     device.name = std::string(name);
 
-    if (!m_loopbacksAllowed && (
+    if (!m_loopbacksAllowed.load(relaxed) && (
         device.name.find("[loopback]") != std::string::npos
         || device.name.find("(loopback)") != std::string::npos
         || device.name.find("Monitor of") != std::string::npos
@@ -202,22 +203,22 @@ void AudioManager::setRecordBufferCapacity(size_t frames) {
 }
 
 Result<> AudioManager::startRecordingEncoded(
-    std23::move_only_function<void(const EncodedAudioFrame&)>&& encodedCallback
+    geode::Function<void(const EncodedAudioFrame&)>&& encodedCallback
 ) {
     GEODE_UNWRAP(this->startRecordingInternal());
     m_callback = std::move(encodedCallback);
     m_rawCallback = nullptr;
-    m_recordingRaw = false;
+    m_recordingRaw.store(false, relaxed);
     return Ok();
 }
 
 Result<> AudioManager::startRecordingRaw(
-    std23::move_only_function<void(const float*, size_t)>&& rawCallback
+    geode::Function<void(const float*, size_t)>&& rawCallback
 ) {
     GEODE_UNWRAP(this->startRecordingInternal());
     m_rawCallback = std::move(rawCallback);
     m_callback = nullptr;
-    m_recordingRaw = true;
+    m_recordingRaw.store(true, relaxed);
     return Ok();
 }
 
@@ -230,7 +231,7 @@ Result<> AudioManager::startRecordingInternal() {
         return Err("No recording device selected");
     }
 
-    if (this->isRecording() || m_recordActive) {
+    if (this->isRecording() || m_recordActive.load(relaxed)) {
         return Err("Already recording");
     }
 
@@ -267,21 +268,21 @@ Result<> AudioManager::startRecordingInternal() {
 
     FMOD_ERRC(res, "FMOD::System::recordStart");
 
-    m_recordQueuedStop = false;
-    m_recordQueuedHalt = false;
+    m_recordQueuedStop.store(false, relaxed);
+    m_recordQueuedHalt.store(false, relaxed);
     m_recordLastPosition = 0;
-    m_recordActive = true;
+    m_recordActive.store(true, relaxed);
 
     return Ok();
 }
 
 void AudioManager::stopRecording() {
-    m_recordQueuedStop = true;
+    m_recordQueuedStop.store(true, relaxed);
 }
 
 void AudioManager::haltRecording() {
-    m_recordQueuedHalt = true;
-    m_recordQueuedStop = true;
+    m_recordQueuedHalt.store(true, relaxed);
+    m_recordQueuedStop.store(true, relaxed);
 }
 
 bool AudioManager::isRecording() {
@@ -289,8 +290,8 @@ bool AudioManager::isRecording() {
         return false;
     }
 
-    if (m_recordActive && m_recordingPassive) {
-        return m_recordingPassiveActive;
+    if (m_recordActive.load(relaxed) && m_recordingPassive.load(relaxed)) {
+        return m_recordingPassiveActive.load(relaxed);
     }
 
     bool recording;
@@ -301,19 +302,19 @@ bool AudioManager::isRecording() {
         return false;
     }
 
-    return recording && m_recordActive;
+    return recording && m_recordActive.load(relaxed);
 }
 
 void AudioManager::setPassiveMode(bool passive) {
-    m_recordingPassive = passive;
+    m_recordingPassive.store(passive, relaxed);
 }
 
 void AudioManager::resumePassiveRecording() {
-    m_recordingPassiveActive = true;
+    m_recordingPassiveActive.store(true, relaxed);
 }
 
 void AudioManager::pausePassiveRecording() {
-    m_recordingPassiveActive = false;
+    m_recordingPassiveActive.store(false, relaxed);
 }
 
 Result<FMOD::Channel*> AudioManager::playSound(FMOD::Sound* sound) {
@@ -345,7 +346,7 @@ void AudioManager::setActiveRecordingDevice(const AudioRecordingDevice& device) 
 }
 
 void AudioManager::toggleLoopbacksAllowed(bool allowed) {
-    m_loopbacksAllowed = allowed;
+    m_loopbacksAllowed.store(allowed, relaxed);
 }
 
 FMOD::System* AudioManager::getSystem() {
@@ -464,27 +465,26 @@ int AudioManager::getFocusedPlayer() {
 
 void AudioManager::audioThreadFunc(decltype(m_thread)::StopToken&) {
     // if we are not recording right now, sleep
-    if (!m_recordActive) {
+    if (!m_recordActive.load(relaxed)) {
         m_thrSleeping = true;
         asp::time::sleep(asp::time::Duration::fromMillis(5));
         return;
     }
 
     // if someone queued us to stop recording, back to sleeping
-    if (m_recordQueuedStop) {
-        m_recordQueuedStop = true;
-        m_thrSleeping = true;
+    if (m_recordQueuedStop.load(relaxed)) {
+        m_thrSleeping.store(true, relaxed);
         this->internalStopRecording();
         return;
     }
 
-    m_thrSleeping = false;
+    m_thrSleeping.store(false, relaxed);
 
     auto result = this->audioThreadWork();
 
     if (!result) {
         globed::toastError("{}", result.unwrapErr());
-        m_thrSleeping = true;
+        m_thrSleeping.store(true, relaxed);
         this->internalStopRecording();
     }
 }
@@ -497,9 +497,8 @@ void AudioManager::internalStopRecording(bool ignoreErrors) {
     }
 
     // if halting instead of stopping, don't call the callback
-    if (m_recordQueuedHalt) {
+    if (m_recordQueuedHalt.exchange(false, relaxed)) {
         m_recordFrame.clear();
-        m_recordQueuedHalt = false;
     } else {
         // call the callback if there's any audio leftover
         this->recordInvokeCallback();
@@ -510,9 +509,9 @@ void AudioManager::internalStopRecording(bool ignoreErrors) {
     m_rawCallback = [](const auto*, auto) {};
     m_recordLastPosition = 0;
     m_recordChunkSize = 0;
-    m_recordingRaw = false;
-    m_recordingPassive = false;
-    m_recordingPassiveActive = false;
+    m_recordingRaw.store(false, relaxed);
+    m_recordingPassive.store(false, relaxed);
+    m_recordingPassiveActive.store(false, relaxed);
     m_recordQueue.clear();
 
     if (m_recordSound) {
@@ -520,8 +519,8 @@ void AudioManager::internalStopRecording(bool ignoreErrors) {
         m_recordSound = nullptr;
     }
 
-    m_recordActive = false;
-    m_recordQueuedStop = false;
+    m_recordActive.store(false, relaxed);
+    m_recordQueuedStop.store(false, relaxed);
 }
 
 Result<> AudioManager::audioThreadWork() {
@@ -546,7 +545,7 @@ Result<> AudioManager::audioThreadWork() {
     );
 
     // don't write any data if we are in passive recording and not currently recording
-    if (!m_recordingPassive || m_recordingPassiveActive) {
+    if (!m_recordingPassive.load(relaxed) || m_recordingPassiveActive.load(relaxed)) {
         if (pos > m_recordLastPosition) {
             m_recordQueue.writeData(pcmData + m_recordLastPosition, pos - m_recordLastPosition);
         } else if (pos < m_recordLastPosition) { // we reached the end of the buffer
@@ -565,7 +564,7 @@ Result<> AudioManager::audioThreadWork() {
         "Sound::unlock"
     );
 
-    if (m_recordingRaw) {
+    if (m_recordingRaw.load(relaxed)) {
         size_t samples = m_recordQueue.size();
 
         // raw recording, call the raw callback with the pcm data directly.
@@ -579,7 +578,7 @@ Result<> AudioManager::audioThreadWork() {
 
         m_recordQueue.clear();
     } else {
-        bool stoppedPassive = m_recordingPassive && !m_recordingPassiveActive;
+        bool stoppedPassive = m_recordingPassive.load(relaxed) && !m_recordingPassiveActive.load(relaxed);
         // encoded recording, encode the data and push to the frame.
         if (m_recordQueue.size() >= VOICE_TARGET_FRAMESIZE || stoppedPassive) {
             float pcmbuf[VOICE_TARGET_FRAMESIZE];

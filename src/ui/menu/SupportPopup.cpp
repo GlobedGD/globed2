@@ -11,9 +11,13 @@ using namespace geode::prelude;
 
 namespace globed {
 
-CCSize SupportPopup::POPUP_SIZE {};
+bool SupportPopup::init() {
+    auto bg = CCSprite::create("kofi-promo-border.png"_spr);
+    float scaleMult = std::min(1.5f, (CCDirector::get()->getWinSize().width - 35.f) / bg->getContentWidth());
+    bg->setScale(scaleMult);
 
-bool SupportPopup::setup(CCSprite* bg) {
+    if (!BasePopup::init(bg->getScaledContentSize())) return false;
+
     this->setID("GlobedKofiPopup"_spr);
 
     m_bgSprite->removeFromParent();
@@ -222,12 +226,13 @@ void SupportPopup::kofiEnableParticlesCallback2(float dt) {
 }
 
 SupportPopup* SupportPopup::create() {
-    auto bg = CCSprite::create("kofi-promo-border.png"_spr);
-    float scaleMult = std::min(1.5f, (CCDirector::get()->getWinSize().width - 35.f) / bg->getContentWidth());
-    bg->setScale(scaleMult);
-    POPUP_SIZE = bg->getScaledContentSize();
-
-    return BasePopup::create(bg);
+    auto ret = new SupportPopup;
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

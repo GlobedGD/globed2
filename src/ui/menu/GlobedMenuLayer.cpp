@@ -1313,7 +1313,7 @@ void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
     m_connectMenuBg->setVisible(true);
 }
 
-void GlobedMenuLayer::keyDown(enumKeyCodes key) {
+void GlobedMenuLayer::keyDown(enumKeyCodes key, double x) {
 #ifdef GLOBED_DEBUG
     bool showDebug = true;
 #else
@@ -1325,7 +1325,7 @@ void GlobedMenuLayer::keyDown(enumKeyCodes key) {
         this->handleDebugKey(key);
     }
 
-    BaseLayer::keyDown(key);
+    BaseLayer::keyDown(key, x);
 }
 
 void GlobedMenuLayer::handleDebugKey(cocos2d::enumKeyCodes key) {

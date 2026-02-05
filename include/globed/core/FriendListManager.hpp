@@ -2,7 +2,6 @@
 
 #include <globed/util/singleton.hpp>
 #include <asp/sync/Mutex.hpp>
-#include <asp/sync/Atomic.hpp>
 #include <Geode/Bindings.hpp>
 
 namespace globed {
@@ -20,7 +19,7 @@ public:
 
 private:
     friend class SingletonNodeBase;
-    asp::AtomicBool m_fetched = false;
+    bool m_fetched = false;
     enum LoadStep {
         None,
         Friends,

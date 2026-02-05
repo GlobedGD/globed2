@@ -49,7 +49,7 @@ public:
 
 private:
     AudioDecoder m_decoder;
-    asp::AtomicBool m_starving = true; // true if there aren't enough samples in the queue
+    std::atomic<bool> m_starving = true; // true if there aren't enough samples in the queue
     asp::Mutex<AudioSampleQueue> m_queue;
     asp::Mutex<VolumeEstimator> m_estimator;
     asp::time::Instant m_lastPlaybackTime;

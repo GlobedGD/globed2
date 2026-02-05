@@ -9,8 +9,8 @@ constexpr int ACTION_TAG = 83487329;
 
 bool HoldableButton::init(
     cocos2d::CCSprite* sprite,
-    std23::move_only_function<void(HoldableButton*)> onClick,
-    std23::move_only_function<void(HoldableButton*)> onHold
+    geode::Function<void(HoldableButton*)> onClick,
+    geode::Function<void(HoldableButton*)> onHold
 ) {
     if (!CCMenuItemSprite::initWithNormalSprite(sprite, nullptr, nullptr, this, nullptr)) {
         return false;
@@ -91,8 +91,8 @@ void HoldableButton::setHoldThreshold(float seconds) {
 
 HoldableButton* HoldableButton::create(
     CCSprite* sprite,
-    std23::move_only_function<void(HoldableButton*)> onClick,
-    std23::move_only_function<void(HoldableButton*)> onHold
+    geode::Function<void(HoldableButton*)> onClick,
+    geode::Function<void(HoldableButton*)> onHold
 ) {
     auto ret = new HoldableButton();
     if (ret->init(sprite, std::move(onClick), std::move(onHold))) {
