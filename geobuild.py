@@ -19,7 +19,7 @@ import sys
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
-QUNET_VERSION = "aecafd3"
+QUNET_VERSION = "6c1221f"
 SERVER_SHARED_VERSION = "6282374"
 CUE_VERSION = "ae3ee0b"
 
@@ -246,9 +246,6 @@ def main(build: Build):
         build.add_definition("GLOBED_VOICE_SUPPORT", "1")
         if config.platform.is_windows():
             build.add_definition("GLOBED_VOICE_CAN_TALK", "1")
-
-    # pugixml options
-    build.set_cache_variable("GEODE_CODEGEN_EXTRA_ARGS", "--skip-pugixml", force=True)
 
     # Add geode dependencies
     build.enable_mod_json_generation("mod.json.template")
