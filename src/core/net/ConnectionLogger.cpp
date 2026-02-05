@@ -78,6 +78,7 @@ Future<> ConnectionLogger::setup(std::filesystem::path path) {
 
         co_return;
     }(this, std::move(pRx), std::move(tRx)));
+    m_handle->setName("[Globed] ConnectionLogger");
 
     this->resetInternal();
 

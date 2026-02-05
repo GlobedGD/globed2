@@ -354,17 +354,17 @@ Future<> NetworkManagerImpl::asyncInit() {
     });
 
     // Spawn the main worker tasks
-    arc::spawn([](auto* self) -> arc::Future<> {
+    async::spawn([this] -> arc::Future<> {
         while (true) {
-            co_await self->threadWorkerLoop();
+            co_await this->threadWorkerLoop();
         }
-    }(this));
+    }).setName("[Globed] Main Net Worker");
 
-    arc::spawn([](auto* self) -> arc::Future<> {
+    async::spawn([this] -> arc::Future<> {
         while (true) {
-            co_await self->threadGameWorkerLoop();
+            co_await this->threadGameWorkerLoop();
         }
-    }(this));
+    }).setName("[Globed] Game Net Worker");
 }
 
 void NetworkManagerImpl::initializeTls() {
@@ -986,6 +986,12 @@ void NetworkManagerImpl::dumpNetworkStats() {
     describe(m_centralConn->statSnapshotFull());
     log::info("==== Game connection stats =====");
     describe(m_gameConn->statSnapshotFull());
+    log::info("===== Async runtime stats ======");
+    for (auto& task : async::runtime().getTaskStats()) {
+        auto name = task->name();
+        log::info("- {}: {} polls, {} runtime", name.empty() ? "<unnamed>" : name, task->totalPolls(), task->totalRuntime().toString());
+    }
+
     log::info("================================");
 }
 

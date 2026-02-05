@@ -19,7 +19,7 @@ import sys
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v4.10.0"
-QUNET_VERSION = "16c289f"
+QUNET_VERSION = "aecafd3"
 SERVER_SHARED_VERSION = "6282374"
 CUE_VERSION = "ae3ee0b"
 
@@ -314,7 +314,7 @@ def main(build: Build):
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
     build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static")
-    build.add_cpm_dep("GlobedGD/argon", "v1.4.1")
+    build.add_cpm_dep("GlobedGD/argon", "v1.4.2")
     build.add_cpm_dep("Prevter/sinaps", "2541d6d")
     build.add_cpm_dep("Prevter/AdvancedLabel", "e8903a3", link_name="advanced_label")
 
