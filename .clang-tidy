@@ -1,0 +1,44 @@
+Checks: >
+  clang-analyzer-*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-macro-parentheses,
+  -bugprone-crtp-constructor-accessibility,
+  performance-*,
+  readability-const-return-type,
+  readability-redundant-smartptr-get,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-use-default-member-init,
+  modernize-use-using,
+  modernize-loop-convert,
+  modernize-pass-by-value
+  bugprone-copy-constructor-init,
+  bugprone-dangling-handle,
+  bugprone-integer-division,
+  bugprone-sizeof-expression,
+  bugprone-suspicious-missing-comma,
+  -performance-unnecessary-value-param,
+  -performance-enum-size,
+  -performance-no-int-to-ptr,
+  -performance-move-const-arg,
+  -modernize-use-using,
+  -modernize-use-override,
+  -clang-diagnostic-unsafe-buffer-usage,
+  -clang-analyzer-security.*,
+  performance-unnecessary-copy-initialization,
+  performance-for-range-copy,
+  performance-inefficient-string-concatenation
+  readability-const-return-type,
+  readability-simplify-boolean-expr,
+  readability-redundant-member-init
+  cppcoreguidelines-narrowing-conversions,
+
+  # cppcoreguidelines-special-member-functions
+
+HeaderFilterRegex: '.*/globed/.*'
+
+CheckOptions:
+  - key: performance-move-const-arg.CheckTriviallyCopyableMove
+    value: false
