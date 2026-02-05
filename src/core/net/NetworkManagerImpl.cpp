@@ -2375,3 +2375,9 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
 }
 
 }
+
+$on_mod(Loaded) {
+    GameEvent(GameEventType::Exiting).listen([] {
+        globed::NetworkManagerImpl::get().shutdown();
+    }, -10).leak();
+}
