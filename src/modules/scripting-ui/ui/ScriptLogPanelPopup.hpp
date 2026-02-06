@@ -9,9 +9,9 @@
 
 namespace globed {
 
-class ScriptLogPanelPopup : public BasePopup<ScriptLogPanelPopup> {
+class ScriptLogPanelPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
+    static ScriptLogPanelPopup* create();
 
 private:
     CodeEditor* m_editor;
@@ -22,7 +22,7 @@ private:
     bool m_graphShown = false;
     std::optional<MessageListener<msg::ScriptLogsMessage>> m_listener;
 
-    bool setup() override;
+    bool init() override;
     void toggleGraphShown(bool graph);
     void refresh();
     void refreshGraph(const std::deque<std::pair<asp::time::SystemTime, float>>& queue);

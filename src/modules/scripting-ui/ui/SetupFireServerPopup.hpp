@@ -8,12 +8,9 @@
 
 namespace globed {
 
-class SetupFireServerPopup : public BasePopup<SetupFireServerPopup, FireServerObject*> {
-    friend class BasePopup;
-    static const cocos2d::CCSize POPUP_SIZE;
-
+class SetupFireServerPopup : public BasePopup {
 public:
-    bool setup(FireServerObject* obj) override;
+    static SetupFireServerPopup* create(FireServerObject* obj);
 
 private:
     FireServerObject* m_object;
@@ -24,6 +21,7 @@ private:
     CCNode* m_multiTriggerNode;
     bool m_invalidEventId = false;
 
+    bool init(FireServerObject* obj);
     void onClose(CCObject*) override;
 
     CCNode* createParam(size_t idx, int value);

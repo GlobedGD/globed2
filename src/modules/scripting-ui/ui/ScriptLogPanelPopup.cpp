@@ -12,11 +12,11 @@ using namespace asp::time;
 
 namespace globed {
 
-const CCSize ScriptLogPanelPopup::POPUP_SIZE {460.f, 300.f};
 static const CCSize GRAPH_SIZE {400.f, 240.f};
 
+bool ScriptLogPanelPopup::init() {
+    if (!BasePopup::init(460.f, 300.f)) return false;
 
-bool ScriptLogPanelPopup::setup() {
     m_editor = Build(CodeEditor::create({400.f, 240.f}))
         .pos(this->fromCenter(0.f, 10.f))
         .parent(m_mainLayer);
@@ -228,6 +228,16 @@ void ScriptLogPanelPopup::refreshGraph(const std::deque<std::pair<asp::time::Sys
         // auto timeDelta = (b.first - a.first).value_or(Duration::fromMillis(1));
         // float t = (float)estPassed.micros() / timeDelta.micros();
     }
+}
+
+ScriptLogPanelPopup* ScriptLogPanelPopup::create() {
+    auto ret = new ScriptLogPanelPopup();
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

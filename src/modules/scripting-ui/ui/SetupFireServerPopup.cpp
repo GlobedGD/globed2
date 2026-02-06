@@ -8,9 +8,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize SetupFireServerPopup::POPUP_SIZE {400.f, 270.f};
+bool SetupFireServerPopup::init(FireServerObject* obj) {
+    if (!BasePopup::init(400.f, 270.f)) return false;
 
-bool SetupFireServerPopup::setup(FireServerObject* obj) {
     m_object = obj;
     m_payload = this->getPayload();
 
@@ -24,7 +24,7 @@ bool SetupFireServerPopup::setup(FireServerObject* obj) {
         .anchorPoint(0.f, 0.5f)
         .pos(this->fromLeft({2.f, 8.f}))
         .layout(ColumnLayout::create()->setGap(-2.f)->setAxisReverse(true))
-        .contentSize(POPUP_SIZE.width * 0.8f, POPUP_SIZE.height * 0.75f)
+        .contentSize(m_size.width * 0.8f, m_size.height * 0.75f)
         .parent(m_mainLayer)
         .id("root-node")
         .collect();
@@ -84,7 +84,7 @@ bool SetupFireServerPopup::setup(FireServerObject* obj) {
     Build<CCNode>::create()
         .layout(RowLayout::create()->setGap(5.f))
         .anchorPoint(0.5f, 0.5f)
-        .contentSize(POPUP_SIZE.width * 0.4f, 24.f)
+        .contentSize(m_size.width * 0.4f, 24.f)
         .child(spawnTrigger)
         .child(touchTrigger)
         .pos(this->fromBottomLeft(88.f, 22.f))
@@ -178,7 +178,7 @@ CCNode* SetupFireServerPopup::createInputBox(size_t idx, int value) {
 
     auto menu = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(7.5f)->setAutoScale(false))
-        .contentSize(POPUP_SIZE.width * 0.8f, 50.f)
+        .contentSize(m_size.width * 0.8f, 50.f)
         .child(
             Build<CCSprite>::createSpriteName("edit_leftBtn_001.png")
                 .intoMenuItem([this, idx, input](auto) {
@@ -310,6 +310,16 @@ FireServerPayload SetupFireServerPopup::getPayload() {
     }
 
     return *payloadRes;
+}
+
+SetupFireServerPopup* SetupFireServerPopup::create(FireServerObject* obj) {
+    auto ret = new SetupFireServerPopup();
+    if (ret->init(obj)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }

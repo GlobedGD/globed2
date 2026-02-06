@@ -8,12 +8,9 @@
 
 namespace globed {
 
-class SetupEmbeddedScriptPopup : public BasePopup<SetupEmbeddedScriptPopup, TextGameObject*> {
-    friend class BasePopup;
-    static const cocos2d::CCSize POPUP_SIZE;
-
+class SetupEmbeddedScriptPopup : public BasePopup {
 public:
-    bool setup(TextGameObject* obj) override;
+    static SetupEmbeddedScriptPopup* create(TextGameObject* obj);
 
 private:
     TextGameObject* m_object;
@@ -24,6 +21,7 @@ private:
     bool m_madeChanges = false;
     CodeEditor* m_editor;
 
+    bool init(TextGameObject* obj);
     void onClose(CCObject*) override;
     void onUpload();
     void onPaste();

@@ -9,11 +9,10 @@ using namespace geode::prelude;
 
 namespace globed {
 
-const CCSize SetupEmbeddedScriptPopup::POPUP_SIZE {460.f, 300.f};
+bool SetupEmbeddedScriptPopup::init(TextGameObject* obj) {
+    if (!BasePopup::init(460.f, 300.f)) return false;
 
-bool SetupEmbeddedScriptPopup::setup(TextGameObject* obj) {
     auto& text = obj->m_text;
-
     m_object = obj;
 
     auto res = EmbeddedScript::decode(std::span{(uint8_t*) text.data(), text.size()});
@@ -43,7 +42,7 @@ bool SetupEmbeddedScriptPopup::setup(TextGameObject* obj) {
     // confirm / cancel buttons
     auto bottomMenu = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(3.f)->setAutoScale(false))
-        .contentSize(POPUP_SIZE.width, 60.f)
+        .contentSize(m_size.width, 60.f)
         .pos(this->fromBottom(27.f))
         .parent(m_mainLayer)
         .collect();
@@ -132,28 +131,33 @@ bool SetupEmbeddedScriptPopup::setup(TextGameObject* obj) {
 }
 
 void SetupEmbeddedScriptPopup::onUpload() {
-    auto task = geode::utils::file::pick(
-        file::PickMode::OpenFile,
-        file::FilePickOptions {
-            .filters = {{
-                .description = "Lua Script Files (*.lua)",
-                .files = {"*.lua"}
-            }}
+    async::spawn(
+        geode::utils::file::pick(
+            file::PickMode::OpenFile,
+            file::FilePickOptions {
+                .filters = {{
+                    .description = "Lua Script Files (*.lua)",
+                    .files = {"*.lua"}
+                }}
+            }
+        ),
+
+        [this](auto result) {
+            if (!result) {
+                log::info("Failed to upload file: {}", result.unwrapErr());
+                return;
+            }
+
+            auto opt = std::move(result).unwrap();
+            if (!opt) return;
+
+            auto res = this->loadCodeFromPath(*opt);
+
+            if (!res) {
+                globed::alertFormat("Error", "Failed to import the given file: {}", res.unwrapErr());
+            }
         }
     );
-
-    task.listen([this](Result<std::filesystem::path>* result) {
-        if (!result || !*result) {
-            log::info("Failed to upload file: {}", result->unwrapErr());
-            return;
-        }
-
-        auto res = this->loadCodeFromPath(**result);
-
-        if (!res) {
-            globed::alertFormat("Error", "Failed to import the given file: {}", res.unwrapErr());
-        }
-    });
 }
 
 void SetupEmbeddedScriptPopup::onPaste() {
@@ -207,6 +211,16 @@ void SetupEmbeddedScriptPopup::onClose(CCObject* obj) {
     }
 
     BasePopup::onClose(obj);
+}
+
+SetupEmbeddedScriptPopup* SetupEmbeddedScriptPopup::create(TextGameObject* obj) {
+    auto ret = new SetupEmbeddedScriptPopup();
+    if (ret->init(obj)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
 }
 
 }
