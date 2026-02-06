@@ -6,7 +6,7 @@
 #include <globed/core/ServerManager.hpp>
 #include <globed/core/FriendListManager.hpp>
 #include <globed/core/actions.hpp>
-#include <globed/util/Random.hpp>
+#include <Geode/utils/random.hpp>
 #include <globed/util/GameState.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
@@ -590,7 +590,7 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
         }
 
         // shuffle everything afterwards
-        rng::shuffle(firstNonFriend, sortedPlayers.end());
+        utils::random::shuffle(firstNonFriend, sortedPlayers.end());
     }
 
     this->addPinnedLevelCell();

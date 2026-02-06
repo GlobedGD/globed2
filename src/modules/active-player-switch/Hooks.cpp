@@ -1,7 +1,7 @@
 #include "Hooks.hpp"
 
 #include <globed/core/RoomManager.hpp>
-#include <globed/util/Random.hpp>
+#include <Geode/utils/random.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
@@ -108,7 +108,7 @@ void APSPlayLayer::handleEvent(const ActivePlayerSwitchEvent& event) {
     }
 
     if (fields.m_meActive) {
-        float delay = rng::generate(3.5f, 8.0f);
+        float delay = utils::random::generate(3.5f, 8.0f);
 
         auto scene = this->getParent();
         scene->scheduleOnce(schedule_selector(APSPlayLayer::performPreSwitchProxy), delay);
@@ -206,7 +206,7 @@ void APSPlayLayer::performPreSwitch() {
         return;
     }
 
-    size_t idx = rng::generate<size_t>(0, players.size() - 1);
+    size_t idx = utils::random::generate<size_t>(0, players.size() - 1);
 
     auto it = players.begin();
     std::advance(it, idx);

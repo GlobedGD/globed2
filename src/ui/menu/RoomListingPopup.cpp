@@ -3,7 +3,7 @@
 
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/PopupManager.hpp>
-#include <globed/util/Random.hpp>
+#include <Geode/utils/random.hpp>
 #include <ui/misc/InputPopup.hpp>
 #include <ui/misc/LoadingPopup.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -408,38 +408,38 @@ void RoomListingPopup::doRemoveCell(RoomListingCell* cell) {
 static std::vector<RoomListingInfo> makeFakeData() {
     std::vector<RoomListingInfo> rooms;
 
-    size_t count = rng::generate<size_t>(500, 1000);
+    size_t count = utils::random::generate<size_t>(500, 1000);
     for (size_t i = 0; i < count; i++) {
         rooms.push_back(RoomListingInfo {
-            .roomId = rng::generate<uint32_t>(100000, 999999),
+            .roomId = utils::random::generate<uint32_t>(100000, 999999),
             .roomName = fmt::format("Room {}", i + 1),
             .roomOwner = RoomPlayer {
                 MinimalRoomPlayer {
                     .accountData = PlayerAccountData {
-                        .accountId = rng::generate<int>(),
-                        .userId = rng::generate<int>(),
-                        .username = fmt::format("Player {}", rng::generate<int>(1, 1000000))
+                        .accountId = utils::random::generate<int>(),
+                        .userId = utils::random::generate<int>(),
+                        .username = fmt::format("Player {}", utils::random::generate<int>(1, 1000000))
                     },
-                    .cube = rng::generate<int16_t>(1, 484),
-                    .color1 = rng::generate<uint16_t>(1, 106),
-                    .color2 = rng::generate<uint16_t>(1, 106),
+                    .cube = utils::random::generate<int16_t>(1, 484),
+                    .color1 = utils::random::generate<uint16_t>(1, 106),
+                    .color2 = utils::random::generate<uint16_t>(1, 106),
                     .glowColor = NO_GLOW,
                 },
                 SessionId{},
             },
-            .playerCount = rng::generate<uint32_t>(1, 1000),
-            .hasPassword = rng::ratio(0.3),
+            .playerCount = utils::random::generate<uint32_t>(1, 1000),
+            .hasPassword = utils::random::chance(0.3),
             .settings = RoomSettings {
                 .serverId = 0,
-                .playerLimit = rng::ratio(0.1) ? rng::generate<uint16_t>(1, 2000) : (uint16_t)0,
-                .fasterReset = rng::generate<bool>(),
-                .hidden = rng::ratio(0.1),
-                .privateInvites = rng::ratio(0.2),
-                .isFollower = rng::ratio(0.2),
-                .levelIntegrity = rng::ratio(0.1),
-                .collision = rng::ratio(0.2),
-                .twoPlayerMode = rng::ratio(0.2),
-                .deathlink = rng::ratio(0.2),
+                .playerLimit = utils::random::chance(0.1) ? utils::random::generate<uint16_t>(1, 2000) : (uint16_t)0,
+                .fasterReset = utils::random::generate<bool>(),
+                .hidden = utils::random::chance(0.1),
+                .privateInvites = utils::random::chance(0.2),
+                .isFollower = utils::random::chance(0.2),
+                .levelIntegrity = utils::random::chance(0.1),
+                .collision = utils::random::chance(0.2),
+                .twoPlayerMode = utils::random::chance(0.2),
+                .deathlink = utils::random::chance(0.2),
             },
         });
     }
