@@ -5,8 +5,8 @@
 #include "sound/AudioSource.hpp"
 #include <globed/prelude.hpp>
 
+#include <Geode/utils/async.hpp>
 #include <asp/sync.hpp>
-#include <asp/thread.hpp>
 #include <fmod.hpp>
 
 namespace globed {
@@ -139,9 +139,10 @@ private:
 
     /* thread */
     std::atomic<bool> m_thrSleeping = true;
-    asp::Thread<AudioManager*> m_thread;
+    std::optional<arc::TaskHandle<void>> m_workerTask;
+    arc::Notify m_workerNotify;
 
-    void audioThreadFunc(decltype(m_thread)::StopToken&);
+    arc::Future<> threadFunc();
     Result<> audioThreadWork();
 
     Result<> startRecordingInternal();

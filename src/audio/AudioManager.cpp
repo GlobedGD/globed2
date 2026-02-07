@@ -10,7 +10,7 @@
 
 #include <fmod_errors.h>
 #include <Geode/utils/permission.hpp>
-#include <asp/time/sleep.hpp>
+#include <arc/time/Sleep.hpp>
 
 using namespace geode::prelude;
 using enum std::memory_order;
@@ -38,26 +38,8 @@ static float proximityVolumeMult(float distance) {
 AudioManager::AudioManager()
     : m_encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
 
-    m_thread.setLoopFunction(&AudioManager::audioThreadFunc);
-
-    // initializing COM is not necessary as FMOD will do it on its own, but FMOD docs recommend doing it anyway.
-    m_thread.setStartFunction([] {
-#ifdef GEODE_IS_WINDOWS
-        auto result = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-        if (result != S_OK) {
-            log::error("failed to initialize COM: {:X}", result);
-        }
-#endif
-    });
-
-#ifdef GEODE_IS_WINDOWS
-    m_thread.setTerminationFunction([] {
-        CoUninitialize();
-    });
-#endif
-
-    m_thread.setName("Audio Thread");
-    m_thread.start(this);
+    m_workerTask = async::spawn(this->threadFunc());
+    m_workerTask->setName("[Globed] Audio worker");
 
     m_recordDevice = AudioRecordingDevice{.id = -1};
 
@@ -71,7 +53,10 @@ AudioManager::AudioManager()
 }
 
 AudioManager::~AudioManager() {
-    m_thread.stopAndWait();
+    if (m_workerTask) {
+        m_workerTask->abort();
+        m_workerTask->blockOn();
+    }
 }
 
 void AudioManager::preInitialize() {
@@ -272,6 +257,7 @@ Result<> AudioManager::startRecordingInternal() {
     m_recordQueuedHalt.store(false, relaxed);
     m_recordLastPosition = 0;
     m_recordActive.store(true, relaxed);
+    m_workerNotify.notifyOne(true);
 
     return Ok();
 }
@@ -463,29 +449,40 @@ int AudioManager::getFocusedPlayer() {
 
 // Thread stuff
 
-void AudioManager::audioThreadFunc(decltype(m_thread)::StopToken&) {
-    // if we are not recording right now, sleep
-    if (!m_recordActive.load(relaxed)) {
-        m_thrSleeping = true;
-        asp::time::sleep(asp::time::Duration::fromMillis(5));
-        return;
-    }
+arc::Future<> AudioManager::threadFunc() {
+    auto notify = m_workerNotify;
+    
+    while (true) {
+        // if we are not recording right now, wait for something to happen
+        if (!m_recordActive.load(relaxed)) {
+            m_thrSleeping.store(true, relaxed);
+            co_await notify.notified();
+            continue;
+        }
 
-    // if someone queued us to stop recording, back to sleeping
-    if (m_recordQueuedStop.load(relaxed)) {
-        m_thrSleeping.store(true, relaxed);
-        this->internalStopRecording();
-        return;
-    }
+        // if someone queued us to stop recording, back to sleeping
+        if (m_recordQueuedStop.load(relaxed)) {
+            m_thrSleeping.store(true, relaxed);
+            this->internalStopRecording();
+            co_return;
+        }
+        
+        m_thrSleeping.store(false, relaxed);
+        
+        auto result = this->audioThreadWork();
 
-    m_thrSleeping.store(false, relaxed);
+        if (!result) {
+            log::warn("audioThreadWork failed: {}", result.unwrapErr());
 
-    auto result = this->audioThreadWork();
+            geode::queueInMainThread([result = std::move(result)] {
+                globed::toastError("{}", result.unwrapErr());
+            });
 
-    if (!result) {
-        globed::toastError("{}", result.unwrapErr());
-        m_thrSleeping.store(true, relaxed);
-        this->internalStopRecording();
+            m_thrSleeping.store(true, relaxed);
+            this->internalStopRecording();
+        }
+
+        co_await arc::sleep(asp::Duration::fromMillis(3));
     }
 }
 
@@ -493,7 +490,9 @@ void AudioManager::internalStopRecording(bool ignoreErrors) {
     auto res =  this->getSystem()->recordStop(m_recordDevice->id);
 
     if (res != FMOD_OK && !ignoreErrors) {
-        globed::toastError("{}", formatFmodError(res, "FMOD::System::recordStop"));
+        geode::queueInMainThread([res = std::move(res)] {
+            globed::toastError("{}", formatFmodError(res, "FMOD::System::recordStop"));
+        });
     }
 
     // if halting instead of stopping, don't call the callback
@@ -535,7 +534,6 @@ Result<> AudioManager::audioThreadWork() {
 
     // if we are at the same position, do nothing
     if (pos == m_recordLastPosition) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
         return Ok();
     }
 
@@ -596,8 +594,6 @@ Result<> AudioManager::audioThreadWork() {
             this->recordInvokeCallback();
         }
     }
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(4));
 
     return Ok();
 }
