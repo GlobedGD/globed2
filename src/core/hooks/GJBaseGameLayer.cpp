@@ -161,19 +161,19 @@ void GlobedGJBGL::setupAudio() {
         // set audio device
         am.refreshDevices();
         am.setRecordBufferCapacity(globed::setting<int>("core.audio.buffer-size"));
-        auto result = am.startRecordingEncoded([this](const auto& frame) {
-            NetworkManagerImpl::get().sendVoiceData(frame);
 
-            if (g_settings.voiceLoopback) {
-                m_fields->m_ghost->playVoiceData(frame);
-            }
-        });
-        am.setPassiveMode(true);
+        AudioRecordConfig config {
+            .encodedCallback = [this](const auto& frame) {
+                NetworkManagerImpl::get().sendVoiceData(frame);
 
-        if (!result) {
-            log::warn("[Globed] Failed to start recording audio: {}", result.unwrapErr());
-            globed::toastError("[Globed] Failed to start recording audio");
-        }
+                if (g_settings.voiceLoopback) {
+                    m_fields->m_ghost->playVoiceData(frame);
+                }
+            },
+            .passive = true,
+        };
+
+        am.startRecording(std::move(config));
     }
 #endif
 

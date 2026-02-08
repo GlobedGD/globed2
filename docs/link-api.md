@@ -190,19 +190,23 @@ auto& am = globed::AudioManager::get();
 am.setRecordBufferCapacity(3); // Optional
 
 // Start recording audio
-am.startRecordingEncoded([](const globed::EncodedAudioFrame& frame) {
-    // `frame` now contains up to 3 opus frames, each is just a byte array
-    for (auto& oframe : frame.getFrames()) {
-        log::debug("Opus frame of size: {} @ {}", oframe.size, fmt::ptr(oframe.data.get()));
-    }
-}).unwrap();
+am.startRecording(globed::AudioRecordConfig {
+    .encodedCallback = [](const globed::EncodedAudioFrame& frame) {
+        // `frame` now contains up to 3 opus frames, each is just a byte array
+        for (auto& oframe : frame.getFrames()) {
+            log::debug("Opus frame of size: {} @ {}", oframe.size, fmt::ptr(oframe.data.get()));
+        }
+    },
+});
 
 // Or, start recording raw PCM audio
-am.startRecordingRaw([](const float* pcm, size_t samples) {
-    log::debug("Got {} PCM samples", samples);
-    // play the audio back through the stream with ID -1
-    globed::AudioManager::get().playFrameStreamedRaw(-1, pcm, samples);
-}).unwrap();
+am.startRecording(globed::AudioRecordConfig {
+    .rawCallback = [](const float* pcm, size_t samples) {
+        log::debug("Got {} PCM samples", samples);
+        // play the audio back through the stream with ID -1
+        globed::AudioManager::get().playFrameStreamedRaw(-1, pcm, samples);
+    },
+});
 
 // When in a level, each player that speaks has their own stream with ID being their account ID:
 int playerId = 123456;

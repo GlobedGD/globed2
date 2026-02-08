@@ -4,8 +4,8 @@
 
 namespace globed {
 
-struct SetupLevelIdEvent : public geode::SimpleEvent<SetupLevelIdEvent, GJGameLevel*, int64_t*> {
-    using SimpleEvent::SimpleEvent;
+struct SetupLevelIdEvent : public geode::Event<SetupLevelIdEvent, bool(GJGameLevel*, int64_t*)> {
+    using Event::Event;
 };
 
 }

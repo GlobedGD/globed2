@@ -10,7 +10,9 @@
 
 #include <fmod_errors.h>
 #include <Geode/utils/permission.hpp>
+#include <arc/future/Select.hpp>
 #include <arc/time/Sleep.hpp>
+#include <arc/time/Interval.hpp>
 
 using namespace geode::prelude;
 using enum std::memory_order;
@@ -38,8 +40,10 @@ static float proximityVolumeMult(float distance) {
 AudioManager::AudioManager()
     : m_encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
 
-    m_workerTask = async::spawn(this->threadFunc());
-    m_workerTask->setName("[Globed] Audio worker");
+    auto [tx, rx] = arc::mpsc::channel<AudioThreadMessage>(16);
+
+    m_workerTask = async::spawn(this->threadFunc(std::move(rx)));
+    m_workerTask.setName("[Globed] Audio worker");
 
     m_recordDevice = AudioRecordingDevice{.id = -1};
 
@@ -54,8 +58,7 @@ AudioManager::AudioManager()
 
 AudioManager::~AudioManager() {
     if (m_workerTask) {
-        m_workerTask->abort();
-        m_workerTask->blockOn();
+        m_workerTask.abort();
     }
 }
 
@@ -187,88 +190,18 @@ void AudioManager::setRecordBufferCapacity(size_t frames) {
     m_recordFrame.setCapacity(frames);
 }
 
-Result<> AudioManager::startRecordingEncoded(
-    geode::Function<void(const EncodedAudioFrame&)>&& encodedCallback
-) {
-    GEODE_UNWRAP(this->startRecordingInternal());
-    m_callback = std::move(encodedCallback);
-    m_rawCallback = nullptr;
-    m_recordingRaw.store(false, relaxed);
-    return Ok();
-}
-
-Result<> AudioManager::startRecordingRaw(
-    geode::Function<void(const float*, size_t)>&& rawCallback
-) {
-    GEODE_UNWRAP(this->startRecordingInternal());
-    m_rawCallback = std::move(rawCallback);
-    m_callback = nullptr;
-    m_recordingRaw.store(true, relaxed);
-    return Ok();
-}
-
-Result<> AudioManager::startRecordingInternal() {
-    if (!permission::getPermissionStatus(Permission::RecordAudio)) {
-        return Err("Recording failed, please grant microphone permission in Globed settings");
+void AudioManager::startRecording(AudioRecordConfig config) {
+    if (auto err = m_threadChan->trySend(std::move(config)).err()) {
+        log::error("Failed to start recording: channel closed");
     }
-
-    if (!m_recordDevice) {
-        return Err("No recording device selected");
-    }
-
-    if (this->isRecording() || m_recordActive.load(relaxed)) {
-        return Err("Already recording");
-    }
-
-    if (m_recordSound) {
-        m_recordSound->release();
-        m_recordSound = nullptr;
-    }
-
-    FMOD_CREATESOUNDEXINFO exinfo = {};
-
-    exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
-    exinfo.numchannels = 1;
-    exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
-    exinfo.defaultfrequency = VOICE_TARGET_SAMPLERATE;
-    exinfo.length = sizeof(float) * exinfo.defaultfrequency * exinfo.numchannels;
-    m_recordChunkSize = exinfo.length;
-
-    FMOD_ERRC(
-        this->getSystem()->createSound(
-            nullptr,
-            FMOD_2D | FMOD_OPENUSER | FMOD_LOOP_NORMAL | FMOD_CREATESAMPLE,
-            &exinfo,
-            &m_recordSound
-        ),
-        "FMOD::System::createSound"
-    );
-
-    FMOD_RESULT res = this->getSystem()->recordStart(m_recordDevice->id, m_recordSound, true);
-
-    // invalid device most likely
-    if (res == FMOD_ERR_RECORD) {
-        return Err("Failed to start recording audio");
-    }
-
-    FMOD_ERRC(res, "FMOD::System::recordStart");
-
-    m_recordQueuedStop.store(false, relaxed);
-    m_recordQueuedHalt.store(false, relaxed);
-    m_recordLastPosition = 0;
-    m_recordActive.store(true, relaxed);
-    m_workerNotify.notifyOne(true);
-
-    return Ok();
 }
 
 void AudioManager::stopRecording() {
-    m_recordQueuedStop.store(true, relaxed);
+    (void) m_threadChan->trySend(AudioStopRecording{.halt = false});
 }
 
 void AudioManager::haltRecording() {
-    m_recordQueuedHalt.store(true, relaxed);
-    m_recordQueuedStop.store(true, relaxed);
+    (void) m_threadChan->trySend(AudioStopRecording{.halt = true});
 }
 
 bool AudioManager::isRecording() {
@@ -291,16 +224,16 @@ bool AudioManager::isRecording() {
     return recording && m_recordActive.load(relaxed);
 }
 
-void AudioManager::setPassiveMode(bool passive) {
-    m_recordingPassive.store(passive, relaxed);
-}
-
 void AudioManager::resumePassiveRecording() {
     m_recordingPassiveActive.store(true, relaxed);
 }
 
 void AudioManager::pausePassiveRecording() {
     m_recordingPassiveActive.store(false, relaxed);
+}
+
+bool AudioManager::isPassiveRecording() {
+    return m_recordingPassive.load(relaxed);
 }
 
 Result<FMOD::Channel*> AudioManager::playSound(FMOD::Sound* sound) {
@@ -449,44 +382,108 @@ int AudioManager::getFocusedPlayer() {
 
 // Thread stuff
 
-arc::Future<> AudioManager::threadFunc() {
-    auto notify = m_workerNotify;
-    
+arc::Future<> AudioManager::threadFunc(arc::mpsc::Receiver<AudioThreadMessage> rx) {
+    // wake up every 3ms if recording audio
+    auto recordInterval = arc::interval(asp::Duration::fromMillis(3));
+    recordInterval.setMissedTickBehavior(arc::MissedTickBehavior::Skip);
+
     while (true) {
-        // if we are not recording right now, wait for something to happen
-        if (!m_recordActive.load(relaxed)) {
-            m_thrSleeping.store(true, relaxed);
-            co_await notify.notified();
-            continue;
-        }
+        bool recording = m_recordActive.load(relaxed);
 
-        // if someone queued us to stop recording, back to sleeping
-        if (m_recordQueuedStop.load(relaxed)) {
-            m_thrSleeping.store(true, relaxed);
-            this->internalStopRecording();
-            co_return;
-        }
-        
-        m_thrSleeping.store(false, relaxed);
-        
-        auto result = this->audioThreadWork();
+        co_await arc::select(
+            arc::selectee(
+                rx.recv(),
+                [&](auto res) {
+                    if (!res) return;
+                    this->threadHandleMessage(std::move(res).unwrap());
+                }
+            ),
 
-        if (!result) {
-            log::warn("audioThreadWork failed: {}", result.unwrapErr());
+            arc::selectee(recordInterval.tick(), [&] {
+                auto result = this->threadProcessMicrophone();
 
-            geode::queueInMainThread([result = std::move(result)] {
-                globed::toastError("{}", result.unwrapErr());
-            });
+                if (!result) {
+                    log::warn("audioThreadWork failed: {}", result.unwrapErr());
 
-            m_thrSleeping.store(true, relaxed);
-            this->internalStopRecording();
-        }
+                    geode::queueInMainThread([result = std::move(result)] {
+                        globed::toastError("{}", result.unwrapErr());
+                    });
 
-        co_await arc::sleep(asp::Duration::fromMillis(3));
+                    this->threadStopRecording(true, false);
+                }
+            }, recording)
+        );
     }
 }
 
-void AudioManager::internalStopRecording(bool ignoreErrors) {
+void AudioManager::threadHandleMessage(AudioThreadMessage in) {
+    if (auto msg = std::get_if<AudioStopRecording>(&in)) {
+        this->threadStopRecording(msg->halt);
+    } else if (auto msg = std::get_if<AudioRecordConfig>(&in)) {
+        auto res = this->threadStartRecording();
+        if (!res) {
+            log::warn("Failed to start recording: {}", res.unwrapErr());
+            return;
+        }
+
+        m_callback = std::move(msg->encodedCallback);
+        m_rawCallback = std::move(msg->rawCallback);
+    }
+}
+
+Result<> AudioManager::threadStartRecording() {
+    if (!permission::getPermissionStatus(Permission::RecordAudio)) {
+        return Err("Recording failed, please grant microphone permission in Globed settings");
+    }
+
+    if (!m_recordDevice) {
+        return Err("No recording device selected");
+    }
+
+    if (this->isRecording() || m_recordActive.load(relaxed)) {
+        return Err("Already recording");
+    }
+
+    if (m_recordSound) {
+        m_recordSound->release();
+        m_recordSound = nullptr;
+    }
+
+    FMOD_CREATESOUNDEXINFO exinfo = {};
+
+    exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
+    exinfo.numchannels = 1;
+    exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
+    exinfo.defaultfrequency = VOICE_TARGET_SAMPLERATE;
+    exinfo.length = sizeof(float) * exinfo.defaultfrequency * exinfo.numchannels;
+    m_recordChunkSize = exinfo.length;
+
+    FMOD_ERRC(
+        this->getSystem()->createSound(
+            nullptr,
+            FMOD_2D | FMOD_OPENUSER | FMOD_LOOP_NORMAL | FMOD_CREATESAMPLE,
+            &exinfo,
+            &m_recordSound
+        ),
+        "FMOD::System::createSound"
+    );
+
+    FMOD_RESULT res = this->getSystem()->recordStart(m_recordDevice->id, m_recordSound, true);
+
+    // invalid device most likely
+    if (res == FMOD_ERR_RECORD) {
+        return Err("Failed to start recording audio");
+    }
+
+    FMOD_ERRC(res, "FMOD::System::recordStart");
+
+    m_recordLastPosition = 0;
+    m_recordActive.store(true, relaxed);
+
+    return Ok();
+}
+
+void AudioManager::threadStopRecording(bool halt, bool ignoreErrors) {
     auto res =  this->getSystem()->recordStop(m_recordDevice->id);
 
     if (res != FMOD_OK && !ignoreErrors) {
@@ -496,11 +493,11 @@ void AudioManager::internalStopRecording(bool ignoreErrors) {
     }
 
     // if halting instead of stopping, don't call the callback
-    if (m_recordQueuedHalt.exchange(false, relaxed)) {
+    if (halt) {
         m_recordFrame.clear();
     } else {
         // call the callback if there's any audio leftover
-        this->recordInvokeCallback();
+        this->threadInvokeMicCallback();
     }
 
     // cleanup
@@ -508,7 +505,6 @@ void AudioManager::internalStopRecording(bool ignoreErrors) {
     m_rawCallback = [](const auto*, auto) {};
     m_recordLastPosition = 0;
     m_recordChunkSize = 0;
-    m_recordingRaw.store(false, relaxed);
     m_recordingPassive.store(false, relaxed);
     m_recordingPassiveActive.store(false, relaxed);
     m_recordQueue.clear();
@@ -519,10 +515,9 @@ void AudioManager::internalStopRecording(bool ignoreErrors) {
     }
 
     m_recordActive.store(false, relaxed);
-    m_recordQueuedStop.store(false, relaxed);
 }
 
-Result<> AudioManager::audioThreadWork() {
+Result<> AudioManager::threadProcessMicrophone() {
     float* pcmData;
     unsigned int pcmLen;
 
@@ -542,8 +537,14 @@ Result<> AudioManager::audioThreadWork() {
         "Sound::lock"
     );
 
+    auto unlocker = arc::scopeDtor([&] {
+        m_recordSound->unlock(pcmData, nullptr, pcmLen, 0);
+    });
+
+
     // don't write any data if we are in passive recording and not currently recording
-    if (!m_recordingPassive.load(relaxed) || m_recordingPassiveActive.load(relaxed)) {
+    bool notRecording = m_recordingPassive.load(relaxed) && !m_recordingPassiveActive.load(relaxed);
+    if (!notRecording) {
         if (pos > m_recordLastPosition) {
             m_recordQueue.writeData(pcmData + m_recordLastPosition, pos - m_recordLastPosition);
         } else if (pos < m_recordLastPosition) { // we reached the end of the buffer
@@ -557,28 +558,24 @@ Result<> AudioManager::audioThreadWork() {
 
     m_recordLastPosition = pos;
 
-    FMOD_ERRC(
-        m_recordSound->unlock(pcmData, nullptr, pcmLen, 0),
-        "Sound::unlock"
-    );
+    bool recordingRaw = m_rawCallback != nullptr;
 
-    if (m_recordingRaw.load(relaxed)) {
+    if (recordingRaw) {
         size_t samples = m_recordQueue.size();
 
         // raw recording, call the raw callback with the pcm data directly.
         if (auto pcm = m_recordQueue.contiguousData()) {
-            this->recordInvokeRawCallback(*pcm, samples);
+            this->threadInvokeRawCallback(*pcm, samples);
         } else {
             auto pcmdata = std::make_unique<float[]>(samples);
             m_recordQueue.readData(pcmdata.get(), samples);
-            this->recordInvokeRawCallback(pcmdata.get(), samples);
+            this->threadInvokeRawCallback(pcmdata.get(), samples);
         }
 
         m_recordQueue.clear();
     } else {
-        bool stoppedPassive = m_recordingPassive.load(relaxed) && !m_recordingPassiveActive.load(relaxed);
         // encoded recording, encode the data and push to the frame.
-        if (m_recordQueue.size() >= VOICE_TARGET_FRAMESIZE || stoppedPassive) {
+        if (m_recordQueue.size() >= VOICE_TARGET_FRAMESIZE || notRecording) {
             float pcmbuf[VOICE_TARGET_FRAMESIZE];
             size_t filled = m_recordQueue.readData(pcmbuf, VOICE_TARGET_FRAMESIZE);
 
@@ -590,22 +587,23 @@ Result<> AudioManager::audioThreadWork() {
             }
         }
 
-        if (m_recordFrame.size() >= m_recordFrame.capacity() || (stoppedPassive && m_recordFrame.size() > 0)) {
-            this->recordInvokeCallback();
+        if (m_recordFrame.size() >= m_recordFrame.capacity() || notRecording) {
+            this->threadInvokeMicCallback();
         }
+
+        m_recordFrame.clear();
     }
 
     return Ok();
 }
 
-void AudioManager::recordInvokeCallback() {
+void AudioManager::threadInvokeMicCallback() {
     if (m_recordFrame.size() == 0) return;
 
     if (m_callback) m_callback(m_recordFrame);
-    m_recordFrame.clear();
 }
 
-void AudioManager::recordInvokeRawCallback(const float* pcm, size_t samples) {
+void AudioManager::threadInvokeRawCallback(const float* pcm, size_t samples) {
     if (samples == 0) return;
 
     if (m_rawCallback) m_rawCallback(pcm, samples);

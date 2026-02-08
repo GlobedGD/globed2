@@ -6,8 +6,10 @@
 #include <globed/prelude.hpp>
 
 #include <Geode/utils/async.hpp>
+#include <arc/sync/mpsc.hpp>
 #include <asp/sync.hpp>
 #include <fmod.hpp>
+#include <variant>
 
 namespace globed {
 
@@ -28,6 +30,17 @@ struct AudioRecordingDevice {
     int speakerModeChannels;
     FMOD_DRIVER_STATE driverState;
 };
+
+struct AudioRecordConfig {
+    geode::Function<void(const EncodedAudioFrame&)> encodedCallback;
+    geode::Function<void(const float*, size_t)> rawCallback;
+    bool passive = false;
+};
+struct AudioStopRecording {
+    bool halt = false;
+};
+
+using AudioThreadMessage = std::variant<AudioRecordConfig, AudioStopRecording>;
 
 class GLOBED_DLL AudioManager : public SingletonBase<AudioManager> {
 protected:
@@ -62,23 +75,19 @@ public:
     // set the amount of record frames in a buffer (used by the lowerAudioLatency setting)
     void setRecordBufferCapacity(size_t frames);
 
-    // start recording the voice and call the callback whenever new data is ready.
-    // same rules apply as with `startRecording`, except the callback includes raw PCM samples,
-    // and is called much more often.
-    Result<> startRecordingEncoded(geode::Function<void(const EncodedAudioFrame&)>&& encodedCallback);
-    Result<> startRecordingRaw(geode::Function<void(const float*, size_t)>&& rawCallback);
+    /// start recording the voice and call either the raw callback with pcm data,
+    /// or the encoded callback with opus data. only one must be provided.
+    void startRecording(AudioRecordConfig config);
+
     // tell the audio thread to stop recording
     void stopRecording();
     // tell the audio thread to stop recording, don't call the callback with leftover data
     void haltRecording();
     bool isRecording();
 
-    /* Background recording API */
-    void setPassiveMode(bool passive);
-
     void resumePassiveRecording();
     void pausePassiveRecording();
-    inline bool isPassiveRecording() { return m_recordingPassiveActive; }
+    bool isPassiveRecording();
 
     /* Playback API */
 
@@ -119,36 +128,34 @@ private:
     /* devices */
     std::optional<AudioRecordingDevice> m_recordDevice;
     std::atomic<bool> m_loopbacksAllowed = false;
+    FMOD::System* m_system = nullptr;
 
     /* recording */
     std::atomic<bool> m_recordActive = false;
-    std::atomic<bool> m_recordQueuedStop = false;
-    std::atomic<bool> m_recordQueuedHalt = false;
-    std::atomic<bool> m_recordingRaw = false;
     std::atomic<bool> m_recordingPassive = false;
     std::atomic<bool> m_recordingPassiveActive = false;
+    /* private fields for the recording task */
     FMOD::Sound* m_recordSound = nullptr;
-    size_t m_recordChunkSize = 0;
+    uint32_t m_recordChunkSize = 0;
+    uint32_t m_recordLastPosition = 0;
     geode::Function<void(const EncodedAudioFrame&)> m_callback;
     geode::Function<void(const float*, size_t)> m_rawCallback;
     AudioSampleQueue m_recordQueue;
-    unsigned int m_recordLastPosition = 0;
     EncodedAudioFrame m_recordFrame;
     AudioEncoder m_encoder;
-    FMOD::System* m_system = nullptr;
 
     /* thread */
-    std::atomic<bool> m_thrSleeping = true;
-    std::optional<arc::TaskHandle<void>> m_workerTask;
-    arc::Notify m_workerNotify;
+    arc::TaskHandle<void> m_workerTask;
+    std::optional<arc::mpsc::Sender<AudioThreadMessage>> m_threadChan;
 
-    arc::Future<> threadFunc();
-    Result<> audioThreadWork();
+    arc::Future<> threadFunc(arc::mpsc::Receiver<AudioThreadMessage> rx);
+    void threadHandleMessage(AudioThreadMessage msg);
+    Result<> threadProcessMicrophone();
+    void threadStopRecording(bool halt, bool ignoreErrors = false);
+    Result<> threadStartRecording();
+    void threadInvokeMicCallback();
+    void threadInvokeRawCallback(const float* pcm, size_t samples);
 
-    Result<> startRecordingInternal();
-    void internalStopRecording(bool ignoreErrors = false);
-    void recordInvokeCallback();
-    void recordInvokeRawCallback(const float* pcm, size_t samples);
     float calculateVolume(AudioSource& src, const CCPoint& playerPos, bool voiceProximity);
 
     /* playback */
