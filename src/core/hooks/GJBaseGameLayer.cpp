@@ -762,12 +762,12 @@ void GlobedGJBGL::killLocalPlayer(bool fake) {
 
 void GlobedGJBGL::resetSafeMode() {
     auto& fields = *m_fields.self();
-    fields.m_safeMode = false;
+    fields.m_safeMode = fields.m_permanentSafeMode;
 }
 
-void GlobedGJBGL::toggleSafeMode() {
+void GlobedGJBGL::enableSafeMode() {
     auto& fields = *m_fields.self();
-    fields.m_safeMode = false;
+    fields.m_safeMode = true;
 }
 
 void GlobedGJBGL::pausedUpdate(float dt) {

@@ -208,7 +208,7 @@ protected:
                         return;
                     }
 
-                    gjbgl->toggleSafeMode();
+                    gjbgl->enableSafeMode();
 
                     if (auto player = gjbgl->getPlayer(accountId)) {
                         gjbgl->m_player1->m_position = player->player1()->getLastPosition();

@@ -134,7 +134,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void killLocalPlayer(bool fake = true);
 
     void resetSafeMode();
-    void toggleSafeMode();
+    void enableSafeMode();
 
     void pausedUpdate(float dt);
 
