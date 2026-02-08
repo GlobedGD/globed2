@@ -49,13 +49,6 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
         .parent(m_uiLayer)
         .anchorPoint(0.f, 0.f);
 
-    auto gjbgl = GlobedGJBGL::get(this);
-    gjbgl->toggleCullingEnabled(false);
-    gjbgl->toggleExtendedData(true);
-    auto& lerper = gjbgl->m_fields->m_interpolator;
-    lerper.setLowLatencyMode(true);
-    lerper.setCameraCorrections(false);
-
     return true;
 }
 

@@ -16,6 +16,15 @@ void APSModule::onModuleInit() {
 void APSModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
     if (!RoomManager::get().getSettings().switcheroo) {
         (void) this->disable();
+    } else {
+        // force safe mode
+        gjbgl->setPermanentSafeMode();
+
+        auto& lerper = gjbgl->m_fields->m_interpolator;
+        gjbgl->toggleCullingEnabled(false);
+        gjbgl->toggleExtendedData(true);
+        lerper.setLowLatencyMode(true);
+        lerper.setCameraCorrections(false);
     }
 }
 
