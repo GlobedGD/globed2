@@ -429,6 +429,7 @@ void AudioManager::threadHandleMessage(AudioThreadMessage in) {
 
         m_callback = std::move(msg->encodedCallback);
         m_rawCallback = std::move(msg->rawCallback);
+        m_recordingPassive.store(msg->passive, relaxed);
     }
 }
 
@@ -485,6 +486,10 @@ Result<> AudioManager::threadStartRecording() {
 }
 
 void AudioManager::threadStopRecording(bool halt, bool ignoreErrors) {
+    if (!m_recordActive.load(relaxed)) {
+        return;
+    }
+
     auto res =  this->getSystem()->recordStop(m_recordDevice->id);
 
     if (res != FMOD_OK && !ignoreErrors) {
@@ -542,7 +547,6 @@ Result<> AudioManager::threadProcessMicrophone() {
         m_recordSound->unlock(pcmData, nullptr, pcmLen, 0);
     });
 
-
     // don't write any data if we are in passive recording and not currently recording
     bool notRecording = m_recordingPassive.load(relaxed) && !m_recordingPassiveActive.load(relaxed);
     if (!notRecording) {
@@ -590,9 +594,8 @@ Result<> AudioManager::threadProcessMicrophone() {
 
         if (m_recordFrame.size() >= m_recordFrame.capacity() || notRecording) {
             this->threadInvokeMicCallback();
+            m_recordFrame.clear();
         }
-
-        m_recordFrame.clear();
     }
 
     return Ok();

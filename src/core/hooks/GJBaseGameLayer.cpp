@@ -959,7 +959,6 @@ void GlobedGJBGL::resumeVoiceRecording() {
         return;
     }
 
-    log::debug("Resuming voice recording");
     AudioManager::get().resumePassiveRecording();
 #endif
 }

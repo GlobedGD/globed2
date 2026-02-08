@@ -173,11 +173,6 @@ void AudioDeviceSetupPopup::stopRecording() {
 
 void AudioDeviceSetupPopup::update(float dt) {
     auto& am = AudioManager::get();
-    if (m_stream && !am.isRecording()) {
-        // assume that we could not start recording due to an error (or it abruptly stopped)
-        am.stopAllOutputSources();
-        m_stream.reset();
-    }
 
     if (m_stream) {
         m_stream->updateEstimator(dt);
