@@ -32,7 +32,7 @@ bool FeaturedLevelCell::init() {
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    m_bg = Build<CCScale9Sprite>::create("square02_001.png")
+    m_bg = Build<NineSlice>::create("square02_001.png")
         .anchorPoint(0.f, 0.f)
         .contentSize({CELL_WIDTH, CELL_HEIGHT})
         .opacity(75)
@@ -46,7 +46,7 @@ bool FeaturedLevelCell::init() {
         .visible(false)
         .parent(this);
 
-    m_loadedBg = Build<CCScale9Sprite>::create("GJ_square02.png")
+    m_loadedBg = Build<NineSlice>::create("GJ_square02.png")
         .anchorPoint(0.f, 0.f)
         .contentSize({CELL_WIDTH, CELL_HEIGHT})
         .zOrder(9)

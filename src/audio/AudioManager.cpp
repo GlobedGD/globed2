@@ -41,6 +41,7 @@ AudioManager::AudioManager()
     : m_encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
 
     auto [tx, rx] = arc::mpsc::channel<AudioThreadMessage>(16);
+    m_threadChan = std::move(tx);
 
     m_workerTask = async::spawn(this->threadFunc(std::move(rx)));
     m_workerTask.setName("[Globed] Audio worker");

@@ -34,10 +34,10 @@ protected:
     void requestPlayerCount(float);
 
     Ref<CCMenu> m_menu;
-    Ref<CCScale9Sprite> m_bg;
-    Ref<CCScale9Sprite> m_loadedBg;
+    Ref<geode::NineSlice> m_bg;
+    Ref<geode::NineSlice> m_loadedBg;
     Ref<CCNode> m_loadedContainer;
-    Ref<CCScale9Sprite> m_playersBg;
+    Ref<geode::NineSlice> m_playersBg;
     Ref<CCNode> m_playerCountContainer;
     Ref<CCNode> m_playerCountIcon;
     Ref<cue::LoadingCircle> m_loadingCircle;

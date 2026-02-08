@@ -28,7 +28,7 @@ public:
 
 private:
     CCMenu* m_connectMenu;
-    CCScale9Sprite* m_connectMenuBg;
+    geode::NineSlice* m_connectMenuBg;
     CCMenuItemSpriteExtra* m_editServerButton;
     CCLabelBMFont* m_serverNameLabel;
     CCMenuItemSpriteExtra* m_connectButton;

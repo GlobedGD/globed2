@@ -126,7 +126,9 @@ bool RoomListingPopup::init() {
             .updateLayout()
             .collect();
 
-        cue::attachBackground(menu);
+        cue::attachBackground(menu, cue::BackgroundOptions {
+            .cornerRoundness = 0.5f
+        });
     }
 
     // page arrow buttons

@@ -4,6 +4,7 @@
 #include <globed/core/data/Messages.hpp>
 #include <ui/BasePopup.hpp>
 
+#include <Geode/ui/NineSlice.hpp>
 #include <cue/PlayerIcon.hpp>
 
 namespace globed {
@@ -14,7 +15,7 @@ public:
 
 protected:
     cocos2d::CCNode* m_playerCard;
-    cocos2d::extension::CCScale9Sprite* m_background;
+    geode::NineSlice* m_background;
     CCMenuItemSpriteExtra* m_discordBtn = nullptr;
     CCMenuItemSpriteExtra* m_startBtn = nullptr;
     cocos2d::CCNode* m_statusContainer = nullptr;
