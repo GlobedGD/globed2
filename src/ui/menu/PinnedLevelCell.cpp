@@ -71,6 +71,7 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
     m_levelCell->autorelease();
     m_levelCell->m_compactView = useCompact;
     m_levelCell->setUserObject("cvolton.compact_lists/skip-adjustment", CCBool::create(true));
+    m_levelCell->setUserFlag("cvolton.compact_lists/skip-adjustment");
     m_levelCell->loadFromLevel(level);
     m_levelCell->setContentSize({ this->getContentWidth(), HEIGHT });
     m_levelCell->setPosition({ 0.f, 0.f });
