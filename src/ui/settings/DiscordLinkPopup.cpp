@@ -155,15 +155,21 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
     m_activelyWaiting = false;
     this->unschedule(schedule_selector(DiscordLinkPopup::requestState));
 
-    m_statusLabel->setString("Linked");
-    m_statusLabel->setColor(ccColor3B{ 69, 255, 23 });
-    m_statusContainer->updateLayout();
 
-    m_nameLabel->setString(username.c_str());
+    if (!username.empty()) {
+        m_nameLabel->setString(username.c_str());
+        m_statusLabel->setString("Linked");
+        m_statusLabel->setColor(ccColor3B{ 69, 255, 23 });
+    } else {
+        // linked, but the server for some reason cannot obtain username & avatar
+        m_statusLabel->setString("Linked (?)");
+        m_statusLabel->setColor(ccColor3B{ 211, 255, 51 });
+    }
+
+    m_statusContainer->updateLayout();
     m_nameLabel->limitLabelWidth(m_size.width * 0.85f, 0.6f, 0.1f);
 
     cue::resetNode(m_idLabel);
-    cue::resetNode(m_playerIcon);
     cue::resetNode(m_background);
     cue::resetNode(m_waitingLabel1);
     cue::resetNode(m_waitingLabel2);
@@ -171,10 +177,24 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
 
     m_dataContainer->updateLayout();
 
-    m_avatar = Build(LazySprite::create(ICON_SIZE))
-        .parent(m_playerCard);
-    m_avatar->setAutoResize(true);
-    m_avatar->loadFromUrl(convertAvatarUrl(avatarUrl));
+    // only replace the avatar if we actually got a link
+    if (!avatarUrl.empty()) {
+        m_playerIcon->setVisible(false);
+        m_avatar = Build(LazySprite::create(ICON_SIZE))
+            .parent(m_playerCard);
+        m_avatar->setAutoResize(true);
+        m_avatar->loadFromUrl(convertAvatarUrl(avatarUrl));
+        m_avatar->setLoadCallback([this](Result<> res) {
+            if (res.isOk()) {
+                // nothing
+            } else {
+                // show player icon
+                m_playerIcon->setVisible(true);
+                cue::resetNode(m_avatar);
+            }
+        });
+    }
+
     m_playerCard->updateLayout();
 
     m_background = cue::attachBackground(m_playerCard);
