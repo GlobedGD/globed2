@@ -9,7 +9,7 @@
 #include <core/CoreImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/misc/AudioVisualizer.hpp>
-#include <ui/misc/Sliders.hpp>
+#include <ui/Core.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -444,6 +444,41 @@ bool UserListPopup::init() {
     //     .parent(cbLayout);
 
     cbLayout->updateLayout();
+
+    // add a label showing current server
+    auto server = NetworkManagerImpl::get().getGameServer();
+    if (server) {
+        auto serverNameContainer = Build<ColumnContainer>::create(0.f)
+            .anchorPoint(0.f, 1.f)
+            .pos(this->fromTopLeft(30.f, 9.f))
+            .parent(m_mainLayer)
+            .collect();
+
+        Build<Label>::create(server->name.c_str(), "bigFont.fnt")
+            .color({ 31, 255, 87 })
+            .scale(0.4f)
+            .parent(serverNameContainer);
+
+        std::string pingText;
+        ccColor3B color;
+
+        if (server->avgLatency > 10000) {
+            pingText = "? ms";
+            color = {127, 127, 127};
+        } else {
+            pingText = fmt::format("{} ms", server->avgLatency);
+            // TODO
+            color = {255, 255, 255};
+        }
+
+        // TODO: also update this periodically
+        Build<Label>::create(pingText.c_str(), "bigFont.fnt")
+            .scale(0.4f)
+            .color(color)
+            .parent(serverNameContainer);
+
+        serverNameContainer->updateLayout();
+    }
 
     // this->schedule(schedule_selector(GlobedUserListPopup::reorderWithVolume), 0.5f);
     this->scheduleUpdate();

@@ -23,6 +23,7 @@ struct PopupRef::Data {
     size_t shownAtFrame;
     asp::time::Duration blockClosingFor;
     bool persist = false;
+    bool priority = false;
 };
 
 PopupRef::PopupRef(FLAlertLayer* layer) : inner(layer) {}
@@ -44,6 +45,10 @@ void PopupRef::setPersistent(bool state) {
     this->getFields().persist = state;
 }
 
+void PopupRef::setPriority(bool state) {
+    this->getFields().priority = state;
+}
+
 void PopupRef::blockClosingFor(const asp::time::Duration& dur) {
     this->getFields().blockClosingFor = dur;
 }
@@ -57,7 +62,8 @@ void PopupRef::showInstant() {
 }
 
 void PopupRef::showQueue() {
-    PopupManager::get().queuePopup(*this);
+    bool back = !this->getFields().priority;
+    PopupManager::get().queuePopup(*this, back);
 }
 
 bool PopupRef::isShown() {
@@ -251,8 +257,12 @@ bool PopupManager::isManaged(FLAlertLayer* alert) {
     return this->manage(alert).hasFields();
 }
 
-void PopupManager::queuePopup(const PopupRef& popup) {
-    m_queuedPopups.push(popup);
+void PopupManager::queuePopup(const PopupRef& popup, bool back) {
+    if (back) {
+        m_queuedPopups.push_back(popup);
+    } else {
+        m_queuedPopups.push_front(popup);
+    }
 }
 
 bool PopupManager::hasPendingPopups() const {
@@ -271,7 +281,7 @@ void PopupManager::update(float dt) {
 
     // check if we are eligible to show a queued popup
 
-    // if none, there is nothing to show
+    // if there aren't any in the queue, there is nothing to show
     if (m_queuedPopups.empty()) {
         return;
     }
@@ -281,26 +291,47 @@ void PopupManager::update(float dt) {
         return;
     }
 
-    // if we are playing and are unpaused, don't show any popups
-    if (auto pl = GlobedGJBGL::get()) {
-        if (!pl->isPaused()) {
-            return;
-        }
-    }
-
-    // if we are in loading layer then wait until menulayer
+    // if there's no current layer, don't show anything
     auto children = scene->getChildren();
-    if (children) {
-        auto child = children->firstObject();
-        if (typeinfo_cast<LoadingLayer*>(child)) {
-            return;
-        }
+    if (!children) return;
+    auto layer = children->firstObject();
+    if (!layer) return;
+
+    // if we are in loadinglayer, don't show anything
+    if (typeinfo_cast<LoadingLayer*>(layer)) {
+        return;
     }
 
-    // show the popup
-    auto popup = std::move(m_queuedPopups.front());
-    popup.doShow();
-    m_queuedPopups.pop();
+    // if we are playing and are unpaused, only show priority popups
+    bool playing = false;
+    auto gjbgl = GlobedGJBGL::get();
+    if (gjbgl && !gjbgl->isPaused()) {
+        playing = true;
+    }
+
+    bool didPause = false;
+    while (!m_queuedPopups.empty()) {
+        auto popup = m_queuedPopups.front();
+        bool isPrio = popup.getFields().priority;
+
+        if (playing && !isPrio) {
+            // we are currently playing a level, so we don't want to show non-prio popups
+            // since prio popups are always put to the front of the queue, we know there's no more prio popups left
+            break;
+        }
+
+        if (playing && isPrio && !didPause) {
+            // pause the level
+            if (auto pl = gjbgl->asPlayLayer()) {
+                pl->pauseGame(false);
+            }
+            didPause = true;
+        }
+
+        // show the popup
+        popup.doShow();
+        m_queuedPopups.pop_front();
+    }
 }
 
 void PopupManager::changedScene(CCScene* newScene) {

@@ -590,6 +590,7 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
                 cur.reset();
             } else {
                 info->m_gameServerUrl = cur->url;
+                info->m_gameServerId = cur->serverId;
             }
         } else {
             // already tried connecting to this server and failed, so give it up
@@ -999,10 +1000,15 @@ void NetworkManagerImpl::simulateConnectionDrop() {
     m_centralConn->simulateConnectionDrop();
 }
 
-std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
+std::optional<uint8_t> NetworkManagerImpl::getPreferredServer(bool useLatencyFallback) {
     auto info = this->connInfo();
     if (!info) return std::nullopt;
+
     auto& servers = info->m_gameServers;
+
+    if (info->m_serverOverride) {
+        return *info->m_serverOverride;
+    }
 
     if (auto value = globed::value<std::string>("core.net.preferred-server")) {
         for (auto& srv : servers) {
@@ -1013,7 +1019,7 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
     }
 
     // fallback to the server with the lowest latency
-    if (!servers.empty()) {
+    if (!servers.empty() && useLatencyFallback) {
         auto it = std::min_element(servers.begin(), servers.end(),
             [](const auto& a, const auto& b) {
                 return a.second.lastLatency < b.second.lastLatency;
@@ -1031,6 +1037,35 @@ std::vector<GameServer> NetworkManagerImpl::getGameServers() {
     }
 
     return asp::iter::values(info->m_gameServers).collect();
+}
+
+std::optional<GameServer> NetworkManagerImpl::getGameServer(uint8_t id) {
+    auto info = this->connInfo();
+    if (!info) {
+        return {};
+    }
+
+    return asp::iter::values(info->m_gameServers)
+        .find([id](const GameServer& srv) { return srv.id == id; });
+}
+
+std::optional<GameServer> NetworkManagerImpl::getGameServer() {
+    auto info = this->connInfo();
+    if (!info) {
+        return {};
+    }
+
+    uint8_t id = info->m_gameServerId;
+
+    return asp::iter::values(info->m_gameServers)
+        .find([id](const GameServer& srv) { return srv.id == id; });
+}
+
+void NetworkManagerImpl::setTemporaryServerOverride(std::optional<uint8_t> id) {
+    auto info = this->connInfo();
+    if (!info) return;
+
+    info->m_serverOverride = id;
 }
 
 bool NetworkManagerImpl::isConnected() const {
@@ -1941,7 +1976,7 @@ void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platform
 
     for (auto& srv : info->m_gameServers) {
         if (srv.second.id == serverId) {
-            this->joinSessionWith(info, srv.second.url, id, platformer, editorCollab);
+            this->joinSessionWith(info, srv.second.url, serverId, id, platformer, editorCollab);
             return;
         }
     }
@@ -1951,10 +1986,11 @@ void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platform
     toastError("Globed: join failed, no server with ID {}", serverId);
 }
 
-void NetworkManagerImpl::joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, SessionId id, bool platformer, bool editorCollab) {
+void NetworkManagerImpl::joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, uint8_t serverId, SessionId id, bool platformer, bool editorCollab) {
     GameServerJoinRequest req;
     req.url = serverUrl;
     req.id = id;
+    req.serverId = serverId;
     req.platformer = platformer;
     req.editorCollab = editorCollab;
     (void) m_gameServerJoinTx->trySend(std::move(req));

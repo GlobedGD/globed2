@@ -6,7 +6,7 @@
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/utils/cocos.hpp>
 
-#include <queue>
+#include <deque>
 
 class Label;
 
@@ -36,6 +36,11 @@ public:
     // Set whether the popup should follow the user if they transition to another scene,
     // instead of disappearing. By default is disabled.
     void setPersistent(bool state = true);
+
+    // Makes the popup prioritized, ensuring that it will be put in front of the queue,
+    // and shown even if the user is playing a level (the level will be paused).
+    // Only effective if `showQueue()` is used, if `showInstant()` is used the popup already shows immediately.
+    void setPriority(bool state = true);
 
     // Makes it impossible to accidentally close the popup (via esc or back button)
     // for a given period of time after it is shown.
@@ -118,10 +123,10 @@ private:
     std::array<geode::Ref<FLAlertLayer>, 16> m_savedAlerts;
     size_t m_frameCounter = 0;
     size_t m_savedAlertCount;
-    std::queue<PopupRef> m_queuedPopups;
+    std::deque<PopupRef> m_queuedPopups;
 
     void changedScene(cocos2d::CCScene* newScene);
-    void queuePopup(const PopupRef& popup);
+    void queuePopup(const PopupRef& popup, bool back = true);
     void update(float dt);
 };
 

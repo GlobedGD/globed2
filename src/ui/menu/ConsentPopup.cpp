@@ -1,6 +1,7 @@
 #include "ConsentPopup.hpp"
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <ui/Core.hpp>
 #include <UIBuilder.hpp>
 #include <AdvancedLabel.hpp>
 #include <cue/Util.hpp>
@@ -113,12 +114,8 @@ bool ConsentPopup::init() {
 
     // actual consent questions (first for accepting rules, second for data collection)
 
-    auto consentContainer = Build<CCNode>::create()
-        .layout(SimpleColumnLayout::create()
-            ->setGap(10.f)
-            ->setMainAxisScaling(AxisScaling::Fit)
-            ->setCrossAxisScaling(AxisScaling::Fit)
-        )
+
+    auto consentContainer = Build(ColumnContainer::create(10.f))
         .anchorPoint(0.5f, 0.5f)
         .id("consent-container")
         .parent(m_mainLayer)

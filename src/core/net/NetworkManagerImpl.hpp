@@ -51,6 +51,7 @@ struct GameServer {
 struct GameServerJoinRequest {
     std::string url;
     SessionId id;
+    uint8_t serverId;
     bool platformer;
     bool editorCollab;
     bool triedConnecting = false;
@@ -81,6 +82,7 @@ struct ConnectionInfo {
     std::string m_centralUrl;
     std::string m_knownArgonUrl;
     std::unordered_map<std::string, GameServer> m_gameServers;
+    std::optional<uint8_t> m_serverOverride = 0;
     bool m_gameServersUpdated = true;
     bool m_established = false;
     bool m_authenticating = false;
@@ -88,6 +90,7 @@ struct ConnectionInfo {
 
     // game server info
     std::string m_gameServerUrl;
+    uint8_t m_gameServerId;
     bool m_gameEstablished = false;
     std::queue<OutEvent> m_gameEventQueue;
     std::vector<EmbeddedScript> m_queuedScripts;
@@ -168,8 +171,12 @@ public:
     void simulateConnectionDrop();
 
     /// Returns the numeric ID of the preferred game server, or nullopt if not connected
-    std::optional<uint8_t> getPreferredServer();
+    std::optional<uint8_t> getPreferredServer(bool useLatencyFallback = true);
     std::vector<GameServer> getGameServers();
+    std::optional<GameServer> getGameServer(uint8_t id);
+    /// Gets the game server the user is currently connected to, if any
+    std::optional<GameServer> getGameServer();
+    void setTemporaryServerOverride(std::optional<uint8_t> id);
 
     /// Returns whether the client is connected and authenticated with the central server
     bool isConnected() const;
@@ -387,7 +394,7 @@ private:
     void handleLoginFailed(schema::main::LoginFailedReason reason);
     void showDisconnectCause(bool reconnecting, bool wasConnected);
 
-    void joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, SessionId id, bool platformer, bool editorCollab);
+    void joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, uint8_t serverId, SessionId id, bool platformer, bool editorCollab);
     void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false, bool editorCollab = false);
     void sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab);
 

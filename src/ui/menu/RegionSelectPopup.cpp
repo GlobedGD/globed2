@@ -49,11 +49,11 @@ class ListCell : public CCNode {
 public:
     uint8_t m_serverId;
 
-    static ListCell* create(const GameServer& server, RegionSelectPopup* popup) {
+    static ListCell* create(const GameServer& server, bool active, RegionSelectPopup* popup) {
         auto ret = new ListCell;
         ret->m_popup = popup;
         ret->autorelease();
-        ret->init(server);
+        ret->init(server, active);
         return ret;
     }
 
@@ -86,7 +86,7 @@ private:
     CCMenu* m_menu;
     uint32_t m_ping;
 
-    void init(const GameServer& server) {
+    void init(const GameServer& server, bool active) {
         m_stringId = server.stringId;
         m_serverId = server.id;
 
@@ -117,16 +117,17 @@ private:
             .parent(this)
             .collect();
 
-        bool isPreferred = globed::value<std::string>("core.net.preferred-server") == m_stringId;
-
-        m_button = Build<CCSprite>::createSpriteName(isPreferred ? "GJ_selectSongOnBtn_001.png" : "GJ_playBtn2_001.png")
+        m_button = Build<CCSprite>::createSpriteName(active ? "GJ_selectSongOnBtn_001.png" : "GJ_playBtn2_001.png")
             .with([&](auto spr) { cue::rescaleToMatch(spr, CELL_HEIGHT * 0.7f); })
-            .intoMenuItem([this, isPreferred, id = m_stringId] {
-                if (isPreferred) {
+            .intoMenuItem([this, active, id = m_stringId] {
+                if (active) {
                     globed::setValue("core.net.preferred-server", "");
                 } else {
                     globed::setValue("core.net.preferred-server", id);
                 }
+
+                // always reset the temp override if explicitly changing server
+                NetworkManagerImpl::get().setTemporaryServerOverride(std::nullopt);
 
                 m_popup->reloadList();
             })
@@ -174,10 +175,12 @@ bool RegionSelectPopup::init() {
 bool RegionSelectPopup::reloadList() {
     m_list->clear();
 
-    auto servers = NetworkManagerImpl::get().getGameServers();
+    auto& nm = NetworkManagerImpl::get();
+    auto servers = nm.getGameServers();
+    auto preferred = nm.getPreferredServer(false);
 
     for (auto& server : servers) {
-        m_list->addCell(ListCell::create(server, this));
+        m_list->addCell(ListCell::create(server, server.id == preferred, this));
     }
 
     m_list->sortAs<ListCell>([](auto a, auto b) {

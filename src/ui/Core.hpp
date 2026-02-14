@@ -1,5 +1,7 @@
+/// Core components for UI building
 #pragma once
 
+#include <UIBuilder.hpp>
 #include <cue/Slider.hpp>
 #include <cue/ProgressBar.hpp>
 
@@ -24,5 +26,17 @@ inline cue::ProgressBar* createProgressBar() {
         "slider-fill.png"_spr
     );
 }
+
+/// Column container with auto grow, top to bottom
+struct ColumnContainer : public cocos2d::CCNode {
+    static ColumnContainer* create(float gap = 3.f);
+    ColumnContainer* flip();
+};
+
+/// Row container with auto grow, left to right
+struct RowContainer : public cocos2d::CCNode {
+    static RowContainer* create(float gap = 3.f);
+    RowContainer* flip();
+};
 
 }

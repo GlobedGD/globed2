@@ -141,7 +141,7 @@ protected:
             m_joinBtn = Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
                 .with([&](auto spr) { cue::rescaleToMatch(spr, BTN_SIZE); })
                 .intoMenuItem([this] {
-                    globed::warpToSession(m_sessionId, false, true);
+                    globed::warpToSession(WarpContext{ m_sessionId, WarpSource::Manual });
                 })
                 .zOrder(10)
                 .scaleMult(1.1f)

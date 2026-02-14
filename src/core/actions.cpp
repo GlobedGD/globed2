@@ -5,6 +5,7 @@
 #include <globed/util/gd.hpp>
 #include <globed/util/singleton.hpp>
 #include <globed/util/FunctionQueue.hpp>
+#include <globed/util/CCData.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/hooks/GameManager.hpp>
@@ -20,33 +21,17 @@ using namespace geode::prelude;
 
 namespace globed {
 
-static SessionId g_warpctx;
-static std::optional<SessionId> g_awaitingWarp;
-
-void warpToSession(SessionId session, bool openLevel, bool force) {
-    auto& rm = RoomManager::get();
-
-    // ignore if we are the room host or not a follower room
-    if (!force && (rm.isOwner() || !rm.isInFollowerRoom())) {
-        g_awaitingWarp.reset();
-        return;
-    }
-
-    auto putOnHold = [&] {
-        g_awaitingWarp = session;
-
-        FunctionQueue::get().queue([openLevel, force] {
-            if (g_awaitingWarp.has_value()) {
-                warpToSession(g_awaitingWarp.value(), openLevel, force);
-            }
+static void forceWarp(WarpContext context) {
+    auto defer = [&] {
+        auto cx = context;
+        FunctionQueue::get().queue([cx] {
+            warpToSession(cx);
         });
     };
 
-    // delay in case it's a bad time to warp right now
     auto scene = CCScene::get();
-    if (typeinfo_cast<CCTransitionScene*>(scene)) {
-        // put it on hold
-        putOnHold();
+    if (!scene || typeinfo_cast<CCTransitionScene*>(scene)) {
+        defer();
         return;
     }
 
@@ -57,15 +42,13 @@ void warpToSession(SessionId session, bool openLevel, bool force) {
             pl->onQuit();
             globed::replaceScene(GlobedMenuLayer::create());
 
-            putOnHold();
+            defer();
             return;
         }
     }
 
+    auto session = context.session;
     log::debug("Warping to session {} (room: {}, level: {})", session.asU64(), session.roomId(), session.levelId());
-
-    g_awaitingWarp.reset();
-    g_warpctx = session;
 
     auto levelId = session.levelId();
     if (levelId == 0) {
@@ -73,23 +56,91 @@ void warpToSession(SessionId session, bool openLevel, bool force) {
         return;
     }
 
+    // set temporary server override
+    auto& nm= NetworkManagerImpl::get();
+    nm.setTemporaryServerOverride(session.serverId());
+
+    // only open level for global
+    bool openLevel = context.source == WarpSource::Global;
+
     auto classify = globed::classifyLevel(levelId);
     if (classify.kind == GameLevelKind::Main) {
-        // main levels, go to that page in LevelSelectLayer if `openLevel` is false
-        if (!openLevel) {
-            globed::replaceScene(LevelSelectLayer::scene(levelId - 1));
-        } else {
-            globed::replaceScene(PlayLayer::scene(classify.level, false, false));
-        }
+        // main levels, go to that page in LevelSelectLayer
+        globed::replaceScene(LevelSelectLayer::scene(levelId - 1));
+
+        // globed::replaceScene(PlayLayer::scene(classify.level, false, false));
     } else if (classify.kind == GameLevelKind::Tower) {
         // tower levels, always go straight to playlayer
         globed::replaceScene(PlayLayer::scene(classify.level, false, false));
     } else {
         // custom levels, show a loading popup
-        // replace scene if openLevel is true, push scene otherwise
-        auto popup = WarpLoadPopup::create(levelId, openLevel, openLevel);
+        auto popup = WarpLoadPopup::create(levelId, openLevel, false);
         if (popup) popup->show();
     }
+}
+
+static std::string describeServer(std::optional<uint8_t> id) {
+    if (!id) return "unassigned";
+
+    auto& nm = NetworkManagerImpl::get();
+    auto srv = nm.getGameServer(*id);
+    if (!srv) return fmt::format("unknown ({})", *id);
+
+    return fmt::format("{} ({})", srv->name, srv->stringId);
+}
+
+void warpToSession(WarpContext context) {
+    auto& rm = RoomManager::get();
+
+    // if warped by room owner, ignore if we are owner or not in a follower room
+    if (context.source == WarpSource::Room && (rm.isOwner() || !rm.isInFollowerRoom())) {
+        return;
+    }
+
+    // if warped by clicking on a person who's in a different server, ask if we want to switch servers
+    if (context.source == WarpSource::Manual) {
+        auto& nm = NetworkManagerImpl::get();
+        uint8_t targetServer = context.session.serverId();
+        auto currentServer = rm.pickServerId();
+
+        bool showNotice = !globed::flag("core.flags.seen-warp-server-switch");
+
+        if (targetServer != currentServer && showNotice) {
+            std::string target = describeServer(targetServer);
+            std::string current = describeServer(currentServer);
+
+            globed::confirmPopup(
+                "Switch servers",
+                fmt::format(
+                    "You are trying to join someone who's playing on the server <cg>{}</c>, but your chosen server is <cy>{}</c>. Do you want to temporarily <cj>switch</c> your preferred server? In future, you won't be prompted about this again.",
+                    target, current
+                ),
+                "Cancel", "Yes",
+                [context](auto) {
+                    globed::swapFlag("core.flags.seen-warp-server-switch");
+                    forceWarp(context);
+                }
+            );
+
+            return;
+        }
+    } else if (context.source == WarpSource::Room) {
+        auto ref = PopupManager::get().quickPopup(
+            "Warp Request",
+            fmt::format("The room owner has joined a level, do you want to follow them?"),
+            "No", "Yes",
+            [context](auto alert, bool yes) {
+                if (!yes) return;
+                forceWarp(context);
+            }
+        );
+        ref.setPriority(true);
+        ref.showQueue();
+        return;
+    }
+
+    // force warp!
+    forceWarp(context);
 }
 
 void openModPanel(int accountId) {
@@ -106,28 +157,6 @@ void openModPanel(int accountId) {
         ModPanelPopup::create()->show();
     } else {
         ModUserPopup::create(accountId)->show();
-    }
-}
-
-SessionId _getWarpContext() {
-    return g_warpctx;
-}
-
-void _clearWarpContext() {
-    g_warpctx = SessionId{};
-}
-
-void warpToLevel(int level, bool openLevel) {
-    auto& rm = RoomManager::get();
-
-    if (auto srv = rm.pickServerId()) {
-        warpToSession(SessionId::fromParts(
-            *srv,
-            rm.getRoomId(),
-            level
-        ), openLevel);
-    } else {
-        globed::alert("Error", "Warp failed, no game servers available!");
     }
 }
 
@@ -165,7 +194,7 @@ $on_mod(Loaded) {
     auto& nm = NetworkManagerImpl::get();
 
     nm.listenGlobal<msg::WarpPlayerMessage>([](const auto& msg) {
-        globed::warpToSession(msg.sessionId, true, true);
+        globed::warpToSession(WarpContext{ msg.sessionId, WarpSource::Global });
         return ListenerResult::Stop;
     });
 

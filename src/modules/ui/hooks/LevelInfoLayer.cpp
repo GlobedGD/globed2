@@ -118,16 +118,6 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
     }
 
     $override
-    void onBack(CCObject* sender) {
-        // clear warp context
-        if (globed::_getWarpContext().levelId() == m_level->m_levelID) {
-            globed::_clearWarpContext();
-        }
-
-        LevelInfoLayer::onBack(sender);
-    }
-
-    $override
     void onPlay(CCObject* s) {
         if (m_fields->m_allowAnyway) {
             m_fields->m_allowAnyway = false;

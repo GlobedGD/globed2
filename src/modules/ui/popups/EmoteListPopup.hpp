@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ui/misc/Sliders.hpp>
+#include <ui/Core.hpp>
 #include <ui/BasePopup.hpp>
 #include <cue/ListNode.hpp>
 #include <vector>

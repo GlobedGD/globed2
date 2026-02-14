@@ -13,12 +13,7 @@ namespace globed {
 void RoomManager::joinLevel(int levelId, int author, bool platformer, bool editorCollab) {
     auto& nm = NetworkManagerImpl::get();
 
-    // check for warp context, join a specific server if warping
-    auto wctx = globed::_getWarpContext();
-
-    if (wctx.levelId() == levelId) {
-        nm.sendJoinSession(wctx, author, platformer, editorCollab);
-    } else if (auto srv = this->pickServerId()) {
+    if (auto srv = this->pickServerId()) {
         // construct a session ID
         auto id = SessionId::fromParts(*srv, m_roomId, levelId);
         nm.sendJoinSession(id, author, platformer, editorCollab);
@@ -164,8 +159,8 @@ RoomManager::RoomManager() {
             this->resetValues();
             m_roomId = msg.roomId;
 
-            // a change in rooms resets the warp context as well
-            globed::_clearWarpContext();
+            // a change in rooms resets the preferred server
+            NetworkManagerImpl::get().setTemporaryServerOverride(std::nullopt);
 
             // if we are in a level, clear the current session
             if (GJBaseGameLayer::get()) {
@@ -237,7 +232,7 @@ RoomManager::RoomManager() {
     nm.listenGlobal<msg::RoomWarpMessage>([this](const auto& msg) {
         m_currentWarpLevel = msg.sessionId;
         log::debug("Current warp level {}", msg.sessionId.levelId());
-        globed::warpToSession(msg.sessionId, true);
+        globed::warpToSession(WarpContext{ msg.sessionId, WarpSource::Room });
         return ListenerResult::Continue;
     })->setPriority(-10000);
 }

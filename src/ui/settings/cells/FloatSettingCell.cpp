@@ -1,19 +1,13 @@
 #include "FloatSettingCell.hpp"
 
-#include <UIBuilder.hpp>
+#include <ui/Core.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
 
 void FloatSettingCell::setup() {
-    auto container = Build<CCNode>::create()
-        .layout(SimpleColumnLayout::create()
-            ->setMainAxisDirection(AxisDirection::BottomToTop)
-            ->setMainAxisScaling(AxisScaling::Fit)
-            ->setCrossAxisScaling(AxisScaling::Fit)
-            ->setGap(0.f)
-        )
+    auto container = Build(ColumnContainer::create(0.f)->flip())
         .parent(m_rightMenu)
         .collect();
 

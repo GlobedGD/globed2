@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BaseSettingCell.hpp"
-#include <ui/misc/Sliders.hpp>
+#include <ui/Core.hpp>
 
 namespace globed {
 
