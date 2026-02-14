@@ -84,6 +84,8 @@ public:
     void addListener(const std::type_info& ty, void* listener, void* dtor);
     void removeListener(const std::type_info& ty, void* listener);
 
+    static ccColor3B latencyToColor(uint64_t ms);
+
 private:
     friend class SingletonBase;
     friend class NetworkManagerImpl;

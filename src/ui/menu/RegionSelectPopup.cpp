@@ -1,6 +1,7 @@
 #include "RegionSelectPopup.hpp"
 #include <globed/core/ValueManager.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <globed/core/net/NetworkManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
@@ -13,37 +14,6 @@ static constexpr CCSize LIST_SIZE { 330.f, 180.f };
 
 namespace {
 constexpr float CELL_HEIGHT = 40.f;
-
-static ccColor3B latencyToColor(uint64_t ms) {
-    std::array breakpoints = {
-        std::make_pair(0, ccColor3B{0, 255, 0}),
-        std::make_pair(50, ccColor3B{144, 238, 144}),
-        std::make_pair(125, ccColor3B{255, 255, 0}),
-        std::make_pair(200, ccColor3B{255, 165, 0}),
-        std::make_pair(300, ccColor3B{255, 0, 0}),
-    };
-
-    ms = std::clamp<uint64_t>(ms, breakpoints.front().first, breakpoints.back().first);
-
-    for (size_t i = 0; i < breakpoints.size() - 1; i++) {
-        auto& [lo_val, lo_color] = breakpoints[i];
-        auto& [hi_val, hi_color] = breakpoints[i + 1];
-
-        if (ms > (uint64_t)hi_val) {
-            continue;
-        }
-
-        float t = (float)(ms - lo_val) / (float)(hi_val - lo_val);
-        uint8_t r = std::round(std::lerp((float)lo_color.r, (float)hi_color.r, t));
-        uint8_t g = std::round(std::lerp((float)lo_color.g, (float)hi_color.g, t));
-        uint8_t b = std::round(std::lerp((float)lo_color.b, (float)hi_color.b, t));
-
-        return ccColor3B{r, g, b};
-    }
-
-    // should never reach here
-    std::unreachable();
-}
 
 class ListCell : public CCNode {
 public:
@@ -68,7 +38,7 @@ public:
             m_pingLabel->setColor(ccColor3B{150, 150, 150});
         } else {
             m_pingLabel->setString(fmt::format("{} ms", m_ping).c_str());
-            m_pingLabel->setColor(latencyToColor(m_ping));
+            m_pingLabel->setColor(NetworkManager::latencyToColor(m_ping));
         }
     }
 

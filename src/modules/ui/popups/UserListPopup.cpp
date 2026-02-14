@@ -4,14 +4,13 @@
 #include <globed/core/FriendListManager.hpp>
 #include <globed/core/PlayerCacheManager.hpp>
 #include <globed/audio/AudioManager.hpp>
+#include <globed/core/net/NetworkManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/CoreImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/misc/AudioVisualizer.hpp>
 #include <ui/Core.hpp>
-
-#include <UIBuilder.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -446,42 +445,11 @@ bool UserListPopup::init() {
     cbLayout->updateLayout();
 
     // add a label showing current server
-    auto server = NetworkManagerImpl::get().getGameServer();
-    if (server) {
-        auto serverNameContainer = Build<ColumnContainer>::create(0.f)
-            .anchorPoint(0.f, 1.f)
-            .pos(this->fromTopLeft(30.f, 9.f))
-            .parent(m_mainLayer)
-            .collect();
-
-        Build<Label>::create(server->name.c_str(), "bigFont.fnt")
-            .color({ 31, 255, 87 })
-            .scale(0.4f)
-            .parent(serverNameContainer);
-
-        std::string pingText;
-        ccColor3B color;
-
-        if (server->avgLatency > 10000) {
-            pingText = "? ms";
-            color = {127, 127, 127};
-        } else {
-            pingText = fmt::format("{} ms", server->avgLatency);
-            // TODO
-            color = {255, 255, 255};
-        }
-
-        // TODO: also update this periodically
-        Build<Label>::create(pingText.c_str(), "bigFont.fnt")
-            .scale(0.4f)
-            .color(color)
-            .parent(serverNameContainer);
-
-        serverNameContainer->updateLayout();
-    }
+    this->updateServer(0.f);
 
     // this->schedule(schedule_selector(GlobedUserListPopup::reorderWithVolume), 0.5f);
     this->scheduleUpdate();
+    this->schedule(schedule_selector(UserListPopup::updateServer), 1.f);
 
     return true;
 }
@@ -559,6 +527,49 @@ void UserListPopup::update(float dt) {
 
     m_needsFilterUpdate = false;
     this->hardRefresh();
+}
+
+void UserListPopup::updateServer(float dt) {
+    auto server = NetworkManagerImpl::get().getGameServer();
+    if (!server) {
+        cue::resetNode(m_serverContainer);
+        return;
+    }
+
+    if (!m_serverContainer) {
+        // recreate the container and ui stuff
+        m_serverContainer = Build<ColumnContainer>::create(0.f)
+            .anchorPoint(0.f, 1.f)
+            .pos(this->fromTopLeft(30.f, 9.f))
+            .parent(m_mainLayer);
+
+        m_serverNameLabel = Build<Label>::create("", "bigFont.fnt")
+            // .color({ 31, 255, 87 })
+            .scale(0.4f)
+            .parent(m_serverContainer);
+
+        m_serverPingLabel = Build<Label>::create("", "bigFont.fnt")
+            .scale(0.4f)
+            .parent(m_serverContainer);
+    }
+
+    m_serverNameLabel->setString(server->name.c_str());
+
+    std::string pingText;
+    ccColor3B color;
+
+    if (server->avgLatency > 10000) {
+        pingText = "? ms";
+        color = {127, 127, 127};
+    } else {
+        pingText = fmt::format("{} ms", server->avgLatency);
+        color = NetworkManager::latencyToColor(server->avgLatency);
+    }
+
+    m_serverPingLabel->setString(pingText.c_str());
+    m_serverPingLabel->setColor(color);
+
+    m_serverContainer->updateLayout();
 }
 
 void UserListPopup::onVolumeChanged(double value) {
