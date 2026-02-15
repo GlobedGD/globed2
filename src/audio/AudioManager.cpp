@@ -234,7 +234,7 @@ void AudioManager::pausePassiveRecording() {
 }
 
 bool AudioManager::isPassiveRecording() {
-    return m_recordingPassive.load(relaxed);
+    return m_recordingPassiveActive.load(relaxed);
 }
 
 Result<FMOD::Channel*> AudioManager::playSound(FMOD::Sound* sound) {
