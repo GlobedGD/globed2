@@ -125,6 +125,11 @@ void warpToSession(WarpContext context) {
             return;
         }
     } else if (context.source == WarpSource::Room) {
+        // if the room owner exited the room, do nothing
+        if (context.session.asU64() == 0) {
+            return;
+        }
+
         auto ref = PopupManager::get().quickPopup(
             "Warp Request",
             fmt::format("The room owner has joined a level, do you want to follow them?"),
