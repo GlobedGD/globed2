@@ -265,6 +265,21 @@ NetworkManagerImpl& NetworkManagerImpl::get() {
     return *NetworkManager::get().m_impl;
 }
 
+static void commonConnectionSetup(qn::Connection& conn) {
+    auto qdbPath = Mod::get()->getSaveDir() / "qdb-cache";
+    conn.setQdbFolder(qdbPath);
+    conn.setShouldReconnectCallback([](const qn::ConnectionError& err) {
+        // Do not reconnect if the server decided to explicitly close the connection,
+        // unless it is the "Server is shutting down" error
+        if (err.isServerClosedError()) {
+            auto msg = err.asServerClosedError().message();
+            return msg == "Server is shutting down";
+        }
+
+        return true;
+    });
+}
+
 Future<> NetworkManagerImpl::asyncInit() {
     // this does not have to be async but it also must not be in the constructor
     if (globed::value<bool>("net.dont-override-dns").value_or(false)) {
@@ -287,9 +302,8 @@ Future<> NetworkManagerImpl::asyncInit() {
     m_centralConn->setActiveKeepaliveInterval(Duration::fromSecs(45));
     m_gameConn->setActiveKeepaliveInterval(Duration::fromSecs(10));
 
-    auto qdbPath = Mod::get()->getSaveDir() / "qdb-cache";
-    m_centralConn->setQdbFolder(qdbPath);
-    m_gameConn->setQdbFolder(qdbPath);
+    commonConnectionSetup(*m_centralConn);
+    commonConnectionSetup(*m_gameConn);
 
     this->initializeTls();
 
