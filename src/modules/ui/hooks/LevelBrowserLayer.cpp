@@ -22,7 +22,7 @@ static bool isValidLevelType(GJLevelType level) {
 struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBrowserLayer, LevelBrowserLayer> {
     struct Fields {
         std::unordered_map<int, uint16_t> m_levels;
-        std::optional<MessageListener<msg::PlayerCountsMessage>> m_listener;
+        MessageListener<msg::PlayerCountsMessage> m_listener;
     };
 
     static void onModify(auto& self) {

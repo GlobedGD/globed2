@@ -16,7 +16,7 @@ public:
 protected:
     geode::Function<void()> m_callback;
     geode::TextInput* m_passwordInput = nullptr;
-    std::optional<MessageListener<msg::AdminResultMessage>> m_listener;
+    MessageListener<msg::AdminResultMessage> m_listener;
     LoadingPopup* m_loadPopup = nullptr;
 
     bool init(geode::Function<void()> callback);

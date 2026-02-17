@@ -32,8 +32,8 @@ private:
     std::unordered_map<int, FeatureTier> m_levelToRateTier;
     std::unordered_set<int> m_failedQueries;
     std::vector<int> m_currentQuery;
-    std::optional<MessageListener<msg::PlayerCountsMessage>> m_playerCountListener;
-    std::optional<MessageListener<msg::FeaturedListMessage>> m_listListener;
+    MessageListener<msg::PlayerCountsMessage> m_playerCountListener;
+    MessageListener<msg::FeaturedListMessage> m_listListener;
 
     bool init() override;
     void update(float dt) override;

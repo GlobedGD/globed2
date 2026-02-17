@@ -20,7 +20,7 @@ private:
     CCNode* m_graphBottomLabels;
     bool m_autoRefresh = true;
     bool m_graphShown = false;
-    std::optional<MessageListener<msg::ScriptLogsMessage>> m_listener;
+    MessageListener<msg::ScriptLogsMessage> m_listener;
 
     bool init() override;
     void toggleGraphShown(bool graph);

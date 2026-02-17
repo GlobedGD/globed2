@@ -32,7 +32,7 @@ protected:
     std::map<asp::time::Duration, CCMenuItemToggler*> m_durationButtons;
     asp::time::Duration m_currentDuration{};
 
-    std::optional<MessageListener<msg::AdminResultMessage>> m_listener;
+    MessageListener<msg::AdminResultMessage> m_listener;
     LoadingPopup* m_loadPopup = nullptr;
 
     bool init(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun);

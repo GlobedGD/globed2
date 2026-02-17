@@ -43,8 +43,8 @@ protected:
     Ref<cue::LoadingCircle> m_loadingCircle;
     Ref<GradientLabel> m_playerCountLabel;
 
-    std::optional<MessageListener<msg::PlayerCountsMessage>> m_playerCountListener;
-    std::optional<MessageListener<msg::FeaturedLevelMessage>> m_levelListener;
+    MessageListener<msg::PlayerCountsMessage> m_playerCountListener;
+    MessageListener<msg::FeaturedLevelMessage> m_levelListener;
 
     std::optional<FeaturedLevelMeta> m_levelMeta;
     Ref<GJGameLevel> m_level;

@@ -86,15 +86,42 @@ Result<FollowRotationEvent> FollowRotationEvent::decode(qn::ByteReader& reader) 
     return Ok(GEODE_UNWRAP(decodeFollowRotationData(reader)));
 }
 
-Result<ActivePlayerSwitchEvent> ActivePlayerSwitchEvent::decode(qn::ByteReader& reader) {
+Result<SwitcherooFullStateEvent> SwitcherooFullStateEvent::decode(qn::ByteReader& reader) {
+    int activePlayer = READER_UNWRAP(reader.readI32());
+    uint8_t flags = READER_UNWRAP(reader.readU8());
+
+    bool active = (flags & 0b00000001) != 0;
+    bool indication = (flags & 0b00000010) != 0;
+    bool restart = (flags & 0b00000100) != 0;
+
+    return Ok(SwitcherooFullStateEvent {
+        activePlayer, active, indication, restart
+    });
+}
+
+Result<> SwitcherooFullStateEvent::encode(qn::HeapByteWriter& writer) {
+    writer.writeU16(EVENT_SWITCHEROO_FULLSTATE);
+    writer.writeI32(activePlayer);
+
+    uint8_t flags = 0;
+    if (this->gameActive) flags |= 0b00000001;
+    if (this->playerIndication) flags |= 0b00000010;
+    if (this->restarting) flags |= 0b00000100;
+
+    writer.writeU8(flags);
+
+    return Ok();
+}
+
+Result<SwitcherooSwitchEvent> SwitcherooSwitchEvent::decode(qn::ByteReader& reader) {
     auto playerId = READER_UNWRAP(reader.readI32());
     auto type = READER_UNWRAP(reader.readU8());
 
-    return Ok(ActivePlayerSwitchEvent { playerId, type });
+    return Ok(SwitcherooSwitchEvent { playerId, Type(type) });
 }
 
-Result<> ActivePlayerSwitchEvent::encode(qn::HeapByteWriter& writer) {
-    writer.writeU16(EVENT_ACTIVE_PLAYER_SWITCH);
+Result<> SwitcherooSwitchEvent::encode(qn::HeapByteWriter& writer) {
+    writer.writeU16(EVENT_SWITCHEROO_SWITCH);
     writer.writeI32(playerId);
     writer.writeU8(type);
 
@@ -115,7 +142,8 @@ Result<InEvent> InEvent::decode(ByteReader& reader) {
         MAP_TO(EVENT_SCR_FOLLOW_ROTATION, FollowRotationEvent);
         MAP_TO(EVENT_2P_LINK_REQUEST, TwoPlayerLinkRequestEvent);
         MAP_TO(EVENT_2P_UNLINK, TwoPlayerUnlinkEvent);
-        MAP_TO(EVENT_ACTIVE_PLAYER_SWITCH, ActivePlayerSwitchEvent);
+        MAP_TO(EVENT_SWITCHEROO_FULLSTATE, SwitcherooFullStateEvent);
+        MAP_TO(EVENT_SWITCHEROO_SWITCH, SwitcherooSwitchEvent);
         default: break;
     }
 #undef MAP_TO

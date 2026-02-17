@@ -33,10 +33,10 @@ protected:
     CCMenuItemSpriteExtra* m_searchBtn = nullptr;
     CCMenuItemSpriteExtra* m_clearSearchBtn = nullptr;
     std::vector<std::vector<RoomListingInfo>> m_allRooms;
-    std::optional<MessageListener<msg::RoomListMessage>> m_roomListListener;
+    MessageListener<msg::RoomListMessage> m_roomListListener;
 
-    std::optional<MessageListener<msg::RoomStateMessage>> m_successListener;
-    std::optional<MessageListener<msg::RoomJoinFailedMessage>> m_failListener;
+    MessageListener<msg::RoomStateMessage> m_successListener;
+    MessageListener<msg::RoomJoinFailedMessage> m_failListener;
     LoadingPopup* m_loadingPopup = nullptr;
     uint32_t m_joinedRoomId = 0;
     uint64_t m_joinedRoomPasscode = 0;

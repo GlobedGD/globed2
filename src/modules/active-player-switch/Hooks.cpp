@@ -1,28 +1,195 @@
 #include "Hooks.hpp"
 
+#include "SettingsPopup.hpp"
 #include <globed/core/RoomManager.hpp>
+#include <globed/core/data/Event.hpp>
 #include <Geode/utils/random.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
+#include <asp/iter.hpp>
 
 using namespace geode::prelude;
 
 static bool g_ignoreNoclip = false;
 static bool g_ignoreButtonBlock = true;
 
+
 // when respawning player becomes visible again
 
 namespace globed {
 
+using SwitchType = SwitcherooSwitchEvent::Type;
+
+// Game controller
+
+void APSController::restart() {
+    m_activePlayer = m_pl->m_fields->m_myAccountId;
+    m_meActive = true;
+    m_gameActive = true;
+    this->calculateNextSwitch();
+}
+
+void APSController::handleStateEvent(const SwitcherooFullStateEvent& event) {
+    log::debug(
+        "(APS) State: game {}, player {}, indication {}, restarting {}",
+        event.gameActive, event.activePlayer, event.playerIndication, event.restarting
+    );
+
+    m_settings.m_showNextPlayer = event.playerIndication;
+    m_gameActive = event.gameActive;
+    m_activePlayer = event.activePlayer;
+    m_meActive = event.activePlayer == m_pl->m_fields->m_myAccountId;
+
+    if (event.restarting) {
+        m_pl->customResetLevel();
+    }
+
+    this->rehidePlayers();
+}
+
+void APSController::handleSwitchEvent(const SwitcherooSwitchEvent& event) {
+    if (event.type == event.Warning) {
+        log::debug("(APS) Soon switching to {}", event.playerId);
+        m_nextPlayer = event.playerId;
+
+        // if showNextPlayer is enabled, only show the pre switch effect to the next player, to make it simpler
+        // otherwise show to everyone and let them guess!
+        bool meNext = m_nextPlayer == m_pl->m_fields->m_myAccountId;
+        bool showEffect = meNext || !m_settings.m_showNextPlayer;
+
+        if (showEffect) m_pl->showPreSwitchEffect();
+    } else if (event.type == event.Switch) {
+        log::debug("(APS) Now switching to {}!", event.playerId);
+        m_activePlayer = event.playerId;
+        m_meActive = m_activePlayer == m_pl->m_fields->m_myAccountId;
+        m_pl->hideSwitchEffects();
+
+        if (m_meActive) {
+            m_pl->showSwitchEffect();
+        } else {
+            // switched away from us, cancel inputs
+            bool prev = g_ignoreButtonBlock;
+            g_ignoreButtonBlock = true;
+            m_gjbgl->handleButton(false, 0, true);
+            g_ignoreButtonBlock = prev;
+        }
+
+        this->rehidePlayers();
+    }
+}
+
+void APSController::rehidePlayers() {
+    for (auto& [id, player] : m_gjbgl->m_fields->m_players) {
+        player->setForceHide(id != m_activePlayer);
+    }
+}
+
+std::optional<SwitcherooSwitchEvent> APSController::poll() {
+    if (!m_gameActive) return std::nullopt;
+
+    auto untilSwitch = m_nextSwitch.until();
+
+    if (untilSwitch.isZero()) {
+        // switch now
+        this->calculateNextSwitch();
+        int player = m_detNext ? m_detNext : this->pickNextPlayer();
+        m_detNext = 0;
+
+        return SwitcherooSwitchEvent {
+            .playerId = player,
+            .type = SwitchType::Switch,
+        };
+    } else if (!m_warned && untilSwitch < *asp::Duration::fromSecs(m_settings.m_warningDelay)) {
+        // calculate player and show warning
+        m_detNext = this->pickNextPlayer();
+        m_warned = true;
+
+        return SwitcherooSwitchEvent {
+            .playerId = m_detNext,
+            .type = SwitchType::Warning,
+        };
+    }
+
+    return std::nullopt;
+}
+
+void APSController::calculateNextSwitch() {
+    m_warned = false;
+
+    float var = std::abs(m_settings.m_intervalVar);
+    float base = std::abs(m_settings.m_interval);
+    float untilNext = utils::random::generate<float>(base - var, base + var);
+    m_nextSwitch = asp::Instant::now() + *asp::Duration::fromSecs(untilNext);
+}
+
+int APSController::pickNextPlayer() {
+    switch (m_settings.m_cycleAlgo) {
+        case APSSelectionAlgorithm::FairRandom: {
+            if (m_pqueue.empty()) {
+                this->getAllPlayers();
+                utils::random::shuffle(m_pqueue);
+
+                // ensure that the same person can't play twice in a row!
+                if (m_pqueue.back() == m_activePlayer) {
+                    std::swap(m_pqueue.front(), m_pqueue.back());
+                }
+            }
+
+            int ret = m_pqueue.back();
+            m_pqueue.pop_back();
+            return ret;
+        } break;
+
+        case APSSelectionAlgorithm::Sequential: {
+            if (m_pqueue.empty()) {
+                this->getAllPlayers();
+                std::ranges::sort(m_pqueue);
+            }
+
+            int ret = m_pqueue.back();
+            m_pqueue.pop_back();
+            return ret;
+        } break;
+
+        case APSSelectionAlgorithm::Random: {
+            // yes it's not efficient but we recollect all players into the vector every time,
+            // so that we dont miss people that newly joined
+            this->getAllPlayers();
+
+            while (true) {
+                int next = m_pqueue[utils::random::generate(0, m_pqueue.size())];
+                if (next != m_activePlayer || m_pqueue.size() == 1) return next;
+            }
+        } break;
+    }
+
+    return 0;
+}
+
+void APSController::getAllPlayers() {
+    m_pqueue = asp::iter::keys(m_gjbgl->m_fields->m_players).collect();
+    m_pqueue.push_back(m_pl->m_fields->m_myAccountId);
+}
+
+// PlayLayer
+
 bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
     if (!PlayLayer::init(level, a, b)) return false;
 
-    m_fields->m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& msg) {
+    auto& fields = *m_fields.self();
+    fields.m_myAccountId = GJAccountManager::get()->m_accountID;
+    fields.m_controller.m_pl = this;
+    fields.m_controller.m_gjbgl = GlobedGJBGL::get(this);
+
+    fields.m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& msg) {
+        auto& controller = m_fields->m_controller;
         for (auto& event : msg.events) {
-            if (event.is<ActivePlayerSwitchEvent>()) {
-                this->handleEvent(event.as<ActivePlayerSwitchEvent>());
+            if (event.is<SwitcherooFullStateEvent>()) {
+                controller.handleStateEvent(event.as<SwitcherooFullStateEvent>());
+            } else if (event.is<SwitcherooSwitchEvent>()) {
+                controller.handleSwitchEvent(event.as<SwitcherooSwitchEvent>());
             }
         }
 
@@ -31,7 +198,7 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
 
     float glowScale = 1.5f;
 
-    m_fields->m_switchGlow = Build(CCScale9Sprite::create("switch-screen-glow.png"_spr))
+    fields.m_switchGlow = Build(CCScale9Sprite::create("switch-screen-glow.png"_spr))
         .scale(glowScale)
         .zOrder(11)
         .contentSize(CCDirector::get()->getWinSize() / glowScale)
@@ -40,7 +207,7 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
         .parent(m_uiLayer)
         .anchorPoint(0.f, 0.f);
 
-    m_fields->m_switchPreglow = Build(CCScale9Sprite::create("switch-screen-preglow.png"_spr))
+    fields.m_switchPreglow = Build(CCScale9Sprite::create("switch-screen-preglow.png"_spr))
         .scale(glowScale)
         .zOrder(10)
         .contentSize(CCDirector::get()->getWinSize() / glowScale)
@@ -55,9 +222,10 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
 void APSPlayLayer::destroyPlayer(PlayerObject* player, GameObject* obj) {
     auto& mod = APSModule::get();
     auto& fields = *m_fields.self();
+    auto& controller = fields.m_controller;
     auto gameLayer = GlobedGJBGL::get();
 
-    if (!gameLayer || fields.m_meActive || fields.m_activePlayer == 0) {
+    if (!gameLayer || controller.m_meActive || controller.m_activePlayer == 0) {
         PlayLayer::destroyPlayer(player, obj);
         return;
     }
@@ -69,51 +237,6 @@ void APSPlayLayer::destroyPlayer(PlayerObject* player, GameObject* obj) {
     }
 
     PlayLayer::destroyPlayer(player, obj);
-}
-
-void APSPlayLayer::handleEvent(const ActivePlayerSwitchEvent& event) {
-    log::info("(APS) Switching active player to {} (type: {})", event.playerId, event.type);
-
-    auto self = GlobedGJBGL::get(this);
-
-    if (event.type == 2) { // full reset
-        this->customResetLevel();
-    }
-
-    if (event.type == 0) { // pre-switch
-        if (event.playerId == globed::get<GJAccountManager>()->m_accountID) {
-            this->showPreSwitchEffect();
-        }
-
-        return;
-    }
-
-    auto& fields = *m_fields.self();
-    fields.m_activePlayer = event.playerId;
-    fields.m_meActive = event.playerId == globed::get<GJAccountManager>()->m_accountID;
-
-    for (auto& [id, player] : self->m_fields->m_players) {
-        if (id == fields.m_activePlayer) {
-            player->setForceHide(false);
-        } else {
-            player->setForceHide(true);
-        }
-    }
-
-    if (fields.m_meActive) {
-        float delay = utils::random::generate(3.5f, 8.0f);
-
-        auto scene = this->getParent();
-        scene->scheduleOnce(schedule_selector(APSPlayLayer::performPreSwitchProxy), delay);
-    } else {
-        // switched away from us, cancel inputs
-        bool prev = g_ignoreButtonBlock;
-        g_ignoreButtonBlock = true;
-        GJBaseGameLayer::handleButton(false, 0, true);
-        g_ignoreButtonBlock = prev;
-    }
-
-    this->showSwitchEffect();
 }
 
 void APSPlayLayer::showSwitchEffect() {
@@ -128,18 +251,14 @@ void APSPlayLayer::showEffect(bool presw) {
     auto& fields = *m_fields.self();
     auto node = presw ? fields.m_switchPreglow : fields.m_switchGlow;
 
-    // first disable both
-    fields.m_switchPreglow->setVisible(false);
-    fields.m_switchPreglow->stopAllActions();
-    fields.m_switchGlow->setVisible(false);
-    fields.m_switchGlow->stopAllActions();
+    this->hideSwitchEffects();
 
     node->setOpacity(0);
     node->runAction(
         CCSequence::create(
             CCShow::create(),
             CCFadeIn::create(presw ? 0.01f : 0.f),
-            CCDelayTime::create(presw ? 5.f : 0.4f),
+            CCDelayTime::create(presw ? 99999.f : 0.4f),
             CCFadeOut::create(0.1f),
             CCHide::create(),
             nullptr
@@ -147,8 +266,17 @@ void APSPlayLayer::showEffect(bool presw) {
     );
 }
 
+void APSPlayLayer::hideSwitchEffects() {
+    auto& fields = *m_fields.self();
+    fields.m_switchPreglow->setVisible(false);
+    fields.m_switchPreglow->stopAllActions();
+    fields.m_switchGlow->setVisible(false);
+    fields.m_switchGlow->stopAllActions();
+
+}
+
 void APSPlayLayer::handlePlayerDeath(const PlayerDeath& death, RemotePlayer* player) {
-    if (player->id() == m_fields->m_activePlayer) {
+    if (player->id() == m_fields->m_controller.m_activePlayer) {
         log::info("Handling death from {}", player->displayData().username);
         g_ignoreNoclip = true;
         GlobedGJBGL::get(this)->killLocalPlayer();
@@ -173,67 +301,50 @@ void APSPlayLayer::customResetLevel() {
 }
 
 bool APSPlayLayer::shouldBlockInput() {
+    auto& controller = m_fields->m_controller;
+    return !controller.m_meActive && controller.m_activePlayer != 0;
+}
+
+void APSPlayLayer::restartSwitchCycle() {
     auto& fields = *m_fields.self();
-    return !fields.m_meActive && fields.m_activePlayer != 0;
+
+    // start the game and send full state
+    fields.m_controller.restart();
+    this->sendFullState(true);
 }
 
-void APSPlayLayer::performSwitch() {
+void APSPlayLayer::sendFullState(bool restarting) {
     auto& fields = *m_fields.self();
-    log::info("(APS) Sending switch event to {}", fields.m_switchingTo);
 
-    NetworkManagerImpl::get().queueGameEvent(ActivePlayerSwitchEvent {
-        .playerId = fields.m_switchingTo,
-        .type = 1, // switch
-    });
+    // collect the game state and send to all users
+    SwitcherooFullStateEvent ev{};
+    ev.gameActive = fields.m_controller.m_gameActive;
+    ev.activePlayer = fields.m_controller.m_activePlayer;
+    ev.playerIndication = fields.m_controller.m_settings.m_showNextPlayer;
+    ev.restarting = restarting;
+
+    NetworkManagerImpl::get().queueGameEvent(ev);
 }
 
-void APSPlayLayer::performPreSwitch() {
-    auto& fields = *m_fields.self();
-    auto self = GlobedGJBGL::get(this);
-
-    // choose the next player
-    auto& players = self->m_fields->m_players;
-
-    if (players.empty()) {
-        log::warn("no players to switch to!");
-        return;
-    }
-
-    size_t idx = utils::random::generate<size_t>(0, players.size() - 1);
-
-    auto it = players.begin();
-    std::advance(it, idx);
-
-    fields.m_switchingTo = it->first;
-    log::info("(APS) Sending pre-switch event to {}", it->first);
-
-    NetworkManagerImpl::get().queueGameEvent(ActivePlayerSwitchEvent {
-        .playerId = fields.m_switchingTo,
-        .type = 0, // pre-switch
-    });
-
-    // schedule the switch 1 second later
-    auto scene = this->getParent();
-    scene->scheduleOnce(schedule_selector(APSPlayLayer::performSwitchProxy), 1.0f);
-
-    this->showPreSwitchEffect();
-}
-
-void APSPlayLayer::performSwitchProxy(float dt) {
-    if (auto pl = APSPlayLayer::get()) pl->performSwitch();
-}
-
-void APSPlayLayer::performPreSwitchProxy(float dt) {
-    if (auto pl = APSPlayLayer::get()) pl->performPreSwitch();
+void APSPlayLayer::updateSettings(const APSSettings& settings) {
+    m_fields->m_controller.m_settings = settings;
 }
 
 void APSPlayLayer::handleUpdate() {
     auto& fields = *m_fields.self();
+    auto& controller = fields.m_controller;
     auto self = GlobedGJBGL::get(this);
 
-    if (fields.m_activePlayer != 0) {
-        bool p1vis = fields.m_meActive;
-        bool p2vis = fields.m_meActive && m_gameState.m_isDualMode;
+    if (fields.m_controlling) {
+        auto ev = controller.poll();
+        if (ev) {
+            NetworkManagerImpl::get().queueGameEvent(std::move(*ev));
+        }
+    }
+
+    if (controller.m_activePlayer != 0) {
+        bool p1vis = controller.m_meActive;
+        bool p2vis = controller.m_meActive && m_gameState.m_isDualMode;
 
         m_player1->setVisible(p1vis);
         if (m_player1->m_shipStreak) m_player1->m_shipStreak->setVisible(p1vis);
@@ -244,14 +355,14 @@ void APSPlayLayer::handleUpdate() {
         if (m_player2->m_regularTrail) m_player2->m_regularTrail->setVisible(p2vis);
     }
 
-    if (!fields.m_meActive && fields.m_activePlayer != 0) {
-        auto rp = self->getPlayer(fields.m_activePlayer);
+    if (!controller.m_meActive && controller.m_activePlayer != 0) {
+        auto rp = self->getPlayer(controller.m_activePlayer);
         if (rp) {
             this->handleUpdateFromRp(m_player1, rp.get(), false);
             this->handleUpdateFromRp(m_player2, rp.get(), true);
         } else {
-            log::warn("active player {} not found!", fields.m_activePlayer);
-            fields.m_activePlayer = 0;
+            log::warn("active player {} not found!", controller.m_activePlayer);
+            controller.m_activePlayer = 0;
         }
     }
 }
@@ -331,20 +442,7 @@ void APSPauseLayer::customSetup() {
     Build<CCSprite>::create("icon-switcheroo.png"_spr)
         .scale(0.9f)
         .intoMenuItem(+[] {
-            if (!globed::swapFlag("core.flags.seen-switcheroo-note")) {
-                globed::alert(
-                    "Switcheroo",
-                    "This button starts (or restarts) the <cj>Switcheroo</c> mode. You do <cr>not</c> need to press it multiple times (e.g. every switch or when someone joins), players are going to be switched <cg>automatically</c> once started, this button only serves to <cy>start or restart</c> the mode.\n\n"
-                    "Press the button again once all your friends join, to <cg>start</c> the game!"
-                );
-
-                return;
-            }
-
-            NetworkManagerImpl::get().queueGameEvent(ActivePlayerSwitchEvent {
-                .playerId = GJAccountManager::get()->m_accountID,
-                .type = 2,
-            });
+            if (auto pl = APSPlayLayer::get()) APSSettingsPopup::create(pl)->show();
         })
         .scaleMult(1.2f)
         .id("btn-switcheroo"_spr)

@@ -17,9 +17,9 @@ protected:
     friend class TeamCell;
     cue::ListNode* m_list;
     cue::LoadingCircle* m_loadingCircle = nullptr;
-    std::optional<MessageListener<msg::RoomStateMessage>> m_stateListener;
-    std::optional<MessageListener<msg::TeamCreationResultMessage>> m_creationListener;
-    std::optional<MessageListener<msg::RoomSettingsUpdatedMessage>> m_settingsListener;
+    MessageListener<msg::RoomStateMessage> m_stateListener;
+    MessageListener<msg::TeamCreationResultMessage> m_creationListener;
+    MessageListener<msg::RoomSettingsUpdatedMessage> m_settingsListener;
     CCNode* m_bottomContainer;
     int m_assigningFor = 0;
     bool m_showPlus = false;

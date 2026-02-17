@@ -21,7 +21,7 @@ private:
     std::vector<uint8_t> m_roleIds;
     Callback m_callback;
 
-    std::optional<MessageListener<msg::AdminResultMessage>> m_listener;
+    MessageListener<msg::AdminResultMessage> m_listener;
     LoadingPopup* m_loadPopup = nullptr;
 
     bool init(int32_t accountId, std::vector<uint8_t> roleIds);

@@ -49,11 +49,11 @@ private:
     CCMenu* m_farRightMenu = nullptr;
     CCMenuItemSpriteExtra* m_searchBtn = nullptr;
     CCMenuItemSpriteExtra* m_clearSearchBtn = nullptr;
-    std::optional<MessageListener<msg::RoomStateMessage>> m_roomStateListener;
-    std::optional<MessageListener<msg::RoomPlayersMessage>> m_roomPlayersListener;
-    std::optional<MessageListener<msg::PinnedLevelUpdatedMessage>> m_pinnedListener;
-    std::optional<MessageListener<msg::UserDataChangedMessage>> m_userChangedListener;
-    std::optional<MessageListener<msg::AdminPunishmentReasonsMessage>> m_adminResultListener;
+    MessageListener<msg::RoomStateMessage> m_roomStateListener;
+    MessageListener<msg::RoomPlayersMessage> m_roomPlayersListener;
+    MessageListener<msg::PinnedLevelUpdatedMessage> m_pinnedListener;
+    MessageListener<msg::UserDataChangedMessage> m_userChangedListener;
+    MessageListener<msg::AdminPunishmentReasonsMessage> m_adminResultListener;
     uint32_t m_roomId = -1;
     size_t m_playerCount = 0;
     std::optional<asp::time::Instant> m_lastRoomUpdate;

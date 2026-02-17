@@ -29,9 +29,9 @@ private:
     CCMenuItemToggler* m_deathlinkBtn = nullptr;
     CCMenuItemToggler* m_switcherooBtn = nullptr;
     CCMenuItemToggler* m_collisionBtn = nullptr;
-    std::optional<MessageListener<msg::RoomStateMessage>> m_successListener;
-    std::optional<MessageListener<msg::RoomCreateFailedMessage>> m_failListener;
-    std::optional<MessageListener<msg::RoomBannedMessage>> m_bannedListener;
+    MessageListener<msg::RoomStateMessage> m_successListener;
+    MessageListener<msg::RoomCreateFailedMessage> m_failListener;
+    MessageListener<msg::RoomBannedMessage> m_bannedListener;
     LoadingPopup* m_loadingPopup = nullptr;
 
     bool init() override;

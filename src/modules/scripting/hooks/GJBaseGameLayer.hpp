@@ -39,8 +39,8 @@ struct CustomFollowedData {
 
 struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBaseGameLayer> {
     struct Fields {
-        std::optional<MessageListener<msg::LevelDataMessage>> m_listener;
-        std::optional<MessageListener<msg::ScriptLogsMessage>> m_logsListener;
+        MessageListener<msg::LevelDataMessage> m_listener;
+        MessageListener<msg::ScriptLogsMessage> m_logsListener;
         std::vector<std::string> m_logBuffer;
         std::deque<std::pair<asp::time::SystemTime, float>> m_memLimitBuffer;
 

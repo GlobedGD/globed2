@@ -59,10 +59,10 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         std::shared_ptr<RemotePlayer> m_ghost; // player that always follows the local player
         std::vector<int> m_unknownPlayers;
         float m_lastDataRequest = 0.f;
-        std::optional<MessageListener<msg::LevelDataMessage>> m_levelDataListener;
-        std::optional<MessageListener<msg::VoiceBroadcastMessage>> m_voiceListener;
-        std::optional<MessageListener<msg::QuickChatBroadcastMessage>> m_quickChatListener;
-        std::optional<MessageListener<msg::ChatNotPermittedMessage>> m_mutedListener;
+        MessageListener<msg::LevelDataMessage> m_levelDataListener;
+        MessageListener<msg::VoiceBroadcastMessage> m_voiceListener;
+        MessageListener<msg::QuickChatBroadcastMessage> m_quickChatListener;
+        MessageListener<msg::ChatNotPermittedMessage> m_mutedListener;
 
         uint8_t m_deathCount = 0;
         bool m_lastLocalDeathReal = false;

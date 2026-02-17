@@ -13,14 +13,59 @@
 
 namespace globed {
 
+enum class APSSelectionAlgorithm {
+    /// Truly random selection of the next player (minus the active one)
+    Random,
+    /// Tetris-like selection, every player gets to play in a single cycle, but the order is random
+    FairRandom,
+    /// Deterministic order based on account ID
+    Sequential,
+};
+
+struct APSSettings {
+    APSSelectionAlgorithm m_cycleAlgo = APSSelectionAlgorithm::FairRandom;
+    float m_interval = 5.f;
+    float m_intervalVar = 2.f;
+    float m_warningDelay = 1.f;
+    bool m_showNextPlayer = false;
+};
+
+struct APSPlayLayer;
+struct APSController {
+    APSSettings m_settings{};
+    APSPlayLayer* m_pl{};
+    GlobedGJBGL* m_gjbgl{};
+    int m_activePlayer = 0;
+    int m_nextPlayer = 0;
+    bool m_meActive = false;
+    bool m_gameActive = false;
+
+    void restart();
+    void handleStateEvent(const SwitcherooFullStateEvent& event);
+    void handleSwitchEvent(const SwitcherooSwitchEvent& event);
+    void rehidePlayers();
+
+    std::optional<SwitcherooSwitchEvent> poll();
+
+private:
+    std::vector<int> m_pqueue;
+    asp::Instant m_nextSwitch;
+    int m_detNext = 0;
+    bool m_warned = false;
+
+    void calculateNextSwitch();
+    int pickNextPlayer();
+    void getAllPlayers();
+};
+
 struct GLOBED_MODIFY_ATTR APSPlayLayer : geode::Modify<APSPlayLayer, PlayLayer> {
     struct Fields {
-        std::optional<MessageListener<msg::LevelDataMessage>> m_listener;
-        int m_activePlayer = 0;
-        int m_switchingTo = 0;
-        bool m_meActive = false;
+        MessageListener<msg::LevelDataMessage> m_listener;
+        int m_myAccountId = 0;
         cocos2d::extension::CCScale9Sprite* m_switchGlow = nullptr;
         cocos2d::extension::CCScale9Sprite* m_switchPreglow = nullptr;
+        APSController m_controller{};
+        bool m_controlling = false; // whether we are room owner
     };
 
     static void onModify(auto& self) {
@@ -38,21 +83,21 @@ struct GLOBED_MODIFY_ATTR APSPlayLayer : geode::Modify<APSPlayLayer, PlayLayer> 
     $override
     void destroyPlayer(PlayerObject* player, GameObject* obj);
 
-    void handleEvent(const ActivePlayerSwitchEvent& event);
     void handlePlayerDeath(const PlayerDeath& death, RemotePlayer* player);
     void handleUpdate();
     void handleUpdateFromRp(PlayerObject* local, RemotePlayer* rp, bool p2);
 
     void customResetLevel();
     bool shouldBlockInput();
-    void performSwitch();
-    void performPreSwitch();
-    void performSwitchProxy(float dt);
-    void performPreSwitchProxy(float dt);
 
     void showSwitchEffect();
     void showPreSwitchEffect();
     void showEffect(bool presw);
+    void hideSwitchEffects();
+
+    void restartSwitchCycle();
+    void sendFullState(bool restarting = false);
+    void updateSettings(const APSSettings& settings);
 };
 
 struct GLOBED_MODIFY_ATTR APSGJBGL : geode::Modify<APSGJBGL, GJBaseGameLayer> {

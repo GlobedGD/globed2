@@ -15,7 +15,7 @@ public:
 
 private:
     cue::ListNode* m_list;
-    std::optional<MessageListener<msg::GlobalPlayersMessage>> m_listener;
+    MessageListener<msg::GlobalPlayersMessage> m_listener;
     CCMenu* m_rightSideMenu;
     CCMenuItemSpriteExtra* m_searchBtn;
     CCMenuItemSpriteExtra* m_clearSearchBtn;

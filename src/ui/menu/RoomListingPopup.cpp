@@ -354,7 +354,7 @@ void RoomListingPopup::waitForResponse() {
 
         return ListenerResult::Continue;
     });
-    m_successListener.value()->setPriority(-100);
+    m_successListener->setPriority(-100);
 
     m_failListener = NetworkManagerImpl::get().listen<msg::RoomJoinFailedMessage>([this](const auto& msg) {
         using enum msg::RoomJoinFailedReason;
@@ -382,7 +382,7 @@ void RoomListingPopup::waitForResponse() {
 
         return ListenerResult::Stop;
     });
-    m_failListener.value()->setPriority(-1);
+    m_failListener->setPriority(-1);
 }
 
 void RoomListingPopup::stopWaiting(std::optional<std::string> failReason, bool dontClose) {

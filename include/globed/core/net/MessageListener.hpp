@@ -78,47 +78,58 @@ public:
     MessageListener(const MessageListener&) = delete;
     MessageListener& operator=(const MessageListener&) = delete;
 
-    inline MessageListener(MessageListener&& other) noexcept
+    MessageListener() = default;
+
+    MessageListener(MessageListener&& other) noexcept
         : m_impl(other.m_impl) {
         other.m_impl = nullptr;
     }
 
-    inline MessageListener& operator=(MessageListener&& other) noexcept {
+    MessageListener& operator=(MessageListener&& other) noexcept {
         if (this != &other) {
-            if (m_impl) m_impl->destroy(typeid(T));
+            this->reset();
             m_impl = other.m_impl;
             other.m_impl = nullptr;
         }
         return *this;
     }
 
-    inline MessageListenerImpl<T>* operator*() {
+    MessageListenerImpl<T>* operator*() {
         return m_impl;
     }
 
-    inline MessageListenerImpl<T>* operator->() {
+    MessageListenerImpl<T>* operator->() {
         return m_impl;
     }
 
-    inline ~MessageListener() {
+    operator bool() const {
+        return m_impl != nullptr;
+    }
+
+    void reset() {
         if (m_impl) m_impl->destroy(typeid(T));
+        m_impl = nullptr;
+    }
+
+    ~MessageListener() {
+        this->reset();
     }
 
     /// Set the priority of this listener. Lower values are called first. The default is 0.
-    inline void setPriority(int priority) {
+    void setPriority(int priority) {
         m_impl->setPriority(priority);
     }
 
-    inline int getPriority() const {
+    int getPriority() const {
         return m_impl->getPriority();
     }
 
     /// Set whether the listener is thread-safe. If `false` (the default), the listener will always be called on the main thread.
-    inline void setThreadSafe(bool threadSafe) {
+    void setThreadSafe(bool threadSafe) {
         m_impl->setThreadSafe(threadSafe);
     }
 
-    inline bool isThreadSafe() const {
+    bool isThreadSafe() const {
         return m_impl->isThreadSafe();
     }
 

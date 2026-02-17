@@ -18,7 +18,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelAreaInnerLayer : geode::Modify<HookedLevelA
     struct Fields {
         std::unordered_map<int, uint16_t> m_levels;
         std::unordered_map<int, Ref<cocos2d::CCNode>> m_doorNodes;
-        std::optional<MessageListener<msg::PlayerCountsMessage>> m_listener;
+        MessageListener<msg::PlayerCountsMessage> m_listener;
     };
 
     static void onModify(auto& self) {

@@ -23,8 +23,8 @@ protected:
     size_t m_loadReqs = 0;
 
     FetchLogsFilters m_filters;
-    std::optional<MessageListener<msg::AdminFetchModsResponseMessage>> m_modsListener;
-    std::optional<MessageListener<msg::AdminLogsResponseMessage>> m_logsListener;
+    MessageListener<msg::AdminFetchModsResponseMessage> m_modsListener;
+    MessageListener<msg::AdminLogsResponseMessage> m_logsListener;
 
     bool init(FetchLogsFilters filters);
     void refetch();

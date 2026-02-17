@@ -18,15 +18,9 @@ namespace globed {
 
 // Event type values
 // [0; 0xf000) (61440) are reserved for scripting
-// [0xf000; 0xf800) (total 2048) are reserved for globed events
-// [0xf800; 0xffff] (total 2048) are reserved for custom mod events
-
-// Globed events
-// 0xf001 - EVENT_COUNTER_CHANGE
-// 0xf010 - EVENT_SCR_SPAWN_GROUP
-// 0xf011 - EVENT_SCR_SET_ITEM
-// 0xf100 - EVENT_2P_LINK_REQUEST
-// 0xf101 - EVENT_2P_UNLINK
+// [0xf000; 0xff00) (total 3840) are reserved for globed events
+// 0xff00 is reserved for custom events implementation
+// rest are reserved for future use
 
 constexpr uint16_t EVENT_GLOBED_BASE = 0xf000;
 constexpr uint16_t EVENT_COUNTER_CHANGE = 0xf001;
@@ -42,9 +36,8 @@ constexpr uint16_t EVENT_SCR_FOLLOW_ROTATION = 0xf016;
 constexpr uint16_t EVENT_2P_LINK_REQUEST = 0xf100;
 constexpr uint16_t EVENT_2P_UNLINK = 0xf101;
 
-constexpr uint16_t EVENT_ACTIVE_PLAYER_SWITCH =  0xf140;
-
-constexpr uint16_t EVENT_CUSTOM_BASE = 0xf800;
+constexpr uint16_t EVENT_SWITCHEROO_FULLSTATE = 0xf120;
+constexpr uint16_t EVENT_SWITCHEROO_SWITCH = 0xf121;
 
 struct UnknownEvent {
     uint16_t type;
@@ -121,11 +114,24 @@ struct FollowRotationEvent {
     static Result<FollowRotationEvent> decode(qn::ByteReader& reader);
 };
 
-struct ActivePlayerSwitchEvent {
-    int playerId;
-    uint8_t type; // 0 - warning, 1 - switch, 2 - full reset
+struct SwitcherooFullStateEvent {
+    int activePlayer = 0;
+    bool gameActive = false;
+    bool playerIndication = false;
+    bool restarting = false;
 
-    static Result<ActivePlayerSwitchEvent> decode(qn::ByteReader& reader);
+    static Result<SwitcherooFullStateEvent> decode(qn::ByteReader& reader);
+    Result<> encode(qn::HeapByteWriter& writer);
+};
+
+struct SwitcherooSwitchEvent {
+    int playerId;
+    enum Type : uint8_t {
+        Switch = 0,
+        Warning = 1,
+    } type;
+
+    static Result<SwitcherooSwitchEvent> decode(qn::ByteReader& reader);
     Result<> encode(qn::HeapByteWriter& writer);
 };
 
@@ -144,7 +150,8 @@ struct InEvent {
         FollowRotationEvent,
         TwoPlayerLinkRequestEvent,
         TwoPlayerUnlinkEvent,
-        ActivePlayerSwitchEvent
+        SwitcherooSwitchEvent,
+        SwitcherooFullStateEvent
 #endif
     >;
 
@@ -196,7 +203,8 @@ struct OutEvent {
         TwoPlayerUnlinkEvent,
         ScriptedEvent,
         RequestScriptLogsEvent,
-        ActivePlayerSwitchEvent
+        SwitcherooSwitchEvent,
+        SwitcherooFullStateEvent
 #endif
     >;
 
@@ -210,7 +218,8 @@ struct OutEvent {
     OutEvent(TwoPlayerUnlinkEvent e) : m_kind(std::move(e)) {}
     OutEvent(ScriptedEvent e) : m_kind(std::move(e)) {}
     OutEvent(RequestScriptLogsEvent e) : m_kind(std::move(e)) {}
-    OutEvent(ActivePlayerSwitchEvent e) : m_kind(std::move(e)) {}
+    OutEvent(SwitcherooSwitchEvent e) : m_kind(std::move(e)) {}
+    OutEvent(SwitcherooFullStateEvent e) : m_kind(std::move(e)) {}
 
     Result<> encode(qn::HeapByteWriter& writer);
 #endif

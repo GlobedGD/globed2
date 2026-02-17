@@ -481,7 +481,7 @@ void CreateRoomPopup::waitForResponse() {
 
         return ListenerResult::Continue;
     });
-    m_successListener.value()->setPriority(-100);
+    m_successListener->setPriority(-100);
 
     m_failListener = nm.listen<msg::RoomCreateFailedMessage>([this](const auto& msg) {
         using enum msg::RoomCreateFailedReason;

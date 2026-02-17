@@ -29,8 +29,8 @@ protected:
     geode::LazySprite* m_avatar = nullptr;
     bool m_activelyWaiting = false;
 
-    std::optional<MessageListener<msg::DiscordLinkStateMessage>> m_stateListener;
-    std::optional<MessageListener<msg::DiscordLinkAttemptMessage>> m_attemptListener;
+    MessageListener<msg::DiscordLinkStateMessage> m_stateListener;
+    MessageListener<msg::DiscordLinkAttemptMessage> m_attemptListener;
 
     bool init() override;
     void onClose(CCObject*) override;

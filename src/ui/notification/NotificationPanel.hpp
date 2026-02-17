@@ -22,7 +22,7 @@ private:
 
     asp::time::SystemTime m_lastAdded = asp::time::SystemTime::UNIX_EPOCH;
     std::queue<geode::Ref<CCNode>> m_queued;
-    std::optional<MessageListener<msg::InvitedMessage>> m_listener;
+    MessageListener<msg::InvitedMessage> m_listener;
 
     bool init() override;
     void update(float dt) override;

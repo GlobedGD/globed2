@@ -20,8 +20,8 @@ public:
 
 protected:
     cue::LoadingCircle* m_loadCircle = nullptr;
-    std::optional<MessageListener<msg::AdminFetchResponseMessage>> m_listener;
-    std::optional<MessageListener<msg::AdminResultMessage>> m_resultListener;
+    MessageListener<msg::AdminFetchResponseMessage> m_listener;
+    MessageListener<msg::AdminResultMessage> m_resultListener;
     std::string m_query;
     bool m_queryIsId = false;
     CCMenu* m_nameLayout = nullptr;

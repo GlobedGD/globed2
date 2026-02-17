@@ -49,7 +49,7 @@ private:
     geode::Ref<cue::LoadingCircle> m_loadingCircle;
     // GlobedFeaturedLevel currentFeaturedLevel;
 
-    std::optional<MessageListener<msg::LevelListMessage>> m_levelListener;
+    MessageListener<msg::LevelListMessage> m_levelListener;
     std::unordered_map<SessionId, uint32_t> m_playerCounts;
     std::unordered_map<int, geode::Ref<GJGameLevel>> m_levelCache;
 
