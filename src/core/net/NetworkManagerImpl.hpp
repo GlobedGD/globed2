@@ -82,7 +82,7 @@ struct ConnectionInfo {
     std::string m_centralUrl;
     std::string m_knownArgonUrl;
     std::unordered_map<std::string, GameServer> m_gameServers;
-    std::optional<uint8_t> m_serverOverride = 0;
+    std::optional<uint8_t> m_serverOverride;
     bool m_gameServersUpdated = true;
     bool m_established = false;
     bool m_authenticating = false;

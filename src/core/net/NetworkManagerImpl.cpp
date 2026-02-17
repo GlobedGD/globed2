@@ -1021,7 +1021,12 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer(bool useLatencyFal
     auto& servers = info->m_gameServers;
 
     if (info->m_serverOverride) {
-        return *info->m_serverOverride;
+        auto ov = *info->m_serverOverride;
+        // only use if it actually exists
+        bool exists = asp::iter::values(servers).any([&](auto&& s) {
+            return s.id == ov;
+        });
+        if (exists) return ov;
     }
 
     if (auto value = globed::value<std::string>("core.net.preferred-server")) {
