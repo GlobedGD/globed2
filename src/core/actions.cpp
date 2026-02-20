@@ -125,8 +125,13 @@ void warpToSession(WarpContext context) {
             return;
         }
     } else if (context.source == WarpSource::Room) {
-        // if the room owner exited the room, do nothing
+        // if the room owner exited the room or joined the same level, do nothing
         if (context.session.asU64() == 0) {
+            return;
+        }
+
+        auto gjbgl = GlobedGJBGL::get();
+        if (gjbgl && gjbgl->m_level && gjbgl->m_level->m_levelID == context.session.levelId()) {
             return;
         }
 
