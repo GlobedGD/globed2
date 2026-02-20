@@ -497,10 +497,7 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                             // if at least one server is unstable, ping all servers again soon
                             if (unstable) {
                                 log::debug("Scheduling a ping soon due to unstable results!");
-                                m_workerState.nextGSPing = std::min(
-                                    Instant::now() + Duration::fromSecs(5),
-                                    m_workerState.nextGSPing
-                                );
+                                m_workerState.schedulePing(Duration::fromSecs(5));
                             }
                         }
                     }
@@ -727,11 +724,7 @@ void NetworkManagerImpl::threadPingGameServers(LockedConnInfo& info) {
         nextPing = std::min(nextPing, server.lastPingTime + interval);
     }
 
-    log::debug(
-        "Scheduling next game server ping in {:.3f}s",
-        (nextPing.durationSince(now)).seconds<float>()
-    );
-    m_workerState.nextGSPing = nextPing;
+    m_workerState.schedulePing(nextPing);
 }
 
 void NetworkManagerImpl::threadMaybeResendOwnData(LockedConnInfo& info) {

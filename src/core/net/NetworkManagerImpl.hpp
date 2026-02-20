@@ -68,6 +68,21 @@ struct WorkerState {
         decltype(pingResultTx) tx,
         decltype(pingResultRx) rx
     ) : pingResultTx(std::move(tx)), pingResultRx(std::move(rx)) {}
+
+    void schedulePing(asp::Duration dur) {
+        schedulePing(asp::Instant::now() + dur);
+    }
+
+    void schedulePing(asp::Instant time) {
+        auto now = asp::Instant::now();
+        if (nextGSPing <= now) {
+            // no scheduled ping in the future
+            nextGSPing = time;
+        } else {
+            // ping scheduled, choose whichever is sooner
+            nextGSPing = std::min(nextGSPing, time);
+        }
+    }
 };
 
 struct GameWorkerState {
