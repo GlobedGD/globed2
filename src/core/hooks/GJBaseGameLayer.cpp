@@ -706,6 +706,14 @@ bool GlobedGJBGL::isEditor() {
     return m_isEditor;
 }
 
+bool GlobedGJBGL::isSpectating() {
+    return m_fields->m_spectating;
+}
+
+void GlobedGJBGL::setSpectating(bool spectate) {
+    m_fields->m_spectating = spectate;
+}
+
 bool GlobedGJBGL::isCurrentPlayLayer() {
     auto pl = CCScene::get()->getChildByType<PlayLayer>(0);
     return static_cast<GJBaseGameLayer*>(pl) == this;

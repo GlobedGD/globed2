@@ -84,6 +84,7 @@ void APSController::rehidePlayers() {
     for (auto& [id, player] : m_gjbgl->m_fields->m_players) {
         player->setForceHide(id != m_activePlayer);
     }
+    m_gjbgl->setSpectating(!m_meActive);
 }
 
 std::optional<SwitcherooSwitchEvent> APSController::poll() {
@@ -182,6 +183,7 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
     fields.m_myAccountId = GJAccountManager::get()->m_accountID;
     fields.m_controller.m_pl = this;
     fields.m_controller.m_gjbgl = GlobedGJBGL::get(this);
+    fields.m_controlling = RoomManager::get().isOwner();
 
     fields.m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& msg) {
         auto& controller = m_fields->m_controller;

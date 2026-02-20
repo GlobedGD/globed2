@@ -466,9 +466,10 @@ void VisualPlayer::setStickyState(bool p1, bool sticky) {
 void VisualPlayer::updateOpacity() {
     float mult = 1.f;
 
-    bool hideNearby_ = this->hideNearby(GlobedGJBGL::get(m_gameLayer));
+    auto gjbgl = GlobedGJBGL::get(m_gameLayer);
+    bool hideNearby_ = this->hideNearby(gjbgl);
 
-    if (hideNearby_) {
+    if (hideNearby_ && !gjbgl->isSpectating()) {
         // calculate distance
         auto p1pos = m_gameLayer->m_player1->getPosition();
         auto p2pos = m_gameLayer->m_player2->getPosition();

@@ -77,6 +77,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_knownServerMuted = false;
         bool m_deafened = false;
         bool m_showingNoticeAlert = false;
+        bool m_spectating = false;
         BoolExt m_didJustJump1, m_didJustJump2;
 
         CCNode* m_playerNode = nullptr;
@@ -120,6 +121,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     PlayerState getPlayerState();
     bool isPaused(bool checkCurrent = true);
     bool isEditor();
+    bool isSpectating();
     bool isCurrentPlayLayer();
     bool isManuallyResetting();
     bool isSafeMode();
@@ -128,6 +130,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void handlePlayerLeave(int playerId, bool removeFromMap = true);
     void handleLocalPlayerDeath(PlayerObject*);
     void setPermanentSafeMode();
+    void setSpectating(bool spectate);
     void sendPlayerData(const PlayerState& state);
     /// Kills the local player, by default the death will not be counted as 'real'.
     /// If this is unwanted, pass `false`
