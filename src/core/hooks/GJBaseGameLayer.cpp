@@ -19,6 +19,7 @@
 #include <Geode/utils/VMTHookManager.hpp>
 #include <UIBuilder.hpp>
 #include <asp/time/Instant.hpp>
+#include <asp/iter.hpp>
 #include <qunet/util/algo.hpp>
 #include <cue/Util.hpp>
 
@@ -435,15 +436,16 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         AudioManager::get().updatePlayback(camState.cameraCenter(), fields.m_isVoiceProximity);
     }
 
-    // the server might not send any updates if there are no players on the level,
-    // if we receive no response for a while, assume all players have left
-    if (fields.m_timeCounter - fields.m_lastServerUpdate > 1.5f && fields.m_players.size() <= 2) {
-        for (auto it = fields.m_players.begin(); it != fields.m_players.end(); ) {
-            int playerId = it->first;
-            this->handlePlayerLeave(playerId, false);
-            it = fields.m_players.erase(it);
-        }
-    }
+    // -- commented chunk below is from globed v2, we no longer do this optimization for now --
+    // // the server might not send any updates if there are no players on the level,
+    // // if we receive no response for a while, assume all players have left
+    // if (fields.m_timeCounter - fields.m_lastServerUpdate > 1.5f && fields.m_players.size() <= 2) {
+    //     for (auto it = fields.m_players.begin(); it != fields.m_players.end(); ) {
+    //         int playerId = it->first;
+    //         this->handlePlayerLeave(playerId, false);
+    //         it = fields.m_players.erase(it);
+    //     }
+    // }
 
     // refresh teams if needed
     if (rm.getSettings().teams) {
