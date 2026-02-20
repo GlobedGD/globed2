@@ -16,12 +16,14 @@ bool APSSettingsPopup::init(APSPlayLayer* layer) {
     m_settings = layer->m_fields->m_controller.m_settings;
     m_layer = layer;
 
-    Build(ButtonSprite::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.8f))
+    m_btn = Build(ButtonSprite::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.8f))
         .intoMenuItem([this] {
+            m_btn->removeFromParent();
             this->startGame();
         })
         .pos(this->fromBottom(40.f))
-        .parent(m_buttonMenu);
+        .parent(m_buttonMenu)
+        .collect();
 
     return true;
 }
