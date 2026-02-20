@@ -135,12 +135,43 @@ void GlobedGJBGL::setupNecessary() {
     }
 }
 
+static CCNode* createLoadingOverlay() {
+    auto winSize = CCDirector::get()->getWinSize();
+    auto layer = CCLayerColor::create({0, 0, 0, 220}, winSize.width, winSize.height);
+    layer->ignoreAnchorPointForPosition(false);
+    layer->setAnchorPoint({0.f, 0.f});
+
+    Build<Label>::create("Loading...", "bigFont.fnt")
+        .parent(layer)
+        .pos(winSize.width / 2, winSize.height / 2)
+        .anchorPoint(0.5f, 0.5f);
+
+    auto lbl = Build(Label::create("Globed is currently loading player icons and death effects.\nThis is done to reduce stutters in-game, and can be disabled in settings.", "chatFont.fnt"))
+        .parent(layer)
+        .scale(0.7f)
+        .pos(winSize.width / 2, winSize.height / 2 - 50.f)
+        .anchorPoint(0.5f, 0.5f)
+        .collect();
+    lbl->setAlignment(BMFontAlignment::Center);
+
+    return layer;
+}
+
 void GlobedGJBGL::setupAssetLoading() {
     auto& pm = PreloadManager::get();
     pm.enterContext(PreloadContext::Level);
 
     if (pm.shouldPreload()) {
         log::info("Preloading assets (deferred)");
+
+        // show an overlay while the game is frozen and loading resources,
+        // so that the user knows what's going on
+        auto ov = createLoadingOverlay();
+        CCScene::get()->addChild(ov, 1000);
+        auto dir = CCDirector::get();
+        dir->m_bPaused = true;
+        dir->drawScene();
+        dir->m_bPaused = false;
 
         auto start = Instant::now();
         pm.loadEverything();
