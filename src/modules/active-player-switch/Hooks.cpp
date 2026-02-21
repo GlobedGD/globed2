@@ -329,7 +329,19 @@ void APSPlayLayer::sendFullState(bool restarting) {
 }
 
 void APSPlayLayer::updateSettings(const APSSettings& settings) {
-    m_fields->m_controller.m_settings = settings;
+    auto& set = m_fields->m_controller.m_settings;
+    set = settings;
+
+    // validate settings
+
+    // interval must be at least 1 second
+    set.m_interval = std::max(set.m_interval, 1.f);
+
+    // variance cannot be higher than the base interval
+    set.m_intervalVar = std::min(set.m_intervalVar, set.m_interval - 1.f);
+
+    // warning delay cannot be higher than the base interval
+    set.m_warningDelay = std::min(set.m_warningDelay, set.m_interval - 1.f);
 }
 
 void APSPlayLayer::handleUpdate() {

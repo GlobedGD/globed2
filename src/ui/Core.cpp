@@ -15,6 +15,8 @@ static void deferredUpdate(CCNode* node) {
 
 ColumnContainer* ColumnContainer::create(float gap) {
     auto ret = new ColumnContainer();
+    ret->init();
+    ret->ignoreAnchorPointForPosition(false);
     ret->setLayout(
         SimpleColumnLayout::create()
             ->setGap(gap)
@@ -27,14 +29,20 @@ ColumnContainer* ColumnContainer::create(float gap) {
 }
 
 ColumnContainer* ColumnContainer::flip() {
-    auto layout = static_cast<SimpleColumnLayout*>(this->getLayout());
+    auto layout = this->layout();
     layout->setMainAxisDirection(layout->getMainAxisDirection() == AxisDirection::TopToBottom ? AxisDirection::BottomToTop : AxisDirection::TopToBottom);
     this->updateLayout();
     return this;
 }
 
+SimpleColumnLayout* ColumnContainer::layout() {
+    return static_cast<SimpleColumnLayout*>(this->getLayout());
+}
+
 RowContainer* RowContainer::create(float gap) {
     auto ret = new RowContainer();
+    ret->init();
+    ret->ignoreAnchorPointForPosition(false);
     ret->setLayout(
         SimpleRowLayout::create()
             ->setGap(gap)
@@ -47,10 +55,14 @@ RowContainer* RowContainer::create(float gap) {
 }
 
 RowContainer* RowContainer::flip() {
-    auto layout = static_cast<SimpleRowLayout*>(this->getLayout());
+    auto layout = this->layout();
     layout->setMainAxisDirection(layout->getMainAxisDirection() == AxisDirection::LeftToRight ? AxisDirection::RightToLeft : AxisDirection::LeftToRight);
     this->updateLayout();
     return this;
+}
+
+SimpleRowLayout* RowContainer::layout() {
+    return static_cast<SimpleRowLayout*>(this->getLayout());
 }
 
 }

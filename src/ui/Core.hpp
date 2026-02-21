@@ -28,15 +28,19 @@ inline cue::ProgressBar* createProgressBar() {
 }
 
 /// Column container with auto grow, top to bottom
-struct ColumnContainer : public cocos2d::CCNode {
+struct ColumnContainer : public cocos2d::CCMenu {
     static ColumnContainer* create(float gap = 3.f);
     ColumnContainer* flip();
+
+    geode::SimpleColumnLayout* layout();
 };
 
 /// Row container with auto grow, left to right
-struct RowContainer : public cocos2d::CCNode {
+struct RowContainer : public cocos2d::CCMenu {
     static RowContainer* create(float gap = 3.f);
     RowContainer* flip();
+
+    geode::SimpleRowLayout* layout();
 };
 
 }

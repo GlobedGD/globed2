@@ -18,10 +18,10 @@ import tomllib
 import sys
 
 # minimum required geode, can be a commit or a tag
-REQUIRED_GEODE_VERSION = "v5.0.0-beta.2"
-QUNET_VERSION = "2faa1cb"
+REQUIRED_GEODE_VERSION = "v5.0.0-beta.3"
+QUNET_VERSION = "2726a9a"
 SERVER_SHARED_VERSION = "066d3b0"
-CUE_VERSION = "v1.0.0"
+CUE_VERSION = "v1.0.1"
 
 if sys.version_info < (3, 12):
     raise RuntimeError("Globed's build system requires Python 3.12 or higher")
@@ -311,7 +311,7 @@ def main(build: Build):
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
     build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static")
-    build.add_cpm_dep("GlobedGD/argon", "v1.4.2")
+    build.add_cpm_dep("GlobedGD/argon", "v1.4.3")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
     build.add_cpm_dep("Prevter/AdvancedLabel", "a800983", link_name="advanced_label")
 
