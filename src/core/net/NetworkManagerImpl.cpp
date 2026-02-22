@@ -960,9 +960,9 @@ void NetworkManagerImpl::disconnectCentral() {
 
 qn::ConnectionState NetworkManagerImpl::getConnState(bool game) {
     if (game) {
-        return m_gameConn->state();
+        return m_gameConn ? m_gameConn->state() : qn::ConnectionState::Disconnected;
     } else {
-        return m_centralConn->state();
+        return m_centralConn ? m_centralConn->state() : qn::ConnectionState::Disconnected;
     }
 }
 
