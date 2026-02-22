@@ -37,14 +37,21 @@ enum class PreloadContext {
 
 class PreloadManager : public SingletonBase<PreloadManager> {
 public:
+    struct Item {
+        std::string image;
+        bool isIcon = false;
+        IconType iconType;
+        int iconId;
+    };
+
     bool shouldPreload();
     void enterContext(PreloadContext context);
     void exitContext();
 
     // Loads a reasonable amount of assets in a single call, to avoid blocking the main thread for too long
-    void loadNextBatch();
+    void loadNextBatch(bool blocking = true);
     // Loads all assets in a single call, blocking the main thread until all assets are loaded
-    void loadEverything();
+    void loadEverything(bool blocking = true);
 
     // Returns the number of assets that have been loaded so far
     size_t getLoadedCount();
@@ -59,13 +66,6 @@ public:
 
 private:
     friend class SingletonBase;
-    struct Item {
-        std::string image;
-        bool isIcon = false;
-        IconType iconType;
-        int iconId;
-    };
-
     struct SessionState {
         bool initialized = false;
         bool hasTexturePack;
@@ -94,7 +94,7 @@ private:
 
     void resetState();
     void initLoadQueue();
-    void doLoadBatch(std::vector<Item>& items);
+    void doLoadBatch(std::vector<Item> items, bool blocking);
     void initSessionState();
 
     gd::string fullPathForFilename(std::string_view input, bool ignoreSuffix = false);

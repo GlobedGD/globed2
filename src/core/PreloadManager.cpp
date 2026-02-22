@@ -1,6 +1,7 @@
 #include "PreloadManager.hpp"
 #include <globed/prelude.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <globed/util/FunctionQueue.hpp>
 #include <asp/fs.hpp>
 #include <asp/sync/SpinLock.hpp>
 #include <asp/format.hpp>
@@ -157,7 +158,7 @@ void PreloadManager::initLoadQueue() {
     m_totalCount = m_loadQueue.size();
 }
 
-void PreloadManager::loadNextBatch() {
+void PreloadManager::loadNextBatch(bool blocking) {
     // 200 icons is a somewhat reasonable batch to load in a single call that shouldn't cause freezes even on low-end devices
     // death effects are huge and would be counted as 20 icons
     constexpr size_t Limit = 200;
@@ -177,10 +178,10 @@ void PreloadManager::loadNextBatch() {
         }
     }
 
-    this->doLoadBatch(items);
+    this->doLoadBatch(items, blocking);
 }
 
-void PreloadManager::loadEverything() {
+void PreloadManager::loadEverything(bool blocking) {
     std::vector<Item> items;
     items.reserve(m_loadQueue.size());
 
@@ -189,12 +190,154 @@ void PreloadManager::loadEverything() {
         m_loadQueue.pop();
     }
 
-    this->doLoadBatch(items);
+    this->doLoadBatch(items, blocking);
 }
 
-void PreloadManager::doLoadBatch(std::vector<Item>& items) {
-    // TODO: optimize.
+static std::pair<int, int> getOpenGLVersion() {
+    int major = 0, minor = 0;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+    return {major, minor};
+}
 
+static bool supportsGLExtension(std::string_view ext) {
+    GLint exts = 0;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &exts);
+
+    for (GLint i = 0; i < exts; i++) {
+        auto e = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
+        if (e == ext) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool supportsPBO() {
+    auto [major, minor] = getOpenGLVersion();
+#ifdef GEODE_IS_DESKTOP
+    // PBOs are supported on OpenGL 2.1+
+    return (major > 2) || (major == 2 && minor >= 1);
+#else
+    // On mobile, it's GLES 3.0+
+    return major >= 3;
+#endif
+}
+
+static bool supportsImmutableTex() {
+    auto [major, minor] = getOpenGLVersion();
+#ifdef GEODE_IS_DESKTOP
+    // Core feature of OpenGL 4.2+
+    if ((major > 4) || (major == 4 && minor >= 2)) {
+        return true;
+    }
+#else
+    // On mobile, it's GLES 3.0+
+    if (major >= 3) {
+        return true;
+    }
+#endif
+
+    return supportsGLExtension("GL_ARB_texture_storage") || supportsGLExtension("GL_EXT_texture_storage");
+}
+
+struct ItemState {
+    PreloadManager::Item item;
+    gd::string path;
+    Ref<CCImage> image;
+    Ref<CCTexture2D> texture;
+    GLuint pbo = 0;
+    GLuint tex = 0;
+    std::atomic<bool> pboReady{false};
+    bool failed = false;
+
+    ItemState(PreloadManager::Item item, gd::string path) : item(std::move(item)), path(std::move(path)) {}
+
+    // so, how's life?
+    ItemState(ItemState&& other) noexcept {
+        item = std::move(other.item);
+        path = std::move(other.path);
+        image = std::move(other.image);
+        texture = std::move(other.texture);
+        pbo = other.pbo;
+        tex = other.tex;
+        pboReady.store(other.pboReady.load(std::memory_order::relaxed), std::memory_order::relaxed);
+        failed = other.failed;
+
+        other.pbo = 0;
+        other.tex = 0;
+    }
+};
+
+using MtTextureCallback = geode::CopyableFunction<void(ItemState&)>;
+
+static bool initializeTexture(ItemState& state, asp::ThreadPool& pool, MtTextureCallback onCreated) {
+    if (!supportsPBO()) {
+        // PBO not supported, let's just use cctexture2d directly
+        state.texture = Ref<CCTexture2D>::adopt(new CCTexture2D());
+        if (!state.texture->initWithImage(state.image)) {
+            state.texture = nullptr;
+            state.failed = true;
+            return false;
+        }
+
+        onCreated(state);
+        return true;
+    }
+
+    int64_t width = state.image->m_nWidth, height = state.image->m_nHeight;
+    int64_t byteSize = width * height * 4;
+
+    glGenTextures(1, &state.tex);
+    glGenBuffers(1, &state.pbo);
+
+    glBindTexture(GL_TEXTURE_2D, state.tex);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, state.pbo);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, byteSize, nullptr, GL_STREAM_DRAW);
+
+    void* ptr = glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, byteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+
+    pool.pushTask([ptr, &state, onCreated = std::move(onCreated)] mutable {
+        int64_t byteSize = (int64_t)state.image->m_nWidth * state.image->m_nHeight * 4;
+        std::memcpy(ptr, state.image->m_pData, byteSize);
+        state.image = nullptr; // no longer needed
+        state.pboReady.store(true, std::memory_order::relaxed);
+
+        // notify main thread
+        onCreated(state);
+    });
+
+    return true;
+}
+
+static CCTexture2D* initializeTextureFinalize(ItemState& state) {
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, state.pbo);
+    glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+    glBindTexture(GL_TEXTURE_2D, state.tex);
+
+    int64_t w = state.image->m_nWidth, h = state.image->m_nHeight;
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    auto texture = Ref<CCTexture2D>::adopt(new CCTexture2D());
+    texture->m_uName = state.tex;
+    texture->m_tContentSize = CCSize(w, h);
+    texture->m_uPixelsWide = w;
+    texture->m_uPixelsHigh = h;
+    texture->m_ePixelFormat = kCCTexture2DPixelFormat_RGBA8888;
+    texture->m_bHasPremultipliedAlpha = false;
+    texture->m_bHasMipmaps = false;
+
+    // TODO: investigate, is this always just 1 ??
+    texture->m_fMaxS = 1.f;
+    texture->m_fMaxT = 1.f;
+
+    texture->setShaderProgram(CCShaderCache::sharedShaderCache()->programForKey(kCCShader_PositionTexture));
+
+    return texture;
+}
+
+void PreloadManager::doLoadBatch(std::vector<Item> items, bool blocking) {
     if (!m_sstate.initialized) {
         this->initSessionState();
     }
@@ -211,19 +354,16 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
     auto sfCache = CCSpriteFrameCache::get();
     auto fu = CCFileUtils::get();
 
-    struct ItemState {
-        Item& item;
-        gd::string path;
-        CCTexture2D* texture = nullptr;
-    };
-
     // note: this vector might seem not thread safe and you would be right to think so,
     // although after the loop nothing is ever added/removed from it,
     // and a single specific item will initially be only accessed by the pool, and then given to the main thread
-    std::vector<ItemState> itemStates;
+    std::shared_ptr<std::vector<ItemState>> itemStates = std::make_shared<std::vector<ItemState>>();
 
     for (auto& item : items) {
-        auto fullPath = this->fullPathForFilename(item.image + ".png");
+        StringBuffer<256> buf;
+        buf.append("{}.png", item.image);
+
+        auto fullPath = this->fullPathForFilename(buf.view());
         if (fullPath.empty()) {
             log::warn("PreloadManager: could not find full path for '{}'", item.image);
             continue;
@@ -234,87 +374,116 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
             continue;
         }
 
-        itemStates.push_back(ItemState{
-            .item = item,
-            .path = std::move(fullPath),
-        });
+        itemStates->emplace_back(std::move(item), std::move(fullPath));
     }
 
-    if (itemStates.empty()) return;
+    if (itemStates->empty()) return;
 
-    log::debug("PreloadManager: loading {} images (took {} to populate)", itemStates.size(), timeBegin.elapsed().toString());
+    log::debug("PreloadManager: loading {} images (took {} to populate)", itemStates->size(), timeBegin.elapsed().toString());
     auto timePreInit = Instant::now();
 
-    asp::Channel<std::pair<size_t, CCImage*>> texInitRequests;
+    asp::Channel<ItemState*> texRequests;
 
-    for (size_t i = 0; i < itemStates.size(); i++) {
-        pool.pushTask([i, &itemStates, &texInitRequests] {
-            auto& state = itemStates[i];
+    MtTextureCallback textureCb;
+
+    if (blocking) {
+        // if blocking, push into the channel to be handled later
+        textureCb = [&texRequests](ItemState& tex) {
+            texRequests.push(&tex);
+        };
+    } else {
+        utils::terminate("non-blocking preload is not yet implemented");
+        // // otherwise offload stuff to qimt
+        // onImageLoaded = [](size_t idx, CCImage* image) {
+        //     FunctionQueue::get().queue([=] {
+
+        //     });
+        // };
+    }
+
+    for (size_t i = 0; i < itemStates->size(); i++) {
+        pool.pushTask([i, itemStates, textureCb] {
+            auto& state = (*itemStates)[i];
 
             unsigned long filesize = 0;
             auto buffer = getFileDataThreadSafe(state.path.c_str(), "rb", &filesize);
 
             if (!buffer || filesize == 0) {
+                state.failed = true;
                 log::warn("PreloadManager: could not read file '{}'", state.path);
                 return;
             }
 
-            auto image = new CCImage();
-            if (!image->initWithImageData(buffer.get(), filesize, cocos2d::CCImage::kFmtPng)) {
-                delete image;
+            state.image = Ref<CCImage>::adopt(new CCImage());
+            if (!state.image->initWithImageData(buffer.get(), filesize, cocos2d::CCImage::kFmtPng)) {
+                state.image = nullptr;
+                state.failed = true;
                 log::warn("PreloadManager: failed to init image '{}'", state.path);
                 return;
             }
 
-            texInitRequests.push({i, image});
+            textureCb(state);
         });
     }
 
-    // initialize all the textures, which must be done on the main thread
+    // initialize all textures
     size_t inited = 0;
-    while (true) {
-        if (texInitRequests.empty()) {
-            if (pool.isDoingWork()) {
-                std::this_thread::yield();
-                continue;
-            } else if (texInitRequests.empty()) {
-                break;
-            }
-        }
-
-        auto [idx, image] = texInitRequests.popNow();
-        auto& state = itemStates[idx];
-
-        auto texture = new CCTexture2D();
-        if (!texture->initWithImage(image)) {
-            delete image;
-            delete texture;
-            log::warn("PreloadManager: failed to init texture for '{}'", state.path);
-            continue;
-        }
-
-        state.texture = texture;
-        texCache->m_pTextures->setObject(texture, state.path);
-
-        texture->release(); // bring ref count back to 1
-        delete image; // no longer needed
+    auto insertTexture = [&](ItemState& state) {
+        texCache->m_pTextures->setObject(state.texture, state.path);
 
         // cache the icon texture
-        this->setCachedIcon((int) state.item.iconType, state.item.iconId, texture);
-
+        this->setCachedIcon((int) state.item.iconType, state.item.iconId, state.texture);
         inited++;
+    };
+
+    while (true) {
+        if (auto req = texRequests.tryPop()) {
+            auto& state = **req;
+
+            // state x (failure) - skip
+            if (state.failed) continue;
+
+            // state 1 - image loaded, need to init texture
+            else if (state.image && !state.texture) {
+                if (!initializeTexture(state, pool, textureCb)) {
+                    log::warn("PreloadManager: failed to init texture for '{}' (early)", state.path);
+                    continue;
+                }
+            }
+
+            // state 2 - texture loaded without PBO, this texture is ready
+            if (state.texture) {
+                insertTexture(state);
+                continue;
+            }
+
+            // state 3 - texture loaded with PBO, not yet ready
+            GLOBED_ASSERT(state.tex && state.pbo);
+            if (!state.pboReady.load(std::memory_order::relaxed)) {
+                continue;
+            }
+
+            // state 4 - texture loaded with PBO, ready to be finalized
+            state.texture = initializeTextureFinalize(state);
+            insertTexture(state);
+        }
+
+        if (pool.isDoingWork()) {
+            std::this_thread::yield();
+            continue;
+        } else if (texRequests.empty()) {
+            break;
+        }
     }
 
     log::debug("PreloadManager: initialized {} textures in {}, adding frames", inited, timePreInit.elapsed().toString());
     auto timePreFrames = Instant::now();
 
-    // TODO: bring over the pugixml sprite frame parsing code from blaze?
-
-    for (size_t i = 0; i < itemStates.size(); i++) {
+    for (size_t i = 0; i < itemStates->size(); i++) {
         pool.pushTask([i, &itemStates] {
             auto texCache = CCTextureCache::get();
             auto sfCache = CCSpriteFrameCache::get();
-            auto& state = itemStates[i];
+            auto& state = (*itemStates)[i];
             auto& self = PreloadManager::get();
 
             if (!state.texture) {
