@@ -156,6 +156,13 @@ bool PreloadItemState::createTexture() {
     return true;
 }
 
+static void checkGL(std::string_view where) {
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        log::error("GL error at {}: 0x{:X}", where, err);
+    }
+}
+
 void PreloadItemState::enqueuePBOCreation() {
 #ifdef GEODE_IS_WINDOWS
     GLOBED_DEBUG_ASSERT(!m_tex && !m_pbo);
@@ -176,14 +183,17 @@ void PreloadItemState::enqueuePBOCreation() {
 
     if (supportsImmutableTex()) {
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
+        checkGL("glTexStorage2D");
     } else {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        checkGL("glTexImage2D");
     }
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
     glBufferData(GL_PIXEL_UNPACK_BUFFER, byteSize, nullptr, GL_STREAM_DRAW);
 
     void* ptr = glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, byteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    checkGL("glMapBufferRange");
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -223,11 +233,14 @@ void PreloadItemState::finalizePBO() {
     // auto now = asp::Instant::now();
 #ifdef GEODE_IS_WINDOWS
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
-    glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+    GLboolean ok = glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+    GLOBED_ASSERT(ok);
     glBindTexture(GL_TEXTURE_2D, m_tex);
 
     int64_t w = m_width, h = m_height;
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    checkGL("glTexSubImage2D");
 
     // unbind texture & pbo, delete the pbo
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
