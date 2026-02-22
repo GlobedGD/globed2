@@ -317,10 +317,10 @@ def main(build: Build):
     build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static")
     build.add_cpm_dep("GlobedGD/argon", "v1.4.3")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
-    build.add_cpm_dep("Prevter/AdvancedLabel", "a800983", link_name="advanced_label")
+    build.add_cpm_dep("Prevter/AdvancedLabel", "0c702d6", link_name="advanced_label")
 
     if gc.voice:
-        build.add_cpm_dep("xiph/opus", "v1.5.2", {
+        build.add_cpm_dep("xiph/opus", "v1.6.1", {
             "OPUS_INSTALL_PKG_CONFIG_MODULE": "OFF",
             "OPUS_BUILD_SHARED_LIBRARY": "OFF",
             "OPUS_BUILD_TESTING": "OFF",

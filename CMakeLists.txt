@@ -23,5 +23,5 @@ set(GEODE_CODEGEN_EXTRA_ARGS "--skip-pugixml" CACHE STRING "" FORCE)
 set(GEODE_ASP_VERSION "#8992b63" CACHE STRING "" FORCE)
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
-CPMAddPackage("gh:dankmeme01/geobuild#633f443")
+CPMAddPackage("gh:dankmeme01/geobuild#0d75545")
 include("${CMAKE_CURRENT_BINARY_DIR}/geobuild-gen.cmake")
