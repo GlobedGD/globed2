@@ -12,7 +12,7 @@
 #include <globed/util/FunctionQueue.hpp>
 #include <globed/util/GameState.hpp>
 #include <core/CoreImpl.hpp>
-#include <core/PreloadManager.hpp>
+#include <core/preload/PreloadManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/game/SettingCache.hpp>
 

@@ -2,7 +2,7 @@
 #include <Geode/modify/LoadingLayer.hpp>
 #include <globed/config.hpp>
 #include <core/CoreImpl.hpp>
-#include <core/PreloadManager.hpp>
+#include <core/preload/PreloadManager.hpp>
 #include <asp/time/SystemTime.hpp>
 
 using namespace geode::prelude;

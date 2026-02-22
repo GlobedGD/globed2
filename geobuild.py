@@ -255,6 +255,10 @@ def main(build: Build):
     build.relax_geode_requirement()
 
     build.add_geode_dep("geode.node-ids", ">=v1.10.0")
+    build.add_geode_dep("prevter.imageplus", {
+        "version": ">=v1.0.5",
+        "required": False,
+    })
 
     if 'scripting-ui' in gc.modules:
         build.add_geode_dep("alphalaneous.editortab_api", ">=1.0.17")

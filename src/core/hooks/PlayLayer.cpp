@@ -2,7 +2,7 @@
 #include <globed/util/gd.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <core/CoreImpl.hpp>
-#include <core/PreloadManager.hpp>
+#include <core/preload/PreloadManager.hpp>
 #include <core/patches.hpp>
 
 #include <Geode/modify/PlayLayer.hpp>

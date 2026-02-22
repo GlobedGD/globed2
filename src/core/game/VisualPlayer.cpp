@@ -3,7 +3,7 @@
 #include <globed/core/RoomManager.hpp>
 #include <globed/audio/AudioManager.hpp>
 #include <globed/util/lazy.hpp>
-#include <core/PreloadManager.hpp>
+#include <core/preload/PreloadManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/game/SettingCache.hpp>
 #include <core/net/NetworkManagerImpl.hpp>

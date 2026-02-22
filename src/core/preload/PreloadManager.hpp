@@ -4,6 +4,7 @@
 #include <asp/thread/ThreadPool.hpp>
 #include <asp/time/Instant.hpp>
 #include <asp/sync/SpinLock.hpp>
+#include "Item.hpp"
 #include <queue>
 
 // TODO (very low): it's time consuming so postponing for later, but we should add background preloading,
@@ -25,7 +26,6 @@ struct PairIntIntHash {
 };
 
 TextureQuality getTextureQuality();
-std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize);
 
 // An enum describing *where* are we preloading assets
 enum class PreloadContext {
@@ -37,13 +37,6 @@ enum class PreloadContext {
 
 class PreloadManager : public SingletonBase<PreloadManager> {
 public:
-    struct Item {
-        std::string image;
-        bool isIcon = false;
-        IconType iconType;
-        int iconId;
-    };
-
     bool shouldPreload();
     void enterContext(PreloadContext context);
     void exitContext();
@@ -66,6 +59,7 @@ public:
 
 private:
     friend class SingletonBase;
+    friend struct PreloadItemState;
     struct SessionState {
         bool initialized = false;
         bool hasTexturePack;
@@ -80,13 +74,13 @@ private:
     };
 
     PreloadContext m_context = PreloadContext::None;
-    std::queue<Item> m_loadQueue;
+    std::deque<PreloadItem> m_loadQueue;
     SessionState m_sstate;
     size_t m_totalCount = 0;
 
     bool m_iconsLoaded = false;
     bool m_deathEffectsLoaded = false;
-    asp::SpinLock<std::unordered_set<std::string>> m_loadedFrames;
+    asp::SpinLock<geode::utils::StringSet> m_loadedFrames;
     std::unordered_map<std::pair<int, int>, geode::Ref<cocos2d::CCTexture2D>, PairIntIntHash> m_loadedIcons;
 
     PreloadManager();
@@ -94,7 +88,7 @@ private:
 
     void resetState();
     void initLoadQueue();
-    void doLoadBatch(std::vector<Item> items, bool blocking);
+    void doLoadBatch(std::vector<PreloadItem> items, bool blocking);
     void initSessionState();
 
     gd::string fullPathForFilename(std::string_view input, bool ignoreSuffix = false);

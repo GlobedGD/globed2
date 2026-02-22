@@ -1,6 +1,6 @@
 #pragma once
 #include <globed/config.hpp>
-#include <core/PreloadManager.hpp>
+#include <core/preload/PreloadManager.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/GameManager.hpp>
