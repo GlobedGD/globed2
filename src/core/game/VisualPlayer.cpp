@@ -918,7 +918,9 @@ float VisualPlayer::getLastRotation() {
 }
 
 void VisualPlayer::setVisible(bool vis) {
-    bool showName = !m_forceHideName && (m_isLocalPlayer || vis);
+    auto gjbgl = GlobedGJBGL::get(m_gameLayer);
+
+    bool showName = !m_forceHideName && (vis || (m_isLocalPlayer && !gjbgl->isSpectating()));
 
     if (vis == m_bVisible && m_nameLabel->m_bVisible == showName) return;
     PlayerObject::setVisible(vis);
