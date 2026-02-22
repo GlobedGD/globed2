@@ -63,5 +63,6 @@ static bool supportsImmutableTex() {
 #else
 
 static bool supportsPBO() { return false; }
+static bool supportsImmutableTex() { return false; }
 
 #endif

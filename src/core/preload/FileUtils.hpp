@@ -54,11 +54,11 @@ inline std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, 
     return buffer;
 
 #elif defined GEODE_IS_ANDROID
-    auto fu = CCFileUtils::get();
+    auto fu = cocos2d::CCFileUtils::get();
     auto _lck = g_fileMutex.lock();
     return std::unique_ptr<unsigned char[]>(fu->getFileData(path, mode, outSize));
 #else
-    auto fu = CCFileUtils::get();
+    auto fu = cocos2d::CCFileUtils::get();
     return std::unique_ptr<unsigned char[]>(fu->getFileData(path, mode, outSize));
 #endif
 }
