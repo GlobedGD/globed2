@@ -159,14 +159,42 @@ void PreloadManager::initLoadQueue() {
 }
 
 void PreloadManager::loadNextBatch(bool blocking) {
-    // 200 icons is a somewhat reasonable batch to load in a single call that shouldn't cause freezes even on low-end devices
-    // death effects are huge and would be counted as 20 icons
-    constexpr size_t Limit = 200;
+    if (!m_sstate.initialized) {
+        this->initSessionState();
+    }
+
+    static size_t limit = [&] {
+        // random heuristic to decide how many textures to put in one batch to not freeze for too long
+        // smaller batches = more responsive loading UI
+        // larger batches = gets work done much faster (less waiting)
+        float deviceFactor = 1.f
+            GEODE_DESKTOP(* 2.5f);
+
+        size_t threads = std::thread::hardware_concurrency();
+        float threadFactor = std::powf(std::max<size_t>(threads, 2), 0.8f);
+        float qualityFactor = 1.f;
+
+        switch (m_sstate.texQuality) {
+            case TextureQuality::Low: qualityFactor = 2.5f; break;
+            case TextureQuality::Medium: qualityFactor = 1.5f; break;
+            case TextureQuality::High: qualityFactor = 1.f; break;
+        }
+
+        size_t base = 100;
+
+        return (float)base * deviceFactor * threadFactor * qualityFactor;
+
+        // here are some example outputs of this computation:
+        // * Android 8-core CPU, medium quality -> 791 items
+        // * iOS 4-core CPU, high quality -> 303 items
+        // * Windows 4-core CPU, low quality -> 1894 items
+        // * Windows 8-core CPU, high quality - 1319 items
+    }();
     size_t count = 0;
 
     std::vector<Item> items;
 
-    while (count < Limit && !m_loadQueue.empty()) {
+    while (count < limit && !m_loadQueue.empty()) {
         items.push_back(std::move(m_loadQueue.front()));
         m_loadQueue.pop();
 
@@ -193,6 +221,8 @@ void PreloadManager::loadEverything(bool blocking) {
     this->doLoadBatch(items, blocking);
 }
 
+#ifdef GEODE_IS_WINDOWS
+
 static std::pair<int, int> getOpenGLVersion() {
     int major = 0, minor = 0;
     glGetIntegerv(GL_MAJOR_VERSION, &major);
@@ -214,32 +244,44 @@ static bool supportsGLExtension(std::string_view ext) {
 }
 
 static bool supportsPBO() {
-    auto [major, minor] = getOpenGLVersion();
+    bool does = [] {
+        auto [major, minor] = getOpenGLVersion();
 #ifdef GEODE_IS_DESKTOP
-    // PBOs are supported on OpenGL 2.1+
-    return (major > 2) || (major == 2 && minor >= 1);
+        // PBOs are supported on OpenGL 2.1+
+        return (major > 2) || (major == 2 && minor >= 1);
 #else
-    // On mobile, it's GLES 3.0+
-    return major >= 3;
+        // On mobile, it's GLES 3.0+
+        return major >= 3;
 #endif
+    }();
+    return does;
 }
 
 static bool supportsImmutableTex() {
-    auto [major, minor] = getOpenGLVersion();
+    bool does = [] {
+        auto [major, minor] = getOpenGLVersion();
 #ifdef GEODE_IS_DESKTOP
-    // Core feature of OpenGL 4.2+
-    if ((major > 4) || (major == 4 && minor >= 2)) {
-        return true;
-    }
+        // Core feature of OpenGL 4.2+
+        if ((major > 4) || (major == 4 && minor >= 2)) {
+            return true;
+        }
 #else
-    // On mobile, it's GLES 3.0+
-    if (major >= 3) {
-        return true;
-    }
+        // On mobile, it's GLES 3.0+
+        if (major >= 3) {
+            return true;
+        }
 #endif
 
-    return supportsGLExtension("GL_ARB_texture_storage") || supportsGLExtension("GL_EXT_texture_storage");
+        return supportsGLExtension("GL_ARB_texture_storage") || supportsGLExtension("GL_EXT_texture_storage");
+    }();
+    return does;
 }
+
+#else
+
+static bool supportsPBO() { return false; }
+
+#endif
 
 struct ItemState {
     PreloadManager::Item item;
@@ -272,6 +314,8 @@ struct ItemState {
 using MtTextureCallback = geode::CopyableFunction<void(ItemState&)>;
 
 static bool initializeTexture(ItemState& state, asp::ThreadPool& pool, MtTextureCallback onCreated) {
+    // auto now = asp::Instant::now();
+
     if (!supportsPBO()) {
         // PBO not supported, let's just use cctexture2d directly
         state.texture = Ref<CCTexture2D>::adopt(new CCTexture2D());
@@ -282,8 +326,12 @@ static bool initializeTexture(ItemState& state, asp::ThreadPool& pool, MtTexture
         }
 
         onCreated(state);
+        // log::debug("No PBO created in {}", now.elapsed());
         return true;
     }
+
+#ifdef GEODE_IS_WINDOWS
+    GLOBED_DEBUG_ASSERT(!state.tex && !state.pbo);
 
     int64_t width = state.image->m_nWidth, height = state.image->m_nHeight;
     int64_t byteSize = width * height * 4;
@@ -292,26 +340,43 @@ static bool initializeTexture(ItemState& state, asp::ThreadPool& pool, MtTexture
     glGenBuffers(1, &state.pbo);
 
     glBindTexture(GL_TEXTURE_2D, state.tex);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    if (supportsImmutableTex()) {
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
+    } else {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    }
+
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, state.pbo);
     glBufferData(GL_PIXEL_UNPACK_BUFFER, byteSize, nullptr, GL_STREAM_DRAW);
 
     void* ptr = glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, byteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     pool.pushTask([ptr, &state, onCreated = std::move(onCreated)] mutable {
         int64_t byteSize = (int64_t)state.image->m_nWidth * state.image->m_nHeight * 4;
         std::memcpy(ptr, state.image->m_pData, byteSize);
-        state.image = nullptr; // no longer needed
         state.pboReady.store(true, std::memory_order::relaxed);
 
         // notify main thread
         onCreated(state);
     });
+#endif
 
+    // log::debug("PBO created in {}", now.elapsed());
     return true;
 }
 
-static CCTexture2D* initializeTextureFinalize(ItemState& state) {
+static void initializeTextureFinalize(ItemState& state) {
+    // auto now = asp::Instant::now();
+#ifdef GEODE_IS_WINDOWS
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, state.pbo);
     glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
     glBindTexture(GL_TEXTURE_2D, state.tex);
@@ -319,7 +384,13 @@ static CCTexture2D* initializeTextureFinalize(ItemState& state) {
     int64_t w = state.image->m_nWidth, h = state.image->m_nHeight;
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
-    auto texture = Ref<CCTexture2D>::adopt(new CCTexture2D());
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    state.image = nullptr; // no longer needed
+
+    state.texture = Ref<CCTexture2D>::adopt(new CCTexture2D());
+    auto& texture = state.texture;
     texture->m_uName = state.tex;
     texture->m_tContentSize = CCSize(w, h);
     texture->m_uPixelsWide = w;
@@ -333,8 +404,7 @@ static CCTexture2D* initializeTextureFinalize(ItemState& state) {
     texture->m_fMaxT = 1.f;
 
     texture->setShaderProgram(CCShaderCache::sharedShaderCache()->programForKey(kCCShader_PositionTexture));
-
-    return texture;
+#endif
 }
 
 void PreloadManager::doLoadBatch(std::vector<Item> items, bool blocking) {
@@ -444,7 +514,7 @@ void PreloadManager::doLoadBatch(std::vector<Item> items, bool blocking) {
             if (state.failed) continue;
 
             // state 1 - image loaded, need to init texture
-            else if (state.image && !state.texture) {
+            else if (state.image && !state.texture && !state.pbo) {
                 if (!initializeTexture(state, pool, textureCb)) {
                     log::warn("PreloadManager: failed to init texture for '{}' (early)", state.path);
                     continue;
@@ -464,7 +534,7 @@ void PreloadManager::doLoadBatch(std::vector<Item> items, bool blocking) {
             }
 
             // state 4 - texture loaded with PBO, ready to be finalized
-            state.texture = initializeTextureFinalize(state);
+            initializeTextureFinalize(state);
             insertTexture(state);
         }
 
