@@ -921,6 +921,8 @@ LockedConnInfo NetworkManagerImpl::connInfo() const {
 }
 
 Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
+    if (!m_centralConn) return Err("NetworkManagerImpl not yet initialized");
+
     if (!m_centralConn->disconnected()) {
         return Err("Already connected to central server");
     }
@@ -2428,4 +2430,7 @@ $on_mod(Loaded) {
     GameEvent(GameEventType::Exiting).listen([] {
         globed::NetworkManagerImpl::get().shutdown();
     }, -10).leak();
+
+    // initialize nm early
+    globed::NetworkManagerImpl::get();
 }

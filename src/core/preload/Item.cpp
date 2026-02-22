@@ -205,6 +205,9 @@ void PreloadItemState::enqueuePBOCreation() {
                 m_batchState->callback(*this);
                 return;
             }
+
+            auto bytes = res.unwrap();
+            // log::debug("{}: decoded: {} png, {} decoded, {} expected", m_path, m_rawSize, bytes, byteSize);
         }
 
         // notify main thread
@@ -242,7 +245,7 @@ void PreloadItemState::finalizePBO() {
     texture->m_bHasPremultipliedAlpha = false;
     texture->m_bHasMipmaps = false;
 
-    // TODO: investigate, is this always just 1 ??
+    // this is  weird
     texture->m_fMaxS = 1.f;
     texture->m_fMaxT = 1.f;
 

@@ -19,7 +19,7 @@ Added / reworked:
 * <cj>2 player mode</c> received a bunch of fixes, and linking to others is now way clearer
 * Rooms will by default <cg>automatically pin</c> the level played by the host, making it easier for everyone to join
 * Discord linking is now <cg>more interactive</c> and simpler to do
-* Defer Preloading is now enabled by default, which means Globed won't increase load times and instead will load all icons when joining a level while connected
+* Asset preloading has been sped up by a lot, and should now be especially fast on desktop
 * Credits menu is now automatically updated server-side
 * Community Figures now have their own role in-game (if you have it in <cb>Discord</c>, get it by linking your account)
 * UI has been touched up in many places for better looks and clarity
