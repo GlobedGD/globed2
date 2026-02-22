@@ -3,17 +3,46 @@
 #include <Geode/platform/cplatform.h>
 #include <utility>
 
-#ifdef GEODE_IS_WINDOWS
-#include <Geode/cocos/platform/win32/CCGL.h>
+#ifndef GEODE_IS_IOS
+# define GLOBED_PBO_SUPPORT
+#endif
+
+#ifdef GLOBED_PBO_SUPPORT
+# ifdef GEODE_IS_WINDOWS
+#  include <Geode/cocos/platform/win32/CCGL.h>
+# elif defined (GEODE_IS_MOBILE)
+#  include <EGL/egl.h>
+# endif
+
+#ifndef GL_PIXEL_UNPACK_BUFFER
+# define GL_PIXEL_UNPACK_BUFFER 0x88EC
+#endif
+#ifndef GL_MAP_INVALIDATE_BUFFER_BIT
+# define GL_MAP_INVALIDATE_BUFFER_BIT 0x0008
+#endif
+#ifndef GL_RGBA8
+# define GL_RGBA8 0x8058
+#endif
 
 static std::pair<int, int> getOpenGLVersion() {
+#ifdef GL_MAJOR_VERSION
     int major = 0, minor = 0;
     glGetIntegerv(GL_MAJOR_VERSION, &major);
     glGetIntegerv(GL_MINOR_VERSION, &minor);
     return {major, minor};
+#else
+    auto v = glGetString(GL_VERSION);
+    if (!v) return {2, 0};
+
+    std::string_view ver{(const char*) v};
+    if (ver.contains("OpenGL ES 3")) return {3, 0};
+
+    return {2, 0};
+#endif
 }
 
 static bool supportsGLExtension(std::string_view ext) {
+#ifdef GL_NUM_EXTENSIONS
     GLint exts = 0;
     glGetIntegerv(GL_NUM_EXTENSIONS, &exts);
 
@@ -23,6 +52,10 @@ static bool supportsGLExtension(std::string_view ext) {
             return true;
         }
     }
+#else
+    auto exts = glGetString(GL_EXTENSIONS);
+    return std::string_view{(const char*)exts}.contains(ext);
+#endif
     return false;
 }
 
@@ -31,10 +64,16 @@ static bool supportsPBO() {
         auto [major, minor] = getOpenGLVersion();
 #ifdef GEODE_IS_DESKTOP
         // PBOs are supported on OpenGL 2.1+
-        return (major > 2) || (major == 2 && minor >= 1);
+        if ((major > 2) || (major == 2 && minor >= 1)) {
+            return true;
+        }
 #else
         // On mobile, it's GLES 3.0+
-        return major >= 3;
+        if (major >= 3) {
+            return true;
+        }
+
+        return supportsGLExtension("GL_EXT_pixel_buffer_object");
 #endif
     }();
     return does;
@@ -65,4 +104,4 @@ static bool supportsImmutableTex() {
 static bool supportsPBO() { return false; }
 static bool supportsImmutableTex() { return false; }
 
-#endif
+#endif // GLOBED_PBO_SUPPORT

@@ -19,7 +19,7 @@ Added / reworked:
 * <cj>2 player mode</c> received a bunch of fixes, and linking to others is now way clearer
 * Rooms will by default <cg>automatically pin</c> the level played by the host, making it easier for everyone to join
 * Discord linking is now <cg>more interactive</c> and simpler to do
-* Asset preloading has been sped up by a lot, and should now be especially fast on desktop
+* Asset preloading has been made much faster, which should be especially noticable on Windows, MacOS and Android. The [ImagePlus](mod:prevter.imageplus) mod is now an optional dependency which makes it *even faster*, allowing Globed to decode all textures straight into your GPU
 * Credits menu is now automatically updated server-side
 * Community Figures now have their own role in-game (if you have it in <cb>Discord</c>, get it by linking your account)
 * UI has been touched up in many places for better looks and clarity

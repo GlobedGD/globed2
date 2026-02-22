@@ -331,6 +331,8 @@ def main(build: Build):
 
     # reexport some
     build.link_libraries("asp", privacy=Privacy.PUBLIC)
+    if config.platform.is_android():
+        build.link_libraries("EGL", "GLESv2")
 
     build.silence_warnings_for("kj")
     build.silence_warnings_for("capnp")

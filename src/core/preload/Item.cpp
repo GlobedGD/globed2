@@ -8,6 +8,11 @@
 using namespace geode::prelude;
 using enum std::memory_order;
 
+#ifdef GEODE_IS_MOBILE
+static PFNGLTEXSTORAGE2DEXTPROC   pglTexStorage2D   = nullptr;
+static PFNGLMAPBUFFERRANGEEXTPROC pglMapBufferRange = nullptr;
+#endif
+
 namespace globed {
 
 static asp::SpinLock<> cocosLock;
@@ -15,6 +20,23 @@ static asp::SpinLock<> cocosLock;
 static bool hasImagePlus() {
     static bool result = imgp::isAvailable();
     return result;
+}
+
+static void initGL() {
+    static bool inited = false;
+    if (inited) return;
+    inited = true;
+
+    supportsPBO();
+    supportsImmutableTex();
+
+#ifdef GEODE_IS_MOBILE
+    pglTexStorage2D = (PFNGLTEXSTORAGE2DEXTPROC)eglGetProcAddress("glTexStorage2D");
+    pglMapBufferRange = (PFNGLMAPBUFFERRANGEEXTPROC)eglGetProcAddress("glMapBufferRange");
+#else
+    pglTexStorage2D = &glTexStorage2D;
+    pglMapBufferRange = &glMapBufferRange;
+#endif
 }
 
 bool canDirectDecode() {
@@ -35,9 +57,7 @@ PreloadItemState::PreloadItemState(PreloadItemState&& other) noexcept
 bool PreloadItemState::process() {
     switch (this->state()) {
         case ItemStateEnum::Initial: {
-            // Cache these bools as this must happen on main thread
-            supportsImmutableTex();
-            supportsPBO();
+            initGL();
 
             // Initial state - load image into memory, then kick off the decoding process in a thread
             unsigned long filesize = 0;
@@ -113,6 +133,7 @@ void PreloadItemState::enqueueImageDecode() {
     auto& pool = *m_batchState->pool;
 
     pool.pushTask([this] {
+#ifdef GLOBED_PBO_SUPPORT
         if (canDirectDecode()) {
             // try to parse only the image header, this may not work if imageplus is outdated
             auto res = imgp::decode::pngHeader(m_rawData.get(), m_rawSize);
@@ -129,6 +150,7 @@ void PreloadItemState::enqueueImageDecode() {
                 log::warn("Failed to decode PNG header: {}, falling back to full decode", res.unwrapErr());
             }
         }
+#endif
 
         m_image = Ref<CCImage>::adopt(new CCImage());
         if (!m_image->initWithImageData(m_rawData.get(), m_rawSize, cocos2d::CCImage::kFmtPng)) {
@@ -164,7 +186,7 @@ static void checkGL(std::string_view where) {
 }
 
 void PreloadItemState::enqueuePBOCreation() {
-#ifdef GEODE_IS_WINDOWS
+#ifdef GLOBED_PBO_SUPPORT
     GLOBED_DEBUG_ASSERT(!m_tex && !m_pbo);
 
     int64_t width = m_width;
@@ -181,8 +203,8 @@ void PreloadItemState::enqueuePBOCreation() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    if (supportsImmutableTex()) {
-        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
+    if (supportsImmutableTex() && pglTexStorage2D) {
+        pglTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
         checkGL("glTexStorage2D");
     } else {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -192,7 +214,7 @@ void PreloadItemState::enqueuePBOCreation() {
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
     glBufferData(GL_PIXEL_UNPACK_BUFFER, byteSize, nullptr, GL_STREAM_DRAW);
 
-    void* ptr = glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, byteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    void* ptr = pglMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, byteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     checkGL("glMapBufferRange");
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
@@ -204,6 +226,7 @@ void PreloadItemState::enqueuePBOCreation() {
             std::memcpy(ptr, m_image->m_pData, byteSize);
             m_image = nullptr; // no longer needed
         } else {
+#ifdef GLOBED_PBO_SUPPORT
             auto res = imgp::decode::pngInto(m_rawData.get(), m_rawSize, ptr, byteSize);
             m_rawData.reset();
 
@@ -218,6 +241,9 @@ void PreloadItemState::enqueuePBOCreation() {
 
             auto bytes = res.unwrap();
             // log::debug("{}: decoded: {} png, {} decoded, {} expected", m_path, m_rawSize, bytes, byteSize);
+#else
+            GLOBED_ASSERT(false);
+#endif
         }
 
         // notify main thread
@@ -226,12 +252,12 @@ void PreloadItemState::enqueuePBOCreation() {
     });
 #else
     GLOBED_ASSERT(false);
-#endif
+#endif // GLOBED_PBO_SUPPORT
 }
 
 void PreloadItemState::finalizePBO() {
     // auto now = asp::Instant::now();
-#ifdef GEODE_IS_WINDOWS
+#ifdef GLOBED_PBO_SUPPORT
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
     GLboolean ok = glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
     GLOBED_ASSERT(ok);
@@ -263,7 +289,7 @@ void PreloadItemState::finalizePBO() {
     texture->m_fMaxT = 1.f;
 
     texture->setShaderProgram(CCShaderCache::sharedShaderCache()->programForKey(kCCShader_PositionTexture));
-#else
+#else // GLOBED_PBO_SUPPORT
     GLOBED_ASSERT(false);
 #endif
 }
