@@ -200,6 +200,7 @@ WorkerState createWorkerState() {
 }
 
 NetworkManagerImpl::NetworkManagerImpl() : m_runtime(async::runtime().weakFromThis()), m_workerState(createWorkerState()) {
+    arc::setGlobalRuntime(&async::runtime());
     m_hasSecure = bb_init();
 
     async::spawn(this->asyncInit());
