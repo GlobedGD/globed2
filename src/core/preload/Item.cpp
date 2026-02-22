@@ -97,6 +97,18 @@ bool PreloadItemState::process() {
     return false;
 }
 
+void PreloadItemState::cleanup() {
+    // here we do cleanup that must happen on main thread
+    if (m_tex) {
+        glDeleteTextures(1, &m_tex);
+        m_tex = 0;
+    }
+    if (m_pbo) {
+        glDeleteBuffers(1, &m_pbo);
+        m_pbo = 0;
+    }
+}
+
 void PreloadItemState::enqueueImageDecode() {
     auto& pool = *m_batchState->pool;
 
@@ -188,6 +200,9 @@ void PreloadItemState::enqueuePBOCreation() {
             if (!res) {
                 log::warn("PreloadManager: failed to decode image '{}' into PBO: {}", m_path, res.unwrapErr());
                 m_state.store(ItemStateEnum::Failed, relaxed);
+
+                // enqueue cleanup
+                m_batchState->callback(*this);
                 return;
             }
         }
@@ -211,12 +226,15 @@ void PreloadItemState::finalizePBO() {
     int64_t w = m_width, h = m_height;
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
+    // unbind texture & pbo, delete the pbo
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+    glDeleteBuffers(1, &m_pbo);
+    m_pbo = 0;
 
     m_texture = Ref<CCTexture2D>::adopt(new CCTexture2D());
     auto& texture = m_texture;
-    texture->m_uName = m_tex;
+    texture->m_uName = std::exchange(m_tex, 0);
     texture->m_tContentSize = CCSize(w, h);
     texture->m_uPixelsWide = w;
     texture->m_uPixelsHigh = h;

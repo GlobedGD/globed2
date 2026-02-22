@@ -231,7 +231,7 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, bool blocking) 
 
             // if the item is not ready/failed, immediately advance the state machine forward
             auto state = item.state();
-            if (state != ItemStateEnum::TextureReady && state != ItemStateEnum::Failed) {
+            if (state != ItemStateEnum::TextureReady && state != ItemStateEnum::Failed && state != ItemStateEnum::Ready) {
                 if (!item.process()) {
                     // not yet ready, result will be posted to main thread later
                     continue;
@@ -242,10 +242,12 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, bool blocking) 
             }
 
             switch (state) {
-                // failure state - skip
-                case ItemStateEnum::Failed: break;
+                // failure state - perform cleanup and skip
+                case ItemStateEnum::Failed: {
+                    item.cleanup();
+                } break;
 
-                // ready state - the texture is complete, enqueue sprite frames task which is the final one
+                // textureready state - the texture is complete, enqueue sprite frames task which is the final one
                 case ItemStateEnum::TextureReady: {
                     insertTexture(item);
                     item.process();

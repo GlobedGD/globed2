@@ -73,6 +73,7 @@ struct PreloadItemState {
     }
 
     bool process();
+    void cleanup();
     void enqueueImageDecode();
 
     bool createTexture();
