@@ -8,12 +8,15 @@
 #endif
 
 #ifdef GLOBED_PBO_SUPPORT
-# include <Geode/cocos/platform/CCGL.h>
-# if defined (GEODE_IS_MOBILE)
-#  include <EGL/egl.h>
-# endif
 # if defined(GEODE_IS_MACOS)
+#  define GL_SILENCE_DEPRECATION
 #  include <OpenGL/gl3.h>
+#  include <OpenGL/gl3ext.h>
+# elif defined (GEODE_IS_MOBILE)
+#  include <Geode/cocos/platform/CCGL.h>
+#  include <EGL/egl.h>
+# else
+#  include <Geode/cocos/platform/CCGL.h>
 # endif
 
 # ifndef GL_PIXEL_UNPACK_BUFFER
