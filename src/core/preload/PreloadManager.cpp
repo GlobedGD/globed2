@@ -7,7 +7,6 @@
 #include <asp/format.hpp>
 #include "FileUtils.hpp"
 #include "Item.hpp"
-#include "OpenGL.hpp"
 
 using namespace asp::time;
 using namespace geode::prelude;
@@ -155,7 +154,6 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, bool blocking) 
     auto& pool = *m_sstate.threadPool;
 
     log::debug("PreloadManager: loading batch of {} items", items.size());
-    log::debug("PreloadManager: using PBOs: {}, direct decode: {}", supportsPBO(), canDirectDecode());
 
     auto texCache = CCTextureCache::get();
     auto sfCache = CCSpriteFrameCache::get();

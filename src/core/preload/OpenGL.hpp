@@ -8,21 +8,29 @@
 #endif
 
 #ifdef GLOBED_PBO_SUPPORT
-# ifdef GEODE_IS_WINDOWS
-#  include <Geode/cocos/platform/win32/CCGL.h>
-# elif defined (GEODE_IS_MOBILE)
+# include <Geode/cocos/platform/CCGL.h>
+# if defined (GEODE_IS_MOBILE)
 #  include <EGL/egl.h>
 # endif
 
-#ifndef GL_PIXEL_UNPACK_BUFFER
-# define GL_PIXEL_UNPACK_BUFFER 0x88EC
-#endif
-#ifndef GL_MAP_INVALIDATE_BUFFER_BIT
-# define GL_MAP_INVALIDATE_BUFFER_BIT 0x0008
-#endif
-#ifndef GL_RGBA8
-# define GL_RGBA8 0x8058
-#endif
+# ifndef GL_PIXEL_UNPACK_BUFFER
+#  define GL_PIXEL_UNPACK_BUFFER 0x88EC
+# endif
+# ifndef GL_MAP_INVALIDATE_BUFFER_BIT
+#  define GL_MAP_INVALIDATE_BUFFER_BIT 0x0008
+# endif
+# ifndef GL_MAP_WRITE_BIT
+#  define GL_MAP_WRITE_BIT 0x0002
+# endif
+# ifndef GL_RGBA8
+#  define GL_RGBA8 0x8058
+# endif
+
+using globed_PFNGLTEXSTORAGE2D = void(*)(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height);
+using globed_PFNGLMAPBUFFERRANGE = void*(*)(GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access);
+
+static globed_PFNGLTEXSTORAGE2D   pglTexStorage2D   = nullptr;
+static globed_PFNGLMAPBUFFERRANGE pglMapBufferRange = nullptr;
 
 static std::pair<int, int> getOpenGLVersion() {
 #ifdef GL_MAJOR_VERSION
@@ -97,6 +105,21 @@ static bool supportsImmutableTex() {
     }();
     return does;
 }
+
+
+static void initGL() {
+    supportsPBO();
+    supportsImmutableTex();
+
+#ifdef GEODE_IS_MOBILE
+    pglTexStorage2D = (globed_PFNGLTEXSTORAGE2D)eglGetProcAddress("glTexStorage2D");
+    pglMapBufferRange = (globed_PFNGLMAPBUFFERRANGE)eglGetProcAddress("glMapBufferRange");
+#else
+    pglTexStorage2D = glTexStorage2D;
+    pglMapBufferRange = glMapBufferRange;
+#endif
+}
+
 
 #else
 

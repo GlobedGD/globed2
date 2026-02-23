@@ -24,5 +24,5 @@ set(GEODE_ASP_VERSION "#8992b63" CACHE STRING "" FORCE)
 set(GEODE_NO_PUGIXML_HEADER ON CACHE BOOL "" FORCE)
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
-CPMAddPackage("gh:dankmeme01/geobuild#0d75545")
+CPMAddPackage("gh:dankmeme01/geobuild#cf2207a")
 include("${CMAKE_CURRENT_BINARY_DIR}/geobuild-gen.cmake")

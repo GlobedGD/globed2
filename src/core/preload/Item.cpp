@@ -8,10 +8,6 @@
 using namespace geode::prelude;
 using enum std::memory_order;
 
-#ifdef GEODE_IS_MOBILE
-static PFNGLTEXSTORAGE2DEXTPROC   pglTexStorage2D   = nullptr;
-static PFNGLMAPBUFFERRANGEEXTPROC pglMapBufferRange = nullptr;
-#endif
 
 namespace globed {
 
@@ -22,25 +18,22 @@ static bool hasImagePlus() {
     return result;
 }
 
-static void initGL() {
+bool canDirectDecode() {
+    return supportsPBO() && hasImagePlus();
+}
+
+static void initialize() {
     static bool inited = false;
     if (inited) return;
     inited = true;
 
-    supportsPBO();
-    supportsImmutableTex();
+    initGL();
 
-#ifdef GEODE_IS_MOBILE
-    pglTexStorage2D = (PFNGLTEXSTORAGE2DEXTPROC)eglGetProcAddress("glTexStorage2D");
-    pglMapBufferRange = (PFNGLMAPBUFFERRANGEEXTPROC)eglGetProcAddress("glMapBufferRange");
-#else
-    pglTexStorage2D = &glTexStorage2D;
-    pglMapBufferRange = &glMapBufferRange;
+    log::info("Using PBOs: {}, immutable textures: {}, direct decode: {}", supportsPBO(), supportsImmutableTex(), canDirectDecode());
+#ifdef GEODE_IS_DESKTOP
+    auto v = glGetString(GL_VERSION);
+    log::info("OpenGL version: {}", v ? v : "<null>");
 #endif
-}
-
-bool canDirectDecode() {
-    return supportsPBO() && hasImagePlus();
 }
 
 PreloadItemState::PreloadItemState(PreloadItemState&& other) noexcept
@@ -57,7 +50,7 @@ PreloadItemState::PreloadItemState(PreloadItemState&& other) noexcept
 bool PreloadItemState::process() {
     switch (this->state()) {
         case ItemStateEnum::Initial: {
-            initGL();
+            initialize();
 
             // Initial state - load image into memory, then kick off the decoding process in a thread
             unsigned long filesize = 0;
