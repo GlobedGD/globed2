@@ -12,6 +12,9 @@
 # if defined (GEODE_IS_MOBILE)
 #  include <EGL/egl.h>
 # endif
+# if defined(GEODE_IS_MACOS)
+#  include <OpenGL/gl3.h>
+# endif
 
 # ifndef GL_PIXEL_UNPACK_BUFFER
 #  define GL_PIXEL_UNPACK_BUFFER 0x88EC

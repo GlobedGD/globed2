@@ -314,7 +314,9 @@ def main(build: Build):
     }, link_name="qunet")
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
-    build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static")
+    build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static", options = {
+        "PUGIXML_NO_EXCEPTIONS": "ON",
+    })
     build.add_cpm_dep("GlobedGD/argon", "v1.4.3")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
     build.add_cpm_dep("Prevter/AdvancedLabel", "0c702d6", link_name="advanced_label")

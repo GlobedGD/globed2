@@ -23,6 +23,7 @@ bool canDirectDecode() {
 }
 
 static void initialize() {
+#ifdef GLOBED_PBO_SUPPORT
     static bool inited = false;
     if (inited) return;
     inited = true;
@@ -32,6 +33,7 @@ static void initialize() {
     log::info("Using PBOs: {}, immutable textures: {}, direct decode: {}", supportsPBO(), supportsImmutableTex(), canDirectDecode());
     auto v = (const char*)glGetString(GL_VERSION);
     log::info("OpenGL version: {}", v ? v : "<null>");
+#endif
 }
 
 PreloadItemState::PreloadItemState(PreloadItemState&& other) noexcept
