@@ -2,6 +2,7 @@
 #include <globed/core/ValueManager.hpp>
 
 #include <Geode/utils/function.hpp>
+#include <Geode/utils/StringMap.hpp>
 #include <fmt/format.h>
 #include <asp/fs.hpp>
 #include <asp/iter.hpp>
@@ -16,6 +17,10 @@ SettingsManager::SettingsManager() {
     // Preload
     this->registerSetting("core.preload.enabled", true);
     this->registerSetting("core.preload.defer", false);
+    // hidden preload settings
+    this->registerSetting("core.preload.batch-size", 0);
+    this->registerSetting("core.preload.use-pbos", true);
+    this->registerSetting("core.preload.use-direct-decode", true);
 
     // Various
     this->registerSetting("core.autoconnect", true);
@@ -464,7 +469,7 @@ void SettingsManager::reloadFromSlot() {
 
 static std::optional<matjson::Value> findOverride(std::string_view key) {
     static auto overrideMap = []{
-        std::unordered_map<std::string, matjson::Value> map;
+        geode::utils::StringMap<matjson::Value> map;
         auto names = Loader::get()->getLaunchArgumentNames();
 
         for (auto& name : names) {
@@ -495,7 +500,7 @@ static std::optional<matjson::Value> findOverride(std::string_view key) {
         return map;
     }();
 
-    auto it = overrideMap.find(std::string(key));
+    auto it = overrideMap.find(key);
     if (it != overrideMap.end()) {
         auto& value = it->second;
         return value;

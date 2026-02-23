@@ -13,13 +13,14 @@ namespace globed {
 
 static asp::SpinLock<> cocosLock;
 
-static bool hasImagePlus() {
-    static bool result = imgp::isAvailable();
-    return result;
+static bool shouldUsePBO() {
+    static bool should = supportsPBO() && globed::setting<bool>("core.preload.use-pbos");
+    return should;
 }
 
 bool canDirectDecode() {
-    return supportsPBO() && hasImagePlus();
+    static bool can = shouldUsePBO() && imgp::isAvailable() && globed::setting<bool>("core.preload.use-direct-decode");
+    return can;
 }
 
 static void initialize() {
@@ -30,7 +31,7 @@ static void initialize() {
 
     initGL();
 
-    log::info("Using PBOs: {}, immutable textures: {}, direct decode: {}", supportsPBO(), supportsImmutableTex(), canDirectDecode());
+    log::info("Using PBOs: {}, immutable textures: {}, direct decode: {}", shouldUsePBO(), supportsImmutableTex(), canDirectDecode());
     auto v = (const char*)glGetString(GL_VERSION);
     log::info("OpenGL version: {}", v ? v : "<null>");
 #endif
@@ -76,7 +77,7 @@ bool PreloadItemState::process() {
         case ItemStateEnum::ImageReady: {
             // Image is now ready, we need to initialize the texture
             // This again differs by whether we support PBOs or not
-            if (supportsPBO()) {
+            if (shouldUsePBO()) {
                 this->enqueuePBOCreation();
             } else {
                 if (!this->createTexture()) {

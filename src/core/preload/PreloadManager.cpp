@@ -115,6 +115,12 @@ void PreloadManager::loadNextBatch(bool blocking) {
         // * Windows 4-core CPU, low quality -> 1894 items
         // * Windows 8-core CPU, high quality - 1319 items
     }();
+
+    size_t setLimit = globed::setting<int>("core.preload.batch-size");
+    if (setLimit > 0) {
+        limit = setLimit;
+    }
+
     size_t count = 0;
 
     std::vector<PreloadItem> items;
