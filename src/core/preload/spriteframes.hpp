@@ -11,6 +11,9 @@
 #include <Geode/Result.hpp>
 #include <cocos2d.h>
 
+// This is to ensure that Geode's pugixml header is not included
+static_assert(std::is_trivially_destructible_v<pugi::xml_node>);
+
 namespace globed {
 
 struct SpriteFrame {
