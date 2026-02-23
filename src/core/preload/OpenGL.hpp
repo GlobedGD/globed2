@@ -72,9 +72,8 @@ static bool supportsPBO() {
         if (major >= 3) {
             return true;
         }
-
-        return supportsGLExtension("GL_EXT_pixel_buffer_object");
 #endif
+        return supportsGLExtension("GL_EXT_pixel_buffer_object");
     }();
     return does;
 }
