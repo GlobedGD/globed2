@@ -30,10 +30,8 @@ static void initialize() {
     initGL();
 
     log::info("Using PBOs: {}, immutable textures: {}, direct decode: {}", supportsPBO(), supportsImmutableTex(), canDirectDecode());
-#ifdef GEODE_IS_DESKTOP
-    auto v = glGetString(GL_VERSION);
+    auto v = (const char*)glGetString(GL_VERSION);
     log::info("OpenGL version: {}", v ? v : "<null>");
-#endif
 }
 
 PreloadItemState::PreloadItemState(PreloadItemState&& other) noexcept
