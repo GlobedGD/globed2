@@ -46,7 +46,7 @@ If you find someone breaking the rules, report them in [our Discord server](http
 
 static constexpr auto ARGON_TEXT = R"(
 # Privacy Policy
-We temporarily store server logs to keep <cj>Globed</c> running properly. These logs may include your <cy>account ID</c>, <cy>username</c>, <cy>IP address</c>, <cy>connection type</c>, the <cy>levels or rooms</c> you join, and other in-game behavior. All logs are used strictly for <cg>debugging</c> and <cg>statistical purposes</c>, and are automatically deleted whenever the server restarts.
+We temporarily store server logs to keep <cj>Globed</c> running properly. These logs may include your <cy>account ID</c>, <cy>username</c>, <cy>platform</c>, <cy>IP address</c>, <cy>connection type</c>, the <cy>levels or rooms</c> you join, and other in-game behavior. All logs are used strictly for <cg>debugging</c> and <cg>statistical purposes</c>, and are never kept for more than 30 days.
 
 We may also keep some anonymous data for statistics, such as which levels are played most often. This data cannot be used to identify you.
 

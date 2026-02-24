@@ -825,6 +825,22 @@ Future<> NetworkManagerImpl::threadTryAuth() {
     }
 }
 
+static bool isWine() {
+    auto dll = LoadLibraryW(L"ntdll.dll");
+    return GetProcAddress(dll, "wine_get_version") != nullptr;
+}
+
+static schema::main::Platform currentPlatform() {
+    using enum schema::main::Platform;
+    return
+        GEODE_WINDOWS(isWine() ? WINE : WINDOWS)
+        GEODE_ARM_MAC(MAC_ARM)
+        GEODE_INTEL_MAC(MAC_INTEL)
+        GEODE_ANDROID32(ANDROID32)
+        GEODE_ANDROID64(ANDROID64)
+        GEODE_IOS(IOS);
+}
+
 void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         int accountId = g_argonData.accountId;
@@ -858,6 +874,12 @@ void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token
                 plain.setUsername(g_argonData.username);
             } break;
         }
+
+        // gather platform data
+        login.setPlatform(currentPlatform());
+        login.setGeodeVersion(Loader::get()->getVersion().toNonVString());
+        login.setGlobedVersion(Mod::get()->getVersion().toNonVString());
+
     });
 }
 

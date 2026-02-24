@@ -19,8 +19,8 @@ import sys
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "2145d34"
-QUNET_VERSION = "2726a9a"
-SERVER_SHARED_VERSION = "066d3b0"
+QUNET_VERSION = "82a83eb"
+SERVER_SHARED_VERSION = "c86a6d2"
 CUE_VERSION = "36f4a61"
 
 if sys.version_info < (3, 12):
@@ -317,9 +317,9 @@ def main(build: Build):
     build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static", options = {
         "PUGIXML_NO_EXCEPTIONS": "ON",
     })
-    build.add_cpm_dep("GlobedGD/argon", "v1.4.3")
+    build.add_cpm_dep("GlobedGD/argon", "v1.4.4")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
-    build.add_cpm_dep("Prevter/AdvancedLabel", "0c702d6", link_name="advanced_label")
+    build.add_cpm_dep("Prevter/AdvancedLabel", "7e0eff9", link_name="advanced_label")
 
     if gc.voice:
         build.add_cpm_dep("xiph/opus", "v1.6.1", {
