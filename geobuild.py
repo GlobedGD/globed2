@@ -244,7 +244,7 @@ def setup_unity(build: Build, gc: GlobedConfig):
             for path in build.config.project_dir.glob(glob):
                 if path in exclusions:
                     continue
-                stmt += f"    \"{path.absolute().replace('\\', '\\\\')}\"\n"
+                stmt += f"    \"{str(path.absolute()).replace('\\', '\\\\')}\"\n"
                 loc += path.read_bytes().count(b'\n')
                 filecount += 1
 
