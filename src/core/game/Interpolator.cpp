@@ -11,6 +11,7 @@
 constexpr float TIME_DRIFT_THRESHOLD = 0.20f; // 200ms
 constexpr float TIME_DRIFT_SMALL_THRESHOLD = 0.05f; // 50ms
 constexpr float TIME_DRIFT_SMALL_ADJ_DEADLINE = 30.0f; // 30s
+constexpr bool DO_EXTRAPOLATE = true;
 
 using namespace geode::prelude;
 
@@ -134,7 +135,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
 
     // account for potential drift in time
     if (state.frames.size() >= 2) {
-        float sinceLastCorrection = state.lastDriftCorrection - state.timeCounter;
+        float sinceLastCorrection = state.timeCounter - state.lastDriftCorrection;
 
         float drift = state.newestFrame().timestamp - state.timeCounter;
         bool smallDrift = std::abs(drift) > TIME_DRIFT_SMALL_THRESHOLD;
@@ -259,7 +260,8 @@ static inline void lerpSpecific(
         auto& a = *older.extData;
         auto& b = *newer.extData;
 
-        auto ed = ExtendedPlayerData{};
+        if (!out.extData) out.extData.emplace();
+        auto& ed = *out.extData;
         ed.velocityX = std::lerp(a.velocityX, b.velocityX, ctx.t);
         ed.velocityY = std::lerp(a.velocityY, b.velocityY, ctx.t);
         ed.accelerating = a.accelerating;
@@ -269,8 +271,6 @@ static inline void lerpSpecific(
         ed.gravityMod = a.gravityMod;
         ed.gravity = a.gravity;
         ed.touchedPad = a.touchedPad;
-
-        out.extData = ed;
     }
 }
 
@@ -377,11 +377,13 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
         if (!older || !newer) {
             // possibly the next frame is delayed, we may need to extrapolate
             if (player.timeCounter >= player.newestFrame().timestamp) {
-                // newer = &player.newestFrame();
-                // older = &player.frames[player.frames.size() - 2]; // the one right before the newest
-
-                // rather than extrapolation, wait for a new frame.
-                continue;
+                if (DO_EXTRAPOLATE) {
+                    older = &player.frames[player.frames.size() - 2]; // the one right before the newest
+                    newer = &player.newestFrame();
+                } else {
+                    // rather than extrapolation, wait for a new frame.
+                    continue;
+                }
             } else if (player.timeCounter < player.oldestFrame().timestamp) {
                 older = &player.oldestFrame();
                 newer = &player.frames[1]; // the one right after the oldest
