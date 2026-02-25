@@ -20,8 +20,8 @@ import sys
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "2145d34"
 QUNET_VERSION = "82a83eb"
-SERVER_SHARED_VERSION = "c86a6d2"
-CUE_VERSION = "36f4a61"
+SERVER_SHARED_VERSION = "914cbc0"
+CUE_VERSION = "55a3118"
 
 if sys.version_info < (3, 12):
     raise RuntimeError("Globed's build system requires Python 3.12 or higher")
@@ -416,7 +416,7 @@ def main(build: Build):
     build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static", options = {
         "PUGIXML_NO_EXCEPTIONS": "ON",
     })
-    build.add_cpm_dep("GlobedGD/argon", "v1.4.4")
+    build.add_cpm_dep("GlobedGD/argon", "v1.4.5")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
     build.add_cpm_dep("Prevter/AdvancedLabel", "7e0eff9", link_name="advanced_label")
 
