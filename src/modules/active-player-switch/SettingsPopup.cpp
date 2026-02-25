@@ -105,16 +105,16 @@ bool APSSettingsPopup::init(APSPlayLayer* layer) {
 
     auto toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f, [this](auto toggler) {
         bool on = !toggler->isOn();
-        m_settings.m_showNextPlayer = !on;
+        m_settings.m_showNextPlayer = on;
         m_dirty = true;
     }))
         .parent(warnContainer)
         .collect();
     toggler->m_offButton->m_scaleMultiplier = 1.15f;
     toggler->m_onButton->m_scaleMultiplier = 1.15f;
-    toggler->toggle(!m_settings.m_showNextPlayer);
+    toggler->toggle(m_settings.m_showNextPlayer);
 
-    Build<Label>::create("Warn Everybody", "bigFont.fnt")
+    Build<Label>::create("Show Next Player", "bigFont.fnt")
         .scale(0.4f)
         .parent(warnContainer);
 

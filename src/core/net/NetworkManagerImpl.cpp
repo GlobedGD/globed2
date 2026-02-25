@@ -2129,6 +2129,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
             auto info = this->connInfo();
             updateServers(*info, servers);
+            m_workerNotify.notifyOne();
         } break;
 
         case CentralMessage::USER_DATA_CHANGED: {

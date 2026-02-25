@@ -27,7 +27,7 @@ struct APSSettings {
     float m_interval = 5.f;
     float m_intervalVar = 2.f;
     float m_warningDelay = 1.f;
-    bool m_showNextPlayer = false;
+    bool m_showNextPlayer = true;
 };
 
 struct APSPlayLayer;
@@ -94,6 +94,7 @@ struct GLOBED_MODIFY_ATTR APSPlayLayer : geode::Modify<APSPlayLayer, PlayLayer> 
     void showPreSwitchEffect();
     void showEffect(bool presw);
     void hideSwitchEffects();
+    void showNextPlayerNotification(int id);
 
     void restartSwitchCycle();
     void sendFullState(bool restarting = false);

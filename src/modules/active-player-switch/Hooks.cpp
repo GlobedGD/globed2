@@ -3,6 +3,7 @@
 #include "SettingsPopup.hpp"
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/data/Event.hpp>
+#include <globed/util/gd.hpp>
 #include <Geode/utils/random.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -57,9 +58,14 @@ void APSController::handleSwitchEvent(const SwitcherooSwitchEvent& event) {
         // if showNextPlayer is enabled, only show the pre switch effect to the next player, to make it simpler
         // otherwise show to everyone and let them guess!
         bool meNext = m_nextPlayer == m_pl->m_fields->m_myAccountId;
-        bool showEffect = meNext || !m_settings.m_showNextPlayer;
 
-        if (showEffect) m_pl->showPreSwitchEffect();
+        if (m_settings.m_showNextPlayer) {
+            if (meNext) m_pl->showPreSwitchEffect();
+            m_pl->showNextPlayerNotification(m_nextPlayer);
+        } else {
+            m_pl->showPreSwitchEffect();
+        }
+
     } else if (event.type == event.Switch) {
         log::debug("(APS) Now switching to {}!", event.playerId);
         m_activePlayer = event.playerId;
@@ -247,6 +253,28 @@ void APSPlayLayer::showSwitchEffect() {
 
 void APSPlayLayer::showPreSwitchEffect() {
     this->showEffect(true);
+}
+
+void APSPlayLayer::showNextPlayerNotification(int id) {
+    auto gjbgl = GlobedGJBGL::get(this);
+    cue::Icons icons;
+    std::string username;
+
+    auto player = gjbgl->getPlayer(id);
+    if (player) {
+        auto& ddata = player->displayData();
+        icons = convertPlayerIcons(ddata.icons);
+        username = ddata.username;
+    } else if (id == m_fields->m_myAccountId) {
+        icons = getPlayerIcons();
+        username = "you";
+    } else {
+        return;
+    }
+
+    auto icon = cue::PlayerIcon::create(icons);
+
+    Notification::create(fmt::format("Switching to {} soon!", username), icon, 0.5f)->show();
 }
 
 void APSPlayLayer::showEffect(bool presw) {
