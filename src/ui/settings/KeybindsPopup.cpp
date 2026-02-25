@@ -10,10 +10,12 @@ using namespace geode::prelude;
 
 namespace globed {
 
+
+namespace { namespace $anon {
+
 static constexpr CCSize LIST_SIZE { 340.f, 220.f };
 static constexpr float CELL_HEIGHT = 26.f;
 
-namespace {
 class KeybindCell : public CCNode {
 public:
     static KeybindCell* create(CStr key, CStr name, CStr desc) {
@@ -117,7 +119,8 @@ protected:
         m_menu->updateLayout();
     }
 };
-}
+
+} }
 
 bool KeybindsPopup::init() {
     if (!BasePopup::init(400.f, 280.f)) return false;
@@ -126,32 +129,32 @@ bool KeybindsPopup::init() {
 
     KeybindsManager::get().refreshBinds();
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE))
+    m_list = Build(cue::ListNode::create($anon::LIST_SIZE))
         .pos(this->fromCenter(0.f, -10.f))
         .parent(m_mainLayer);
 
 #ifdef GLOBED_VOICE_CAN_TALK
-    m_list->addCell(KeybindCell::create(
+    m_list->addCell($anon::KeybindCell::create(
         "core.keybinds.voice-chat",
         "Voice activate",
         "Captures microphone input and sends it to other users while the button is held"
     ));
 
-    m_list->addCell(KeybindCell::create(
+    m_list->addCell($anon::KeybindCell::create(
         "core.keybinds.deafen",
         "Deafen",
         "Temporarily disables ability to hear other players"
     ));
 #endif
 
-    m_list->addCell(KeybindCell::create(
+    m_list->addCell($anon::KeybindCell::create(
         "core.keybinds.hide-players",
         "Hide players",
         "Hide / unhide all players while in a level"
     ));
 
 #define EMOTE_CELL(n, human) \
-    m_list->addCell(KeybindCell::create( \
+    m_list->addCell($anon::KeybindCell::create( \
         "core.keybinds.emote-" n, \
         "Emote " human, \
         "Send the emote assigned to favorite slot " human \
@@ -165,6 +168,7 @@ bool KeybindsPopup::init() {
     EMOTE_CELL("5", "6")
     EMOTE_CELL("6", "7")
     EMOTE_CELL("7", "8")
+#undef EMOTE_CELL
 
     return true;
 }

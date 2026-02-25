@@ -1,6 +1,7 @@
 #include <globed/core/data/Event.hpp>
 
-using namespace qn;
+using qn::ByteReader;
+using qn::HeapByteWriter;
 using namespace geode::prelude;
 
 #define READER_UNWRAP(...) GEODE_UNWRAP((__VA_ARGS__).mapErr([&](auto&& err) { return err.message(); }));

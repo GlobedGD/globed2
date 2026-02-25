@@ -9,11 +9,11 @@ using namespace geode::prelude;
 
 namespace globed {
 
+namespace { namespace $anon {
+
 static constexpr CCSize LIST_SIZE { 336.f, 220.f };
 static constexpr float CELL_HEIGHT = 27.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
-
-namespace {
 
 class PlayerCell : public PlayerListCell {
 public:
@@ -56,14 +56,14 @@ protected:
     }
 };
 
-}
+} }
 
 bool InvitePopup::init() {
     if (!BasePopup::init(420.f, 280.f)) return false;
 
     this->setTitle("Invite Players");
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE))
+    m_list = Build(cue::ListNode::create($anon::LIST_SIZE))
         .pos(this->fromCenter(0.f, -10.f))
         .parent(m_mainLayer);
     m_list->setAutoUpdate(false);
@@ -165,13 +165,13 @@ void InvitePopup::onLoaded(const std::vector<MinimalRoomPlayer>& players) {
     m_list->clear();
 
     for (auto& player : players) {
-        m_list->addCell(PlayerCell::create(
+        m_list->addCell($anon::PlayerCell::create(
             player.accountData.accountId,
             player.accountData.userId,
             player.accountData.username,
             player.toIcons(),
             std::nullopt,
-            CELL_SIZE
+            $anon::CELL_SIZE
         ));
     }
 

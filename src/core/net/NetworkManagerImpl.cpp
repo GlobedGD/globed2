@@ -825,10 +825,12 @@ Future<> NetworkManagerImpl::threadTryAuth() {
     }
 }
 
+#ifdef GEODE_IS_WINDOWS
 static bool isWine() {
     auto dll = LoadLibraryW(L"ntdll.dll");
     return GetProcAddress(dll, "wine_get_version") != nullptr;
 }
+#endif
 
 static schema::main::Platform currentPlatform() {
     using enum schema::main::Platform;

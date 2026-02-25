@@ -159,6 +159,106 @@ def make_constants_codegen(state: State) -> str:
 
     return out
 
+def setup_unity(build: Build, gc: GlobedConfig):
+    build.add_raw_statement("""
+    set_target_properties(
+        ${PROJECT_NAME} PROPERTIES
+        UNITY_BUILD ON
+        UNITY_BUILD_MODE GROUP
+        UNITY_BUILD_UNIQUE_ID "$anon"
+    )""")
+
+    groups = {
+        "audio": [
+            "src/audio/*.cpp",
+            "src/audio/sound/*.cpp",
+        ],
+        "core": [
+            "src/core/data/*.cpp",
+            # net
+            "src/core/*.cpp",
+        ],
+        "core2": [
+            "src/core/hooks/*.cpp",
+            "src/core/preload/*.cpp",
+        ],
+        "core3": [
+            "src/core/game/*.cpp",
+            "src/soft-link/*.cpp",
+            "src/util/*.cpp",
+        ],
+        "net": [
+            "src/core/net/*.cpp",
+        ],
+        "ui1": [
+            "src/ui/admin/*.cpp",
+        ],
+        "ui2": [
+            "src/ui/game/*.cpp",
+            "src/ui/menu/levels/*.cpp",
+            "src/ui/*.cpp",
+            "src/ui/notification/*.cpp",
+        ],
+        "ui3": [
+            "src/ui/menu/*.cpp",
+            "-src/ui/menu/GlobedMenuLayer.cpp",
+            "-src/ui/menu/RegionSelectPopup.cpp",
+            "-src/ui/menu/TeamManagementPopup.cpp",
+        ],
+        "ui4": [
+            "src/ui/misc/*.cpp",
+            # move some from menu/ here, this is a relatively small group
+            "src/ui/menu/GlobedMenuLayer.cpp",
+            "src/ui/menu/RegionSelectPopup.cpp",
+            "src/ui/menu/TeamManagementPopup.cpp",
+        ],
+        "ui5": [
+            "src/ui/settings/*.cpp",
+            "src/ui/settings/cells/*.cpp",
+        ],
+        "modules": []
+    }
+
+    for mod in gc.modules:
+        mod_dir = build.config.project_dir / "src" / "modules" / mod
+        if not mod_dir.exists():
+            continue
+
+        groups["modules"].extend(str(p.relative_to(build.config.project_dir)) for p in mod_dir.rglob("*.cpp"))
+
+    print("Generating unity groups and checking balancing..")
+
+    for group, globs in groups.items():
+        loc = 0
+        filecount = 0
+
+        stmt = "set_source_files_properties(\n"
+        exclusions = []
+        for s in globs:
+            if s.startswith("-"):
+                exclusions.extend(build.config.project_dir.glob(s[1:]))
+
+        for glob in globs:
+            if glob.startswith("-"):
+                continue
+            for path in build.config.project_dir.glob(glob):
+                if path in exclusions:
+                    continue
+                stmt += f"    {path.absolute()}\n"
+                loc += path.read_bytes().count(b'\n')
+                filecount += 1
+
+        stmt += f"    PROPERTIES UNITY_GROUP {group}\n)\n"
+        build.add_raw_statement(stmt)
+        print(f"Group '{group}' - {filecount} files, {loc} lines")
+
+    # also try unity for certain deps that work with it
+    def unity_dep(name: str, batch: int = 32):
+        build.add_raw_statement(f"set_target_properties({name} PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE {batch})")
+
+    unity_dep("capnp")
+    unity_dep("kj")
+
 def main(build: Build):
     if build.config.bool_var("GLOBED_RELEASE"):
         print("!! GLOBED_RELEASE is defined, setting actions configuration !!")
@@ -195,7 +295,6 @@ def main(build: Build):
     build.add_source_dir(src / "util")
     build.add_source_dir(src / "ui")
     build.add_source_dir(src / "soft-link")
-    build.add_source_dir(src / "old-api")
     plat_dir = src / "platform" / config.platform.platform_str()
     if plat_dir.exists():
         # src/platform/<windows|android|ios|macos> , optional
@@ -331,8 +430,6 @@ def main(build: Build):
         })
         build.add_definition("GLOBED_VOICE_SUPPORT", "1", Privacy.PUBLIC)
 
-    # reexport some
-    build.link_libraries("asp", privacy=Privacy.PUBLIC)
     if config.platform.is_android():
         build.link_libraries("EGL", "GLESv2")
 
@@ -340,6 +437,12 @@ def main(build: Build):
     build.silence_warnings_for("capnp")
     build.silence_warnings_for("libzstd_static")
     build.silence_warnings_for("opus")
+
+    # setup unity build
+    if gc.release:
+        setup_unity(build, gc)
+    else:
+        build.add_definition("$anon", "_no_unity")
 
     # cpm overrides
     for name, path in gc.cpm_overrides.items():

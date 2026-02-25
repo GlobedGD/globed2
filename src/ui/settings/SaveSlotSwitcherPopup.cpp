@@ -10,10 +10,11 @@ using namespace geode::prelude;
 
 namespace globed {
 
+namespace { namespace $anon {
+
 static const CCSize LIST_SIZE = { 306.f, 210.f };
 static constexpr float CELL_HEIGHT = 36.f;
 
-namespace {
 class Cell : public CCNode {
 public:
     static Cell* create(SaveSlotMeta meta, SaveSlotSwitcherPopup* popup) {
@@ -107,14 +108,15 @@ private:
         return true;
     }
 };
-}
+
+} }
 
 bool SaveSlotSwitcherPopup::init() {
     if (!BasePopup::init(360.f, 280.f)) return false;
 
     this->setTitle("Setting Profiles");
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE))
+    m_list = Build(cue::ListNode::create($anon::LIST_SIZE))
         .pos(this->fromCenter(0.f, -15.f))
         .parent(m_mainLayer);
     m_list->setJustify(cue::Justify::Center);
@@ -131,11 +133,11 @@ void SaveSlotSwitcherPopup::refreshList(bool scrollToTop) {
     m_list->clear();
 
     for (auto& slot : slots) {
-        m_list->addCell(Cell::create(std::move(slot), this));
+        m_list->addCell($anon::Cell::create(std::move(slot), this));
     }
 
     auto plusBtn = Build<CCSprite>::createSpriteName("GJ_plusBtn_001.png")
-        .with([&](auto btn) { cue::rescaleToMatch(btn, CCSize{CELL_HEIGHT, CELL_HEIGHT}); })
+        .with([&](auto btn) { cue::rescaleToMatch(btn, CCSize{$anon::CELL_HEIGHT, $anon::CELL_HEIGHT}); })
         .intoMenuItem([this] {
             SettingsManager::get().createSaveSlot();
             this->refreshList();

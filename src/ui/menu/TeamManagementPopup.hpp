@@ -13,16 +13,19 @@ class TeamManagementPopup : public BasePopup {
 public:
     static TeamManagementPopup* create(int assigningFor);
 
-protected:
-    friend class TeamCell;
+    void createTeam();
+    void deleteTeam(uint16_t teamId);
+    void updateTeamColor(uint16_t teamId, cocos2d::ccColor4B color);
+
     cue::ListNode* m_list;
+    int m_assigningFor = 0;
+    bool m_showPlus = false;
+protected:
     cue::LoadingCircle* m_loadingCircle = nullptr;
     MessageListener<msg::RoomStateMessage> m_stateListener;
     MessageListener<msg::TeamCreationResultMessage> m_creationListener;
     MessageListener<msg::RoomSettingsUpdatedMessage> m_settingsListener;
     CCNode* m_bottomContainer;
-    int m_assigningFor = 0;
-    bool m_showPlus = false;
 
     bool init(int assigningFor);
     void startLoading();
@@ -31,10 +34,6 @@ protected:
 
     void stopLoad();
     void addPlusButton();
-
-    void createTeam();
-    void deleteTeam(uint16_t teamId);
-    void updateTeamColor(uint16_t teamId, cocos2d::ccColor4B color);
 
     void setLockedTeams(bool locked);
 };

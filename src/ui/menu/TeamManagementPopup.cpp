@@ -10,6 +10,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+namespace { namespace $anon {
+
 static constexpr float CELL_HEIGHT = 26.f;
 static constexpr float CELL_WIDTH = 260.f;
 
@@ -189,6 +191,8 @@ private:
     }
 };
 
+} } // namespace $anon
+
 bool TeamManagementPopup::init(int assigningFor) {
     if (!BasePopup::init(300.f, 250.f)) return false;
 
@@ -196,18 +200,18 @@ bool TeamManagementPopup::init(int assigningFor) {
     m_showPlus = RoomManager::get().isOwner() && !assigningFor;
     m_assigningFor = assigningFor;
 
-    m_list = Build(cue::ListNode::create({CELL_WIDTH, 170.f}))
+    m_list = Build(cue::ListNode::create({$anon::CELL_WIDTH, 170.f}))
         .pos(this->fromCenter(0.f, -2.f))
         .visible(false)
         .parent(m_mainLayer);
 
     m_list->setAutoUpdate(false);
-    m_list->setCellHeight(CELL_HEIGHT);
+    m_list->setCellHeight($anon::CELL_HEIGHT);
     m_list->setJustify(cue::Justify::Center);
 
     m_bottomContainer = Build<CCMenu>::create()
         .layout(RowLayout::create()->setAutoScale(false))
-        .contentSize(CELL_WIDTH, 30.f)
+        .contentSize($anon::CELL_WIDTH, 30.f)
         .pos(this->fromBottom(20.f))
         .visible(false)
         .parent(m_mainLayer);
@@ -269,7 +273,7 @@ void TeamManagementPopup::onLoaded(const std::vector<RoomTeam>& teams) {
     // populate the list
     size_t i = 0;
     for (auto& team : teams) {
-        m_list->addCell(TeamCell::create(team, i++, this));
+        m_list->addCell($anon::TeamCell::create(team, i++, this));
     }
 
     // add the plus button
@@ -293,8 +297,8 @@ void TeamManagementPopup::onTeamCreated(bool success, uint16_t teamCount) {
                 m_list->removeCell(m_list->size() - 1); // remove the plus cell
             }
 
-            m_list->addCell(TeamCell::create(RoomTeam {
-                .color = getDefaultColor(teamCount - 1)
+            m_list->addCell($anon::TeamCell::create(RoomTeam {
+                .color = $anon::getDefaultColor(teamCount - 1)
             }, teamCount - 1, this));
 
             this->addPlusButton();
@@ -314,7 +318,7 @@ void TeamManagementPopup::addPlusButton() {
     if (!m_showPlus) return;
 
     auto plusBtn = Build<CCSprite>::createSpriteName("GJ_plusBtn_001.png")
-        .with([&](auto btn) { cue::rescaleToMatch(btn, CCSize{CELL_HEIGHT, CELL_HEIGHT}); })
+        .with([&](auto btn) { cue::rescaleToMatch(btn, CCSize{$anon::CELL_HEIGHT, $anon::CELL_HEIGHT}); })
         .intoMenuItem([this] {
             this->createTeam();
         })
@@ -347,7 +351,7 @@ void TeamManagementPopup::stopLoad() {
 void TeamManagementPopup::createTeam() {
     this->startLoading();
 
-    NetworkManagerImpl::get().sendCreateTeam(getDefaultColor(m_list->size() - 1));
+    NetworkManagerImpl::get().sendCreateTeam($anon::getDefaultColor(m_list->size() - 1));
 }
 
 void TeamManagementPopup::deleteTeam(uint16_t teamId) {

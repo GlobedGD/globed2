@@ -54,7 +54,7 @@ std::vector<CentralServerData>& ServerManager::getAllServers() {
 }
 
 void ServerManager::commit() {
-    globed::setValue("core.central-servers", m_storage);
+    globed::setValue("core.central-servers", m_storage.encode());
 }
 
 static std::string getMainServerUrl() {
@@ -90,10 +90,12 @@ static std::string getMainServerUrl() {
 }
 
 void ServerManager::reload() {
-    if (auto opt = globed::value<Storage>("core.central-servers")) {
-        m_storage = std::move(*opt);
-    } else {
-        m_storage = {};
+    m_storage = {};
+    auto opt = globed::value<matjson::Value>("core.central-servers");
+    if (opt) {
+        if (auto val = Storage::decode(*opt)) {
+            m_storage = std::move(*val);
+        }
     }
 
     // ensure the main server is always present and is the first one
@@ -117,6 +119,36 @@ void ServerManager::reload() {
 
 bool ServerManager::isOfficialServerActive() {
     return this->getActiveServer().url == GLOBED_DEFAULT_MAIN_SERVER_URL;
+}
+
+matjson::Value ServerManager::Storage::encode() {
+    auto serversArr = matjson::Value::array();
+    for (auto& srv : servers) {
+        serversArr.push(matjson::makeObject({
+            {"name", srv.name},
+            {"url", srv.url},
+        }));
+    }
+
+    return matjson::makeObject({
+        {"activeIdx", activeIdx},
+        {"servers", serversArr},
+    });
+}
+
+geode::Result<ServerManager::Storage> ServerManager::Storage::decode(const matjson::Value& json) {
+    Storage out;
+
+    out.activeIdx = GEODE_UNWRAP(json["activeIdx"].as<size_t>());
+
+    auto arr = GEODE_UNWRAP(json["servers"].asArray());
+    for (auto& val : arr) {
+        auto name = GEODE_UNWRAP(val["name"].asString());
+        auto url = GEODE_UNWRAP(val["url"].asString());
+        out.servers.emplace_back(std::move(name), std::move(url));
+    }
+
+    return Ok(std::move(out));
 }
 
 }

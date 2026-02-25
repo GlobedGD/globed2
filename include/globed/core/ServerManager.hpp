@@ -1,7 +1,6 @@
 #pragma once
 
 #include <matjson.hpp>
-#include <matjson/reflect.hpp>
 #include <matjson/std.hpp>
 #include <globed/util/singleton.hpp>
 
@@ -32,6 +31,9 @@ private:
     struct Storage {
         std::vector<CentralServerData> servers;
         size_t activeIdx = 0;
+
+        matjson::Value encode();
+        static geode::Result<Storage> decode(const matjson::Value&);
     };
 
     Storage m_storage;

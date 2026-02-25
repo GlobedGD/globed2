@@ -10,9 +10,10 @@ using namespace geode::prelude;
 
 namespace globed {
 
-static constexpr CCSize LIST_SIZE { 330.f, 180.f };
 
-namespace {
+namespace { namespace $anon {
+
+static constexpr CCSize LIST_SIZE { 330.f, 180.f };
 constexpr float CELL_HEIGHT = 40.f;
 
 class ListCell : public CCNode {
@@ -111,17 +112,17 @@ private:
     }
 };
 
-}
+} }
 
 bool RegionSelectPopup::init() {
     if (!BasePopup::init(370.f, 240.f)) return false;
 
     this->setTitle("Select Preferred Server");
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE))
+    m_list = Build(cue::ListNode::create($anon::LIST_SIZE))
         .pos(this->fromCenter(0.f, -10.f))
         .parent(m_mainLayer);
-    m_list->setCellHeight(CELL_HEIGHT);
+    m_list->setCellHeight($anon::CELL_HEIGHT);
 
     if (!this->reloadList()) {
         globed::alert("Error", "No <cy>game servers</c> are currently online.");
@@ -150,10 +151,10 @@ bool RegionSelectPopup::reloadList() {
     auto preferred = nm.getPreferredServer(false);
 
     for (auto& server : servers) {
-        m_list->addCell(ListCell::create(server, server.id == preferred, this));
+        m_list->addCell($anon::ListCell::create(server, server.id == preferred, this));
     }
 
-    m_list->sortAs<ListCell>([](auto a, auto b) {
+    m_list->sortAs<$anon::ListCell>([](auto a, auto b) {
         return a->getPing() < b->getPing();
     });
 
@@ -166,7 +167,7 @@ void RegionSelectPopup::softRefresh(float) {
     std::vector<size_t> toRemove;
 
     size_t i = 0;
-    for (auto cell : m_list->iter<ListCell>()) {
+    for (auto cell : m_list->iter<$anon::ListCell>()) {
         bool refreshed = false;
 
         for (auto& srv : servers) {

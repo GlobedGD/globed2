@@ -17,6 +17,8 @@ using namespace asp::time;
 
 namespace globed {
 
+namespace { namespace $anon {
+
 static constexpr CCSize LIST_SIZE = {370.f, 200.f};
 static constexpr float CELL_HEIGHT = 26.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
@@ -24,8 +26,6 @@ static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
 constexpr static size_t countBools(auto&&... bools) {
     return (static_cast<size_t>(bools) + ... + 0);
 }
-
-namespace {
 
 class PlayerCell : public PlayerListCell {
 public:
@@ -324,7 +324,7 @@ protected:
     }
 };
 
-}
+} }
 
 bool UserListPopup::init() {
     if (!BasePopup::init(420.f, 280.f)) return false;
@@ -333,7 +333,7 @@ bool UserListPopup::init() {
 
     m_noElasticity = true;
 
-    m_list = Build(cue::ListNode::create(LIST_SIZE))
+    m_list = Build(cue::ListNode::create($anon::LIST_SIZE))
         .anchorPoint(0.5f, 1.f)
         .pos(this->fromTop(40.f))
         .parent(m_mainLayer);
@@ -462,7 +462,7 @@ void UserListPopup::hardRefresh() {
 
     this->setTitle(fmt::format("Players ({})", players.size() + 1));
 
-    m_list->addCell(PlayerCell::createMyself(this));
+    m_list->addCell($anon::PlayerCell::createMyself(this));
 
     for (auto& [playerId, player] : players) {
         if (playerId == cachedSingleton<GJAccountManager>()->m_accountID) {
@@ -478,7 +478,7 @@ void UserListPopup::hardRefresh() {
                 }
             }
 
-            m_list->addCell(PlayerCell::create(
+            m_list->addCell($anon::PlayerCell::create(
                 data.accountId,
                 data.userId,
                 data.username,
@@ -500,7 +500,7 @@ void UserListPopup::hardRefresh() {
     auto selfId = cachedSingleton<GJAccountManager>()->m_accountID;
     auto& flm = FriendListManager::get();
 
-    m_list->sortAs<PlayerCell>([&](PlayerCell* a, PlayerCell* b) {
+    m_list->sortAs<$anon::PlayerCell>([&]($anon::PlayerCell* a, $anon::PlayerCell* b) {
         if (a->m_accountId == selfId) return true;
         else if (b->m_accountId == selfId) return false;
 
