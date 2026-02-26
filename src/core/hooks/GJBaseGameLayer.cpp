@@ -597,24 +597,19 @@ PlayerState GlobedGJBGL::getPlayerState() {
         float percent;
 
         if (m_level->m_timestamp > 0) {
-            percent = static_cast<float>(m_gameState.m_currentProgress) / m_level->m_timestamp * 100.f;
+            percent = static_cast<float>(m_gameState.m_currentProgress) / m_level->m_timestamp / 2.f * 100.f;
         } else {
             percent = m_player1->getPosition().x / m_levelLength * 100.f;
         }
 
-        if (percent >= 100.f) {
-            return 100.f;
-        } else if (percent <= 0.f) {
-            return 0.f;
-        } else {
-            return percent;
-        }
+        return std::clamp(percent, 0.f, 100.f);
     };
 
     double progress = (double)getPercent() / 100.0;
     if (std::isnan(progress) || std::isinf(progress)) {
         progress = 0.0;
     }
+    log::debug("My progress: {}, playlayer: {}", progress, reinterpret_cast<PlayLayer*>(this)->getCurrentPercent());
 
     out.percentage = static_cast<uint16_t>(std::floor(progress * 65535.0));
     out.isDead = m_player1->m_isDead || m_player2->m_isDead;
