@@ -38,6 +38,7 @@ private:
 
     void waitForResponse();
     void stopWaiting(std::optional<std::string> failReason);
+    void onCreate();
 };
 
 }

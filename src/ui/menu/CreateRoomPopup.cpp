@@ -7,15 +7,19 @@
 #include <ui/misc/LoadingPopup.hpp>
 #include <ui/menu/RoomSettingsPopup.hpp>
 
-#include <UIBuilder.hpp>
+#include <ui/Core.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
 
 namespace globed {
 
+static std::string defaultName() {
+    return fmt::format("{}'s room", GJAccountManager::get()->m_username);
+}
+
 bool CreateRoomPopup::init() {
-    if (!BasePopup::init(290.f, 190.f)) return false;
+    if (!BasePopup::init(240.f, 190.f)) return false;
 
     this->setID("create-room-popup"_spr);
     this->setTitle("Create Room", "goldFont.fnt", 0.7f, 15.f);
@@ -24,8 +28,8 @@ bool CreateRoomPopup::init() {
 
     m_inputsWrapper = Build<CCNode>::create()
         .id("inputs-wrapper")
-        .anchorPoint(0.f, 0.5f)
-        .pos(this->centerLeft() + CCPoint{15.f, 10.f})
+        .pos(this->fromCenter(0.f, 10.f))
+        .anchorPoint(0.5f, 0.5f)
         .layout(ColumnLayout::create()->setAutoScale(false)->setGap(3.f))
         .contentSize(0.f, m_size.height * 0.6f)
         .parent(m_mainLayer)
@@ -36,6 +40,9 @@ bool CreateRoomPopup::init() {
         .layout(RowLayout::create()->setAutoScale(false))
         .parent(m_inputsWrapper)
         .collect();
+
+    float roomNameWidth = m_size.width * 0.8f;
+    float smallInputWidth = (roomNameWidth - 5.f) / 2.f;
 
     // room name
     auto roomNameWrapper = Build<CCNode>::create()
@@ -59,13 +66,16 @@ bool CreateRoomPopup::init() {
         .updateLayout()
         .intoParent() // into name-wrapper
         .parent(m_inputsWrapper)
-        .intoNewChild(TextInput::create(m_size.width * 0.55f, "", "chatFont.fnt"))
+        .intoNewChild(TextInput::create(roomNameWidth, "", "chatFont.fnt"))
         .with([&](TextInput* input) {
+            gd::string dname(defaultName());
+
             input->setCommonFilter(CommonFilter::Any);
             input->setMaxCharCount(32);
+            input->setPlaceholder(dname);
 
             if (!canName) {
-                input->setString(fmt::format("{}'s Room", GJAccountManager::get()->m_username));
+                input->setString(dname);
                 input->setEnabled(false);
             }
         })
@@ -81,15 +91,16 @@ bool CreateRoomPopup::init() {
         .id("pw-wrapper")
         .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
         .contentSize(0.f, 50.f)
-        .intoNewChild(CCLabelBMFont::create("Password", "bigFont.fnt"))
+        .intoNewChild(CCLabelBMFont::create("Passcode", "bigFont.fnt"))
         .scale(0.35f)
         .intoParent()
         .parent(smallInputsWrapper)
-        .intoNewChild(TextInput::create(m_size.width * 0.25f, "", hidePass ? "bigFont.fnt" : "chatFont.fnt"))
+        .intoNewChild(TextInput::create(smallInputWidth, "", hidePass ? "bigFont.fnt" : "chatFont.fnt"))
         .with([&](TextInput* input) {
             input->setCommonFilter(CommonFilter::Uint);
             input->setMaxCharCount(11);
             input->setPasswordMode(hidePass);
+            input->setPlaceholder("(none)");
         })
         .store(m_passcodeInput)
         .intoParent()
@@ -104,91 +115,41 @@ bool CreateRoomPopup::init() {
         .scale(0.35f)
         .intoParent()
         .parent(smallInputsWrapper)
-        .intoNewChild(TextInput::create(m_size.width * 0.25f, "", "chatFont.fnt"))
+        .intoNewChild(TextInput::create(smallInputWidth, "", "chatFont.fnt"))
         .with([&](TextInput* input) {
             input->setCommonFilter(CommonFilter::Uint);
             input->setMaxCharCount(6);
+            input->setPlaceholder("Unlimited");
         })
         .store(m_playerLimitInput)
         .intoParent()
         .updateLayout();
 
-    // cancel/create buttons
-    Build<CCMenu>::create()
+    // cancel/create and settings buttons
+    auto buttonsCont = Build<RowContainer>::create()
         .id("btn-wrapper")
-        .layout(RowLayout::create()->setAutoScale(false))
+        .contentSize(0.f, 31.5f)
         .parent(m_mainLayer)
-        .child(
-            Build<ButtonSprite>::create("Cancel", "goldFont.fnt", "GJ_button_05.png", 0.8f)
-                .intoMenuItem([this](auto) {
-                    this->onClose(nullptr);
-                })
-                .scaleMult(1.1f)
-                .collect()
-        )
-        .child(
-            Build<ButtonSprite>::create("Create", "goldFont.fnt", "GJ_button_04.png", 0.8f)
-                .intoMenuItem([this](auto) {
-                    std::string roomName = m_nameInput->getString();
-                    if (roomName.empty() || roomName.size() > 32) {
-                        roomName = fmt::format("{}'s room", GJAccountManager::get()->m_username);
-                    }
-
-                    geode::utils::string::trimIP(roomName);
-
-                    // parse as a 32-bit int but cap at 9999
-                    // this is so that if a user inputs a number like 99999 (doesnt fit),
-                    // instead of making it 0, it makes it 9999
-
-                    uint32_t playerCount = geode::utils::numFromString<uint32_t>(m_playerLimitInput->getString()).unwrapOr(0);
-                    m_settings.playerLimit = std::min<uint32_t>(playerCount, 9999);
-
-                    if (m_settings.playerLimit == 1488) {
-                        globed::alert("Error", "Please choose a <cr>different</c> player limit number.");
-                        return;
-                    }
-
-                    auto passcodeStr = m_passcodeInput->getString();
-                    uint32_t passcode = 0;
-
-                    if (!passcodeStr.empty()) {
-                        auto res = geode::utils::numFromString<uint32_t>(m_passcodeInput->getString());
-                        if (!res) {
-                            globed::alert("Error", "Invalid passcode, must consist of 1 to 10 digits.");
-                            return;
-                        }
-
-                        passcode = *res;
-                    }
-
-                    // pick the preferred server
-                    if (auto srv = NetworkManagerImpl::get().getPreferredServer()) {
-                        log::debug("using server ID: {}", *srv);
-                        m_settings.serverId = *srv;
-                    } else {
-                        globed::alert("Error", "No game servers are available to host this room. This is a <cr>server issue</c>, please <cj>reconnect to the server and try again</c>.");
-                        return;
-                    }
-
-                    m_settings.fasterReset = gameVariable(GameVariable::FastRespawn);
-
-                    this->waitForResponse();
-
-                    // send the packet after setting up listeners, avoiding race condition if the server is on localhost
-                    NetworkManagerImpl::get().sendCreateRoom(roomName, passcode, m_settings);
-                })
-                .scaleMult(1.1f)
-                .collect()
-        )
         .pos(this->fromBottom(25.f))
-        .updateLayout();
+        .collect();
+    buttonsCont->layout()->setCrossAxisScaling(AxisScaling::ScaleDown);
 
-    smallInputsWrapper->setContentWidth(roomNameWrapper->getScaledContentWidth());
-    smallInputsWrapper->updateLayout();
-    m_inputsWrapper->updateLayout();
+    Build<ButtonSprite>::create("Cancel", "goldFont.fnt", "GJ_button_05.png", 0.8f)
+        .intoMenuItem([this](auto) {
+            this->onClose(nullptr);
+        })
+        .scaleMult(1.1f)
+        .parent(buttonsCont);
+
+    Build<ButtonSprite>::create("Create", "goldFont.fnt", "GJ_button_04.png", 0.8f)
+        .intoMenuItem([this](auto) {
+            this->onCreate();
+        })
+        .scaleMult(1.1f)
+        .parent(buttonsCont);
 
     // Button to open room settings
-    Build<CCSprite>::create("settings01.png"_spr)
+    auto rsButton = Build<CCSprite>::create("settings01.png"_spr)
         .scale(0.8f)
         .intoMenuItem([this] {
             auto popup = RoomSettingsPopup::create(m_settings);
@@ -197,8 +158,16 @@ bool CreateRoomPopup::init() {
             });
             popup->show();
         })
-        .pos(this->fromRight(50.f))
-        .parent(m_buttonMenu);
+        .scaleMult(1.15f)
+        .parent(buttonsCont)
+        .collect();
+
+    buttonsCont->updateLayout();
+    rsButton->setPositionY(rsButton->getPositionY() - 1.f);
+
+    smallInputsWrapper->setContentWidth(roomNameWrapper->getScaledContentWidth());
+    smallInputsWrapper->updateLayout();
+    m_inputsWrapper->updateLayout();
 
     return true;
 }
@@ -224,6 +193,56 @@ void CreateRoomPopup::showRoomNameWarnPopup(bool canName) {
         "Creating a room with <cy>advertisements</c> or <cr>profanity</c> in its name may lead to a <cy>closure of the room</c>, "
         "or in some cases a <cr>ban</c>."
     );
+}
+
+void CreateRoomPopup::onCreate() {
+    std::string roomName = m_nameInput->getString();
+    if (roomName.empty() || roomName.size() > 32) {
+        roomName = defaultName();
+    }
+
+    geode::utils::string::trimIP(roomName);
+
+    // parse as a 32-bit int but cap at 9999
+    // this is so that if a user inputs a number like 99999 (doesnt fit),
+    // instead of making it 0, it makes it 9999
+
+    uint32_t playerCount = geode::utils::numFromString<uint32_t>(m_playerLimitInput->getString()).unwrapOr(0);
+    m_settings.playerLimit = std::min<uint32_t>(playerCount, 9999);
+
+    if (m_settings.playerLimit == 1488) {
+        globed::alert("Error", "Please choose a <cr>different</c> player limit number.");
+        return;
+    }
+
+    auto passcodeStr = m_passcodeInput->getString();
+    uint32_t passcode = 0;
+
+    if (!passcodeStr.empty()) {
+        auto res = geode::utils::numFromString<uint32_t>(m_passcodeInput->getString());
+        if (!res) {
+            globed::alert("Error", "Invalid passcode, must consist of 1 to 10 digits.");
+            return;
+        }
+
+        passcode = *res;
+    }
+
+    // pick the preferred server
+    if (auto srv = NetworkManagerImpl::get().getPreferredServer()) {
+        log::debug("using server ID: {}", *srv);
+        m_settings.serverId = *srv;
+    } else {
+        globed::alert("Error", "No game servers are available to host this room. This is a <cr>server issue</c>, please <cj>reconnect to the server and try again</c>.");
+        return;
+    }
+
+    m_settings.fasterReset = gameVariable(GameVariable::FastRespawn);
+
+    this->waitForResponse();
+
+    // send the packet after setting up listeners, avoiding race condition if the server is on localhost
+    NetworkManagerImpl::get().sendCreateRoom(roomName, passcode, m_settings);
 }
 
 void CreateRoomPopup::waitForResponse() {
