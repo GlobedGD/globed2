@@ -54,6 +54,7 @@ private:
     MessageListener<msg::PinnedLevelUpdatedMessage> m_pinnedListener;
     MessageListener<msg::UserDataChangedMessage> m_userChangedListener;
     MessageListener<msg::AdminPunishmentReasonsMessage> m_adminResultListener;
+    MessageListener<msg::RoomSettingsUpdatedMessage> m_roomSettingsListener;
     uint32_t m_roomId = -1;
     size_t m_playerCount = 0;
     std::optional<asp::time::Instant> m_lastRoomUpdate;

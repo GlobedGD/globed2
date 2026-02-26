@@ -104,12 +104,18 @@ bool PlayerListCell::initMyself(cocos2d::CCSize cellSize) {
 void PlayerListCell::updateStuff(float dt) {
     auto& rm = RoomManager::get();
 
-    if (auto teamId = rm.getTeamIdForPlayer(m_accountId)) {
-        if (auto team = rm.getTeam(*teamId)) {
-            m_nameLabel->updateTeam(*teamId, team->color);
-            this->updateLayout();
+    if (rm.getSettings().teams) {
+        if (auto teamId = rm.getTeamIdForPlayer(m_accountId)) {
+            if (auto team = rm.getTeam(*teamId)) {
+                m_nameLabel->updateTeam(*teamId, team->color);
+                this->updateLayout();
+            }
         }
+    } else {
+        m_nameLabel->updateNoTeam();
     }
+
+    this->updateLayout();
 }
 
 void PlayerListCell::setGradient(CellGradientType type, bool blend) {

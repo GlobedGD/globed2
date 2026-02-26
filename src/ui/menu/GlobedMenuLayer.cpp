@@ -87,14 +87,15 @@ public:
         this->softRefreshInner(rp.specialUserData, rp.session);
     }
 
-    void softRefresh() {
-        this->recreateButtons();
-    }
-
     // assuming this is the local player, refresh certain things
     void softRefreshSelf() {
         auto sud = NetworkManagerImpl::get().getOwnSpecialData();
         this->softRefreshInner(sud, SessionId{});
+    }
+
+    void softRefresh() {
+        this->recreateButtons();
+        this->updateStuff(0.f);
     }
 
 protected:
@@ -125,6 +126,7 @@ protected:
 
         this->recreateButtons();
         this->initGradients();
+        this->updateStuff(0.f);
     }
 
     void recreateButtons() {
@@ -473,6 +475,13 @@ bool GlobedMenuLayer::init() {
         this->initSideButtons();
         this->softRefreshAll();
 
+        return ListenerResult::Continue;
+    });
+
+    m_roomSettingsListener = nm.listen<msg::RoomSettingsUpdatedMessage>([this](const auto& msg) {
+        // refresh stuff buttons when settings change
+        this->initSideButtons();
+        this->softRefreshAll();
         return ListenerResult::Continue;
     });
 
