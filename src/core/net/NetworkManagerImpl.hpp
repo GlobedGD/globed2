@@ -109,6 +109,8 @@ struct ConnectionInfo {
     bool m_gameEstablished = false;
     std::queue<OutEvent> m_gameEventQueue;
     std::vector<EmbeddedScript> m_queuedScripts;
+    std::deque<std::pair<uint16_t, asp::Instant>> m_gamePlayerDataReqs;
+    uint16_t m_gameNextMessageId = 1;
 
     bool m_sentFriendList = false;
     bool m_sentIcons = true; // icons are sent at login
@@ -123,7 +125,6 @@ struct ConnectionInfo {
     UserPermissions m_perms{};
     PunishReasons m_punishReasons{};
     bool m_authorizedModerator;
-
 
     void startedAuth() {
         m_authenticating = true;

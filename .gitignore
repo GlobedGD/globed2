@@ -70,12 +70,15 @@ src/modules/comm
 
 _old-src
 resources-old
-laptop.py
 bloaty.sh
 bloaty-*.txt
 mod.json
 !libs/bb/*
 symstone.sh
+
+*.py
+!geobuild.py
+!rescale.py
 
 __pycache__
 config.toml

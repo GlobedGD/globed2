@@ -1917,6 +1917,11 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
         return;
     }
 
+    // if there are too many data requests in flight, kill some
+    if (info->m_gamePlayerDataReqs.size() > 15) {
+        info->m_gamePlayerDataReqs.pop_front();
+    }
+
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto playerData = msg.initPlayerData();
         auto data = playerData.initData();
@@ -1943,6 +1948,11 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
 
         auto eventData = std::move(eventEncoder).intoVector();
         playerData.setEventData(kj::ArrayPtr{eventData.data(), eventData.size()});
+
+        // allocate another message id
+        uint16_t msgId = info->m_gameNextMessageId++;
+        playerData.setMessageId(msgId);
+        info->m_gamePlayerDataReqs.emplace_back(msgId, Instant::now());
     }, !info->m_gameEventQueue.empty());
 }
 
@@ -2419,7 +2429,25 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
         } break;
 
         case LEVEL_DATA: {
-            this->invokeListeners(data::decodeUnchecked<msg::LevelDataMessage>(msg.getLevelData()));
+            auto m = msg.getLevelData();
+            uint16_t messageId = m.getMessageId();
+
+            if (messageId != 0) {
+                // erase the request and estimate the RTT
+                auto lock = m_connInfo.lock();
+                auto& connInfo = **lock;
+                auto it = std::ranges::find_if(connInfo.m_gamePlayerDataReqs, [messageId](const auto& req) {
+                    return req.first == messageId;
+                });
+
+                if (it != connInfo.m_gamePlayerDataReqs.end()) {
+                    auto rtt = it->second.elapsed();
+                    connInfo.m_gamePlayerDataReqs.erase(it);
+                    m_gameConn->updateLatency(rtt);
+                }
+            }
+
+            this->invokeListeners(data::decodeUnchecked<msg::LevelDataMessage>(m));
         } break;
 
         case SCRIPT_LOGS: {
