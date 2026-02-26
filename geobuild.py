@@ -18,7 +18,7 @@ import tomllib
 import sys
 
 # minimum required geode, can be a commit or a tag
-REQUIRED_GEODE_VERSION = "2145d34"
+REQUIRED_GEODE_VERSION = "v5.1.0"
 QUNET_VERSION = "82a83eb"
 SERVER_SHARED_VERSION = "914cbc0"
 CUE_VERSION = "55a3118"
@@ -355,8 +355,12 @@ def main(build: Build):
 
     build.add_geode_dep("geode.node-ids", ">=v1.10.0")
     build.add_geode_dep("prevter.imageplus", {
-        "version": ">=v1.0.5",
+        "version": ">=v1.1.0",
         "required": False,
+    })
+    build.add_geode_dep("geode.devtools", {
+        "version": ">=v1.13.1",
+        "required": False
     })
 
     if 'scripting-ui' in gc.modules:
