@@ -106,7 +106,17 @@ void NameLabel::updateName(const char* name) {
 }
 
 void NameLabel::updateSelfWidth() {
+    float scale = 1.f;
+    if (m_labelButton) {
+        scale = m_labelButton->getScale();
+        m_labelButton->setScale(1.f);
+    }
+
     this->updateLayout();
+
+    if (m_labelButton) {
+        m_labelButton->setScale(scale);
+    }
 }
 
 void NameLabel::onClick(CCMenuItemSpriteExtra* btn) {

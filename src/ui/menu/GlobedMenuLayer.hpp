@@ -63,6 +63,7 @@ private:
     std::string m_curFilter;
     float m_autoRefreshCounter = 0.f;
     bool m_hardRefresh = false;
+    bool m_interacting = false;
 
     bool init() override;
     void update(float dt) override;
@@ -73,6 +74,7 @@ private:
     void keyBackClicked() override;
     void onEnter() override;
     bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
+    void ccTouchEnded(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) override;
 
     void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings);
     void updateRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings);

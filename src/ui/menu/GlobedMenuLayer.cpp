@@ -37,6 +37,10 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
+namespace globed {
+
+namespace { namespace $unity {
+
 static constexpr CCSize PLAYER_LIST_MENU_SIZE{420.f, 290.f};
 static constexpr CCSize PLAYER_LIST_SIZE{PLAYER_LIST_MENU_SIZE.width * 0.8f, 198.f};
 static constexpr float CELL_HEIGHT = 27.f;
@@ -44,10 +48,6 @@ static constexpr CCSize CELL_SIZE{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
 
 static constexpr CCSize FAR_BTN_SIZE { 45.f, 45.f };
 
-static constexpr float CONNECT_MENU_WIDTH = 260.f;
-
-namespace globed {
-namespace {
 class PlayerCell : public PlayerListCell {
 public:
     static PlayerListCell* create(
@@ -182,7 +182,9 @@ protected:
         ModUserPopup::create(m_accountId)->show();
     }
 };
-} // namespace
+} } // namespace $unity
+
+static constexpr float CONNECT_MENU_WIDTH = 260.f;
 
 // order of buttons in right side menu
 namespace RightBtn {
@@ -214,6 +216,8 @@ namespace FarLeftBtn {
 }
 
 bool GlobedMenuLayer::init() {
+    using namespace $unity;
+
     if (!BaseLayer::init(false)) return false;
 
     Build<cue::RepeatingBackground>::create("game_bg_01_001.png")
@@ -543,7 +547,7 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
     m_playerList->setAutoUpdate(false);
     m_playerList->clear();
 
-    CCSize cellSize{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
+    CCSize cellSize{$unity::PLAYER_LIST_SIZE.width, $unity::CELL_HEIGHT};
 
     auto& flm = FriendListManager::get();
     auto& rm = RoomManager::get();
@@ -604,10 +608,10 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
 
     this->addPinnedLevelCell();
 
-    m_playerList->addCell(PlayerCell::createMyself(SessionId{}));
+    m_playerList->addCell($unity::PlayerCell::createMyself(SessionId{}));
 
     for (auto& player : sortedPlayers) {
-        m_playerList->addCell(PlayerCell::create(
+        m_playerList->addCell($unity::PlayerCell::create(
             player.accountData.accountId,
             player.accountData.userId,
             player.accountData.username,
@@ -645,7 +649,7 @@ void GlobedMenuLayer::addPinnedLevelCell() {
     }
 
     if (!cell) {
-        cell = PinnedLevelCell::create(CELL_SIZE.width);
+        cell = PinnedLevelCell::create($unity::CELL_SIZE.width);
         cell->setUpdateCallback([this] {
             m_playerList->updateLayout();
         });
@@ -677,9 +681,9 @@ bool GlobedMenuLayer::trySoftRefresh(const std::vector<RoomPlayer>& players) {
     auto scrollPos = m_playerList->getScrollPos();
 
     std::unordered_map<int, const RoomPlayer*> newp;
-    std::unordered_map<int, PlayerCell*> existing;
+    std::unordered_map<int, $unity::PlayerCell*> existing;
 
-    for (auto cell : m_playerList->iterChecked<PlayerCell>()) {
+    for (auto cell : m_playerList->iterChecked<$unity::PlayerCell>()) {
         if (cell->m_accountId == selfId) continue;
 
         existing[cell->m_accountId] = cell;
@@ -720,14 +724,14 @@ bool GlobedMenuLayer::trySoftRefresh(const std::vector<RoomPlayer>& players) {
 }
 
 void GlobedMenuLayer::softRefreshAll() {
-    for (auto cell : m_playerList->iterChecked<PlayerCell>()) {
+    for (auto cell : m_playerList->iterChecked<$unity::PlayerCell>()) {
         cell->softRefresh();
     }
 }
 
 void GlobedMenuLayer::softRefreshSelf() {
     auto selfId = globed::cachedSingleton<GJAccountManager>()->m_accountID;
-    for (auto cell : m_playerList->iterChecked<PlayerCell>()) {
+    for (auto cell : m_playerList->iterChecked<$unity::PlayerCell>()) {
         if (cell->m_accountId != selfId) continue;
 
         cell->softRefreshSelf();
@@ -992,6 +996,8 @@ void GlobedMenuLayer::initSideButtons() {
 }
 
 void GlobedMenuLayer::initFarSideButtons() {
+    using namespace $unity;
+
     auto winSize = CCDirector::get()->getWinSize();
     m_farLeftMenu->removeAllChildren();
     m_farRightMenu->removeAllChildren();
@@ -1075,6 +1081,8 @@ void GlobedMenuLayer::initFarSideButtons() {
 }
 
 std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
+    using namespace $unity;
+
     std::vector<Ref<CCMenuItemSpriteExtra>> out;
 
     // credits
@@ -1172,7 +1180,7 @@ bool GlobedMenuLayer::shouldAutoRefresh(float dt) {
     }
 
     // dont refresh if the player interacted with the ui recently
-    if (m_lastInteraction && m_lastInteraction->elapsed() < Duration::fromSecs(3)) {
+    if (m_interacting || (m_lastInteraction && m_lastInteraction->elapsed() < Duration::fromSecs(3))) {
         return false;
     }
 
@@ -1187,6 +1195,9 @@ bool GlobedMenuLayer::shouldAutoRefresh(float dt) {
             return false;
         }
     }
+
+    // don't refresh if devtools is open
+    // TODO: whenever a devtools update is out ..
 
     return true;
 }
@@ -1387,12 +1398,19 @@ void GlobedMenuLayer::reloadWithFilter(const std::string& filter) {
 }
 
 bool GlobedMenuLayer::ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) {
+    // TODO: this never gets called
     auto pos = this->convertTouchToNodeSpace(touch);
     if (CCRect{{}, this->getContentSize()}.containsPoint(pos)) {
         m_lastInteraction = Instant::now();
+        m_interacting = true;
     }
 
     return CCLayer::ccTouchBegan(touch, event);
+}
+
+void GlobedMenuLayer::ccTouchEnded(cocos2d::CCTouch* touch, cocos2d::CCEvent* event) {
+    m_lastInteraction = Instant::now();
+    m_interacting = false;
 }
 
 GlobedMenuLayer* GlobedMenuLayer::create() {

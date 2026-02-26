@@ -13,7 +13,7 @@ Checks: >
   modernize-use-default-member-init,
   modernize-use-using,
   modernize-loop-convert,
-  modernize-pass-by-value
+  modernize-pass-by-value,
   bugprone-copy-constructor-init,
   bugprone-dangling-handle,
   bugprone-integer-division,
@@ -29,11 +29,9 @@ Checks: >
   -clang-analyzer-security.*,
   performance-unnecessary-copy-initialization,
   performance-for-range-copy,
-  performance-inefficient-string-concatenation
+  performance-inefficient-string-concatenation,
   readability-const-return-type,
-  readability-simplify-boolean-expr,
-  readability-redundant-member-init
-  cppcoreguidelines-narrowing-conversions,
+  readability-redundant-member-init,
 
   # cppcoreguidelines-special-member-functions
 
