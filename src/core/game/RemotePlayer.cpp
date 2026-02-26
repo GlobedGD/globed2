@@ -105,9 +105,9 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
 
     // update progress icons
 
-    auto shownOrHide = [&](auto* node, auto&& onShown) {
+    auto shownOrHide = [&](auto* node, bool extraCond, auto&& onShown) {
         if (!node) return;
-        if (hideMisc) {
+        if (hideMisc || !extraCond) {
             node->setVisible(false);
         } else {
             node->setVisible(true);
@@ -115,11 +115,11 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
         }
     };
 
-    shownOrHide(m_progIcon, [&] {
+    shownOrHide(m_progIcon, true, [&] {
         m_progIcon->updatePosition(state.progress(), state.isPracticing);
     });
 
-    shownOrHide(m_progArrow, [&] {
+    shownOrHide(m_progArrow, !m_localPlayer, [&] {
         m_progArrow->updatePosition(camState, m_player1->getLastPosition(), state.progress());
     });
 
