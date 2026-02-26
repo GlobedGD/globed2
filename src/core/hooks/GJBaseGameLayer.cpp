@@ -609,7 +609,6 @@ PlayerState GlobedGJBGL::getPlayerState() {
     if (std::isnan(progress) || std::isinf(progress)) {
         progress = 0.0;
     }
-    log::debug("My progress: {}, playlayer: {}", progress, reinterpret_cast<PlayLayer*>(this)->getCurrentPercent());
 
     out.percentage = static_cast<uint16_t>(std::floor(progress * 65535.0));
     out.isDead = m_player1->m_isDead || m_player2->m_isDead;
