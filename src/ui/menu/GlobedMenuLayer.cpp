@@ -340,7 +340,7 @@ bool GlobedMenuLayer::init() {
         .scaleMult(1.1f)
         .parent(buttonMenu);
 
-    for (auto btn : this->createCommonButtons()) {
+    for (auto& btn : this->createCommonButtons()) {
         buttonMenu->addChild(btn);
     }
 
@@ -843,7 +843,13 @@ void GlobedMenuLayer::initSideButtons() {
             LeftBtn::Settings,
             "btn-settings",
             [] {
-                RoomSettingsPopup::create()->show();
+                auto& rm = RoomManager::get();
+                auto popup = RoomSettingsPopup::create(rm.getSettings());
+                popup->setCallback([](RoomSettings settings) {
+                    RoomManager::get().getSettings() = settings;
+                    NetworkManagerImpl::get().sendUpdateRoomSettings(settings);
+                });
+                popup->show();
             }
         );
     }
@@ -990,7 +996,7 @@ void GlobedMenuLayer::initFarSideButtons() {
     }
 
     auto commons = this->createCommonButtons();
-    for (auto b : commons) {
+    for (auto& b : commons) {
         m_farRightMenu->addChild(b);
     }
 

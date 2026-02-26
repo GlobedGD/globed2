@@ -11,23 +11,37 @@ namespace globed {
 
 class RoomSettingsPopup : public BasePopup {
 public:
-    static const cocos2d::CCSize POPUP_SIZE;
-    static const cocos2d::CCSize LIST_SIZE;
-    static RoomSettingsPopup* create();
+    static RoomSettingsPopup* create(RoomSettings s);
+    using Callback = geode::Function<void(RoomSettings)>;
 
+    void setCallback(Callback cb) { m_callback = std::move(cb); }
+    void onToggled(bool RoomSettings::* bptr, bool state);
+
+    RoomSettings m_settings;
 protected:
-    cue::ListNode* m_list;
+    cue::ListNode* m_list = nullptr;
+    Callback m_callback;
+    CCMenuItemSpriteExtra* m_safeModeBtn;
 
-    bool init() override;
+    enum class RoomSettingKind {
+        Room,
+        Gamemode,
+    };
 
-    CCNode* makeCell(
-        CStr name,
-        CStr desc,
-        bool RoomSettings::* bptr,
-        std::vector<bool RoomSettings::*> incompats = {},
-        bool invert = false
-    );
+    struct RoomSetting {
+        CStr m_name;
+        CStr m_desc;
+        bool RoomSettings::* m_ptr;
+        RoomSettingKind m_kind;
+        asp::SmallVec<bool RoomSettings::*, 8> m_incompats;
+        bool m_invert;
+        CCMenuItemToggler* m_toggler = nullptr;
+    };
 
+    std::vector<RoomSetting> m_cellSetups;
+
+    bool init(RoomSettings s);
+    void showSafeModePopup(bool firstTime);
     void reloadCheckboxes();
 };
 

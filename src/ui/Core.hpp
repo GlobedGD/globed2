@@ -1,6 +1,7 @@
 /// Core components for UI building
 #pragma once
 
+#include <AdvancedLabel.hpp>
 #include <UIBuilder.hpp>
 #include <cue/Slider.hpp>
 #include <cue/ProgressBar.hpp>

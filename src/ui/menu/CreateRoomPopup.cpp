@@ -5,6 +5,7 @@
 #include <core/net/NetworkManagerImpl.hpp>
 #include <globed/util/gd.hpp>
 #include <ui/misc/LoadingPopup.hpp>
+#include <ui/menu/RoomSettingsPopup.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -13,20 +14,11 @@ using namespace asp::time;
 
 namespace globed {
 
-static constexpr int TAG_PRIVATE = 1021;
-static constexpr int TAG_CLOSED_INVITES = 1022;
-static constexpr int TAG_COLLISION = 1023;
-static constexpr int TAG_TWO_PLAYER= 1024;
-static constexpr int TAG_DEATHLINK = 1025;
-static constexpr int TAG_TEAMS = 1026;
-static constexpr int TAG_AUTO_PINNING = 1027;
-static constexpr int TAG_SWITCHEROO = 1028;
-
 bool CreateRoomPopup::init() {
-    if (!BasePopup::init(420.f, 240.f)) return false;
+    if (!BasePopup::init(290.f, 190.f)) return false;
 
     this->setID("create-room-popup"_spr);
-    this->setTitle("Create Room", "goldFont.fnt", 1.0f);
+    this->setTitle("Create Room", "goldFont.fnt", 0.7f, 15.f);
 
     bool canName = NetworkManagerImpl::get().getUserPermissions().canNameRooms;
 
@@ -67,7 +59,7 @@ bool CreateRoomPopup::init() {
         .updateLayout()
         .intoParent() // into name-wrapper
         .parent(m_inputsWrapper)
-        .intoNewChild(TextInput::create(m_size.width * 0.515f, "", "chatFont.fnt"))
+        .intoNewChild(TextInput::create(m_size.width * 0.55f, "", "chatFont.fnt"))
         .with([&](TextInput* input) {
             input->setCommonFilter(CommonFilter::Any);
             input->setMaxCharCount(32);
@@ -120,17 +112,6 @@ bool CreateRoomPopup::init() {
         .store(m_playerLimitInput)
         .intoParent()
         .updateLayout();
-
-    // classic / follower room
-    m_followerWrapper = Build<CCMenu>::create()
-        .id("follower-wrapper")
-        .zOrder(-1)
-        .layout(RowLayout::create()->setAutoScale(false)->setGap(5.f))
-        .contentSize(m_size.width * 0.515f, 0.f)
-        .parent(m_inputsWrapper);
-    m_followerWrapper->setLayoutOptions(AxisLayoutOptions::create()->setNextGap(8.f));
-
-    this->setFollowerMode(false);
 
     // cancel/create buttons
     Build<CCMenu>::create()
@@ -206,238 +187,20 @@ bool CreateRoomPopup::init() {
     smallInputsWrapper->updateLayout();
     m_inputsWrapper->updateLayout();
 
-    // safe mode button
-    Build<CCSprite>::create("white-period.png"_spr)
-        .color(ccGREEN)
+    // Button to open room settings
+    Build<CCSprite>::create("settings01.png"_spr)
+        .scale(0.8f)
         .intoMenuItem([this] {
-            this->showSafeModePopup(false);
+            auto popup = RoomSettingsPopup::create(m_settings);
+            popup->setCallback([this](RoomSettings settings) {
+                m_settings = settings;
+            });
+            popup->show();
         })
-        .store(m_safeModeBtn)
-        .parent(m_buttonMenu)
-        .pos(this->fromTopRight(16.f, 16.f));
-
-    // list of settings
-    const float gap = 3.f;
-    auto* settingsList = Build<CCNode>::create()
-        .id("settings")
-        .anchorPoint(1.f, 0.5f)
-        .pos(this->centerRight() - CCPoint{15.f, 0.f})
-        .layout(ColumnLayout::create()->setAxisReverse(true)->setGap(gap))
-        .contentSize(0.f, m_size.height * 0.65f)
-        .parent(m_mainLayer)
-        .collect();
-
-    auto settings = std::to_array<std::tuple<const char*, std::string_view, int, CCMenuItemToggler**, bool>>({
-        {"Hidden Room", "hidden-room"_spr, TAG_PRIVATE, nullptr, false},
-        {"Closed Invites", "closed-invites"_spr, TAG_CLOSED_INVITES, nullptr, false},
-        {"Teams", "teams"_spr, TAG_TEAMS, nullptr, false},
-        {"Auto-pinning", "auto-pinning"_spr, TAG_AUTO_PINNING, nullptr, true},
-        {"Collision", "collision"_spr, TAG_COLLISION, &m_collisionBtn, false},
-        {"2-Player Mode", "2-player-mode"_spr, TAG_TWO_PLAYER, &m_twoPlayerBtn, false},
-        {"Death Link", "deathlink"_spr, TAG_DEATHLINK, &m_deathlinkBtn, false},
-        {"Switcheroo", "switcheroo"_spr, TAG_SWITCHEROO, &m_switcherooBtn, false},
-    });
-
-    float totalHeight = 0.f;
-
-    for (const auto& entry : settings) {
-        const float height = 15.5f;
-        const float width = 110.5f;
-
-        if (totalHeight != 0.f) {
-            // gap between settings
-            totalHeight += gap;
-        }
-
-        totalHeight += height;
-
-        CCMenuItemToggler* toggler;
-        Build(CCMenuItemToggler::create(
-            Build<CCSprite>::createSpriteName("GJ_checkOff_001.png").scale(0.5f),
-            Build<CCSprite>::createSpriteName("GJ_checkOn_001.png").scale(0.5f),
-            this, menu_selector(CreateRoomPopup::onCheckboxToggled)
-        ))
-            .pos(width - 11.f, height / 2.f)
-            .id(std::string(std::get<1>(entry)))
-            .tag(std::get<2>(entry))
-            .with([&](auto toggler) { toggler->toggle(std::get<4>(entry)); })
-            .store(toggler)
-            .intoNewParent(CCMenu::create())
-            .contentSize(width, height)
-            .parent(settingsList)
-            .intoNewChild(CCLabelBMFont::create(std::get<0>(entry), "bigFont.fnt"))
-            .limitLabelWidth(width - 30.f, 0.35f, 0.1f)
-            .anchorPoint(0.f, 0.5f)
-            .pos(3.f, height / 2.f)
-            .intoParent()
-            .updateLayout();
-
-        auto outptr = std::get<3>(entry);
-        if (outptr) {
-            *outptr = toggler;
-        }
-    }
-
-    settingsList->setContentHeight(totalHeight + 5.f);
-    settingsList->updateLayout();
-
-    // add bg
-    float sizeScale = 3.f;
-    Build<CCScale9Sprite>::create("square02_001.png")
-        .opacity(67)
-        .zOrder(-1)
-        .contentSize(settingsList->getScaledContentSize() * sizeScale + CCPoint{8.f, 8.f})
-        .scaleX(1.f / sizeScale)
-        .scaleY(1.f / sizeScale)
-        .parent(settingsList)
-        .anchorPoint(0.5f, 0.5f)
-        .pos(settingsList->getScaledContentSize() / 2.f);
+        .pos(this->fromRight(50.f))
+        .parent(m_buttonMenu);
 
     return true;
-}
-
-void CreateRoomPopup::setFollowerMode(bool follower) {
-    m_followerWrapper->removeAllChildren();
-
-    m_settings.isFollower = follower;
-
-    Build<ButtonSprite>::create("Classic", "bigFont.fnt", follower ? "GJ_button_05.png" : "GJ_button_01.png", 0.8f)
-        .scale(0.8f)
-        .intoMenuItem([this](auto) {
-            this->setFollowerMode(false);
-        })
-        .scaleMult(1.1f)
-        .parent(m_followerWrapper);
-
-    Build<ButtonSprite>::create("Follower", "bigFont.fnt", follower ? "GJ_button_01.png" : "GJ_button_05.png", 0.8f)
-        .scale(0.8f)
-        .intoMenuItem([this](auto) {
-            this->setFollowerMode(true);
-        })
-        .scaleMult(1.1f)
-        .parent(m_followerWrapper);
-
-    auto btn = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-        .scale(0.5f)
-        .intoMenuItem([](auto) {
-            globed::alert(
-                "Info",
-                "Follower rooms only allow the host to join levels, and the rest of the players will be instantly warped to the level the host joins."
-            );
-        })
-        .parent(m_followerWrapper)
-        .collect();
-
-    m_followerWrapper->updateLayout();
-
-    btn->setPositionY(btn->getPositionY() + 14.f);
-}
-
-void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
-    auto* btn = static_cast<CCMenuItemToggler*>(p);
-    bool state = !btn->isOn();
-
-    bool isSafeMode = false;
-
-    switch (p->getTag()) {
-        case TAG_TWO_PLAYER:     m_settings.twoPlayerMode = state; isSafeMode = true; break;
-        case TAG_COLLISION:      m_settings.collision = state; isSafeMode = true; break;
-        case TAG_CLOSED_INVITES: m_settings.privateInvites = state; break;
-        case TAG_PRIVATE:        m_settings.hidden = state; break;
-        case TAG_DEATHLINK:      m_settings.deathlink = state; break;
-        case TAG_TEAMS:          m_settings.teams = state; break;
-        case TAG_AUTO_PINNING:   m_settings.manualPinning = !state; break;
-        case TAG_SWITCHEROO:     m_settings.switcheroo = state; isSafeMode = true; break;
-        default: break;
-    }
-
-    if (isSafeMode && state && !globed::swapFlag("core.flags.seen-room-safe-mode-notice")) {
-        this->showSafeModePopup(true);
-    }
-
-
-    int which = p->getTag();
-    if (state) {
-        this->handleMutuallyExclusive(which);
-    }
-
-    m_safeModeBtn->getChildByType<CCSprite>(0)->setColor(m_settings.needsSafeMode() ? ccORANGE : ccGREEN);
-}
-
-void CreateRoomPopup::handleMutuallyExclusive(int which) {
-    // some settings are mutually exclusive
-    // collision -> disables 2p mode and switcheroo
-    // 2p mode -> disables collision, deathlink and switcheroo
-    // deathlink -> disables 2p mode and switcheroo
-    // switcheroo -> disables collision, 2p mode and deathlink
-
-    auto disable = [](auto btn, bool& setting) {
-        setting = false;
-        btn->toggle(false);
-    };
-
-    switch (which) {
-        case TAG_COLLISION: {
-            disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
-            disable(m_switcherooBtn, m_settings.switcheroo);
-        } break;
-
-        case TAG_TWO_PLAYER: {
-            disable(m_collisionBtn, m_settings.collision);
-            disable(m_deathlinkBtn, m_settings.deathlink);
-            disable(m_switcherooBtn, m_settings.switcheroo);
-        } break;
-
-        case TAG_DEATHLINK: {
-            disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
-            disable(m_switcherooBtn, m_settings.switcheroo);
-        } break;
-
-        case TAG_SWITCHEROO: {
-            disable(m_collisionBtn, m_settings.collision);
-            disable(m_twoPlayerBtn, m_settings.twoPlayerMode);
-            disable(m_deathlinkBtn, m_settings.deathlink);
-        } break;
-
-        default: break;
-    }
-}
-
-void CreateRoomPopup::showSafeModePopup(bool firstTime) {
-    auto getSafeModeString = [&]() -> std::string {
-        std::vector<std::string> mods;
-
-        if (m_settings.twoPlayerMode) {
-            mods.push_back("2-Player Mode");
-        }
-        if (m_settings.collision) {
-            mods.push_back("Collision");
-        }
-        if (m_settings.switcheroo) {
-            mods.push_back("Switcheroo");
-        }
-
-        auto joined = utils::string::join(mods, ", ");
-
-        return fmt::format(
-            "<cy>Safe mode</c> is <cr>enabled</c> due to the following setting{}: <cy>{}</c>.\n\n"
-            "You won't be able to make progress on levels while these settings are enabled.",
-            mods.size() > 1 ? "s" : "",
-            joined
-        );
-    };
-
-    if (!m_settings.needsSafeMode()) {
-        globed::alert("Safe Mode", "<cy>Safe Mode</c> is <cg>not enabled</c> with these room settings. You are able to make progress on levels while in this room.");
-        return;
-    }
-
-    globed::alert(
-        "Safe Mode",
-        firstTime
-            ? "This setting enables <cy>safe mode</c>, which means you won't be able to make progress on levels while in this room."
-            : getSafeModeString()
-    );
 }
 
 void CreateRoomPopup::showRoomNameWarnPopup(bool canName) {
