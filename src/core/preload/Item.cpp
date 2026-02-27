@@ -179,6 +179,10 @@ static void checkGL(std::string_view where) {
     }
 }
 
+static void clearGLError() {
+    while (glGetError() != GL_NO_ERROR);
+}
+
 void PreloadItemState::enqueuePBOCreation() {
 #ifdef GLOBED_PBO_SUPPORT
     GLOBED_DEBUG_ASSERT(!m_tex && !m_pbo);
@@ -186,6 +190,9 @@ void PreloadItemState::enqueuePBOCreation() {
     int64_t width = m_width;
     int64_t height = m_height;
     int64_t byteSize = width * height * 4;
+
+    // some cocos code leaves an error for us
+    clearGLError();
 
     glGenTextures(1, &m_tex);
     glGenBuffers(1, &m_pbo);
@@ -252,6 +259,7 @@ void PreloadItemState::enqueuePBOCreation() {
 void PreloadItemState::finalizePBO() {
     // auto now = asp::Instant::now();
 #ifdef GLOBED_PBO_SUPPORT
+    clearGLError();
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
     GLboolean ok = glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
     GLOBED_ASSERT(ok);
