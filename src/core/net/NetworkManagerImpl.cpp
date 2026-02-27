@@ -279,6 +279,11 @@ static void commonConnectionSetup(qn::Connection& conn) {
 
         return true;
     });
+
+    // Disable IPv6 on macos, it is often broken
+#ifdef GEODE_IS_MACOS
+    conn.setIpv6Enabled(false);
+#endif
 }
 
 Future<> NetworkManagerImpl::asyncInit() {
@@ -301,7 +306,7 @@ Future<> NetworkManagerImpl::asyncInit() {
 
     // TODO (low): measure how much of an impact those have on bandwidth
     m_centralConn->setActiveKeepaliveInterval(Duration::fromSecs(45));
-    m_gameConn->setActiveKeepaliveInterval(Duration::fromSecs(10));
+    m_gameConn->setActiveKeepaliveInterval(Duration::fromSecs(45));
 
     commonConnectionSetup(*m_centralConn);
     commonConnectionSetup(*m_gameConn);
