@@ -128,7 +128,7 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
             .id("status-icons"_spr);
     }
 
-    if (lerpDebug()) {
+    if (lerpDebug() && !m_isLocalPlayer) {
         Build<CCDrawNode>::create()
             .id(fmt::format("debug-trajectory"_spr).c_str())
             .parent(gameLayer->m_objectLayer)

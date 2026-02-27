@@ -11,7 +11,7 @@
 constexpr float TIME_DRIFT_THRESHOLD = 0.20f; // 200ms
 constexpr float TIME_DRIFT_SMALL_THRESHOLD = 0.05f; // 50ms
 constexpr float TIME_DRIFT_SMALL_ADJ_DEADLINE = 30.0f; // 30s
-constexpr bool DO_EXTRAPOLATE = true;
+constexpr bool DO_EXTRAPOLATE = false;
 
 using namespace geode::prelude;
 
