@@ -429,6 +429,9 @@ void APSPlayLayer::handleUpdateFromRp(PlayerObject* local, RemotePlayer* rp, boo
     local->m_isOnGround2 = p1->m_isOnGround2;
     local->m_touchedPad = p1->m_touchedPad;
     local->m_isUpsideDown = p1->m_isUpsideDown;
+    local->m_maybeIsFalling = p1->m_maybeIsFalling;
+    local->m_fallSpeed = p1->m_fallSpeed;
+    local->m_isOnGround4 = p1->m_isOnGround4;
 
     // m_player1->m_isRotating = p1->m_isRotating;
     // m_player1->m_isSideways = p1->m_isSideways;

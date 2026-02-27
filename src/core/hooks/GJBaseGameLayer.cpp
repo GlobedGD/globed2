@@ -661,6 +661,9 @@ PlayerState GlobedGJBGL::getPlayerState() {
             ed.gravityMod = obj->m_gravityMod;
             ed.gravity = obj->m_gravity;
             ed.touchedPad = obj->m_touchedPad;
+            ed.maybeFalling = obj->m_maybeIsFalling;
+            ed.fallSpeed = obj->m_fallSpeed;
+            ed.isOnGround4 = obj->m_isOnGround4;
 
             out.extData = ed;
         }

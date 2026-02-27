@@ -135,6 +135,9 @@ $implEncode(const PlayerState& state, game::PlayerData::Builder& data) {
             ext.setGravityMod(ed.gravityMod);
             ext.setGravity(ed.gravity);
             ext.setTouchedPad(ed.touchedPad);
+            ext.setMaybeFalling(ed.maybeFalling);
+            ext.setFallSpeed(ed.fallSpeed);
+            ext.setIsOnGround4(ed.isOnGround4);
         }
     };
 
@@ -197,6 +200,9 @@ $implDecode(PlayerState, game::PlayerData::Reader& reader) {
             ext.gravityMod = ed.getGravityMod();
             ext.gravity = ed.getGravity();
             ext.touchedPad = ed.getTouchedPad();
+            ext.maybeFalling = ed.getMaybeFalling();
+            ext.fallSpeed = ed.getFallSpeed();
+            ext.isOnGround4 = ed.getIsOnGround4();
             dst.extData = ext;
         }
     };

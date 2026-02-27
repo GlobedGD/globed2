@@ -19,8 +19,8 @@ import sys
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v5.1.0"
-QUNET_VERSION = "33346ad"
-SERVER_SHARED_VERSION = "59ef8fd"
+QUNET_VERSION = "ad41f96"
+SERVER_SHARED_VERSION = "b80961e"
 CUE_VERSION = "55a3118"
 
 if sys.version_info < (3, 12):

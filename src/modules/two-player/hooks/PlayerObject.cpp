@@ -70,6 +70,9 @@ struct GLOBED_MODIFY_ATTR TPPlayerObject : geode::Modify<TPPlayerObject, PlayerO
         this->m_isOnGround2 = linked->m_isOnGround2;
         this->m_touchedPad = linked->m_touchedPad;
         this->m_isUpsideDown = linked->m_isUpsideDown;
+        this->m_maybeIsFalling = linked->m_maybeIsFalling;
+        this->m_fallSpeed = linked->m_fallSpeed;
+        this->m_isOnGround4 = linked->m_isOnGround4;
         this->setPosition(pos);
 
         // TODO: doesnt work
