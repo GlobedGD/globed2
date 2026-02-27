@@ -182,6 +182,9 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
         m_gravityMod = ed.gravityMod;
         m_gravity = ed.gravity;
         m_touchedPad = ed.touchedPad;
+        m_maybeIsFalling = ed.maybeFalling;
+        m_fallSpeed = ed.fallSpeed;
+        m_isOnGround4 = ed.isOnGround4;
     }
 
     // calculate visibility n stuff
@@ -920,14 +923,16 @@ float VisualPlayer::getLastRotation() {
 void VisualPlayer::setVisible(bool vis) {
     auto gjbgl = GlobedGJBGL::get(m_gameLayer);
 
-    bool showName = !m_forceHideName && (vis || (m_isLocalPlayer && !gjbgl->isSpectating()));
+    // show things if player is visible or if it's the ghost player, not in editor and not spectating
+    bool actuallyShow = vis || (m_isLocalPlayer && !m_isEditor && !gjbgl->isSpectating());
+    bool showName = !m_forceHideName && actuallyShow;
 
     if (vis == m_bVisible && m_nameLabel->m_bVisible == showName) return;
     PlayerObject::setVisible(vis);
 
     m_nameLabel->setVisible(showName);
-    if (m_statusIcons) m_statusIcons->setVisible(m_isLocalPlayer || vis);
-    if (m_emoteBubble) m_emoteBubble->setVisible(m_isLocalPlayer || vis);
+    if (m_statusIcons) m_statusIcons->setVisible(actuallyShow);
+    if (m_emoteBubble) m_emoteBubble->setVisible(actuallyShow);
 }
 
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
