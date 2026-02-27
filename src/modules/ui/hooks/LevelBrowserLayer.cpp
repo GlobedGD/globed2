@@ -53,22 +53,14 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
 
         auto listLayer = typeinfo_cast<LevelListLayer*>(this);
 
-        std::vector<uint64_t> ids;
+        std::vector<int> ids;
 
         if (listLayer) {
-#ifdef GEODE_IS_ANDROID
-            auto& gdLevels = listLayer->m_levelList->m_levels;
-            std::vector<int> vec{gdLevels.begin(), gdLevels.end()};
-            ids = asp::iter::from(vec)
-#else
-            ids = asp::iter::from(listLayer->m_levelList->m_levels)
-#endif
-                .mapCast<uint64_t>()
-                .collect();
+            ids = asp::iter::from(listLayer->m_levelList->m_levels).collect();
         } else {
             ids = asp::iter::from(CCArrayExt<CCObject*>(p0))
                 .filterMap(levelMapper)
-                .map([](GJGameLevel* level) { return (uint64_t) level->m_levelID; })
+                .map([](GJGameLevel* level) { return (int) level->m_levelID; })
                 .collect();
         }
 
@@ -83,7 +75,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
             return ListenerResult::Continue;
         });
 
-        nm.sendRequestPlayerCounts(std::span{ids.data(), ids.size()});
+        nm.sendRequestPlayerCounts(ids);
         this->schedule(schedule_selector(HookedLevelBrowserLayer::updatePlayerCounts), 5.f);
     }
 
@@ -118,10 +110,10 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
         auto cells = m_list->m_listView->m_tableView->m_contentLayer->getChildrenExt();
         auto levelIds = asp::iter::from(cells)
             .filterMap(cellMapper)
-            .map([](LevelCell* cell) { return (uint64_t) cell->m_level->m_levelID; })
+            .map([](LevelCell* cell) { return (int) cell->m_level->m_levelID; })
             .collect();
 
-        nm.sendRequestPlayerCounts(std::span{levelIds.data(), levelIds.size()});
+        nm.sendRequestPlayerCounts(levelIds);
     }
 };
 

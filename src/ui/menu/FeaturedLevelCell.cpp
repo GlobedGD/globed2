@@ -213,7 +213,7 @@ void FeaturedLevelCell::createCell() {
 void FeaturedLevelCell::requestPlayerCount(float) {
     if (!m_level || m_level->m_levelID <= 0) return;
 
-    NetworkManagerImpl::get().sendRequestPlayerCounts(RoomManager::get().makeSessionId(m_level->m_levelID));
+    NetworkManagerImpl::get().sendRequestPlayerCounts(m_level->m_levelID);
 }
 
 void FeaturedLevelCell::updatePlayerCount(uint16_t count) {

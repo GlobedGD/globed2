@@ -13,7 +13,7 @@ using namespace geode::prelude;
 namespace globed {
 
 struct GLOBED_MODIFY_ATTR HookedLevelAreaInnerLayer : geode::Modify<HookedLevelAreaInnerLayer, LevelAreaInnerLayer> {
-    static inline const auto TOWER_LEVELS = std::to_array<uint64_t>({5001, 5002, 5003, 5004});
+    static inline const auto TOWER_LEVELS = std::to_array<int>({5001, 5002, 5003, 5004});
 
     struct Fields {
         std::unordered_map<int, uint16_t> m_levels;
@@ -89,7 +89,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelAreaInnerLayer : geode::Modify<HookedLevelA
         auto& nm = NetworkManagerImpl::get();
 
         if (nm.isConnected()) {
-            nm.sendRequestPlayerCounts(std::span{TOWER_LEVELS.data(), TOWER_LEVELS.size()});
+            nm.sendRequestPlayerCounts(TOWER_LEVELS);
         }
     }
 

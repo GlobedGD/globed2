@@ -251,10 +251,14 @@ public:
     void sendRequestRoomPlayers(const std::string& nameFilter);
     void sendRequestGlobalPlayerList(const std::string& nameFilter);
     void sendRequestLevelList();
-    void sendRequestPlayerCounts(const std::vector<uint64_t>& sessions);
-    void sendRequestPlayerCounts(std::span<const uint64_t> sessions);
+    /// Requests player counts on these specific session ids
     void sendRequestPlayerCounts(std::span<const SessionId> sessions);
-    void sendRequestPlayerCounts(uint64_t session);
+    /// Requests player counts on these levels, chooses the current room and server
+    void sendRequestPlayerCounts(std::span<const int> levels);
+    /// Requests player counts on this specific session id
+    void sendRequestPlayerCounts(SessionId session);
+    /// Requests player count on this level, chooses the current room and server
+    void sendRequestPlayerCounts(int level);
     void sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings);
     void sendJoinRoom(uint32_t id, uint32_t passcode = 0);
     void sendJoinRoomByToken(uint64_t token);

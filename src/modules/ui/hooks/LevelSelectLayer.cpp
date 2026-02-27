@@ -81,7 +81,7 @@ private:
 
 
 struct GLOBED_MODIFY_ATTR HookedLevelSelectLayer : geode::Modify<HookedLevelSelectLayer, LevelSelectLayer> {
-    static inline const auto MAIN_LEVELS = std::to_array<uint64_t>({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22});
+    static inline const auto MAIN_LEVELS = std::to_array<int>({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22});
 
     struct Fields {
         std::unordered_map<int, uint16_t> m_levels;

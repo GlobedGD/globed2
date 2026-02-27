@@ -118,7 +118,7 @@ struct GLOBED_MODIFY_ATTR HookedGauntletLayer : geode::Modify<HookedGauntletLaye
         if (!nm.isConnected()) return;
 
         auto levelIds = asp::iter::from(CCArrayExt<GJGameLevel*>(m_levels))
-            .map([](auto level) { return (uint64_t) level->m_levelID; })
+            .map([](auto level) { return (int) level->m_levelID; })
             .collect();
 
         nm.sendRequestPlayerCounts(std::span{levelIds.data(), levelIds.size()});

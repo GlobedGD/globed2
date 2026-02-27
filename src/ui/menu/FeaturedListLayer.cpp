@@ -155,7 +155,7 @@ void FeaturedListLayer::queryCurrentPage() {
 void FeaturedListLayer::loadPageFromCache() {
     this->stopLoading();
 
-    std::vector<uint64_t> sessions;
+    std::vector<int> levels;
 
     for (auto& level : m_pages.at(m_page)) {
         auto it = m_levelCache.find(level.levelId);
@@ -177,7 +177,7 @@ void FeaturedListLayer::loadPageFromCache() {
 
         m_list->addCell(cell);
 
-        sessions.push_back(RoomManager::get().makeSessionId(lvl->m_levelID));
+        levels.push_back(lvl->m_levelID);
     }
 
     auto& nm = NetworkManagerImpl::get();
@@ -189,7 +189,7 @@ void FeaturedListLayer::loadPageFromCache() {
     m_levelsLabel->setString(fmt::format("{} to {} of {}", pageMin, pageMax, highest).c_str());
 
     // request player counts
-    nm.sendRequestPlayerCounts(sessions);
+    nm.sendRequestPlayerCounts(levels);
 }
 
 void FeaturedListLayer::toggleSideButtons() {

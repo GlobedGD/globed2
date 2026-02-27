@@ -1536,26 +1536,34 @@ void NetworkManagerImpl::sendRequestLevelList() {
     });
 }
 
-void NetworkManagerImpl::sendRequestPlayerCounts(const std::vector<uint64_t>& sessions) {
+
+void NetworkManagerImpl::sendRequestPlayerCounts(std::span<const SessionId> sessions) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto reqr = msg.initRequestPlayerCounts();
+        reqr.setLevels(kj::arrayPtr((const uint64_t*)sessions.data(), sessions.size()));
+    });
+}
+
+void NetworkManagerImpl::sendRequestPlayerCounts(std::span<const int> levels) {
+    asp::SmallVec<SessionId, 128> sessions;
+    sessions.reserve(levels.size());
+
+    auto& rm = RoomManager::get();
+    auto srv = rm.pickServerId().value_or(0);
+
+    for (int level : levels) {
+        sessions.emplace_back(SessionId::fromParts(srv, rm.getRoomId(), level));
+    }
+
     return this->sendRequestPlayerCounts(std::span{sessions.data(), sessions.size()});
 }
 
-void NetworkManagerImpl::sendRequestPlayerCounts(std::span<const uint64_t> sessions) {
-    this->sendToCentral([&](CentralMessage::Builder& msg) {
-        auto reqr = msg.initRequestPlayerCounts();
-        reqr.setLevels(kj::arrayPtr(sessions.data(), sessions.size()));
-    });
+void NetworkManagerImpl::sendRequestPlayerCounts(SessionId session) {
+    return this->sendRequestPlayerCounts(std::span{&session, 1});
 }
 
-void NetworkManagerImpl::sendRequestPlayerCounts(std::span<const SessionId> sessions) {
-    return this->sendRequestPlayerCounts(std::span{(const uint64_t*)sessions.data(), sessions.size()});
-}
-
-void NetworkManagerImpl::sendRequestPlayerCounts(uint64_t session) {
-    this->sendToCentral([&](CentralMessage::Builder& msg) {
-        auto reqr = msg.initRequestPlayerCounts();
-        reqr.setLevels(kj::arrayPtr(&session, 1));
-    });
+void NetworkManagerImpl::sendRequestPlayerCounts(int level) {
+    return this->sendRequestPlayerCounts(RoomManager::get().makeSessionId(level));
 }
 
 void NetworkManagerImpl::sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings) {
