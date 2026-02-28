@@ -9,12 +9,12 @@
 #include "cells/IntSliderSettingCell.hpp"
 #include "cells/IntCornerSettingCell.hpp"
 #include "DiscordLinkPopup.hpp"
-#include "KeybindsPopup.hpp"
 #include "SaveSlotSwitcherPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/InputPopup.hpp>
 
+#include <Geode/ui/GeodeUI.hpp>
 #include <UIBuilder.hpp>
 #include <argon/argon.hpp>
 
@@ -176,7 +176,7 @@ void SettingsLayer::addSettings() {
         "Keybinds",
         "Configure in-game Globed keybinds.",
         "Edit", [] {
-        KeybindsPopup::create()->show();
+        geode::openKeybindsPopup(std::nullopt, Mod::get());
     }, CELL_SIZE));
     this->addSetting<BoolSettingCell>("core.editor.enabled", "Show Players in Editor",
         "Hosts local (editor) levels as well, letting you see other players playing the level while you are in the editor. Note: <cy>this does not let you build levels together!</c>"
@@ -248,7 +248,7 @@ void SettingsLayer::addSettings() {
         "Sets the opacity of other players' icons in levels."
     );
     this->addSetting<BoolSettingCell>("core.player.quick-chat-enabled", "Emotes",
-        "Enables the use of <cy>emotes</c> (quick chat) in levels. They can be accessed via the <cg>pause menu</c> and then bound to <cr>keybinds</c> (by default numbers 1-4)."
+        "Enables the use of <cy>emotes</c> (quick chat) in levels. They can be accessed via the <cg>pause menu</c> and then bound to <cr>keybinds</c> (by default numbers 1-8)."
     );
     this->addSetting<BoolSettingCell>("core.player.quick-chat-sfx", "Emote Sound Effects",
         "Plays sound effects when you or other players use certain <cy>emotes</c> in levels."

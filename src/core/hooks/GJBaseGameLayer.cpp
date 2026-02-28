@@ -3,7 +3,6 @@
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/PlayerCacheManager.hpp>
 #include <globed/core/SettingsManager.hpp>
-#include <globed/core/KeybindsManager.hpp>
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/EmoteManager.hpp>
 #include <globed/core/FriendListManager.hpp>
@@ -16,6 +15,8 @@
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/game/SettingCache.hpp>
 
+#include <Geode/loader/GameEvent.hpp>
+#include <Geode/loader/SettingV3.hpp>
 #include <Geode/utils/VMTHookManager.hpp>
 #include <UIBuilder.hpp>
 #include <asp/time/Instant.hpp>
@@ -98,15 +99,13 @@ void GlobedGJBGL::setupPostInit() {
 
     if (!fields.m_active) return;
 
-    auto& km = KeybindsManager::get();
-    km.refreshBinds();
-
     // setup everything else
     this->setupAssetLoading();
     this->setupAudio();
     this->setupUpdateLoop();
     this->setupUi();
     this->setupListeners();
+    this->setupKeybinds();
 
     // add ghost player
     fields.m_ghost = std::make_shared<RemotePlayer>(0, this, fields.m_playerNode);
@@ -302,6 +301,46 @@ void GlobedGJBGL::setupListeners() {
         m_fields->m_knownServerMuted = true;
         return ListenerResult::Continue;
     });
+}
+
+void GlobedGJBGL::setupKeybinds() {
+    this->addEventListener(
+        KeybindSettingPressedEventV3(Mod::get(), "keybind-voice-chat"),
+        [this](Keybind const& keybind, bool down, bool repeat, double time) {
+            if (repeat) return;
+
+            down ? this->resumeVoiceRecording() : this->pauseVoiceRecording();
+        }
+    );
+
+    this->addEventListener(
+        KeybindSettingPressedEventV3(Mod::get(), "keybind-hide-players"),
+        [this](Keybind const& keybind, bool down, bool repeat, double time) {
+            if (repeat || !down) return;
+
+            this->toggleHidePlayers();
+        }
+    );
+
+    this->addEventListener(
+        KeybindSettingPressedEventV3(Mod::get(), "keybind-deafen"),
+        [this](Keybind const& keybind, bool down, bool repeat, double time) {
+            if (repeat || !down) return;
+
+            this->toggleDeafen();
+        }
+    );
+
+    for (size_t i = 0; i < 8; i++) {
+        this->addEventListener(
+            KeybindSettingPressedEventV3(Mod::get(), fmt::format("keybind-emote-{}", i)),
+            [this, i](Keybind const& keybind, bool down, bool repeat, double time) {
+                if (repeat || !down) return;
+
+                this->playSelfFavoriteEmote(i);
+            }
+        );
+    }
 }
 
 void GlobedGJBGL::onEnterHook() {

@@ -2,10 +2,9 @@
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/EmoteManager.hpp>
 #include <globed/util/FunctionQueue.hpp>
-#include <globed/core/KeybindsManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
-#include <ui/settings/KeybindsPopup.hpp>
 
+#include <Geode/ui/GeodeUI.hpp>
 #include <UIBuilder.hpp>
 #include <asp/time/Instant.hpp>
 
@@ -18,6 +17,20 @@ static constexpr CCSize LIST_SIZE = {280.f, 130.f};
 static constexpr float CELL_HEIGHT = 40.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
 const int EMOTES_PER_PAGE = 18;
+
+static bool isEmoteKeyBound(uint32_t slot) {
+    auto key = fmt::format("keybind-emote-{}", slot);
+    return !Mod::get()->getSettingValue<std::vector<Keybind>>(key).empty();
+}
+
+static bool isAnyEmoteKeyBound() {
+    for (uint32_t i = 0; i < 8; i++) {
+        if (isEmoteKeyBound(i)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 bool EmoteListPopup::init() {
     if (!BasePopup::init(360.f, 280.f)) return false;
@@ -142,12 +155,10 @@ bool EmoteListPopup::init() {
         .parent(favoriteLabelMenu)
         .collect();
 
-    auto& km = KeybindsManager::get();
-
     // we may need to show a warning icon to make the usage clearer:
     // on desktop -> show if no keys are bound, explaining that it needs to be done
     // on mobile -> always show, explaining that the user must hold the emote button to quickly use favorites
-    bool showWarning = GEODE_DESKTOP(!km.isAnyEmoteKeyBound()) GEODE_MOBILE(true);
+    bool showWarning = GEODE_DESKTOP(!isAnyEmoteKeyBound()) GEODE_MOBILE(true);
 
     if (showWarning) {
         Build<CCSprite>::create("info-warning.png"_spr)
@@ -159,7 +170,7 @@ bool EmoteListPopup::init() {
                     "To be able to use <cg>favorite emotes</c> without <cy>pausing</c>, you need to set up the <cj>emote keybinds</c> in Globed settings. Want to open <cg>Keybind Settings</c> right now?",
                     "Cancel", "Ok",
                     [](auto) {
-                        KeybindsPopup::create()->show();
+                        geode::openKeybindsPopup(std::nullopt, Mod::get());
                     }
                 );
 #else
@@ -385,15 +396,14 @@ void EmoteListPopup::updatePage(bool increment) {
 
 void EmoteListPopup::enterFavoriteSelectMode(uint32_t emoteSlot) {
     // if the key for the slot isn't bound, do nothing on desktop, allow setting on mobile
-    auto& km = KeybindsManager::get();
-    if (!km.isEmoteKeyBound(emoteSlot)) {
+    if (!isEmoteKeyBound(emoteSlot)) {
 #ifdef GEODE_IS_DESKTOP
         globed::confirmPopup(
             "Key Not Bound",
             "This slot does not have a <cy>keybind</c> set up. To be able to quickly send emotes in levels, you need to set one up. Want to open <cg>Keybind Settings</c> now?",
             "Cancel", "Ok",
             [](auto) {
-                KeybindsPopup::create()->show();
+                geode::openKeybindsPopup(std::nullopt, Mod::get());
             }
         );
         return;

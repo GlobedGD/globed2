@@ -241,9 +241,4 @@ if (flm.isLoaded()) {
     bool isFriend = flm.isFriend(1234);
     bool isBlocked = flm.isBlocked(4321);
 }
-
-// Simulate keypresses
-auto& km = globed::KeybindsManager::get();
-km.handleKeyDown(enumKeyCodes::KEY_A);
-km.handleKeyUp(enumKeyCodes::KEY_A);
 ```

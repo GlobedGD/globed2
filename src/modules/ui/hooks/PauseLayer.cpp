@@ -1,7 +1,6 @@
 #include <globed/config.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/PopupManager.hpp>
-#include <globed/core/KeybindsManager.hpp>
 #include <globed/core/EmoteManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/game/SettingCache.hpp>
@@ -54,13 +53,14 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
     void customSetup() {
         PauseLayer::customSetup();
 
+        auto gpl = GlobedGJBGL::get();
+        if (!gpl || !gpl->active()) return;
+
         // prevent some keybinds from being active in pause menu
-        KeybindsManager::get().releaseAll();
+        gpl->pauseVoiceRecording();
 
         auto& fields = *m_fields.self();
 
-        auto gpl = GlobedGJBGL::get();
-        if (!gpl || !gpl->active()) return;
 
         auto winSize = CCDirector::get()->getWinSize();
 

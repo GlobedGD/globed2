@@ -21,7 +21,70 @@
     "tags": [
         "online"
     ],
-    "settings": {},
+    "settings": {
+        "keybinds-title": {
+            "type": "title",
+            "name": "Keybinds"
+        },
+        "keybind-voice-chat": {
+            "type": "keybind",
+            "name": "Voice Chat Activate",
+            "description": "Activates voice chat when held, allowing you to talk to other players in the same level",
+            "default": "V"
+        },
+        "keybind-deafen": {
+            "type": "keybind",
+            "name": "Deafen",
+            "description": "Toggles deafen mode, which prevents you from hearing other players and talking in voice chat",
+            "default": "B"
+        },
+        "keybind-hide-players": {
+            "type": "keybind",
+            "name": "Hide Players",
+            "description": "Toggles visibility of other players in a level",
+            "default": []
+        },
+        "keybind-emote-0": {
+            "type": "keybind",
+            "name": "Emote 1",
+            "default": []
+        },
+        "keybind-emote-1": {
+            "type": "keybind",
+            "name": "Emote 2",
+            "default": []
+        },
+        "keybind-emote-2": {
+            "type": "keybind",
+            "name": "Emote 3",
+            "default": []
+        },
+        "keybind-emote-3": {
+            "type": "keybind",
+            "name": "Emote 4",
+            "default": []
+        },
+        "keybind-emote-4": {
+            "type": "keybind",
+            "name": "Emote 5",
+            "default": []
+        },
+        "keybind-emote-5": {
+            "type": "keybind",
+            "name": "Emote 6",
+            "default": []
+        },
+        "keybind-emote-6": {
+            "type": "keybind",
+            "name": "Emote 7",
+            "default": []
+        },
+        "keybind-emote-7": {
+            "type": "keybind",
+            "name": "Emote 8",
+            "default": []
+        }
+    },
     "resources": {
         "sprites": [
             "resources/misc/*.png",

@@ -103,6 +103,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void setupUi();
     /// Setup message listeners
     void setupListeners();
+    /// Setup keybinds
+    void setupKeybinds();
 
     // Hooks
     $override
