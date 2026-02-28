@@ -262,7 +262,8 @@ void GlobedGJBGL::setupUi() {
 
     Build<CCNode>::create()
         .id("player-node"_spr)
-        .zOrder(1500)
+        // .zOrder(1500)
+        .zOrder(59) // same as gd player ?
         .parent(m_objectLayer)
         .store(fields.m_playerNode);
 
