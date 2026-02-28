@@ -265,8 +265,17 @@ void LevelListLayer::onLoaded(const std::vector<std::pair<SessionId, uint16_t>>&
     m_allLevelIds.clear();
     m_currentQuery.clear();
 
+    auto myServer = RoomManager::get().pickServerId().value_or(0);
+
     for (const auto& level : levels) {
         if (level.first == 0) continue;
+
+        // filter out levels on a different server
+        // for now we filter client-side, which is a waste of bandwidth,
+        // but potentially in the future we could show levels from other servers too
+        if (myServer != 0 && level.first.serverId() != myServer) {
+            continue;
+        }
 
         m_playerCounts.emplace(level.first, level.second);
         m_allLevelIds.push_back(level.first);
