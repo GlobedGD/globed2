@@ -283,7 +283,8 @@ void PreloadItemState::finalizePBO() {
     texture->m_uPixelsWide = w;
     texture->m_uPixelsHigh = h;
     texture->m_ePixelFormat = kCCTexture2DPixelFormat_RGBA8888;
-    texture->m_bHasPremultipliedAlpha = false;
+    // imageplus does not premultiply alpha (why should we do it on the cpu anyway?)
+    texture->m_bHasPremultipliedAlpha = !canDirectDecode();
     texture->m_bHasMipmaps = false;
 
     // this is  weird
