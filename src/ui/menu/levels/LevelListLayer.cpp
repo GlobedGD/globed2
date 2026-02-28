@@ -277,6 +277,11 @@ void LevelListLayer::onLoaded(const std::vector<std::pair<SessionId, uint16_t>>&
             continue;
         }
 
+        // skip duplicates
+        if (m_playerCounts.contains(level.first)) {
+            continue;
+        }
+
         m_playerCounts.emplace(level.first, level.second);
         m_allLevelIds.push_back(level.first);
     }
