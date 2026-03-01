@@ -45,7 +45,7 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
             .opacity(m_opacity)
             .zOrder(1)
             .with([&](CCSprite* spr) {
-                cue::rescaleToMatch(spr, iconSize);
+                spr->setScale(iconSize.height / spr->getContentHeight());
             })
             .id(id)
             .parent(m_iconWrapper)

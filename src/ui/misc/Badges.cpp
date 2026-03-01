@@ -12,9 +12,9 @@ static bool isValid(CCSprite* spr) {
 }
 
 static CCSprite* createAny(const char* name) {
-    auto sprite = CCSprite::create(name);
+    auto sprite = CCSprite::createWithSpriteFrameName(name);
     if (!isValid(sprite)) {
-        sprite = CCSprite::createWithSpriteFrameName(name);
+        sprite = CCSprite::create(name);
     }
 
     return isValid(sprite) ? sprite : nullptr;
