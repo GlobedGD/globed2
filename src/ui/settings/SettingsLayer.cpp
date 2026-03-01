@@ -149,6 +149,24 @@ bool SettingsLayer::init() {
     return true;
 }
 
+static void enableDevPrompt() {
+    globed::confirmPopup(
+        "Note",
+        "Developer settings are meant only for <cy>testing and debugging</c>. "
+        "Touching them without knowing what they do may cause <cr>crashes, network failures, or other issues.</c> "
+        "Are you sure you want to enable them?",
+        "Cancel", "Enable",
+        [](auto) {
+            globed::setValue("core.dev.enable-dev-settings", true);
+
+            globed::alert(
+                "Success",
+                "Developer settings have been enabled. Reopen the settings menu to access them."
+            );
+        }
+    );
+}
+
 void SettingsLayer::addSettings() {
 #ifdef GLOBED_DEBUG
     bool showDebug = true;
@@ -213,7 +231,16 @@ void SettingsLayer::addSettings() {
         "Enables SSL certificate verification when connecting to servers. Disabling this is <cr>not recommended</c> in general, unless experiencing connection issues. This will only affect <cy>Argon authentication</c>, <cy>QUIC/WS</c> connections and <cy>DoH</c>, not TCP or UDP."
     );
 
-    if (showDebug) {
+    if (!showDebug) {
+        this->addSetting(ButtonSettingCell::create(
+            "Enable Dev Settings",
+            "",
+            "Enable", [] {
+            enableDevPrompt();
+        }, CELL_SIZE));
+    } else {
+        this->addHeader("core.dev-debug", "Developer", m_globedTab);
+
         this->addSetting<FloatSettingCell>("core.dev.packet-loss-sim", "Packet Loss Simulation",
             "Artificially simulate outbound packet loss for testing purposes. Results depend on the transport: for <cy>TCP</c> the data is permanently lost, for <cy>UDP</c> the data may be resent if it was a reliable message, for <cy>QUIC</c> there's no loss as it will be handled by the protocol."
         );
