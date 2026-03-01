@@ -4,6 +4,11 @@
 #include "PreloadManager.hpp"
 #include "spriteframes.hpp"
 #include <prevter.imageplus/include/events.hpp>
+#include <bit>
+
+#ifdef GEODE_IS_WINDOWS
+# include <immintrin.h>
+#endif
 
 using namespace geode::prelude;
 using enum std::memory_order;
@@ -11,7 +16,23 @@ using enum std::memory_order;
 
 namespace globed {
 
+struct ScratchBuffer {
+    std::unique_ptr<uint8_t[]> m_data;
+    size_t m_cap = 0;
+
+    uint8_t* reserve(size_t required) {
+        if (required == 0) return nullptr;
+
+        if (m_cap < required) {
+            m_cap = std::bit_ceil(required); // next power of 2
+            m_data = std::make_unique<uint8_t[]>(m_cap);
+        }
+        return m_data.get();
+    }
+};
+
 static asp::SpinLock<> cocosLock;
+static thread_local ScratchBuffer g_scratch;
 
 static bool shouldUsePBO() {
     static bool should = supportsPBO() && globed::setting<bool>("core.preload.use-pbos");
@@ -183,6 +204,8 @@ static void clearGLError() {
     while (glGetError() != GL_NO_ERROR);
 }
 
+static void premultiplyInto(const void* source, void* dest, size_t bytes);
+
 void PreloadItemState::enqueuePBOCreation() {
 #ifdef GLOBED_PBO_SUPPORT
     GLOBED_DEBUG_ASSERT(!m_tex && !m_pbo);
@@ -228,7 +251,9 @@ void PreloadItemState::enqueuePBOCreation() {
             m_image = nullptr; // no longer needed
         } else {
 #ifdef GLOBED_PBO_SUPPORT
-            auto res = imgp::decode::pngInto(m_rawData.get(), m_rawSize, ptr, byteSize);
+            // decode the image into a scratch buffer
+            auto sbuf = g_scratch.reserve(byteSize);
+            auto res = imgp::decode::pngInto(m_rawData.get(), m_rawSize, sbuf, byteSize);
             m_rawData.reset();
 
             if (!res) {
@@ -241,7 +266,11 @@ void PreloadItemState::enqueuePBOCreation() {
             }
 
             auto bytes = res.unwrap();
+            GLOBED_DEBUG_ASSERT(bytes == (size_t)byteSize);
             // log::debug("{}: decoded: {} png, {} decoded, {} expected", m_path, m_rawSize, bytes, byteSize);
+
+            // now premultiply alpha and write into the pbo
+            premultiplyInto(sbuf, ptr, byteSize);
 #else
             GLOBED_ASSERT(false);
 #endif
@@ -283,8 +312,7 @@ void PreloadItemState::finalizePBO() {
     texture->m_uPixelsWide = w;
     texture->m_uPixelsHigh = h;
     texture->m_ePixelFormat = kCCTexture2DPixelFormat_RGBA8888;
-    // imageplus does not premultiply alpha (why should we do it on the cpu anyway?)
-    texture->m_bHasPremultipliedAlpha = !canDirectDecode();
+    texture->m_bHasPremultipliedAlpha = true;
     texture->m_bHasMipmaps = false;
 
     // this is  weird
@@ -352,6 +380,83 @@ void PreloadItemState::initSpriteFrames() {
 
         m_state.store(ItemStateEnum::Ready, relaxed);
     });
+}
+
+static void premultiplyIntoScalar(const void* source, void* dest, size_t bytes) {
+    size_t pixels = bytes / 4;
+    auto src = static_cast<const uint8_t*>(source);
+    auto dst = static_cast<uint8_t*>(dest);
+
+    for (size_t i = 0; i < pixels; i++) {
+        uint8_t r = src[0];
+        uint8_t g = src[1];
+        uint8_t b = src[2];
+        uint8_t a = src[3];
+
+        dst[0] = (r * a) / 255;
+        dst[1] = (g * a) / 255;
+        dst[2] = (b * a) / 255;
+        dst[3] = a;
+
+        src += 4;
+        dst += 4;
+    }
+}
+
+#ifdef GEODE_IS_WINDOWS
+static __attribute__((target("ssse3"))) void premultiplyIntoSSSE3(const void* source, void* dest, size_t bytes) {
+    size_t const max_simd_pixel = bytes / sizeof(__m128i) * sizeof(__m128i);
+
+    __m128i const mask_alphha_color_odd_255 = _mm_set1_epi32(static_cast<int>(0xff000000));
+    __m128i const div_255 = _mm_set1_epi16(static_cast<short>(0x8081));
+
+    __m128i const mask_shuffle_alpha = _mm_set_epi32(0x0f800f80, 0x0b800b80, 0x07800780, 0x03800380);
+    __m128i const mask_shuffle_color_odd = _mm_set_epi32(static_cast<int>(0x80800d80), static_cast<int>(0x80800980), static_cast<int>(0x80800580), static_cast<int>(0x80800180));
+
+    const __m128i* src = reinterpret_cast<const __m128i*>(source);
+    __m128i* dst = reinterpret_cast<__m128i*>(dest);
+    __m128i color, alpha, color_even, color_odd;
+
+    for (size_t i = 0; i < max_simd_pixel; i += sizeof(__m128i)) {
+        color = _mm_loadu_si128(src);
+
+        alpha = _mm_shuffle_epi8(color, mask_shuffle_alpha);
+
+        color_even = _mm_slli_epi16(color, 8);
+        color_odd = _mm_shuffle_epi8(color, mask_shuffle_color_odd);
+        color_odd = _mm_or_si128(color_odd, mask_alphha_color_odd_255);
+//            color_odd = _mm_blendv_epi8(color, _mm_set_epi32(0xff000000, 0xff000000, 0xff000000, 0xff000000), _mm_set_epi32(0x80800080, 0x80800080, 0x80800080, 0x80800080));
+
+        color_odd = _mm_mulhi_epu16(color_odd, alpha);
+        color_even = _mm_mulhi_epu16(color_even, alpha);
+
+        color_odd = _mm_srli_epi16(_mm_mulhi_epu16(color_odd, div_255), 7);
+        color_even = _mm_srli_epi16(_mm_mulhi_epu16(color_even, div_255), 7);
+
+        color = _mm_or_si128(color_even, _mm_slli_epi16(color_odd, 8));
+
+        _mm_storeu_si128(dst, color);
+
+        src++;
+        dst++;
+    }
+
+    size_t remBytes = bytes - max_simd_pixel;
+    premultiplyIntoScalar(
+        static_cast<const uint8_t*>(source) + max_simd_pixel,
+        static_cast<uint8_t*>(dest) + max_simd_pixel,
+        remBytes
+    );
+}
+#endif
+
+void premultiplyInto(const void* source, void* dest, size_t bytes) {
+#ifdef GEODE_IS_WINDOWS
+    // assume that any modern pc supports ssse3, it's around 3x faster than scalar
+    premultiplyIntoSSSE3(source, dest, bytes);
+#else
+    premultiplyIntoScalar(source, dest, bytes);
+#endif
 }
 
 }
