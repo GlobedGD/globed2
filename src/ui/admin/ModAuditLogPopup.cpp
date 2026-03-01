@@ -236,6 +236,8 @@ private:
                 if (!added.empty()) msgStr += "; ";
                 msgStr += fmt::format("Removed: {}", fmt::join(removed, ", "));
             }
+        } else if (log.type == "notice") {
+            msgStr = log.message;
         }
 
         if (!msgStr.empty()) {
