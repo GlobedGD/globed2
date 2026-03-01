@@ -160,6 +160,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     m_isDead = state.isDead;
     m_isUpsideDown = data.isUpsideDown;
     m_isOnGround = data.isGrounded;
+    m_vehicleSize = data.isMini ? 0.6f : 1.0f;
     // m_isRotating = data.isRotating;
     // m_isSideways = data.isSideways;
 
@@ -220,7 +221,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
     // XXX: sticky is pretty broken so not handled
 
-    float innerRot = data.isSideways ? (data.isUpsideDown ? 90.f : -90.f) : 0.f;
+    float innerRot = data.isSideways ? -90.f : 0.f;
 
     float distanceTo90deg = std::fmod(std::abs(data.rotation), 90.f);
     if (distanceTo90deg > 45.f) {
@@ -306,25 +307,17 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     m_positionY = data.position.y;
 
     // setFlipX doesn't work here for jetpack and stuff
-    float mult = data.isMini ? 0.6f : 1.0f;
-    this->setScaleX((data.isLookingLeft ? -1.0f : 1.0f) * mult);
-
-    // m_isUpsideDown on pobj already handles y scale!
-
-    // if (data.iconType == PlayerIconType::Swing) {
-    //     this->setScaleY(mult);
-    // } else {
-    //     this->setScaleY((data.isUpsideDown ? -1.0f : 1.0f) * mult);
-    // }
-
-    m_scaleX = mult;
-    m_scaleY = mult;
+    m_mainLayer->setScaleX(m_isGoingLeft ? -1.0f : 1.0f);
+    m_mainLayer->setScaleY(data.isFlipped ? -1.0f : 1.0f);
+    this->updatePlayerScale(); // sets scale x and y to vehicle size
 
     bool switchedMode = data.iconType != m_prevMode;
     bool turningOffSwing = (data.iconType == PlayerIconType::Swing && switchedMode);
     bool turningOffRobot = (data.iconType == PlayerIconType::Robot && switchedMode);
+    bool flippedShip = changedGravity && data.iconType == PlayerIconType::Ship;
 
-    if (switchedMode || changedGravity) {
+    // ship has some funny display bugs if we don't update icon type after changing gravity
+    if (switchedMode || flippedShip) {
         this->updateIconType(data.iconType);
         m_prevMode = data.iconType;
     }

@@ -677,8 +677,6 @@ PlayerState GlobedGJBGL::getPlayerState() {
 
         out.isVisible = obj->isVisible();
         out.isLookingLeft = obj->m_isGoingLeft;
-        // wtf was this for?
-        // out.isUpsideDown = (iconType == Swing || iconType == Cube) ? obj->m_isUpsideDown : pobjInner->getScaleY() == -1.0f;
         out.isUpsideDown = obj->m_isUpsideDown;
         out.isDashing = obj->m_isDashing;
         out.isMini = obj->m_vehicleSize != 1.0f;
@@ -688,6 +686,7 @@ PlayerState GlobedGJBGL::getPlayerState() {
         out.isRotating = obj->m_isRotating;
         out.isSideways = obj->m_isSideways;
         out.didJustJump = (player1 ? fields.m_didJustJump1 : fields.m_didJustJump2).take();
+        out.isFlipped = obj->m_mainLayer->getScaleY() < -0.f;
 
         if (fields.m_sendExtData) {
             // gather some extra data

@@ -19,7 +19,7 @@ namespace globed {
         }
 
     public:
-        LazyExpr(F&& f) : value(std::forward<F>(f)) {} // idk if the forward is correct here
+        LazyExpr(F&& f) : value(std::move(f)) {}
 
         Ret& operator*() {
             return this->_eval();
@@ -37,6 +37,6 @@ namespace globed {
     // Returns a type that will only evaluate the given expression when it's referenced
     template <typename F>
     auto lazyExpr(F&& f) {
-        return LazyExpr<F>(std::forward<F>(f));
+        return LazyExpr<std::decay_t<F>>(std::forward<F>(f));
     }
 }
