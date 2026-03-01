@@ -605,7 +605,11 @@ void GlobedGJBGL::sendPlayerData(const PlayerState& state) {
             toRequest.push_back(player);
         }
 
-        fields.m_lastDataRequest = fields.m_timeCounter;
+        // only set it if we requested any players, then if someone else joins (or if we just joined)
+        // we will immediately be able to fetch their data without waiting up to a second
+        if (!toRequest.empty()) {
+            fields.m_lastDataRequest = fields.m_timeCounter;
+        }
 
         // TODO: technically there's a possibility for a "ghost player" where we think they are on the level, but the server is not aware of them,
         // this will cause them to be sent every single time (as the server will never send their data). not sure how to handle this yet.
