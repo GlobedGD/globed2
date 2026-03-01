@@ -333,10 +333,10 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
         PlayerStatusFlags flags = {};
         flags.paused = state.isPaused;
-        flags.practicing = state.isPracticing;
+        flags.practicing = m_isLocalPlayer ? false : state.isPracticing;
         flags.speaking = speaking;
         flags.speakingMuted = m_isLocalPlayer ? speaking && gjbgl->m_fields->m_knownServerMuted : false;
-        flags.editing = state.isInEditor;
+        flags.editing = m_isLocalPlayer ? false : state.isInEditor;
         m_statusIcons->updateStatus(flags);
     }
 
