@@ -220,6 +220,12 @@ void SettingsLayer::addSettings() {
         this->addSetting<BoolSettingCell>("core.dev.net-stat-dump", "Network Stat Dump",
             "Enables highly detailed network statistics dumping for debugging. This will write very detailed information about all inbound and outbound packets to a log file, and dump exact packet bytes. F7 can be pressed while in the Globed menu to show current connection stats. <cy>This will use a lot of memory</c>."
         );
+        this->addSetting<BoolSettingCell>("core.dev.net-use-quic", "Prefer QUIC",
+            "Prefers using the <cj>QUIC</c> protocol for server connections. This is a soft preference, and if the server does not support QUIC or the connection fails, other protocols will be attempted afterwards."
+        );
+        this->addSetting<BoolSettingCell>("core.dev.net-use-ipv4", "Force IPv4",
+            "Forces IPv4 server connections and disallows IPv6."
+        );
         this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data",
             "Uses randomly generated data in some places (room list, level list) for testing purposes"
         );

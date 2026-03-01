@@ -410,7 +410,7 @@ void NetworkManagerImpl::initializeTls() {
     if (!qres) {
         log::error("failed to create quic tls context: {}", qres.unwrapErr());
     } else {
-        auto ctx = qres.unwrap();
+        auto& ctx = qres.unwrap();
         m_centralConn->setQuicTlsContext(ctx);
         m_gameConn->setQuicTlsContext(ctx);
     }
@@ -960,13 +960,22 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
     FriendListManager::get().refresh();
 
     bool certVerification = globed::setting<bool>("core.dev.cert-verification");
+    bool useQuic = globed::setting<bool>("core.dev.net-use-quic");
+    bool forceIpv4 = globed::setting<bool>("core.dev.net-use-ipv4");
     argon::setCertVerification(certVerification);
 
     g_argonData = argon::getGameAccountData();
     m_abortCause.lock()->first.clear();
     m_manualDisconnect.store(false, ::release);
 
+    auto preferredProto = useQuic ? qn::ConnectionType::Quic : qn::ConnectionType::Tcp;
+    m_centralConn->setPreferProtocol(preferredProto);
+    m_gameConn->setPreferProtocol(preferredProto);
+    m_centralConn->setIpv6Enabled(!forceIpv4);
+    m_gameConn->setIpv6Enabled(!forceIpv4);
+
     m_centralConn->setDebugOptions(getConnOpts());
+
     auto res = m_centralConn->connect(std::string(url));
 
     if (!res) {
