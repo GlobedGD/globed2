@@ -135,13 +135,14 @@ void GlobedGJBGL::setupNecessary() {
     }
 }
 
-static CCNode* createLoadingOverlay() {
+static std::pair<CCNode*, Label*> createLoadingOverlay() {
     auto winSize = CCDirector::get()->getWinSize();
     auto layer = CCLayerColor::create({0, 0, 0, 220}, winSize.width, winSize.height);
     layer->ignoreAnchorPointForPosition(false);
     layer->setAnchorPoint({0.f, 0.f});
 
-    Build<Label>::create("Loading...", "bigFont.fnt")
+    auto progLabel = Build<Label>::create("Loading... (0 / 0)", "bigFont.fnt")
+        .scale(0.8f)
         .parent(layer)
         .pos(winSize.width / 2, winSize.height / 2)
         .anchorPoint(0.5f, 0.5f);
@@ -154,7 +155,7 @@ static CCNode* createLoadingOverlay() {
         .collect();
     lbl->setAlignment(BMFontAlignment::Center);
 
-    return layer;
+    return {layer, progLabel};
 }
 
 void GlobedGJBGL::setupAssetLoading() {
@@ -166,15 +167,18 @@ void GlobedGJBGL::setupAssetLoading() {
 
         // show an overlay while the game is frozen and loading resources,
         // so that the user knows what's going on
-        auto ov = createLoadingOverlay();
+        auto [ov, label] = createLoadingOverlay();
         CCScene::get()->addChild(ov, 1000);
-        auto dir = CCDirector::get();
-        dir->m_bPaused = true;
-        dir->drawScene();
-        dir->m_bPaused = false;
 
         auto start = Instant::now();
-        pm.loadEverything();
+        pm.loadEverything(PreloadOptions {
+            .callback = [&](const PreloadProgress& prog) {
+                StringBuffer<> buf;
+                buf.append("Loading... ({} / {})", prog.totalLoaded, prog.totalCount);
+                label->setString(buf.view());
+                return true;
+            }
+        });
 
         log::info("Asset preloading took {} ({} items loaded)", start.elapsed().toString(), pm.getLoadedCount());
     }

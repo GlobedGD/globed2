@@ -58,13 +58,20 @@ struct GLOBED_MODIFY_ATTR HookedLoadingLayer : Modify<HookedLoadingLayer, Loadin
             return;
         }
 
-        pm.loadNextBatch();
+        auto updateLabel = [this](size_t loaded, size_t total) {
+            StringBuffer<> buf;
+            buf.append("Globed: preloading assets.. ({}/{})", loaded, total);
+            this->setLabelText(buf.c_str());
+        };
 
-        this->setLabelText(fmt::format(
-            "Globed: preloading assets.. ({}/{})",
-            pm.getLoadedCount(),
-            pm.getTotalCount()
-        ).c_str());
+        pm.loadNextBatch(PreloadOptions {
+            .callback = [&](const PreloadProgress& prog) {
+                updateLabel(prog.totalLoaded, prog.totalCount);
+                return true;
+            }
+        });
+
+        updateLabel(pm.getLoadedCount(), pm.getTotalCount());
     }
 
     void setLabelText(const char* text) {

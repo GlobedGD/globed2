@@ -83,7 +83,7 @@ void PreloadManager::initLoadQueue() {
     m_totalCount = m_loadQueue.size();
 }
 
-void PreloadManager::loadNextBatch(bool blocking) {
+void PreloadManager::loadNextBatch(PreloadOptions options) {
     if (!m_sstate.initialized) {
         this->initSessionState();
     }
@@ -137,20 +137,20 @@ void PreloadManager::loadNextBatch(bool blocking) {
         }
     }
 
-    this->doLoadBatch(std::move(items), blocking);
+    this->doLoadBatch(std::move(items), std::move(options));
 }
 
-void PreloadManager::loadEverything(bool blocking) {
+void PreloadManager::loadEverything(PreloadOptions options) {
     std::vector<PreloadItem> items;
     items.reserve(m_loadQueue.size());
 
     items.insert(items.end(), std::make_move_iterator(m_loadQueue.begin()), std::make_move_iterator(m_loadQueue.end()));
     m_loadQueue.clear();
 
-    this->doLoadBatch(std::move(items), blocking);
+    this->doLoadBatch(std::move(items), std::move(options));
 }
 
-void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, bool blocking) {
+void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions options) {
     if (!m_sstate.initialized) {
         this->initSessionState();
     }
@@ -197,7 +197,7 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, bool blocking) 
 
     asp::Channel<PreloadItemState*> texRequests;
 
-    if (blocking) {
+    if (options.blocking) {
         // if blocking, push into the channel to be handled later
         state->callback = [&texRequests](auto& tex) {
             texRequests.push(&tex);
@@ -227,9 +227,41 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, bool blocking) 
         inited++;
     };
 
+    auto drawFrame = [&] {
+        auto dir = CCDirector::get();
+        dir->m_bPaused = true;
+        dir->drawScene();
+        dir->m_bPaused = false;
+    };
+
+    auto lastProgress = asp::Instant::now();
+    size_t nextProgressWhenTex = 128;
+    auto tryDispatchProgress = [&] {
+        if (options.blocking && options.callback) {
+            PreloadProgress prog{
+                // getLoadedCount essentially returns total - remaining, we need to subtract uninited items from this batch
+                .totalLoaded = this->getLoadedCount() - (state->items.size() - inited),
+                .totalCount = m_totalCount,
+                .batchLoaded = inited,
+                .batchSize = state->items.size(),
+            };
+
+            if (options.callback(prog)) {
+                drawFrame();
+            }
+
+            lastProgress = Instant::now();
+            nextProgressWhenTex = inited + 128;
+        }
+    };
+
     // Stage 2 - wait and process all requests. Main thread will be responsible for advancing the state machine forward,
     // as well as creating PBOs or initializing textures manually.
     while (true) {
+        if (inited >= nextProgressWhenTex) {
+            tryDispatchProgress();
+        }
+
         if (auto req = texRequests.tryPop()) {
             auto& item = **req;
 
@@ -264,8 +296,11 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, bool blocking) 
             continue;
         }
 
-        // TODO: draw frames manually every once in a while so the screen doesnt freeze?
         if (pool.isDoingWork()) {
+            // draw frames manually every once in a while, so the game doesn't appear frozen
+            if (lastProgress.elapsed() > Duration::fromMillis(50)) {
+                tryDispatchProgress();
+            }
             std::this_thread::yield();
             continue;
         } else if (texRequests.empty()) {

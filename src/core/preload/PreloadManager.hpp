@@ -5,7 +5,7 @@
 #include <asp/time/Instant.hpp>
 #include <asp/sync/SpinLock.hpp>
 #include "Item.hpp"
-#include <queue>
+#include <Geode/utils/function.hpp>
 
 // TODO (very low): it's time consuming so postponing for later, but we should add background preloading,
 // which allows the assets to be loaded when the game is running, rather than blocking during loading
@@ -35,6 +35,22 @@ enum class PreloadContext {
     Level,      // When loading into a level
 };
 
+struct PreloadProgress {
+    size_t totalLoaded;
+    size_t totalCount;
+    size_t batchLoaded;
+    size_t batchSize;
+};
+
+struct PreloadOptions {
+    /// Whether to block the main thread (if true) or to load in the background (if false)
+    bool blocking = true;
+    /// The callback that will be invoked periodically in main thread during loading, with some progress information.
+    /// This can be used for e.g. drawing things on the screen and updating progress.
+    /// If this returns true then the preload manager will manually draw the current scene for you.
+    geode::Function<bool(const PreloadProgress&)> callback;
+};
+
 class PreloadManager : public SingletonBase<PreloadManager> {
 public:
     bool shouldPreload();
@@ -42,9 +58,9 @@ public:
     void exitContext();
 
     // Loads a reasonable amount of assets in a single call, to avoid blocking the main thread for too long
-    void loadNextBatch(bool blocking = true);
+    void loadNextBatch(PreloadOptions options = {});
     // Loads all assets in a single call, blocking the main thread until all assets are loaded
-    void loadEverything(bool blocking = true);
+    void loadEverything(PreloadOptions options = {});
 
     // Returns the number of assets that have been loaded so far
     size_t getLoadedCount();
@@ -88,7 +104,7 @@ private:
 
     void resetState();
     void initLoadQueue();
-    void doLoadBatch(std::vector<PreloadItem> items, bool blocking);
+    void doLoadBatch(std::vector<PreloadItem> items, PreloadOptions options);
     void initSessionState();
 
     gd::string fullPathForFilename(std::string_view input, bool ignoreSuffix = false);
