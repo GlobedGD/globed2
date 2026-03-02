@@ -556,6 +556,9 @@ void VisualPlayer::updateIconType(PlayerIconType iconType) {
     }
 
     this->callUpdate(icons, iconType);
+
+    this->updateGlowColor();
+    this->updatePlayerGlow();
 }
 
 void VisualPlayer::callUpdate(PlayerIconData& icons, PlayerIconType ty) {
