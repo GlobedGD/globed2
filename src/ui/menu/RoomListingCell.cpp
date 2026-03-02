@@ -3,6 +3,7 @@
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/NameLabel.hpp>
+#include <ui/admin/Common.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/PlayerIcon.hpp>
@@ -277,6 +278,7 @@ void RoomListingCell::recreateButton() {
         m_rightButton = Build<ButtonSprite>::create("Close", "bigFont.fnt", "GJ_button_06.png", 0.8f)
             .scale(0.7f)
             .intoMenuItem([this] {
+                waitForAdminResult();
                 NetworkManagerImpl::get().sendAdminCloseRoom(m_info.roomId);
                 this->removeMeFromList();
             })

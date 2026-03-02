@@ -29,6 +29,7 @@ protected:
     CCNode* m_rootLayout = nullptr;
     CCMenuItemSpriteExtra* m_roleModifyButton = nullptr;
     CCMenuItemSpriteExtra* m_banButton = nullptr;
+    CCMenuItemSpriteExtra* m_whitelistButton = nullptr;
     CCMenuItemSpriteExtra* m_muteButton = nullptr;
     CCMenuItemSpriteExtra* m_roomBanButton = nullptr;
 
@@ -48,6 +49,7 @@ protected:
     bool init(int accountId);
     void initUi();
     void recreateRoleButton();
+    void resetWhitelisted(bool whitelisted);
     void createMuteAndBanButtons();
     void fullRefresh();
     void showPunishmentPopup(UserPunishmentType type);

@@ -1,6 +1,7 @@
 #include "ModNoticeSetupPopup.hpp"
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <ui/admin/Common.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -198,6 +199,7 @@ void ModNoticeSetupPopup::submit() {
             "Cancel",
             "Send",
             [text = std::move(text)](FLAlertLayer*) {
+                waitForAdminResult();
                 NetworkManagerImpl::get().sendAdminNoticeEveryone(text);
             }
         );
@@ -205,9 +207,8 @@ void ModNoticeSetupPopup::submit() {
         return;
     }
 
+    waitForAdminResult();
     NetworkManagerImpl::get().sendAdminNotice(text, userQuery, roomId, levelId, m_canReplyCheckbox->isOn(), m_showSenderCheckbox->isOn());
-
-    globed::toastSuccess("Notice sent successfully!");
 }
 
 void ModNoticeSetupPopup::onSelectMode(int mode, bool on) {

@@ -3,6 +3,7 @@
 #include "ModRoleModifyPopup.hpp"
 #include "ModNoticeSetupPopup.hpp"
 #include "ModAuditLogPopup.hpp"
+#include "Common.hpp"
 
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/actions.hpp>
@@ -127,7 +128,7 @@ void ModUserPopup::initUi() {
     this->createMuteAndBanButtons();
 
     // Whitelist button
-    Build<CCSprite>::create(m_data->whitelisted ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr)
+    m_whitelistButton = Build<CCSprite>::create(m_data->whitelisted ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this](CCMenuItemSpriteExtra* btn) {
             globed::confirmPopup(
@@ -139,13 +140,13 @@ void ModUserPopup::initUi() {
                 "Yes",
                 [this, btn](auto) {
                     bool newv = !m_data->whitelisted;
-                    NetworkManagerImpl::get().sendAdminSetWhitelisted(m_data->accountId, newv);
-                    m_data->whitelisted = newv;
+                    waitForAdminResult([this, newv](auto r) {
+                        if (r.isOk()) {
+                            this->resetWhitelisted(newv);
+                        }
+                    });
 
-                    btn->setSprite(
-                        Build<CCSprite>::create(newv ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr)
-                            .scale(btnScale)
-                    );
+                    NetworkManagerImpl::get().sendAdminSetWhitelisted(m_data->accountId, newv);
                 }
             );
         })
@@ -189,6 +190,7 @@ void ModUserPopup::initUi() {
                 popup->setTitle("Set Password");
                 popup->setCallback([this](auto outcome) {
                     if (outcome.cancelled) return;
+                    waitForAdminResult();
                     NetworkManagerImpl::get().sendAdminSetPassword(m_data->accountId, outcome.text);
                 });
 
@@ -215,6 +217,7 @@ void ModUserPopup::initUi() {
                     popup->setTitle(fmt::format("Kick {}", m_score->m_userName));
                     popup->setCallback([this](auto outcome) {
                         if (outcome.cancelled) return;
+                        waitForAdminResult();
                         NetworkManagerImpl::get().sendAdminKick(m_data->accountId, outcome.text);
                     });
 
@@ -268,6 +271,15 @@ void ModUserPopup::recreateRoleButton() {
         .parent(m_nameLayout);
 
     m_nameLayout->updateLayout();
+}
+
+void ModUserPopup::resetWhitelisted(bool whitelisted) {
+    m_data->whitelisted = whitelisted;
+
+    m_whitelistButton->setSprite(
+        Build<CCSprite>::create(whitelisted ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr)
+            .scale(btnScale)
+    );
 }
 
 void ModUserPopup::createMuteAndBanButtons() {
