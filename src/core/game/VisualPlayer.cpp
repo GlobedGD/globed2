@@ -857,6 +857,10 @@ void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
 
     m_color1 = icons.color1.asColor();
     m_color2 = icons.color2.asColor();
+    if (m_isSecond) {
+        std::swap(m_color1, m_color2);
+    }
+
     m_defaultMiniIcon = icons.defaultMini;
 
     this->setColor(m_color1);
