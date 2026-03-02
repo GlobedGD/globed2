@@ -214,6 +214,7 @@ PlayerIconData PlayerIconData::getOwn() {
     }
     out.trail = gm->m_playerStreak;
     out.shipTrail = gm->m_playerShipFire;
+    out.defaultMini = gm->getGameVariable(GameVar::DefaultMiniIcon);
 
     return out;
 }

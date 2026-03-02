@@ -259,6 +259,7 @@ $implEncode(const PlayerIconData& icons, shared::PlayerIconData::Builder& data) 
     data.setDeathEffect(icons.deathEffect);
     data.setTrail(icons.trail);
     data.setShipTrail(icons.shipTrail);
+    data.setDefaultMini(icons.defaultMini);
 }
 
 $implDecode(PlayerIconData, shared::PlayerIconData::Reader& reader) {
@@ -278,6 +279,7 @@ $implDecode(PlayerIconData, shared::PlayerIconData::Reader& reader) {
     out.deathEffect = reader.getDeathEffect();
     out.trail = reader.getTrail();
     out.shipTrail = reader.getShipTrail();
+    out.defaultMini = reader.getDefaultMini();
     return out;
 }
 

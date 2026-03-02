@@ -160,7 +160,6 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     m_isDead = state.isDead;
     m_isUpsideDown = data.isUpsideDown;
     m_isOnGround = data.isGrounded;
-    m_vehicleSize = data.isMini ? 0.6f : 1.0f;
     // m_isRotating = data.isRotating;
     // m_isSideways = data.isSideways;
 
@@ -306,10 +305,17 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     m_positionX = data.position.x;
     m_positionY = data.position.y;
 
+    // update scale
+    if (m_prevMini != data.isMini) {
+        m_prevMini = data.isMini;
+        // TODO: disable effects?
+        this->togglePlayerScale(data.isMini, false);
+        this->updatePlayerScale(); // sets scale x and y to vehicle size
+    }
+
     // setFlipX doesn't work here for jetpack and stuff
     m_mainLayer->setScaleX(m_isGoingLeft ? -1.0f : 1.0f);
     m_mainLayer->setScaleY(data.isFlipped ? -1.0f : 1.0f);
-    this->updatePlayerScale(); // sets scale x and y to vehicle size
 
     bool switchedMode = data.iconType != m_prevMode;
     bool turningOffSwing = (data.iconType == PlayerIconType::Swing && switchedMode);
@@ -851,6 +857,7 @@ void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
 
     m_color1 = icons.color1.asColor();
     m_color2 = icons.color2.asColor();
+    m_defaultMiniIcon = icons.defaultMini;
 
     this->setColor(m_color1);
     this->setSecondColor(m_color2);

@@ -86,6 +86,7 @@ private:
     bool m_prevPaused = false;
 
     bool m_prevRotating = false;
+    bool m_prevMini = false;
 
     CCPoint m_prevPosition{};
     float m_prevRotation = 0.f;

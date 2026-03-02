@@ -24,6 +24,7 @@ struct PlayerIconData {
     uint8_t deathEffect = DEFAULT_DEATH;
     uint8_t trail = NO_TRAIL;
     uint8_t shipTrail = NO_TRAIL;
+    bool defaultMini;
 
     static PlayerIconData getOwn();
 };
