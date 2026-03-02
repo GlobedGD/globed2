@@ -600,7 +600,7 @@ void VisualPlayer::callUpdate(PlayerIconData& icons, PlayerIconType ty) {
 void VisualPlayer::updateRobotAnimation() {
     if (m_prevGrounded && m_prevStationary) {
         // if on ground and not moving, play the idle animation
-        m_robotSprite->tweenToAnimation("idle01", 0.1f);
+        m_robotSprite->tweenToAnimation("idle01", 0.3f);
         this->animateRobotFire(false);
     } else if (m_prevGrounded && !m_prevStationary) {
         // if on ground and moving, play the running animation
@@ -625,7 +625,7 @@ void VisualPlayer::updateSpiderAnimation() {
     } else if (!m_prevGrounded && !m_prevFalling) {
         m_spiderSprite->tweenToAnimation("jump_loop", 0.1f);
     } else if (m_prevGrounded && m_prevStationary) {
-        m_spiderSprite->tweenToAnimation("idle01", 0.1f);
+        m_spiderSprite->tweenToAnimation("idle01", 0.3f);
     } else if (m_prevGrounded && !m_prevStationary) {
         m_spiderSprite->tweenToAnimation("run", 0.1f);
     }
@@ -797,6 +797,8 @@ void VisualPlayer::handleSpiderTp(const SpiderTeleportData& tp) {
         static_cast<CCNode*>(arr->objectAtIndex(i))->setTag(SPIDER_DASH_CIRCLE_WAVE_TAG);
     }
 
+    auto sfc = cachedSingleton<CCSpriteFrameCache>();
+    auto* spdash1 = sfc->spriteFrameByName("spiderDash_001.png")->getTexture();
     for (auto child : m_parentLayer->getChildrenExt()) {
         if (child->getZOrder() != 40) continue;
         if (!child->getID().empty()) continue;
@@ -804,8 +806,6 @@ void VisualPlayer::handleSpiderTp(const SpiderTeleportData& tp) {
         auto sprite = typeinfo_cast<CCSprite*>(child);
         if (!sprite) continue;
 
-        auto sfc = cachedSingleton<CCSpriteFrameCache>();
-        auto* spdash1 = sfc->spriteFrameByName("spiderDash_001.png")->getTexture();
         auto* tex = sprite->getTexture();
 
         if (tex == spdash1) {
