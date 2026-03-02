@@ -6,6 +6,7 @@
 
 #include <Geode/Geode.hpp>
 #include <cue/ListNode.hpp>
+#include <asp/collections/SmallVec.hpp>
 
 namespace globed {
 

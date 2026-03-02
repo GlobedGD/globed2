@@ -22,6 +22,7 @@
 #include <qunet/util/algo.hpp>
 #include <qunet/util/hash.hpp>
 #include <asp/time/Duration.hpp>
+#include <asp/collections/SmallVec.hpp>
 #include <asp/iter.hpp>
 
 using namespace geode::prelude;
