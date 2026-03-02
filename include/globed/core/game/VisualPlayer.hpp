@@ -101,6 +101,7 @@ private:
     bool init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer);
     void updateOpacity();
     void updateIconType(PlayerIconType iconType);
+    void callUpdate(PlayerIconData& icons, PlayerIconType ty);
     void updateRobotAnimation();
     void updateSpiderAnimation();
     void animateSwingFire(bool goingDown);

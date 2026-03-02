@@ -138,7 +138,7 @@ void ModUserPopup::initUi() {
                     : "Are you sure you want to whitelist this person?",
                 "Cancel",
                 "Yes",
-                [this, btn](auto) {
+                [this](auto) {
                     bool newv = !m_data->whitelisted;
                     waitForAdminResult([this, newv](auto r) {
                         if (r.isOk()) {

@@ -513,6 +513,7 @@ void VisualPlayer::updateOpacity() {
     }
 }
 
+/// Updates the actual displayed gamemode, unlike `callUpdate`, which may update the texture without changing the gamemode
 void VisualPlayer::updateIconType(PlayerIconType iconType) {
     auto& icons = this->icons();
 
@@ -525,41 +526,69 @@ void VisualPlayer::updateIconType(PlayerIconType iconType) {
     this->toggleSwingMode(false, false);
 
     switch (iconType) {
-        case PlayerIconType::Unknown: break;
-        case PlayerIconType::Cube: {
-            // don't call toggle
-            this->updatePlayerFrame(icons.cube);
-        } break;
+        case PlayerIconType::Unknown:
+        case PlayerIconType::Cube: break;
+
         case PlayerIconType::Ship: {
             this->toggleFlyMode(true, false);
-            this->updatePlayerShipFrame(icons.ship);
         } break;
         case PlayerIconType::Ball: {
             this->toggleRollMode(true, false);
-            this->updatePlayerRollFrame(icons.ball);
         } break;
         case PlayerIconType::Ufo: {
             this->toggleBirdMode(true, false);
-            this->updatePlayerBirdFrame(icons.ufo);
         } break;
         case PlayerIconType::Wave: {
             this->toggleDartMode(true, false);
-            this->updatePlayerDartFrame(icons.wave);
         } break;
         case PlayerIconType::Robot: {
             this->toggleRobotMode(true, false);
-            this->updatePlayerRobotFrame(icons.robot);
         } break;
         case PlayerIconType::Spider: {
             this->toggleSpiderMode(true, false);
-            this->updatePlayerSpiderFrame(icons.spider);
         } break;
         case PlayerIconType::Swing: {
             this->toggleSwingMode(true, false);
-            this->updatePlayerSwingFrame(icons.swing);
         } break;
         case PlayerIconType::Jetpack: {
             this->toggleFlyMode(true, true);
+        } break;
+    }
+
+    this->callUpdate(icons, iconType);
+}
+
+void VisualPlayer::callUpdate(PlayerIconData& icons, PlayerIconType ty) {
+    bool doMini = m_defaultMiniIcon && m_prevMini;
+
+    switch (ty) {
+        case PlayerIconType::Unknown: break;
+        case PlayerIconType::Cube: {
+            // for some reason default mini icon does not work on the first player with cube, replicate rob's bug (or not bug??)
+            this->updatePlayerFrame(doMini && m_isSecond ? 0 : icons.cube);
+        } break;
+        case PlayerIconType::Ship: {
+            this->updatePlayerShipFrame(icons.ship);
+        } break;
+        case PlayerIconType::Ball: {
+            this->updatePlayerRollFrame(doMini ? 0 : icons.ball);
+        } break;
+        case PlayerIconType::Ufo: {
+            this->updatePlayerBirdFrame(icons.ufo);
+        } break;
+        case PlayerIconType::Wave: {
+            this->updatePlayerDartFrame(icons.wave);
+        } break;
+        case PlayerIconType::Robot: {
+            this->updatePlayerRobotFrame(icons.robot);
+        } break;
+        case PlayerIconType::Spider: {
+            this->updatePlayerSpiderFrame(icons.spider);
+        } break;
+        case PlayerIconType::Swing: {
+            this->updatePlayerSwingFrame(icons.swing);
+        } break;
+        case PlayerIconType::Jetpack: {
             this->updatePlayerJetpackFrame(icons.jetpack);
         } break;
     }
@@ -701,7 +730,7 @@ void VisualPlayer::updateDisplayData() {
         ddata.icons.deathEffect = DEFAULT_DEATH;
     }
 
-    this->updatePlayerObjectIcons(true);
+    this->updatePlayerObjectIcons(false);
     this->updateIconType(m_prevMode);
 }
 
@@ -875,15 +904,15 @@ void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
     }
 
     if (!skipFrames) {
-        this->updatePlayerFrame(icons.cube);
-        this->updatePlayerShipFrame(icons.ship);
-        this->updatePlayerRollFrame(icons.ball);
-        this->updatePlayerBirdFrame(icons.ufo);
-        this->updatePlayerDartFrame(icons.wave);
-        this->updatePlayerRobotFrame(icons.robot);
-        this->updatePlayerSpiderFrame(icons.spider);
-        this->updatePlayerSwingFrame(icons.swing);
-        this->updatePlayerJetpackFrame(icons.jetpack);
+        this->callUpdate(icons, PlayerIconType::Cube);
+        this->callUpdate(icons, PlayerIconType::Ship);
+        this->callUpdate(icons, PlayerIconType::Ball);
+        this->callUpdate(icons, PlayerIconType::Ufo);
+        this->callUpdate(icons, PlayerIconType::Wave);
+        this->callUpdate(icons, PlayerIconType::Robot);
+        this->callUpdate(icons, PlayerIconType::Spider);
+        this->callUpdate(icons, PlayerIconType::Swing);
+        this->callUpdate(icons, PlayerIconType::Jetpack);
     }
 
     this->updateGlowColor();

@@ -192,7 +192,8 @@ bool GameServer::updateLatency(uint32_t latency) {
     lastLatency = latency;
 
     // consider unstable if the jitter is significant enough
-    return std::abs((int32_t)lastLatency - (int32_t)avgLatency) > (int32_t)(avgLatency * 0.5f);
+    auto jitter = std::abs((int32_t)lastLatency - (int32_t)avgLatency);
+    return jitter > (int32_t)(avgLatency * 0.5f) && jitter > 30;
 }
 
 WorkerState createWorkerState() {
