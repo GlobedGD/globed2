@@ -20,6 +20,7 @@
 #include <ui/menu/TeamManagementPopup.hpp>
 #include <ui/menu/InvitePopup.hpp>
 #include <ui/menu/RoomSettingsPopup.hpp>
+#include <ui/menu/ConsentPopup.hpp>
 #include <ui/menu/SupportPopup.hpp>
 #include <ui/menu/CreditsPopup.hpp>
 #include <ui/menu/FeaturedPopup.hpp>
@@ -206,6 +207,7 @@ namespace LeftBtn {
 }
 
 namespace FarRightBtn {
+    constexpr int Rules = 90;
     constexpr int Discord = 100;
     constexpr int Support = 200;
     constexpr int Credits = 300;
@@ -1125,6 +1127,19 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
         .zOrder(FarRightBtn::Discord)
         .collect()
     );
+
+    // rules
+    if (ServerManager::get().isOfficialServerActive()) {
+        out.push_back(Build<CCSprite>::create("list01.png"_spr)
+            .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
+            .intoMenuItem([] {
+                MDPopup::create("Globed Rules", RULES_TEXT, "Ok")->show();
+            })
+            .scaleMult(1.1f)
+            .zOrder(FarRightBtn::Rules)
+            .collect()
+        );
+    }
 
     return out;
 }
