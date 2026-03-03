@@ -375,6 +375,12 @@ Future<> NetworkManagerImpl::asyncInit() {
         }
     });
 
+    m_gameConn->setStateResetCallback([this] {
+        log::debug("State reset callback invoked on game connection");
+        m_gameMustReauth.store(true, ::release);
+        m_gameWorkerNotify.notifyOne();
+    });
+
     // Spawn the main worker tasks
     async::spawn([this] -> arc::Future<> {
         while (true) {
@@ -569,12 +575,23 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
     }
 
     auto& cur = m_gameWorkerState.currentReq;
+    auto& lastReq = m_gameWorkerState.lastReq;
+    bool reauth = false;
+
+    if (m_gameMustReauth.exchange(false, ::acq_rel)) {
+        // a state reset happened, meaning we lost our session with the game server and have to reauth and rejoin
+        cur = std::move(lastReq);
+        lastReq.reset();
+        reauth = true;
+    }
+
     if (cur) {
         bool sameUrl, gameEstablished;
         {
             auto info = this->connInfo();
             if (!info) {
                 cur.reset();
+                lastReq.reset();
                 co_return;
             }
 
@@ -586,13 +603,15 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
             if (!sameUrl) {
                 // connected to a different server, disconnect and then connect to the needed one
                 m_gameConn->disconnect();
-            } else if (gameEstablished) {
+            } else if (gameEstablished && !reauth) {
                 // connected to the same server as requested, simply send a join request
                 this->sendGameJoinRequest(cur->id, cur->platformer, cur->editorCollab);
+                lastReq = std::move(cur);
                 cur.reset();
             } else {
                 // connected but not yet logged in, send a login request
                 this->sendGameLoginRequest(cur->id, cur->platformer, cur->editorCollab);
+                lastReq = std::move(cur);
                 cur.reset();
             }
         } else if (connState != Disconnected) {
@@ -607,6 +626,7 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
                 log::error("Failed to connect to game server {}: {}", cur->url, res.unwrapErr().message());
                 info->m_gameServerUrl.clear();
                 cur.reset();
+                lastReq.reset();
             } else {
                 info->m_gameServerUrl = cur->url;
                 info->m_gameServerId = cur->serverId;
@@ -615,6 +635,7 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
             // already tried connecting to this server and failed, so give it up
             this->connInfo()->m_gameServerUrl.clear();
             cur.reset();
+            lastReq.reset();
         }
     }
 

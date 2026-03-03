@@ -89,6 +89,7 @@ struct GameWorkerState {
     qn::ConnectionState prevGameState;
     std::optional<arc::mpsc::Receiver<GameServerJoinRequest>> joinRx;
     std::optional<GameServerJoinRequest> currentReq;
+    std::optional<GameServerJoinRequest> lastReq;
 };
 
 /// Connection info across a single session. This gets reset on disconnect or stateless reconnect.
@@ -366,6 +367,7 @@ private:
     std::optional<ConnectionLogger> m_gameLogger;
     bool m_destructing = false;
     bool m_hasSecure = false;
+    std::atomic<bool> m_gameMustReauth{false};
 
     asp::Mutex<std::optional<ConnectionInfo>> m_connInfo;
     asp::SpinLock<std::pair<std::string, bool>> m_abortCause;
