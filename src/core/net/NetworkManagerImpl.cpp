@@ -595,6 +595,10 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
                 co_return;
             }
 
+            if (reauth) {
+                info->m_gameEstablished = false;
+            }
+
             sameUrl = info->m_gameServerUrl == cur->url;
             gameEstablished = info->m_gameEstablished;
         }
@@ -603,12 +607,13 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
             if (!sameUrl) {
                 // connected to a different server, disconnect and then connect to the needed one
                 m_gameConn->disconnect();
-            } else if (gameEstablished && !reauth) {
+            } else if (gameEstablished) {
                 // connected to the same server as requested, simply send a join request
                 this->sendGameJoinRequest(cur->id, cur->platformer, cur->editorCollab);
                 lastReq = std::move(cur);
                 cur.reset();
             } else {
+                log::debug("Sending login request to game server ({}, session {}) ..", cur->url, cur->id.asU64());
                 // connected but not yet logged in, send a login request
                 this->sendGameLoginRequest(cur->id, cur->platformer, cur->editorCollab);
                 lastReq = std::move(cur);
@@ -2466,20 +2471,17 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
 
         case JOIN_SESSION_FAILED: {
             using enum schema::game::JoinSessionFailedReason;
-
             auto reason = msg.getJoinSessionFailed().getReason();
 
-            // TODO: post listener message
+            auto jfr = msg::JoinSessionFailedReason::Unknown;
 
             switch (reason) {
-                case INVALID_PASSCODE: {
-                    log::warn("Join session failed: invalid passcode");
-                } break;
-
-                case INVALID_ROOM: {
-                    log::warn("Join session failed: invalid room");
-                } break;
+                case INVALID_PASSCODE: jfr = msg::JoinSessionFailedReason::InvalidPasscode; break;
+                case INVALID_ROOM: jfr = msg::JoinSessionFailedReason::InvalidRoom; break;
+                default: break;
             }
+
+            this->invokeListeners(msg::JoinSessionFailedMessage{jfr});
         } break;
 
         case LEVEL_DATA: {
