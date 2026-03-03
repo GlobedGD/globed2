@@ -349,7 +349,7 @@ bool GlobedMenuLayer::init() {
         .scaleMult(1.1f)
         .parent(buttonMenu);
 
-    for (auto& btn : this->createCommonButtons()) {
+    for (auto& btn : this->createCommonButtons(false)) {
         buttonMenu->addChild(btn);
     }
 
@@ -1013,7 +1013,7 @@ void GlobedMenuLayer::initFarSideButtons() {
         return;
     }
 
-    auto commons = this->createCommonButtons();
+    auto commons = this->createCommonButtons(true);
     for (auto& b : commons) {
         m_farRightMenu->addChild(b);
     }
@@ -1083,7 +1083,7 @@ void GlobedMenuLayer::initFarSideButtons() {
     m_farRightMenu->updateLayout();
 }
 
-std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
+std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons(bool loggedIn) {
     using namespace $unity;
 
     std::vector<Ref<CCMenuItemSpriteExtra>> out;
@@ -1129,7 +1129,7 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons() {
     );
 
     // rules
-    if (ServerManager::get().isOfficialServerActive()) {
+    if (ServerManager::get().isOfficialServerActive() && loggedIn) {
         out.push_back(Build<CCSprite>::create("list01.png"_spr)
             .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
             .intoMenuItem([] {

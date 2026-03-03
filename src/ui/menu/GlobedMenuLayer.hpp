@@ -88,7 +88,7 @@ private:
     void copyRoomIdToClipboard();
     void requestRoomState();
     bool shouldAutoRefresh(float dt);
-    std::vector<geode::Ref<CCMenuItemSpriteExtra>> createCommonButtons();
+    std::vector<geode::Ref<CCMenuItemSpriteExtra>> createCommonButtons(bool loggedIn);
     void reloadWithFilter(const std::string& filter);
 
     void addPinnedLevelCell();
