@@ -309,8 +309,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     // update scale
     if (m_prevMini != data.isMini) {
         m_prevMini = data.isMini;
-        // TODO: disable effects?
-        this->togglePlayerScale(data.isMini, false);
+        this->togglePlayerScale(data.isMini, true);
         this->updatePlayerScale(); // sets scale x and y to vehicle size
     }
 
