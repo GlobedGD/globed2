@@ -55,9 +55,11 @@ private:
     RemotePlayer* m_remotePlayer = nullptr;
     ccColor3B m_color1{}, m_color2{};
     bool m_teamInitialized = false;
-    NameLabel* m_nameLabel;
     Ref<PlayerStatusIcons> m_statusIcons;
     Ref<cocos2d::CCDrawNode> m_playerTrajectory;
+    geode::WeakRef<CCNode> m_playerNode;
+    // these two unfortunately can't be refs due to forward declaration :(
+    NameLabel* m_nameLabel = nullptr;
     EmoteBubble* m_emoteBubble = nullptr;
 
     bool m_isLocalPlayer = false;

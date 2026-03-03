@@ -470,6 +470,11 @@ void Interpolator::setPlatformer(bool enable) {
     m_platformer = enable;
 }
 
+void Interpolator::fullReset() {
+    m_players.clear();
+    m_stationaryFrames = 0;
+}
+
 bool Interpolator::isCameraStationary() {
     float userFps = 1.f / CCDirector::get()->getAnimationInterval();
 

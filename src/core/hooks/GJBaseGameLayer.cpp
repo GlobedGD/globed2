@@ -91,6 +91,9 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
         RoomManager::get().joinLevel(level);
         CoreImpl::get().onJoinLevel(this, level, editor);
     }
+
+    // this should happen immediately after joining, otherwise we race on localhost
+    this->setupListeners();
 }
 
 void GlobedGJBGL::setupPostInit() {
@@ -104,7 +107,6 @@ void GlobedGJBGL::setupPostInit() {
     this->setupAudio();
     this->setupUpdateLoop();
     this->setupUi();
-    this->setupListeners();
     this->setupKeybinds();
 
     // add ghost player
@@ -305,6 +307,11 @@ void GlobedGJBGL::setupListeners() {
         m_fields->m_knownServerMuted = true;
         return ListenerResult::Continue;
     });
+
+    fields.m_joinFailedListener = nm.listen<msg::JoinSessionFailedMessage>([this](const msg::JoinSessionFailedMessage& msg) {
+        this->onJoinSessionFailed(msg);
+        return ListenerResult::Continue;
+    });
 }
 
 void GlobedGJBGL::setupKeybinds() {
@@ -386,13 +393,20 @@ void GlobedGJBGL::onQuit() {
 
 void GlobedGJBGL::selUpdateProxy(float dt) {
     if (auto self = GlobedGJBGL::get()) {
-        self->active() ? self->selUpdate(dt) : (void)0;
+        self->selUpdate(dt);
     }
 }
 
 void GlobedGJBGL::selUpdate(float tsdt) {
     auto& fields = *m_fields.self();
-    if (!fields.m_active) return;
+
+    if (!fields.m_active) {
+        if (!fields.m_cleanedUp) {
+            this->cleanupGlobedAdditions();
+            fields.m_cleanedUp = true;
+        }
+        return;
+    }
 
     // if we are disconnected from the game server, and no (re)connection is being attempted,
     // set active to false
@@ -1140,6 +1154,39 @@ void GlobedGJBGL::onQuickChatReceived(int accountId, uint32_t quickChatId) {
     }
 
     it->second->player1()->playEmote(quickChatId);
+}
+
+void GlobedGJBGL::onJoinSessionFailed(const msg::JoinSessionFailedMessage& message) {
+    using enum msg::JoinSessionFailedReason;
+
+    std::string msg;
+    switch (message.reason) {
+        case InvalidPasscode: msg = "invalid passcode"; break;
+        case InvalidRoom: msg = "invalid room"; break;
+        default: msg = "unknown error"; break;
+    }
+
+    globed::toastError("Failed to join session: {}", msg);
+
+    auto& fields = *m_fields.self();
+    fields.m_active = false;
+}
+
+void GlobedGJBGL::cleanupGlobedAdditions() {
+    auto& am = AudioManager::get();
+    am.haltRecording();
+    am.stopAllOutputSources();
+
+    auto& fields = *m_fields.self();
+    cue::resetNode(fields.m_playerNode);
+    cue::resetNode(fields.m_progressBarContainer);
+    cue::resetNode(fields.m_voiceOverlay);
+    fields.m_players.clear();
+    fields.m_ghost.reset();
+    fields.m_interpolator.fullReset();
+    if (fields.m_pingOverlay) {
+        fields.m_pingOverlay->updateWithDisconnected();
+    }
 }
 
 bool GlobedGJBGL::playSelfEmote(uint32_t id) {

@@ -81,6 +81,7 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     m_isSecond = isSecond;
     m_isEditor = gameLayer->m_isEditor;
     m_isPlatformer = gameLayer->m_level->isPlatformer();
+    m_playerNode = playerNode;
 
     // preload the cube icon so the passengers are correct
     this->updateIconType(PlayerIconType::Cube);
@@ -703,10 +704,14 @@ void VisualPlayer::cleanupObjectLayer() {
     // hope i didnt forget anything..
 
     // custom nodes
-    $clear(m_nameLabel);
     $clear(m_statusIcons);
-    $clear(m_emoteBubble);
     $clear(m_playerTrajectory);
+
+    // these two are non refs so we have to be careful, if playernode is already destroyed don't touch them
+    if (m_playerNode.valid()) {
+        $clear(m_nameLabel);
+        $clear(m_emoteBubble);
+    }
 
 #undef $clear
 }

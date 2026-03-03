@@ -46,6 +46,8 @@ public:
 
     void setPlatformer(bool enable);
 
+    void fullReset();
+
     struct LerpState {
         VectorSpeedTracker p1speedTracker;
         VectorSpeedTracker p2speedTracker;

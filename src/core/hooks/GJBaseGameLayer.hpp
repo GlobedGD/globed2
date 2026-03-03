@@ -39,6 +39,7 @@ struct GameCameraState {
 struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     struct Fields {
         bool m_active = false;
+        bool m_cleanedUp = false;
         bool m_editor = false;
         bool m_didSchedule = false;
         bool m_quitting = false;
@@ -63,6 +64,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         MessageListener<msg::VoiceBroadcastMessage> m_voiceListener;
         MessageListener<msg::QuickChatBroadcastMessage> m_quickChatListener;
         MessageListener<msg::ChatNotPermittedMessage> m_mutedListener;
+        MessageListener<msg::JoinSessionFailedMessage> m_joinFailedListener;
 
         uint8_t m_deathCount = 0;
         bool m_lastLocalDeathReal = false;
@@ -176,6 +178,9 @@ private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);
     void onVoiceDataReceived(const msg::VoiceBroadcastMessage& message);
     void onQuickChatReceived(int accountId, uint32_t quickChatId);
+    void onJoinSessionFailed(const msg::JoinSessionFailedMessage& message);
+
+    void cleanupGlobedAdditions();
 };
 
 }

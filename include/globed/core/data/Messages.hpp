@@ -197,6 +197,18 @@ struct ScriptLogsMessage {
     float memUsage;
 };
 
+// Join session
+
+enum class JoinSessionFailedReason {
+    Unknown = -1,
+    InvalidPasscode = 0,
+    InvalidRoom = 1,
+};
+
+struct JoinSessionFailedMessage {
+    JoinSessionFailedReason reason;
+};
+
 // Warn
 
 struct WarnMessage {

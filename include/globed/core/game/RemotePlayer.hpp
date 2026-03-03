@@ -56,10 +56,10 @@ private:
     bool m_player2Culled = false;
     bool m_localPlayer = false;
     cocos2d::CCNode* m_parentNode = nullptr;
-    VisualPlayer* m_player1 = nullptr;
-    VisualPlayer* m_player2 = nullptr;
-    ProgressArrow* m_progArrow = nullptr;
-    ProgressIcon* m_progIcon = nullptr;
+    Ref<VisualPlayer> m_player1 = nullptr;
+    Ref<VisualPlayer> m_player2 = nullptr;
+    Ref<ProgressArrow> m_progArrow = nullptr;
+    Ref<ProgressIcon> m_progIcon = nullptr;
     std::optional<uint16_t> m_teamId;
     std::shared_ptr<VoiceStream> m_voiceStream;
 };

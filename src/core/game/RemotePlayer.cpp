@@ -105,7 +105,7 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
 
     // update progress icons
 
-    auto shownOrHide = [&](auto* node, bool extraCond, auto&& onShown) {
+    auto shownOrHide = [&](auto node, bool extraCond, auto&& onShown) {
         if (!node) return;
         if (hideMisc || !extraCond) {
             node->setVisible(false);
