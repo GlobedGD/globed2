@@ -3,7 +3,7 @@
 #include <modules/scripting/objects/Ids.hpp>
 #include <modules/scripting/hooks/Common.hpp>
 
-#include <alphalaneous.editortab_api/include/EditorTabs.hpp>
+#include <alphalaneous.editortab_api/include/EditorTabAPI.hpp>
 #include <cue/Util.hpp>
 #include <Geode/Geode.hpp>
 #include <Geode/modify/EditorUI.hpp>
@@ -34,22 +34,23 @@ struct GLOBED_MODIFY_ATTR SCEditorUIHook : geode::Modify<SCEditorUIHook, EditorU
     bool init(LevelEditorLayer* layer) {
         if (!EditorUI::init(layer)) return false;
 
-        auto arr = CCArray::create();
+        alpha::editor_tabs::addTab("scripting"_spr, alpha::editor_tabs::BUILD, [this] {
+            std::vector<Ref<CCNode>> arr;
 
-        for (auto type : ALL_SCRIPT_OBJECT_TYPES) {
-            if (auto btn = createObjButton(type)) {
-                btn->setTag(static_cast<int>(type));
-                arr->addObject(btn);
+            for (auto type : ALL_SCRIPT_OBJECT_TYPES) {
+                if (auto btn = createObjButton(type)) {
+                    btn->setTag(static_cast<int>(type));
+                    arr.push_back(btn);
+                }
             }
-        }
 
-        m_fields->m_buttonBar = EditorTabUtils::createEditButtonBar(arr, this);
-
-        EditorTabs::addTab(this, TabType::BUILD, "scripting"_spr, [this](EditorUI* ui, CCMenuItemToggler* toggler) -> CCNode* {
+            auto bar = alpha::editor_tabs::createEditButtonBar(arr);
+            m_fields->m_buttonBar = bar;
+            return bar;
+        }, [] {
             auto sprite = CCSprite::create("globed-gold-icon.png"_spr);
             sprite->setScale(0.2f);
-            EditorTabUtils::setTabIcon(toggler, sprite);
-            return m_fields->m_buttonBar;
+            return sprite;
         });
 
         return true;

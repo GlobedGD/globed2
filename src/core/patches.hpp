@@ -27,7 +27,7 @@ struct PatchDef {
 
 #ifdef GEODE_IS_WINDOWS
 
-constexpr inline PatchDef<22074, 0x4932b0> PATCH_EGO_GETSAVESTRING_START;
+constexpr inline PatchDef<22081, 0x4abc20> PATCH_EGO_GETSAVESTRING_START;
 
 #elif defined GEODE_IS_ANDROID32
 

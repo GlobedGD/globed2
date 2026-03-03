@@ -60,7 +60,13 @@ struct GLOBED_MODIFY_ATTR HookedLoadingLayer : Modify<HookedLoadingLayer, Loadin
 
         auto updateLabel = [this](size_t loaded, size_t total) {
             StringBuffer<> buf;
-            buf.append("Globed: preloading assets.. ({}/{})", loaded, total);
+
+            if (loaded < total) {
+                buf.append("Globed: preloading assets.. ({}/{})", loaded, total);
+            } else {
+                buf.append("Globed: finalizing..");
+            }
+
             this->setLabelText(buf.c_str());
         };
 

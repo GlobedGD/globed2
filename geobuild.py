@@ -364,7 +364,7 @@ def main(build: Build):
     })
 
     if 'scripting-ui' in gc.modules:
-        build.add_geode_dep("alphalaneous.editortab_api", ">=1.0.17")
+        build.add_geode_dep("alphalaneous.editortab_api", ">=2.0.7")
         build.mod_json["resources"]["sprites"].append("resources/editor/*.png")
 
     # fixup mod.json version in debug builds, be more strict for release builds
