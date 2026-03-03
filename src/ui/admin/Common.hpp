@@ -8,12 +8,13 @@
 
 namespace globed {
 
-inline void waitForAdminResult(geode::Function<void(geode::Result<>)> callback = {}) {
+template <typename T>
+inline void waitForMessage(geode::Function<void(const T&)> callback = {}) {
     using Callback = decltype(callback);
 
     struct WaitData : public cocos2d::CCObject {
         Callback m_callback;
-        MessageListener<msg::AdminResultMessage> m_listener;
+        MessageListener<T> m_listener;
     };
 
     auto lp = LoadingPopup::create();
@@ -22,13 +23,26 @@ inline void waitForAdminResult(geode::Function<void(geode::Result<>)> callback =
 
     auto wd = new WaitData();
     wd->autorelease();
+    wd->m_callback = std::move(callback);
     lp->setUserObject("callback"_spr, wd);
 
-    auto listener = NetworkManagerImpl::get().listen<msg::AdminResultMessage>([lp, wd](const msg::AdminResultMessage& msg) {
+    auto listener = NetworkManagerImpl::get().listen<T>([lp, wd](const T& msg) {
         lp->forceClose();
 
         if (wd->m_callback) {
-            msg.success ? wd->m_callback(Ok()) : wd->m_callback(Err(msg.error));
+            wd->m_callback(msg);
+        }
+
+        return ListenerResult::Stop;
+    });
+    listener.setPriority(-100);
+    wd->m_listener = std::move(listener);
+}
+
+inline void waitForAdminResult(geode::Function<void(geode::Result<>)> callback = {}) {
+    waitForMessage<msg::AdminResultMessage>([callback = std::move(callback)](const msg::AdminResultMessage& msg) mutable {
+        if (callback) {
+            msg.success ? callback(Ok()) : callback(Err(msg.error));
         }
 
         if (msg.success) {
@@ -40,11 +54,7 @@ inline void waitForAdminResult(geode::Function<void(geode::Result<>)> callback =
                 msg.error
             );
         }
-
-        return ListenerResult::Stop;
     });
-    listener.setPriority(-100);
-    wd->m_listener = std::move(listener);
 }
 
 }

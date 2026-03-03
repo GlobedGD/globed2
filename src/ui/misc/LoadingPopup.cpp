@@ -8,7 +8,7 @@ bool LoadingPopup::init() {
     if (!BasePopup::init(160.f, 90.f)) return false;
     m_circle = cue::LoadingCircle::create();
     m_circle->addToLayer(m_mainLayer);
-    m_circle->setPositionY(35.f);
+    m_circle->setPositionY(40.f);
     m_circle->setScale(0.65f);
     m_circle->fadeIn();
     this->setClosable(false);

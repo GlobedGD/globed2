@@ -2326,6 +2326,15 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             });
         } break;
 
+        case CentralMessage::NOTICE_REPLY_RESULT: {
+            auto replyResult = msg.getNoticeReplyResult();
+
+            this->invokeListeners(msg::NoticeReplyResultMessage {
+                .success = replyResult.getSuccess(),
+                .error = replyResult.getError(),
+            });
+        } break;
+
         case CentralMessage::WARN: {
             this->invokeListeners(msg::WarnMessage{msg.getWarn().getMessage()});
         } break;

@@ -15,6 +15,7 @@
 #include <ui/admin/ModPanelPopup.hpp>
 #include <ui/admin/ModUserPopup.hpp>
 #include <ui/admin/ModLoginPopup.hpp>
+#include <ui/admin/Common.hpp>
 #include <ui/misc/InputPopup.hpp>
 
 using namespace geode::prelude;
@@ -195,6 +196,15 @@ static void promptForNoticeReply(int senderId) {
     popup->setPlaceholder("Message");
     popup->setCallback([senderId](auto outcome) {
         if (outcome.cancelled) return;
+
+        waitForMessage<msg::NoticeReplyResultMessage>([](const auto& msg) {
+            if (!msg.success) {
+                globed::alert("Error", fmt::format("Failed to send notice reply: <cy>{}</c>", msg.error));
+            } else {
+                globed::toastSuccess("Notice reply sent");
+            }
+        });
+
         NetworkManagerImpl::get().sendNoticeReply(senderId, outcome.text);
     });
     popup->show();

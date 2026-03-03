@@ -151,6 +151,11 @@ struct NoticeMessage {
     bool isReply;
 };
 
+struct NoticeReplyResultMessage {
+    bool success;
+    std::string error;
+};
+
 struct PlayerCountsMessage {
     std::vector<std::pair<SessionId, uint16_t>> counts;
 };
