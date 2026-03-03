@@ -387,6 +387,8 @@ void GlobedGJBGL::onQuit() {
     }
 
     fields.m_active = false;
+    fields.m_cleanedUp = true; // don't do any extra cleanup if quitting
+
     CoreImpl::get().onLeaveLevel(this, fields.m_editor);
     RoomManager::get().leaveLevel();
 }
