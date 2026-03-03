@@ -62,8 +62,8 @@ struct GLOBED_MODIFY_ATTR APSPlayLayer : geode::Modify<APSPlayLayer, PlayLayer> 
     struct Fields {
         MessageListener<msg::LevelDataMessage> m_listener;
         int m_myAccountId = 0;
-        cocos2d::extension::CCScale9Sprite* m_switchGlow = nullptr;
-        cocos2d::extension::CCScale9Sprite* m_switchPreglow = nullptr;
+        geode::NineSlice* m_switchGlow = nullptr;
+        geode::NineSlice* m_switchPreglow = nullptr;
         APSController m_controller{};
         bool m_controlling = false; // whether we are room owner
     };

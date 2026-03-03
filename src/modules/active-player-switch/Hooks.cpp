@@ -206,7 +206,7 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
 
     float glowScale = 1.5f;
 
-    fields.m_switchGlow = Build(CCScale9Sprite::create("switch-screen-glow.png"_spr))
+    fields.m_switchGlow = Build(NineSlice::create("switch-screen-glow.png"_spr))
         .scale(glowScale)
         .zOrder(11)
         .contentSize(CCDirector::get()->getWinSize() / glowScale)
@@ -215,7 +215,7 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
         .parent(m_uiLayer)
         .anchorPoint(0.f, 0.f);
 
-    fields.m_switchPreglow = Build(CCScale9Sprite::create("switch-screen-preglow.png"_spr))
+    fields.m_switchPreglow = Build(NineSlice::create("switch-screen-preglow.png"_spr))
         .scale(glowScale)
         .zOrder(10)
         .contentSize(CCDirector::get()->getWinSize() / glowScale)
