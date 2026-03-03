@@ -273,7 +273,7 @@ void LevelListLayer::onLoaded(const std::vector<std::pair<SessionId, uint16_t>>&
         // filter out levels on a different server
         // for now we filter client-side, which is a waste of bandwidth,
         // but potentially in the future we could show levels from other servers too
-        if (myServer != 0 && level.first.serverId() != myServer) {
+        if (level.first.serverId() != myServer) {
             continue;
         }
 
