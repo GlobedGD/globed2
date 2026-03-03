@@ -125,7 +125,7 @@ void FeaturedListLayer::populatePage(uint32_t page, const std::vector<FeaturedLe
 }
 
 void FeaturedListLayer::queryCurrentPage() {
-    std::string query;
+    StringBuffer<> builder;
     m_currentQuery.clear();
 
     for (auto& level : m_pages.at(m_page)) {
@@ -133,10 +133,11 @@ void FeaturedListLayer::queryCurrentPage() {
             continue;
         }
 
-        query += fmt::format("{},", level.levelId);
+        builder.append("{},", level.levelId);
         m_currentQuery.push_back(level.levelId);
     }
 
+    auto query = builder.view();
     if (query.empty()) {
         // no levels to fetch, everything cached or failed
         this->loadPageFromCache();
@@ -145,11 +146,11 @@ void FeaturedListLayer::queryCurrentPage() {
 
     log::debug("Querying featured levels: {}", query);
 
-    query.pop_back();
+    query.remove_suffix(1); // remove trailing comma
 
     auto glm = GameLevelManager::get();
     glm->m_levelManagerDelegate = this;
-    glm->getOnlineLevels(GJSearchObject::create(SearchType::Type19, query));
+    glm->getOnlineLevels(GJSearchObject::create(SearchType::Type26, gd::string{query}));
 }
 
 void FeaturedListLayer::loadPageFromCache() {
