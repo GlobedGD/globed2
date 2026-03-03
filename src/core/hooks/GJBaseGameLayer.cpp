@@ -1097,6 +1097,7 @@ void GlobedGJBGL::customUnscheduleAll() {
 
 void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
     auto& fields = *m_fields.self();
+    if (!fields.m_active) return;
 
     fields.m_lastServerUpdate = fields.m_timeCounter;
 
@@ -1122,8 +1123,10 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
 }
 
 void GlobedGJBGL::onVoiceDataReceived(const msg::VoiceBroadcastMessage& message) {
-    auto& am = AudioManager::get();
+    auto& fields = *m_fields.self();
+    if (!fields.m_active) return;
 
+    auto& am = AudioManager::get();
     if (am.getDeafen() || !g_settings.voiceChat) {
         return;
     }
@@ -1138,15 +1141,12 @@ void GlobedGJBGL::onVoiceDataReceived(const msg::VoiceBroadcastMessage& message)
 }
 
 void GlobedGJBGL::onQuickChatReceived(int accountId, uint32_t quickChatId) {
-    if (!g_settings.quickChat) {
-        return;
-    }
+    auto& fields = *m_fields.self();
+    if (!fields.m_active || !g_settings.quickChat) return;
 
     if (!this->shouldLetMessageThrough(accountId)) {
         return;
     }
-
-    auto& fields = *m_fields.self();
 
     auto it = fields.m_players.find(accountId);
     if (it == fields.m_players.end()) {
@@ -1181,11 +1181,15 @@ void GlobedGJBGL::cleanupGlobedAdditions() {
     cue::resetNode(fields.m_playerNode);
     cue::resetNode(fields.m_progressBarContainer);
     cue::resetNode(fields.m_voiceOverlay);
-    fields.m_players.clear();
     fields.m_ghost.reset();
     fields.m_interpolator.fullReset();
     if (fields.m_pingOverlay) {
         fields.m_pingOverlay->updateWithDisconnected();
+    }
+
+    for (auto it = fields.m_players.begin(); it != fields.m_players.end(); ++it) {
+        this->handlePlayerLeave(it->first, false);
+        it = fields.m_players.erase(it);
     }
 }
 
