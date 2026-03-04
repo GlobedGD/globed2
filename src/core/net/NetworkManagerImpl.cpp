@@ -1437,13 +1437,6 @@ void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener, v
         ty.name(),
         static_cast<MessageListenerImplBase*>(listener)->m_priority
     );
-
-    // sort them by priority
-    std::sort(ls.begin(), ls.end(), [](const auto& a, const auto& b) {
-        auto* implA = static_cast<MessageListenerImplBase*>(a.first);
-        auto* implB = static_cast<MessageListenerImplBase*>(b.first);
-        return implA->m_priority < implB->m_priority;
-    });
 }
 
 void NetworkManagerImpl::removeListener(const std::type_info& ty, void* listener) {

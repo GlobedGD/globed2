@@ -460,7 +460,15 @@ private:
             return;
         }
 
-        for (auto& [listener, _] : listeners->second) {
+        // sort them by priority
+        auto& ls = listeners->second;
+        std::sort(ls.begin(), ls.end(), [](const auto& a, const auto& b) {
+            auto* implA = static_cast<MessageListenerImplBase*>(a.first);
+            auto* implB = static_cast<MessageListenerImplBase*>(b.first);
+            return implA->m_priority < implB->m_priority;
+        });
+
+        for (auto& [listener, _] : ls) {
             auto impl = static_cast<MessageListenerImpl<T>*>(listener);
 
             if (impl->invoke(message) == ListenerResult::Stop) {
