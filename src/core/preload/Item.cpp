@@ -337,7 +337,9 @@ void PreloadItemState::initSpriteFrames() {
             return;
         }
 
-        auto plistKey = fmt::format("{}.plist", m_item.image);
+        StringBuffer<> buf;
+        buf.append("{}.plist", m_item.image);
+        auto plistKey = buf.view();
 
         if (pm.m_loadedFrames.lock()->contains(plistKey)) {
             log::info("PreloadManager: already loaded frames for '{}', skipping", m_item.image);
@@ -345,14 +347,17 @@ void PreloadItemState::initSpriteFrames() {
         }
 
         auto pathsv = std::string_view{m_path};
-        std::string fullPlistPath = std::string(pathsv.substr(0, pathsv.find(".png"))) + ".plist";
+        StringBuffer<> fullPlistPath;
+        fullPlistPath.append(pathsv.substr(0, pathsv.find(".png")));
+        fullPlistPath.append(".plist");
 
+#ifndef __APPLE__
         // read the file
         unsigned long plistSize;
         auto plistData = getFileDataThreadSafe(fullPlistPath.c_str(), "rb", &plistSize);
         if (!plistData || plistSize == 0) {
-            log::info("PreloadManager: can't load {}, trying slower fallback option", fullPlistPath);
-            std::string_view attemptedPlist = relativizeIconPath(fullPlistPath);
+            log::info("PreloadManager: can't load {}, trying slower fallback option", fullPlistPath.view());
+            std::string_view attemptedPlist = relativizeIconPath(fullPlistPath.view());
             auto fallbackPath = pm.fullPathForFilename(attemptedPlist);
             plistData = getFileDataThreadSafe(fallbackPath.c_str(), "rb", &plistSize);
         }
@@ -366,8 +371,6 @@ void PreloadItemState::initSpriteFrames() {
             return;
         }
 
-        pm.m_loadedFrames.lock()->insert(plistKey);
-
         auto res = parseSpriteFrames(plistData.get(), plistSize);
         if (!res) {
             log::warn("PreloadManager: failed to parse sprite frames for '{}': {}", m_path, res.unwrapErr());
@@ -377,6 +380,13 @@ void PreloadItemState::initSpriteFrames() {
 
         auto _lock = cocosLock.lock();
         addSpriteFrames(*spf, m_texture);
+#else
+        // Apple uses binary plists, so we cannot use an XML parser, unfortunately we have to fallback to cocos
+        auto _lock = cocosLock.lock();
+        CCSpriteFrameCache::get()->addSpriteFramesWithFile(fullPlistPath.c_str(), m_texture);
+#endif
+
+        pm.m_loadedFrames.lock()->insert(std::string{plistKey});
 
         m_state.store(ItemStateEnum::Ready, relaxed);
         m_batchState->completedItems.fetch_add(1, relaxed);
