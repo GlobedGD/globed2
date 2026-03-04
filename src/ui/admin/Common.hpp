@@ -26,7 +26,10 @@ inline void waitForMessage(geode::Function<void(const T&)> callback = {}) {
     wd->m_callback = std::move(callback);
     lp->setUserObject("callback"_spr, wd);
 
-    auto listener = NetworkManagerImpl::get().listen<T>([lp, wd](const T& msg) {
+    auto listener = NetworkManagerImpl::get().listen<T>([ref = geode::WeakRef(lp), wd](const T& msg) {
+        auto lp = ref.lock();
+        if (!lp) return ListenerResult::Continue;
+
         lp->forceClose();
 
         if (wd->m_callback) {
