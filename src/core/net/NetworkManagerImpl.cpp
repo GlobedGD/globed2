@@ -1815,6 +1815,16 @@ void NetworkManagerImpl::sendAdminFetchUser(const std::string& query) {
     });
 }
 
+void NetworkManagerImpl::sendAdminFetchUser(int32_t accountId) {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto fetchUser = msg.initAdminFetchUser();
+
+        // TODO: temp compat for older servers, since most recent server honors the id if nonzero but recent ones only read the string query
+        fetchUser.setQuery(fmt::to_string(accountId));
+        fetchUser.setQueryNum(accountId);
+    });
+}
+
 void NetworkManagerImpl::sendAdminFetchMods() {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto fetchUser = msg.initAdminFetchMods();

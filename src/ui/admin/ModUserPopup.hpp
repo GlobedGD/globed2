@@ -15,7 +15,9 @@ public:
 
     ~ModUserPopup();
 
-    void startLoadingProfile(const std::string& query, bool isId);
+    /// Starts loading a profile using the given query to find the user.
+    void startLoadingProfile(const std::string& query);
+    /// Starts loading a profile using the given account ID, strict match unlike string query.
     void startLoadingProfile(int id);
 
 protected:
@@ -23,7 +25,7 @@ protected:
     MessageListener<msg::AdminFetchResponseMessage> m_listener;
     MessageListener<msg::AdminResultMessage> m_resultListener;
     std::string m_query;
-    bool m_queryIsId = false;
+    int32_t m_queryNum = 0;
     CCMenu* m_nameLayout = nullptr;
     CCMenu* m_rootMenu = nullptr;
     CCNode* m_rootLayout = nullptr;
@@ -54,6 +56,7 @@ protected:
     void fullRefresh();
     void showPunishmentPopup(UserPunishmentType type);
     void sendUpdateMessage();
+    void startLoadingProfile();
 
     void onLoaded(const msg::AdminFetchResponseMessage& msg);
     void onUserInfoLoaded(geode::Result<GJUserScore*> res, bool sendUpdate = true);

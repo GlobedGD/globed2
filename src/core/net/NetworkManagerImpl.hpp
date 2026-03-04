@@ -296,6 +296,7 @@ public:
     void sendAdminLogin(const std::string& password);
     void sendAdminKick(int32_t accountId, const std::string& message);
     void sendAdminFetchUser(const std::string& query);
+    void sendAdminFetchUser(int32_t accountId);
     void sendAdminFetchMods();
     void sendAdminSetWhitelisted(int32_t accountId, bool whitelisted);
     void sendAdminCloseRoom(uint32_t roomId);

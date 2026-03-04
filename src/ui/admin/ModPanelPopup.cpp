@@ -36,7 +36,7 @@ bool ModPanelPopup::init() {
             }
 
             auto popup = ModUserPopup::create(0);
-            popup->startLoadingProfile(query, false);
+            popup->startLoadingProfile(query);
             popup->show();
         })
         .scaleMult(1.15f)

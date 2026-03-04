@@ -346,10 +346,18 @@ void ModUserPopup::showPunishmentPopup(UserPunishmentType type) {
 }
 
 void ModUserPopup::startLoadingProfile(int id) {
-    this->startLoadingProfile(fmt::to_string(id), true);
+    m_query.clear();
+    m_queryNum = id;
+    this->startLoadingProfile();
 }
 
-void ModUserPopup::startLoadingProfile(const std::string& query, bool isId) {
+void ModUserPopup::startLoadingProfile(const std::string& query) {
+    m_query = query;
+    m_queryNum = 0;
+    this->startLoadingProfile();
+}
+
+void ModUserPopup::startLoadingProfile() {
     // remove all custom nodes
     cue::resetNode(m_roleModifyButton);
     cue::resetNode(m_banButton);
@@ -366,11 +374,13 @@ void ModUserPopup::startLoadingProfile(const std::string& query, bool isId) {
         .parent(m_mainLayer);
 
     m_loadCircle->fadeIn();
-    m_query = query;
-    m_queryIsId = isId;
 
     auto& nm = NetworkManagerImpl::get();
-    nm.sendAdminFetchUser(query);
+    if (m_queryNum != 0) {
+        nm.sendAdminFetchUser(m_queryNum);
+    } else {
+        nm.sendAdminFetchUser(m_query);
+    }
 }
 
 void ModUserPopup::onLoaded(const msg::AdminFetchResponseMessage& msg) {
@@ -386,8 +396,8 @@ void ModUserPopup::onLoaded(const msg::AdminFetchResponseMessage& msg) {
             .activeMute = std::move(msg.activeMute),
         };
         queryAccountId = msg.accountId;
-    } else if (m_queryIsId) {
-        queryAccountId = utils::numFromString<int>(m_query).unwrapOr(0);
+    } else if (m_queryNum != 0) {
+        queryAccountId = m_queryNum;
     }
 
     // if this is a refresh, reuse the user score
