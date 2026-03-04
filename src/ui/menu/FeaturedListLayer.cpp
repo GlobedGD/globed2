@@ -150,7 +150,7 @@ void FeaturedListLayer::queryCurrentPage() {
 
     auto glm = GameLevelManager::get();
     glm->m_levelManagerDelegate = this;
-    glm->getOnlineLevels(GJSearchObject::create(SearchType::Type26, gd::string{query}));
+    glm->getOnlineLevels(GJSearchObject::create(SearchType::Type26, gd::string{query.data(), query.size()}));
 }
 
 void FeaturedListLayer::loadPageFromCache() {
