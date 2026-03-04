@@ -40,6 +40,11 @@ bool ModUserPopup::init(int accountId) {
         return ListenerResult::Stop;
     });
 
+    // This is a very silly hack, but if the user manages to open multiple popups at the same time,
+    // we want to make sure the responses go to the topmost one, so make sure every new popup is the lowest number.
+    static int prio = 0;
+    m_listener->setPriority(prio--);
+
     m_resultListener = nm.listen<msg::AdminResultMessage>([](const auto& msg) {
         if (!msg.success) {
             globed::alert("Error", fmt::format("Received error from the server: <cy>{}</c>", msg.error));
@@ -408,7 +413,9 @@ void ModUserPopup::onUserInfoLoaded(geode::Result<GJUserScore*> res, bool sendUp
     glm->m_userInfoDelegate = nullptr;
     glm->m_levelManagerDelegate = nullptr;
 
-    m_loadCircle->fadeOut();
+    if (m_loadCircle) {
+        m_loadCircle->fadeOut();
+    }
 
     if (!res) {
         this->onClose(nullptr);
