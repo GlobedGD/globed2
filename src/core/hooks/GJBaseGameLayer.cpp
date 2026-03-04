@@ -30,6 +30,7 @@ using namespace asp::time;
 constexpr float VOICE_OVERLAY_PAD_X = 5.f;
 constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 constexpr auto EMOTE_COOLDOWN = Duration::fromMillis(2500);
+static constexpr bool APPLY_PERCENTAGE_FIX = true;
 
 namespace {
 
@@ -550,6 +551,23 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         this->selPeriodicalUpdate(fields.m_periodicalDelta);
         fields.m_periodicalDelta = 0.f;
     }
+
+    // fix progressbar
+    if constexpr (APPLY_PERCENTAGE_FIX) {
+        this->fixProgressBar(state.progress());
+    }
+}
+
+// Note: this takes percent from 0.0 to 1.0
+void GlobedGJBGL::fixProgressBar(float percent) {
+    auto pl = this->asPlayLayer();
+    if (!pl || !pl->m_progressFill) return;
+
+    pl->m_progressFill->setTextureRect({
+        0.f, 0.f,
+        pl->m_progressWidth * percent,
+        pl->m_progressHeight
+    });
 }
 
 void GlobedGJBGL::selPeriodicalUpdate(float dt) {
@@ -661,7 +679,11 @@ PlayerState GlobedGJBGL::getPlayerState() {
         float percent;
 
         if (m_level->m_timestamp > 0) {
-            percent = static_cast<float>(m_gameState.m_currentProgress) / m_level->m_timestamp / 2.f * 100.f;
+            if constexpr (APPLY_PERCENTAGE_FIX) {
+                percent = static_cast<float>(m_gameState.m_levelTime * 240.f) / m_level->m_timestamp * 100.f;
+            } else {
+                percent = static_cast<float>(m_gameState.m_currentProgress) / m_level->m_timestamp / 2.f * 100.f;
+            }
         } else {
             percent = m_player1->getPosition().x / m_levelLength * 100.f;
         }

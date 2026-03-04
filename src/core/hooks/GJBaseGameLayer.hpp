@@ -181,6 +181,7 @@ private:
     void onJoinSessionFailed(const msg::JoinSessionFailedMessage& message);
 
     void cleanupGlobedAdditions();
+    void fixProgressBar(float percent);
 };
 
 }
