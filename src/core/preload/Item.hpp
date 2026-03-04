@@ -87,6 +87,8 @@ using MtTextureCallback = geode::CopyableFunction<void(PreloadItemState&)>;
 
 struct BatchPreloadState {
     std::vector<PreloadItemState> items;
+    std::atomic<size_t> itemCount{0};
+    std::atomic<size_t> completedItems{0};
     MtTextureCallback callback;
     asp::ThreadPool* pool;
 };

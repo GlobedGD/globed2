@@ -379,6 +379,7 @@ void PreloadItemState::initSpriteFrames() {
         addSpriteFrames(*spf, m_texture);
 
         m_state.store(ItemStateEnum::Ready, relaxed);
+        m_batchState->completedItems.fetch_add(1, relaxed);
     });
 }
 

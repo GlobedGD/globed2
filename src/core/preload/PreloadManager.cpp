@@ -157,45 +157,21 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
 
     auto timeBegin = Instant::now();
 
-    auto& pool = *m_sstate.threadPool;
-
     log::debug("PreloadManager: loading batch of {} items", items.size());
 
     auto texCache = CCTextureCache::get();
     auto sfCache = CCSpriteFrameCache::get();
     auto fu = CCFileUtils::get();
+    auto& pool = *m_sstate.threadPool;
 
-    // note: this vector might seem not thread safe and you would be right to think so,
-    // although after the loop nothing is ever added/removed from it,
-    // and a single specific item will initially be only accessed by the pool, and then given to the main thread
+    asp::Channel<PreloadItemState*> texRequests;
     auto state = asp::make_shared<BatchPreloadState>();
     state->pool = &pool;
     state->items.reserve(items.size());
 
-    for (auto& item : items) {
-        StringBuffer<512> buf;
-        buf.append("{}.png", item.image);
-
-        auto fullPath = this->fullPathForFilename(buf.view());
-        if (fullPath.empty()) {
-            log::warn("PreloadManager: could not find full path for '{}'", item.image);
-            continue;
-        }
-
-        if (texCache->m_pTextures->objectForKey(fullPath)) {
-            // texture already loaded, skip
-            continue;
-        }
-
-        state->items.emplace_back(std::move(item), std::move(fullPath), state);
-    }
-
-    if (state->items.empty()) return;
-
-    log::debug("PreloadManager: loading {} images (took {} to populate)", state->items.size(), timeBegin.elapsed().toString());
-    auto timePreInit = Instant::now();
-
-    asp::Channel<PreloadItemState*> texRequests;
+    // this guards every insertion into `state->items`. we don't wrap the entire vector into a mutex,
+    // since actual accesses are safe because only one thread owns a specific item at any given time and there can be no reallocs.
+    static asp::SpinLock<> itemsLock;
 
     if (options.blocking) {
         // if blocking, push into the channel to be handled later
@@ -212,19 +188,39 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
         // };
     }
 
-    // Stage 1 - advance the state machine of all items to kick off the process
-    for (auto& item : state->items) {
-        item.process();
+    // Stage 1 - enqueue all items for loading, in parallel
+    for (auto& item : items) {
+        pool.pushTask([&item, state, texCache, this] {
+            StringBuffer<512> buf;
+            buf.append("{}.png", item.image);
+
+            auto fullPath = this->fullPathForFilename(buf.view());
+            if (fullPath.empty()) {
+                log::warn("PreloadManager: could not find full path for '{}'", item.image);
+                return;
+            }
+
+            if (texCache->m_pTextures->objectForKey(fullPath)) {
+                // texture already loaded, skip
+                return;
+            }
+
+            auto _lock = itemsLock.lock();
+            auto& itemState = state->items.emplace_back(std::move(item), std::move(fullPath), state);
+            _lock.unlock();
+
+            state->callback(itemState);
+            state->itemCount.fetch_add(1, std::memory_order::relaxed);
+        });
     }
 
-
-    size_t inited = 0;
+    size_t initedTextures = 0;
     auto insertTexture = [&](auto& state) {
         texCache->m_pTextures->setObject(state.m_texture, state.m_path);
 
         // cache the icon texture
         this->setCachedIcon((int) state.m_item.iconType, state.m_item.iconId, state.m_texture);
-        inited++;
+        initedTextures++;
     };
 
     auto drawFrame = [&] {
@@ -236,30 +232,39 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
 
     auto lastProgress = asp::Instant::now();
     size_t nextProgressWhenTex = 128;
-    auto tryDispatchProgress = [&] {
+    auto tryDispatchProgress = [&](size_t completed) {
         if (options.blocking && options.callback) {
+            size_t itemCount = state->itemCount.load(std::memory_order::relaxed);
             PreloadProgress prog{
                 // getLoadedCount essentially returns total - remaining, we need to subtract uninited items from this batch
-                .totalLoaded = this->getLoadedCount() - (state->items.size() - inited),
+                .totalLoaded = this->getLoadedCount() - (itemCount - completed),
                 .totalCount = m_totalCount,
-                .batchLoaded = inited,
-                .batchSize = state->items.size(),
+                .batchLoaded = completed,
+                .batchSize = itemCount,
             };
+            log::debug("PreloadManager: dispatching batch progress: {} textures, {} complete, {} in total", initedTextures, completed, itemCount);
 
             if (options.callback(prog)) {
                 drawFrame();
             }
 
             lastProgress = Instant::now();
-            nextProgressWhenTex = inited + 128;
+            nextProgressWhenTex = completed + 128;
         }
     };
+
+    auto timePreStage2 = Instant::now();
+    std::optional<Instant> timePostTextures;
 
     // Stage 2 - wait and process all requests. Main thread will be responsible for advancing the state machine forward,
     // as well as creating PBOs or initializing textures manually.
     while (true) {
-        if (inited >= nextProgressWhenTex) {
-            tryDispatchProgress();
+        size_t completed = state->completedItems.load(std::memory_order::relaxed);
+        if (completed >= nextProgressWhenTex) {
+            tryDispatchProgress(completed);
+        }
+        if (!timePostTextures && initedTextures >= state->itemCount.load(std::memory_order::relaxed)) {
+            timePostTextures = Instant::now();
         }
 
         if (auto req = texRequests.tryPop()) {
@@ -299,7 +304,7 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
         if (pool.isDoingWork()) {
             // draw frames manually every once in a while, so the game doesn't appear frozen
             if (lastProgress.elapsed() > Duration::fromMillis(50)) {
-                tryDispatchProgress();
+                tryDispatchProgress(state->completedItems.load(std::memory_order::relaxed));
             }
             std::this_thread::yield();
             continue;
@@ -308,9 +313,27 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
         }
     }
 
+    auto timeEnd = Instant::now();
+    size_t totalItems = state->itemCount.load(std::memory_order::relaxed);
+    size_t completeItems = state->completedItems.load(std::memory_order::relaxed);
+
+    if (!timePostTextures) {
+        timePostTextures = timePreStage2;
+    }
+
     log::debug(
-        "PreloadManager: initialized all {} textures in {}", inited, timeBegin.elapsed().toString()
+        "PreloadManager: batch of {}/{} complete in {} ({} prepare, {} tex, {} frames)",
+        completeItems, totalItems,
+        timeEnd.durationSince(timeBegin),
+        timePreStage2.durationSince(timeBegin),
+        timePostTextures->durationSince(timePreStage2),
+        timeEnd.durationSince(*timePostTextures)
     );
+
+    // free everything, since we have a ref cycle in items
+    if (options.blocking) {
+        state->items.clear();
+    }
 }
 
 void PreloadManager::initSessionState() {
