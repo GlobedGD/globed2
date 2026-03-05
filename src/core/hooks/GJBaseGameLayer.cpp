@@ -268,10 +268,11 @@ void GlobedGJBGL::setupUi() {
 
     Build<CCNode>::create()
         .id("player-node"_spr)
-        // .zOrder(1500)
-        .zOrder(59) // same as gd player ?
         .parent(m_objectLayer)
         .store(fields.m_playerNode);
+
+    // gd PlayerObject is drawn on z 59, use 58 to appear on same in-game layer but behind the player
+    fields.m_playerNode->setZOrder(58);
 
     fields.m_progressBarContainer = Build<CCNode>::create()
         .id("progress-bar-wrapper"_spr)
