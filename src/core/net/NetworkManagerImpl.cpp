@@ -1307,6 +1307,13 @@ void NetworkManagerImpl::markAuthorizedModerator() {
     }
 }
 
+void NetworkManagerImpl::deauthorizeMod() {
+    auto info = this->connInfo();
+    if (info) {
+        info->m_authorizedModerator = false;
+    }
+}
+
 std::optional<FeaturedLevelMeta> NetworkManagerImpl::getFeaturedLevel() {
     auto info = this->connInfo();
     return info ? info->m_featuredLevel : std::nullopt;

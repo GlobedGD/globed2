@@ -235,6 +235,7 @@ public:
     /// Force the client to resend the friend list to the connected server. Does nothing if not connected.
     void invalidateFriendList();
     void markAuthorizedModerator();
+    void deauthorizeMod();
 
     /// Get the ID of the current featured level on this server
     std::optional<FeaturedLevelMeta> getFeaturedLevel();

@@ -2,6 +2,7 @@
 #include "ModNoticeSetupPopup.hpp"
 #include "ModAuditLogPopup.hpp"
 #include "ModUserPopup.hpp"
+#include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -69,6 +70,22 @@ bool ModPanelPopup::init() {
         .parent(btnContainer);
 
     btnContainer->updateLayout();
+
+    Build<CCSprite>::createSpriteName("secretDoorBtn_open_001.png")
+        .scale(0.75f)
+        .intoMenuItem([this] {
+            globed::confirmPopup(
+                "Globed",
+                "Are you sure you want to log out?",
+                "Cancel", "Ok",
+                [this](auto) {
+                    NetworkManagerImpl::get().deauthorizeMod();
+                    this->onClose(nullptr);
+            });
+        })
+        .scaleMult(1.15f)
+        .pos(this->fromBottomRight(20.f, 24.f))
+        .parent(m_buttonMenu);
 
     return true;
 }
