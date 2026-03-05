@@ -375,6 +375,7 @@ private:
     std::atomic<bool> m_manualDisconnect{false};
 
     // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
+    // TODO: this entire thing is not properly reentrant and will crash if removing inside an invoke
     asp::Mutex<std::unordered_map<std::type_index, std::vector<std::pair<void*, void*>>>, true> m_listeners;
 
     arc::Future<> asyncInit();
