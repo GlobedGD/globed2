@@ -29,7 +29,13 @@ public:
     GLOBED_NOMOVE(VisualPlayer);
 
     static VisualPlayer* create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer);
-    void updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState, bool forceHide);
+    void updateFromData(
+        const PlayerObjectData& data,
+        const PlayerState& state,
+        const GameCameraState& camState,
+        bool forceHideIcon,
+        bool forceHideEverything
+    );
     void cleanupObjectLayer();
 
     PlayerIconData& icons();
@@ -47,6 +53,7 @@ public:
 
     void playEmote(uint32_t emoteId);
 
+    void setVisible(bool icon, bool misc);
     void setVisible(bool vis) override;
 
 private:

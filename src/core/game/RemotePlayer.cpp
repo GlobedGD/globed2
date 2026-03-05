@@ -79,7 +79,7 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
     forceHide = forceHide || m_forceHide;
 
     bool hideIcon = forceHide;
-    bool hideMisc = forceHide;
+    bool hideEverything = forceHide;
 
     // if it's the local player, only show the actual icon if the setting is enabled
     if (this->isLocal() && !forceHide) {
@@ -92,13 +92,13 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
     m_player2Culled = !m_state.player2;
 
     if (m_state.player1) {
-        m_player1->updateFromData(*m_state.player1, m_state, camState, hideIcon);
+        m_player1->updateFromData(*m_state.player1, m_state, camState, hideIcon, hideEverything);
     } else {
         m_player1->setVisible(false);
     }
 
     if (m_state.player2) {
-        m_player2->updateFromData(*m_state.player2, m_state, camState, hideIcon);
+        m_player2->updateFromData(*m_state.player2, m_state, camState, hideIcon, hideEverything);
     } else {
         m_player2->setVisible(false);
     }
@@ -107,7 +107,7 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
 
     auto shownOrHide = [&](auto node, bool extraCond, auto&& onShown) {
         if (!node) return;
-        if (hideMisc || !extraCond) {
+        if (hideEverything || !extraCond) {
             node->setVisible(false);
         } else {
             node->setVisible(true);

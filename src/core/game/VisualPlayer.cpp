@@ -143,7 +143,13 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     return true;
 }
 
-void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerState& state, const GameCameraState& camState, bool forceHide) {
+void VisualPlayer::updateFromData(
+    const PlayerObjectData& data,
+    const PlayerState& state,
+    const GameCameraState& camState,
+    bool forceHideIcon,
+    bool forceHideEverything
+) {
     if (lerpDebug()) {
         this->updateLerpTrajectory(data);
     }
@@ -200,24 +206,27 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     m_prevNearby = isNearby;
 
     // determine if the player should be visible
-    bool shouldBeVisible = true;
+    bool shouldMiscVisible = !forceHideEverything;
+    bool shouldIconVisible = !forceHideIcon && !forceHideEverything;
 
-    if (forceHide) {
-        shouldBeVisible = false;
-    } else if (state.isPracticing && g_settings.hidePracticing) {
-        shouldBeVisible = false;
-    } else {
-        shouldBeVisible = ((data.isVisible && !m_playingDeathEffect) || g_settings.forceVisibility) && isNearby;
+    if (state.isPracticing && g_settings.hidePracticing) {
+        shouldIconVisible = shouldMiscVisible = false;
+    } else if (!forceHideEverything) {
+        shouldMiscVisible = ((data.isVisible && !m_playingDeathEffect) || g_settings.forceVisibility) && isNearby;
+        if (!forceHideIcon) {
+            shouldIconVisible = shouldMiscVisible;
+        }
     }
 
-    this->setVisible(shouldBeVisible);
-    if (!shouldBeVisible) {
+    bool anyVisible = shouldIconVisible || shouldMiscVisible;
+    this->setVisible(shouldIconVisible, shouldMiscVisible);
+    if (!anyVisible) {
         m_playEffects = false;
         if (m_regularTrail) m_regularTrail->setVisible(false);
         if (m_shipStreak) m_shipStreak->setVisible(false);
     }
 
-    bool extraProcessing = shouldBeVisible || m_isLocalPlayer;
+    bool extraProcessing = anyVisible || m_isLocalPlayer;
 
     // XXX: sticky is pretty broken so not handled
 
@@ -230,7 +239,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
 
     auto gjbgl = GLOBED_LAZY(GlobedGJBGL::get());
 
-    if (shouldBeVisible) {
+    if (shouldIconVisible) {
         this->setPosition(data.position);
         this->setRotation(data.rotation);
         m_mainLayer->setRotation(innerRot);
@@ -355,7 +364,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
             m_prevStationary = data.isStationary;
             m_prevFalling = data.isFalling;
 
-            if (shouldBeVisible) {
+            if (shouldIconVisible) {
                 data.iconType == PlayerIconType::Robot ?
                     this->updateRobotAnimation()
                     : this->updateSpiderAnimation();
@@ -386,7 +395,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
     }
     // remove robot fire
     else if (turningOffRobot) {
-        if (shouldBeVisible) {
+        if (shouldIconVisible) {
             this->animateRobotFire(false);
         } else {
             // just hide the fire
@@ -960,19 +969,24 @@ float VisualPlayer::getLastRotation() {
     return m_prevRotation;
 }
 
-void VisualPlayer::setVisible(bool vis) {
+void VisualPlayer::setVisible(bool icon, bool misc) {
     auto gjbgl = GlobedGJBGL::get(m_gameLayer);
 
+    if (icon != m_bVisible) {
+        // this function has some overhead on every call, don't call if not needed
+        PlayerObject::setVisible(icon);
+    }
+
     // show things if player is visible or if it's the ghost player, not in editor and not spectating
-    bool actuallyShow = vis || (m_isLocalPlayer && !m_isEditor && !gjbgl->isSpectating());
-    bool showName = !m_forceHideName && actuallyShow;
+    // bool actuallyShow = vis || (m_isLocalPlayer && !m_isEditor && !gjbgl->isSpectating());
 
-    if (vis == m_bVisible && m_nameLabel->m_bVisible == showName) return;
-    PlayerObject::setVisible(vis);
+    m_nameLabel->setVisible(misc && !m_forceHideName);
+    if (m_statusIcons) m_statusIcons->setVisible(misc);
+    if (m_emoteBubble) m_emoteBubble->setVisible(misc);
+}
 
-    m_nameLabel->setVisible(showName);
-    if (m_statusIcons) m_statusIcons->setVisible(actuallyShow);
-    if (m_emoteBubble) m_emoteBubble->setVisible(actuallyShow);
+void VisualPlayer::setVisible(bool vis) {
+    this->setVisible(vis, vis);
 }
 
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
