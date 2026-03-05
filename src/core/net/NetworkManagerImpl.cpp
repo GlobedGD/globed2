@@ -541,6 +541,11 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                 this->threadFlushLogger(true);
             }
 
+            // if we are not gonna reconnect, disconnect from the game server
+            if (connState == Disconnected) {
+                m_gameConn->disconnect();
+            }
+
             if (showDisconnect) {
                 this->showDisconnectCause(connState == Reconnecting, wasConnected);
                 co_return;
