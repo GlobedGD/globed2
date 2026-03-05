@@ -408,8 +408,9 @@ private:
     void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false, bool editorCollab = false);
     void sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab);
 
-    template <typename T>
-    void invokeListeners(T&& message) {
+    template <typename Ft>
+    void invokeListeners(Ft&& message) {
+        using T = std::decay_t<Ft>;
         // invoke threadsafe listeners first
         auto res = MessageEvent<T>(true).send(message);
         if (res == geode::ListenerResult::Stop) {
@@ -417,7 +418,7 @@ private:
         }
 
         // queue non-safe listeners to be invoked later
-        FunctionQueue::get().queue([message = std::forward<T>(message)] mutable {
+        FunctionQueue::get().queue([message = std::forward<Ft>(message)] mutable {
             MessageEvent<T>(false).send(message);
         });
     }
