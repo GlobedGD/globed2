@@ -309,6 +309,16 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
             std::this_thread::yield();
             continue;
         } else if (texRequests.empty()) {
+            // verify that everything is truly done
+            for (auto& item : state->items) {
+                auto st = item.state();
+                if (st != ItemStateEnum::Ready && st != ItemStateEnum::Failed) {
+                    log::debug("PreloadManager: looping again, item {} is incomplete (state {})", item.m_path, (int)st);
+                    std::this_thread::yield();
+                    continue;
+                }
+            }
+
             break;
         }
     }
