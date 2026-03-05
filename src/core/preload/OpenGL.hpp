@@ -77,13 +77,8 @@ static bool supportsGLExtension(std::string_view ext) {
     auto extsStr = glGetString(GL_EXTENSIONS);
     if (!extsStr) return false;
 
-    for (auto e : asp::iter::split(std::string_view{(const char*)extsStr}, ' ')) {
-        if (e == ext) {
-            return true;
-        }
-    }
-
-    return false;
+    return asp::iter::split(std::string_view{(const char*)extsStr}, ' ')
+        .any([&](std::string_view e) { return e == ext; });
 }
 
 static bool& supportsPBO() {
