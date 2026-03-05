@@ -54,9 +54,7 @@ bool ModLoginPopup::init(geode::Function<void()> callback) {
                     }
 
                     this->stopWaiting(result.success);
-                    return ListenerResult::Continue;
-                });
-                m_listener->setPriority(-10000);
+                }, -10000);
 
                 nm.sendAdminLogin(password);
 

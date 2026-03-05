@@ -224,14 +224,12 @@ $on_mod(Loaded) {
         if (!password.empty()) {
             nm.sendAdminLogin(password);
         }
-
-        return ListenerResult::Continue;
     });
 
     nm.listenGlobal<msg::NoticeMessage>([](const msg::NoticeMessage& msg) {
         if (globed::setting<bool>("core.ui.disable-notices")) {
             log::info("Notice received but notices are disabled, ignoring");
-            return ListenerResult::Continue;
+            return;
         }
 
         std::string title;
@@ -262,23 +260,18 @@ $on_mod(Loaded) {
         if (auto title = popup.getInner()->m_mainLayer->getChildByType<CCLabelBMFont>(0)) {
             title->limitLabelWidth(360.f, 0.9f, 0.5f);
         }
-
-        return ListenerResult::Continue;
     });
 
     nm.listenGlobal<msg::BannedMessage>([](const msg::BannedMessage& msg) {
         UserPunishmentPopup::create(msg.reason, msg.expiresAt, true)->show();
-        return ListenerResult::Continue;
     });
 
     nm.listenGlobal<msg::MutedMessage>([](const msg::MutedMessage& msg) {
         UserPunishmentPopup::create(msg.reason, msg.expiresAt, false)->show();
-        return ListenerResult::Continue;
     });
 
     nm.listenGlobal<msg::WarnMessage>([](const msg::WarnMessage& msg) {
         PopupManager::get().alert("Server Warning", msg.message, "Ok").showQueue();
-        return ListenerResult::Continue;
     });
 }
 

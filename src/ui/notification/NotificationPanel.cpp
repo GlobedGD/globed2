@@ -47,9 +47,8 @@ bool NotificationPanel::init() {
         }
 
         this->queueInviteNotification(msg);
-        return ListenerResult::Continue;
-    });
-    m_listener->setPriority(-100);
+        return ListenerResult::Propagate;
+    }, -100);
 
     return true;
 }

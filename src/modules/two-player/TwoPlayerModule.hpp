@@ -49,7 +49,6 @@ private:
     bool m_isPlayer2 = false;
     bool m_ignoreNoclip = false;
     std::optional<int> m_linkAttempt;
-    std::optional<MessageListenerImpl<msg::LevelDataMessage>*> m_listener;
     std::shared_ptr<RemotePlayer> m_linkedRp;
 
     geode::Result<> onDisabled() override;

@@ -196,8 +196,6 @@ void GTriggersGJBGL::registerListener() {
                 this->recordPlayerPause(player.accountId);
             }
         }
-
-        return ListenerResult::Continue;
     });
 }
 

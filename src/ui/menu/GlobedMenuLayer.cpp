@@ -454,42 +454,31 @@ bool GlobedMenuLayer::init() {
         } else {
             this->updateRoom(msg.roomId, msg.roomName, msg.players, msg.playerCount, msg.settings);
         }
-
-        return ListenerResult::Continue;
     });
 
     m_roomPlayersListener = nm.listen<msg::RoomPlayersMessage>([this](const auto& msg) {
         this->updatePlayerList(msg.players);
-
-        return ListenerResult::Continue;
     });
 
     m_pinnedListener = nm.listen<msg::PinnedLevelUpdatedMessage>([this](const auto& msg) {
         this->addPinnedLevelCell();
-
-        return ListenerResult::Continue;
     });
 
     // when our user data changes or we are authorized, refresh the buttons
     m_userChangedListener = nm.listen<msg::UserDataChangedMessage>([this](const auto& msg) {
         this->initSideButtons();
         this->softRefreshSelf();
-
-        return ListenerResult::Continue;
     });
 
     m_adminResultListener = nm.listen<msg::AdminPunishmentReasonsMessage>([this](const auto& msg) {
         this->initSideButtons();
         this->softRefreshAll();
-
-        return ListenerResult::Continue;
     });
 
     m_roomSettingsListener = nm.listen<msg::RoomSettingsUpdatedMessage>([this](const auto& msg) {
         // refresh stuff buttons when settings change
         this->initSideButtons();
         this->softRefreshAll();
-        return ListenerResult::Continue;
     });
 
     this->initSideButtons();

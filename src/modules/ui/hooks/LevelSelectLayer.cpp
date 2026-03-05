@@ -109,8 +109,6 @@ struct GLOBED_MODIFY_ATTR HookedLevelSelectLayer : geode::Modify<HookedLevelSele
             }
 
             this->updatePlayerCounts();
-
-            return ListenerResult::Continue;
         });
 
         this->schedule(schedule_selector(HookedLevelSelectLayer::sendRequest), 5.f);

@@ -340,12 +340,10 @@ bool ModAuditLogPopup::init(FetchLogsFilters filters) {
     auto& nm = NetworkManagerImpl::get();
     m_modsListener = nm.listen<msg::AdminFetchModsResponseMessage>([this](const auto& msg) {
         this->populateMods(msg.users);
-        return ListenerResult::Continue;
     });
 
     m_logsListener = nm.listen<msg::AdminLogsResponseMessage>([this](const auto& msg) {
         this->populateLogs(msg.logs, msg.users);
-        return ListenerResult::Continue;
     });
 
     nm.sendAdminFetchMods();

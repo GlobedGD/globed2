@@ -99,6 +99,8 @@ Unfortunately, as Globed is a large mod, most of the other stuff is undocumented
 
 ### Receiving and sending network messages
 
+TODO: update this, very outdated
+
 ```cpp
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/net/MessageListener.hpp>

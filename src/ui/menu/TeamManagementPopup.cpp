@@ -251,17 +251,14 @@ void TeamManagementPopup::startLoading() {
 
     m_stateListener = nm.listen<msg::RoomStateMessage>([this](const auto& msg) {
         this->onLoaded(msg.teams);
-        return ListenerResult::Continue;
     });
 
     m_creationListener = nm.listen<msg::TeamCreationResultMessage>([this](const auto& msg) {
         this->onTeamCreated(msg.success, msg.teamCount);
-        return ListenerResult::Continue;
     });
 
     m_settingsListener = nm.listen<msg::RoomSettingsUpdatedMessage>([this](const auto& msg) {
         this->stopLoad();
-        return ListenerResult::Continue;
     });
 }
 

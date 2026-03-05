@@ -200,8 +200,6 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
                 controller.handleSwitchEvent(event.as<SwitcherooSwitchEvent>());
             }
         }
-
-        return ListenerResult::Continue;
     });
 
     float glowScale = 1.5f;

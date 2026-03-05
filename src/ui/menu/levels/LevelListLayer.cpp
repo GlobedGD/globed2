@@ -229,7 +229,6 @@ bool LevelListLayer::init() {
 
     m_levelListener = NetworkManagerImpl::get().listen<msg::LevelListMessage>([this](const auto& msg) {
         this->onLoaded(msg.levels);
-        return ListenerResult::Continue;
     });
 
     this->onRefresh();

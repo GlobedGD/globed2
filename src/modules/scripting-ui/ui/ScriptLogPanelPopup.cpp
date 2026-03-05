@@ -44,10 +44,7 @@ bool ScriptLogPanelPopup::init() {
         if (m_autoRefresh) {
             this->refresh();
         }
-
-        return ListenerResult::Continue;
-    });
-    (*m_listener)->setPriority(1000); // be after the gjbgl listener
+    }, 1000); // be after the gjbgl listener
 
     auto toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.8f, [this](auto toggler) {
         bool on = !toggler->isOn();

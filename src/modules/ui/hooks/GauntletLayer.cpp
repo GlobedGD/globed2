@@ -89,7 +89,6 @@ struct GLOBED_MODIFY_ATTR HookedGauntletLayer : geode::Modify<HookedGauntletLaye
             }
 
             this->refreshPlayerCounts();
-            return ListenerResult::Continue;
         });
 
         // TODO (applies to all, not just this):

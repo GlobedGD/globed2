@@ -14,7 +14,7 @@ using namespace geode::prelude;
 namespace globed {
 
 TwoPlayerModule::TwoPlayerModule() {
-    m_listener = NetworkManagerImpl::get().listenGlobal<msg::LevelDataMessage>([](const auto& msg) {
+    NetworkManagerImpl::get().listenGlobal<msg::LevelDataMessage>([](const auto& msg) {
         auto& mod = TwoPlayerModule::get();
 
         if (mod.isEnabled()) {
@@ -22,8 +22,6 @@ TwoPlayerModule::TwoPlayerModule() {
                 mod.handleEvent(event);
             }
         }
-
-        return ListenerResult::Continue;
     });
 }
 

@@ -398,8 +398,7 @@ void ModPunishPopup::startWaiting() {
     m_listener = NetworkManagerImpl::get().listen<msg::AdminResultMessage>([this](const auto& msg) {
         this->stopWaiting(msg);
         return ListenerResult::Stop;
-    });
-    m_listener->setPriority(-100);
+    }, -100);
 
     if (m_loadPopup) {
         m_loadPopup->forceClose();

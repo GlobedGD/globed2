@@ -331,27 +331,17 @@ public:
 
     /// Listeners
 
-    template <typename T>
+    // threadSafe = true means event will be invoked earlier and on the arc thread
+    template <typename T, typename F>
     [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]
-    MessageListener<T> listen(ListenerFn<T> callback) {
-        auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
-            delete static_cast<MessageListenerImpl<T>*>(ptr);
-        });
-        return MessageListener<T>(listener);
+    MessageListener<T> listen(F&& callback, int priority = 0, bool threadSafe = false) {
+        return MessageEvent<T>(threadSafe).listen(std::forward<F>(callback), priority);
     }
 
-    template <typename T>
-    MessageListenerImpl<T>* listenGlobal(ListenerFn<T> callback) {
-        auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
-            delete static_cast<MessageListenerImpl<T>*>(ptr);
-        });
-        return listener;
+    template <typename T, typename F>
+    geode::ListenerHandle* listenGlobal(F&& callback, int priority = 0, bool threadSafe = false) {
+        return MessageEvent<T>(threadSafe).listen(std::forward<F>(callback), priority).leak();
     }
-
-    void addListener(const std::type_info& ty, void* listener, void* dtor);
-    void removeListener(const std::type_info& ty, void* listener);
 
 private:
     enum AuthKind {
@@ -373,10 +363,6 @@ private:
     asp::Mutex<std::optional<ConnectionInfo>> m_connInfo;
     asp::SpinLock<std::pair<std::string, bool>> m_abortCause;
     std::atomic<bool> m_manualDisconnect{false};
-
-    // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
-    // TODO: this entire thing is not properly reentrant and will crash if removing inside an invoke
-    asp::Mutex<std::unordered_map<std::type_index, std::vector<std::pair<void*, void*>>>, true> m_listeners;
 
     arc::Future<> asyncInit();
 
@@ -424,59 +410,16 @@ private:
 
     template <typename T>
     void invokeListeners(T&& message) {
-        auto listenersLock = m_listeners.lock();
-        auto listeners = listenersLock->find(typeid(std::decay_t<T>));
-
-        // check if there are any non-threadsafe listeners, and defer to the main thread if so
-        bool hasThreadUnsafe = false;
-
-        if (listeners != listenersLock->end()) {
-            for (auto& [listener, _] : listeners->second) {
-                auto impl = static_cast<MessageListenerImpl<T>*>(listener);
-
-                if (!impl->isThreadSafe()) {
-                    hasThreadUnsafe = true;
-                    break;
-                }
-            }
-        }
-
-        if (hasThreadUnsafe) {
-            FunctionQueue::get().queue([this, message = std::forward<T>(message)]() mutable {
-                this->invokeUnchecked(std::forward<T>(message));
-            });
-        } else {
-            listenersLock.unlock(); // prevent deadlocks
-            this->invokeUnchecked(std::forward<T>(message));
-        }
-    }
-
-    /// Like `invokeListeners`, but does not check for thread safety and invokes the listeners directly.
-    template <typename T>
-    void invokeUnchecked(T&& message) {
-        auto listenersLock = m_listeners.lock();
-        auto listeners = listenersLock->find(typeid(T));
-
-        if (listeners == listenersLock->end()) {
-            geode::log::debug("No listeners for message type '{}'", typeid(T).name());
+        // invoke threadsafe listeners first
+        auto res = MessageEvent<T>(true).send(message);
+        if (res == geode::ListenerResult::Stop) {
             return;
         }
 
-        // sort them by priority
-        auto& ls = listeners->second;
-        std::sort(ls.begin(), ls.end(), [](const auto& a, const auto& b) {
-            auto* implA = static_cast<MessageListenerImplBase*>(a.first);
-            auto* implB = static_cast<MessageListenerImplBase*>(b.first);
-            return implA->m_priority < implB->m_priority;
+        // queue non-safe listeners to be invoked later
+        FunctionQueue::get().queue([this, message = std::forward<T>(message)] mutable {
+            MessageEvent<T>(false).send(message);
         });
-
-        for (auto& [listener, _] : ls) {
-            auto impl = static_cast<MessageListenerImpl<T>*>(listener);
-
-            if (impl->invoke(message) == ListenerResult::Stop) {
-                break;
-            }
-        }
     }
 };
 

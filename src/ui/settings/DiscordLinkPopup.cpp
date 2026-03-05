@@ -109,12 +109,10 @@ bool DiscordLinkPopup::init() {
 
     m_stateListener = nm.listen<msg::DiscordLinkStateMessage>([this](const auto& msg) {
         this->onStateLoaded(msg.id, msg.username, msg.avatarUrl);
-        return ListenerResult::Continue;
     });
 
     m_attemptListener = nm.listen<msg::DiscordLinkAttemptMessage>([this](const auto& msg) {
         this->onAttemptReceived(msg.id, msg.username, msg.avatarUrl);
-        return ListenerResult::Continue;
     });
 
     this->requestState(0.f);

@@ -54,7 +54,6 @@ public:
 
 private:
     std::vector<std::shared_ptr<Module>> m_modules;
-    std::optional<MessageListenerImpl<msg::CentralLoginOkMessage>*> m_loginOkListener;
 
     void enableIf(geode::FunctionRef<bool(Module&)>&& func);
     void disableIf(geode::FunctionRef<bool(Module&)>&& func);

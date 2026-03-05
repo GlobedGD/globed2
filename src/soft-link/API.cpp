@@ -118,16 +118,6 @@ static void addNetFunctions() {
         NetworkManagerImpl::get().queueGameEvent(std::move(event));
         return Ok();
     };
-
-    TABLE_FN(void, addListener, const std::type_info& type, void* listener, void* deleter) {
-        NetworkManagerImpl::get().addListener(type, listener, deleter);
-        return Ok();
-    };
-
-    TABLE_FN(void, removeListener, const std::type_info& type, void* listener) {
-        NetworkManagerImpl::get().removeListener(type, listener);
-        return Ok();
-    };
 }
 
 $execute {

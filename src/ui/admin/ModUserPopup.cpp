@@ -34,16 +34,15 @@ constexpr static float btnScale = 0.85f;
 bool ModUserPopup::init(int accountId) {
     if (!BasePopup::init(340.f, 210.f)) return false;
 
+    // This is a very silly hack, but if the user manages to open multiple popups at the same time,
+    // we want to make sure the responses go to the topmost one, so make sure every new popup is the lowest number.
+    static int prio = 0;
+
     auto& nm = NetworkManagerImpl::get();
     m_listener = nm.listen<msg::AdminFetchResponseMessage>([this](const auto& msg) {
         this->onLoaded(msg);
         return ListenerResult::Stop;
-    });
-
-    // This is a very silly hack, but if the user manages to open multiple popups at the same time,
-    // we want to make sure the responses go to the topmost one, so make sure every new popup is the lowest number.
-    static int prio = 0;
-    m_listener->setPriority(prio--);
+    }, prio--);
 
     m_resultListener = nm.listen<msg::AdminResultMessage>([](const auto& msg) {
         if (!msg.success) {
@@ -51,8 +50,7 @@ bool ModUserPopup::init(int accountId) {
         }
 
         return ListenerResult::Stop;
-    });
-    m_resultListener->setPriority(10000);
+    }, 10000);
 
     // Loading has multiple steps:
     // 1. Fetch various data from the globed server (punishments, roles, etc.)

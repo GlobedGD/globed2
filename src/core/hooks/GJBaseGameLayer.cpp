@@ -291,27 +291,22 @@ void GlobedGJBGL::setupListeners() {
 
     fields.m_levelDataListener = nm.listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& message) {
         this->onLevelDataReceived(message);
-        return ListenerResult::Continue;
     });
 
     fields.m_voiceListener = nm.listen<msg::VoiceBroadcastMessage>([this](const msg::VoiceBroadcastMessage& message) {
         this->onVoiceDataReceived(message);
-        return ListenerResult::Continue;
     });
 
     fields.m_quickChatListener = nm.listen<msg::QuickChatBroadcastMessage>([this](const msg::QuickChatBroadcastMessage& message) {
         this->onQuickChatReceived(message.accountId, message.quickChatId);
-        return ListenerResult::Continue;
     });
 
     fields.m_mutedListener = nm.listen<msg::ChatNotPermittedMessage>([this](const msg::ChatNotPermittedMessage&) {
         m_fields->m_knownServerMuted = true;
-        return ListenerResult::Continue;
     });
 
     fields.m_joinFailedListener = nm.listen<msg::JoinSessionFailedMessage>([this](const msg::JoinSessionFailedMessage& msg) {
         this->onJoinSessionFailed(msg);
-        return ListenerResult::Continue;
     });
 }
 

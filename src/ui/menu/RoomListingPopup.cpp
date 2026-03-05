@@ -49,8 +49,6 @@ bool RoomListingPopup::init() {
         } else {
             this->onPageLoaded(msg.rooms, msg.page);
         }
-
-        return ListenerResult::Continue;
     });
 
     m_background = Build<CCScale9Sprite>::create("square02_small.png")
@@ -351,10 +349,7 @@ void RoomListingPopup::waitForResponse() {
         if (msg.roomId == m_joinedRoomId) {
             this->stopWaiting(std::nullopt);
         }
-
-        return ListenerResult::Continue;
-    });
-    m_successListener->setPriority(-100);
+    }, -100);
 
     m_failListener = NetworkManagerImpl::get().listen<msg::RoomJoinFailedMessage>([this](const auto& msg) {
         using enum msg::RoomJoinFailedReason;
@@ -381,8 +376,7 @@ void RoomListingPopup::waitForResponse() {
         this->stopWaiting(reason);
 
         return ListenerResult::Stop;
-    });
-    m_failListener->setPriority(-1);
+    }, -1);
 }
 
 void RoomListingPopup::stopWaiting(std::optional<std::string> failReason, bool dontClose) {

@@ -260,10 +260,7 @@ void CreateRoomPopup::waitForResponse() {
         if (msg.roomOwner == cachedSingleton<GJAccountManager>()->m_accountID) {
             this->stopWaiting(std::nullopt);
         }
-
-        return ListenerResult::Continue;
-    });
-    m_successListener->setPriority(-100);
+    }, -100);
 
     m_failListener = nm.listen<msg::RoomCreateFailedMessage>([this](const auto& msg) {
         using enum msg::RoomCreateFailedReason;
@@ -296,6 +293,7 @@ void CreateRoomPopup::waitForResponse() {
 }
 
 void CreateRoomPopup::stopWaiting(std::optional<std::string> failReason) {
+    log::debug("a {}", m_loadingPopup);
     m_loadingPopup->forceClose();
     m_loadingPopup = nullptr;
     m_failListener.reset();

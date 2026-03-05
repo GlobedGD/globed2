@@ -1424,49 +1424,6 @@ void NetworkManagerImpl::logArcMessage(arc::LogLevel level, const std::string& m
     // if (m_gameLogger) m_gameLogger->sendTextLog(content);
 }
 
-void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener, void* dtor) {
-    std::type_index index{ty};
-    auto listeners = m_listeners.lock();
-    auto& ls = (*listeners)[index];
-
-    ls.push_back({listener, dtor});
-
-    log::debug(
-        "Added listener {} for message type '{}', priority: {}",
-        listener,
-        ty.name(),
-        static_cast<MessageListenerImplBase*>(listener)->m_priority
-    );
-}
-
-void NetworkManagerImpl::removeListener(const std::type_info& ty, void* listener) {
-    std::type_index index{ty};
-    auto listeners = m_listeners.lock();
-
-    log::debug(
-        "Removing listener {} for message type '{}'",
-        listener,
-        ty.name()
-    );
-
-    auto it = listeners->find(index);
-    if (it != listeners->end()) {
-        auto& vec = it->second;
-        for (auto pos = vec.begin(); pos != vec.end(); ++pos) {
-            if (pos->first != listener) continue;
-            auto dtor = reinterpret_cast<void(*)(void*)>(pos->second);
-
-            vec.erase(pos);
-            if (vec.empty()) {
-                listeners->erase(it);
-            }
-
-            dtor(listener);
-            break;
-        }
-    }
-}
-
 void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reason) {
     using enum schema::main::LoginFailedReason;
 

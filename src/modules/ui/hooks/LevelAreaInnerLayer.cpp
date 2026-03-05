@@ -76,7 +76,6 @@ struct GLOBED_MODIFY_ATTR HookedLevelAreaInnerLayer : geode::Modify<HookedLevelA
             }
 
             this->updatePlayerCounts();
-            return ListenerResult::Continue;
         });
 
         this->schedule(schedule_selector(HookedLevelAreaInnerLayer::sendRequest), 5.f);

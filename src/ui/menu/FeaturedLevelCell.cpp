@@ -70,13 +70,10 @@ bool FeaturedLevelCell::init() {
         } else {
             this->updatePlayerCount(0);
         }
-
-        return ListenerResult::Continue;
     });
 
     m_levelListener = nm.listen<msg::FeaturedLevelMessage>([this](const auto& packet) {
         this->reload(true);
-        return ListenerResult::Continue;
     });
 
     this->schedule(schedule_selector(FeaturedLevelCell::requestPlayerCount), 5.f);

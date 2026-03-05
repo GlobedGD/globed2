@@ -126,14 +126,6 @@ void NetworkManager::sendQuickChat(uint32_t id) {
     m_impl->sendQuickChat(id);
 }
 
-void NetworkManager::addListener(const std::type_info& ty, void* listener, void* dtor) {
-    m_impl->addListener(ty, listener, dtor);
-}
-
-void NetworkManager::removeListener(const std::type_info& ty, void* listener) {
-    m_impl->removeListener(ty, listener);
-}
-
 ccColor3B NetworkManager::latencyToColor(uint64_t ms) {
     std::array breakpoints = {
         std::make_pair(0, ccColor3B{0, 255, 0}),
@@ -163,10 +155,6 @@ ccColor3B NetworkManager::latencyToColor(uint64_t ms) {
 
     // should never reach here
     std::unreachable();
-}
-
-void MessageListenerImplBase::destroy(const std::type_info& ty) {
-    NetworkManager::get().removeListener(ty, this);
 }
 
 }

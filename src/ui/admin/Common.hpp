@@ -27,17 +27,14 @@ inline void waitForMessage(geode::Function<void(const T&)> callback = {}) {
     lp->setUserObject("callback"_spr, wd);
 
     auto listener = NetworkManagerImpl::get().listen<T>([lp, wd](const T& msg) {
-        FunctionQueue::get().queue([r = Ref(lp)] {
-            r->forceClose();
-        });
+        lp->forceClose();
 
         if (wd->m_callback) {
             wd->m_callback(msg);
         }
 
-        return ListenerResult::Stop;
-    });
-    listener.setPriority(-100);
+        return geode::ListenerResult::Stop;
+    }, -250);
     wd->m_listener = std::move(listener);
 }
 

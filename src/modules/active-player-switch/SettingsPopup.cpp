@@ -206,8 +206,6 @@ void APSSettingsPopup::startGame() {
                 this->onClose(nullptr);
             }
         }
-
-        return ListenerResult::Continue;
     });
 }
 

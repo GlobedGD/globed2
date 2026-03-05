@@ -7,9 +7,8 @@ using namespace geode::prelude;
 namespace globed {
 
 CoreImpl::CoreImpl() {
-    m_loginOkListener = NetworkManagerImpl::get().listenGlobal<msg::CentralLoginOkMessage>([this](const auto& msg) {
+    NetworkManagerImpl::get().listenGlobal<msg::CentralLoginOkMessage>([this](const auto& msg) {
         this->onServerConnected();
-        return ListenerResult::Continue;
     });
 }
 

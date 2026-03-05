@@ -187,19 +187,11 @@ RoomManager::RoomManager() {
                 }
             }
         }
-
-        return ListenerResult::Continue;
-    })->setPriority(-10000);
+    }, -10000);
 
     nm.listenGlobal<msg::TeamChangedMessage>([this](const auto& msg) {
         m_teamId = msg.teamId;
-        return ListenerResult::Continue;
-    })->setPriority(-10000);
-
-    nm.listenGlobal<msg::TeamChangedMessage>([this](const auto& msg) {
-        m_teamId = msg.teamId;
-        return ListenerResult::Continue;
-    })->setPriority(-10000);
+    }, -10000);
 
     nm.listenGlobal<msg::TeamMembersMessage>([this](const auto& msg) {
         m_teamMembers.clear();
@@ -207,34 +199,25 @@ RoomManager::RoomManager() {
         for (auto [id, teamId] : msg.members) {
             m_teamMembers[teamId].push_back(id);
         }
-
-        return ListenerResult::Continue;
-    })->setPriority(-10000);
+    }, -10000);
 
     nm.listenGlobal<msg::TeamsUpdatedMessage>([this](const auto& msg) {
         m_teams = msg.teams;
-
-        return ListenerResult::Continue;
-    })->setPriority(-10000);
+    }, -10000);
 
     nm.listenGlobal<msg::RoomSettingsUpdatedMessage>([this](const auto& msg) {
         m_settings = msg.settings;
-
-        return ListenerResult::Continue;
-    })->setPriority(-10000);
+    }, -10000);
 
     nm.listenGlobal<msg::PinnedLevelUpdatedMessage>([this](const auto& msg) {
         m_pinnedLevel = SessionId{msg.id};
-
-        return ListenerResult::Continue;
-    })->setPriority(-10000);
+    }, -10000);
 
     nm.listenGlobal<msg::RoomWarpMessage>([this](const auto& msg) {
         m_currentWarpLevel = msg.sessionId;
         log::debug("Current warp level {}", msg.sessionId.levelId());
         globed::warpToSession(WarpContext{ msg.sessionId, WarpSource::Room });
-        return ListenerResult::Continue;
-    })->setPriority(-10000);
+    }, -10000);
 }
 
 void RoomManager::resetValues() {

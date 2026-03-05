@@ -31,8 +31,6 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
         for (auto& event : msg.events) {
             this->handleEvent(event);
         }
-
-        return ListenerResult::Continue;
     });
 
     fields.m_logsListener = nm.listen<msg::ScriptLogsMessage>([this](const auto& msg) {
@@ -49,8 +47,6 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
         if (fields.m_memLimitBuffer.size() > 300) {
             fields.m_memLimitBuffer.pop_front();
         }
-
-        return ListenerResult::Continue;
     });
 
     // send over the scripts to the server if we are the room owner

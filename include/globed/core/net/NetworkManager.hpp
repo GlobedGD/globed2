@@ -62,27 +62,17 @@ public:
 
     // Listeners
 
-    template <typename T>
+    // threadSafe = true means event will be invoked earlier and on the arc thread
+    template <typename T, typename F>
     [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]
-    MessageListener<T> listen(ListenerFn<T> callback) {
-        auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
-            delete static_cast<MessageListenerImpl<T>*>(ptr);
-        });
-        return MessageListener<T>(listener);
+    MessageListener<T> listen(F&& callback, int priority = 0, bool threadSafe = false) {
+        return MessageEvent<T>(threadSafe).listen(std::forward<F>(callback), priority);
     }
 
-    template <typename T>
-    MessageListenerImpl<T>* listenGlobal(ListenerFn<T> callback) {
-        auto listener = new MessageListenerImpl<T>(std::move(callback));
-        this->addListener(typeid(T), listener, (void*) +[](void* ptr) {
-            delete static_cast<MessageListenerImpl<T>*>(ptr);
-        });
-        return listener;
+    template <typename T, typename F>
+    geode::ListenerHandle listenGlobal(F&& callback, int priority = 0, bool threadSafe = false) {
+        return MessageEvent<T>(threadSafe).listen(std::forward<F>(callback), priority).leak();
     }
-
-    void addListener(const std::type_info& ty, void* listener, void* dtor);
-    void removeListener(const std::type_info& ty, void* listener);
 
     static ccColor3B latencyToColor(uint64_t ms);
 
@@ -95,11 +85,5 @@ private:
     NetworkManager();
     ~NetworkManager();
 };
-
-#ifndef globed2_EXPORTS
-inline void MessageListenerImplBase::destroy(const std::type_info& ty) {
-    NetworkManager::get().removeListener(ty, this);
-}
-#endif
 
 }

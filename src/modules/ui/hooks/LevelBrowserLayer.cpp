@@ -73,7 +73,6 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
             }
 
             this->refreshPagePlayerCounts();
-            return ListenerResult::Continue;
         });
 
         nm.sendRequestPlayerCounts(ids);

@@ -93,8 +93,6 @@ bool FeaturedListLayer::init() {
         for (auto& [k, v] : packet.counts) {
             m_playerCounts[k.levelId()] = v;
         }
-
-        return ListenerResult::Continue;
     });
 
     m_listListener = nm.listen<msg::FeaturedListMessage>([this](const auto& packet) {
@@ -104,7 +102,6 @@ bool FeaturedListLayer::init() {
         m_pages.resize(m_totalPages);
         this->populatePage(packet.page, packet.levels);
         this->queryCurrentPage();
-        return ListenerResult::Continue;
     });
 
     this->refreshLevels();
