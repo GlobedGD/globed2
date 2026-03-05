@@ -61,7 +61,6 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
 
         auto& fields = *m_fields.self();
 
-
         auto winSize = CCDirector::get()->getWinSize();
 
         auto menu = Build<CancellableMenu>::create()
@@ -229,6 +228,13 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
     }
 
     bool hasPopup() {
+        // Due to rob's confirm exit bug, pauselayer functions may be invoked on an invalid pauselayer and this can crash
+        // we check if a PauseLayer exists in the scene and is equal to `this`, and avoid doing anything otherwise
+        auto scene = CCScene::get();
+        if (!scene) return false;
+        auto curPause = scene->getChildByType<PauseLayer>(0);
+        if (curPause != this) return false;
+
         auto parent = this->getParent();
         if (!parent) return false;
 
