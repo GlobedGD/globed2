@@ -2304,7 +2304,8 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
         } break;
 
         case CentralMessage::KICKED: {
-            // TODO
+            auto m = data::decodeUnchecked<msg::KickedMessage>(msg.getKicked());
+            this->invokeListeners(std::move(m));
         } break;
 
         case CentralMessage::NOTICE: {

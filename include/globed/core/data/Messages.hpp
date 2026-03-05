@@ -40,6 +40,19 @@ struct MutedMessage {
     int64_t expiresAt;
 };
 
+// Kicked
+
+enum class KickReason : int {
+    Unknown = -1,
+    Custom = 0,
+    DuplicateLogin,
+};
+
+struct KickedMessage {
+    KickReason reason;
+    std::string message;
+};
+
 // Room banned
 
 struct RoomBannedMessage {

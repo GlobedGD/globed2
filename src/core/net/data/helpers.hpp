@@ -1101,4 +1101,19 @@ $implEncode(const std::vector<EmbeddedScript>& scripts, game::SendLevelScriptMes
     }
 }
 
+/// Kicked
+$implDecode(msg::KickedMessage, main::KickedMessage::Reader& reader) {
+    using enum schema::main::KickReason;
+    msg::KickedMessage out{};
+    out.reason = msg::KickReason::Unknown;
+    out.message = reader.getMessage();
+
+    switch (reader.getReason()) {
+        case CUSTOM: out.reason = msg::KickReason::Custom; break;
+        case DUPLICATE_LOGIN: out.reason = msg::KickReason::DuplicateLogin; break;
+        default: break;
+    }
+    return out;
+}
+
 }
