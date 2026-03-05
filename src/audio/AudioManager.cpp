@@ -528,10 +528,13 @@ Result<> AudioManager::threadProcessMicrophone() {
     unsigned int pcmLen;
 
     unsigned int pos;
-    FMOD_ERRC(
-        this->getSystem()->getRecordPosition(m_recordDevice->id, &pos),
-        "System::getRecordPosition"
-    );
+    auto ec = this->getSystem()->getRecordPosition(m_recordDevice->id, &pos);
+    if (ec == FMOD_ERR_RECORD_DISCONNECTED) {
+        // this for some reason happens when you tab out, swallow this error
+        return Ok();
+    } else if (ec != FMOD_OK) {
+        return Err(formatFmodError(ec, "System::getRecordPosition"));
+    }
 
     // if we are at the same position, do nothing
     if (pos == m_recordLastPosition) {
