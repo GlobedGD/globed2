@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/platform/cplatform.h>
+#include <asp/iter.hpp>
 #include <utility>
 
 #ifndef GEODE_IS_IOS
@@ -57,23 +58,35 @@ static std::pair<int, int> getOpenGLVersion() {
 
 static bool supportsGLExtension(std::string_view ext) {
 #ifdef GL_NUM_EXTENSIONS
-    GLint exts = 0;
-    glGetIntegerv(GL_NUM_EXTENSIONS, &exts);
+    // this does not exist in macos wine
+    auto pglGetStringi = glGetStringi;
 
-    for (GLint i = 0; i < exts; i++) {
-        auto e = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
+    if (pglGetStringi) {
+        GLint exts = 0;
+        glGetIntegerv(GL_NUM_EXTENSIONS, &exts);
+
+        for (GLint i = 0; i < exts; i++) {
+            auto e = reinterpret_cast<const char*>(pglGetStringi(GL_EXTENSIONS, i));
+            if (e && std::string_view{e} == ext) {
+                return true;
+            }
+        }
+    }
+#endif
+
+    auto extsStr = glGetString(GL_EXTENSIONS);
+    if (!extsStr) return false;
+
+    for (auto e : asp::iter::split(std::string_view{(const char*)extsStr}, ' ')) {
         if (e == ext) {
             return true;
         }
     }
-#else
-    auto exts = glGetString(GL_EXTENSIONS);
-    return std::string_view{(const char*)exts}.contains(ext);
-#endif
+
     return false;
 }
 
-static bool supportsPBO() {
+static bool& supportsPBO() {
     static bool does = [] {
         auto [major, minor] = getOpenGLVersion();
 #ifdef GEODE_IS_DESKTOP
@@ -92,7 +105,7 @@ static bool supportsPBO() {
     return does;
 }
 
-static bool supportsImmutableTex() {
+static bool& supportsImmutableTex() {
     static bool does = [] {
         auto [major, minor] = getOpenGLVersion();
 #ifdef GEODE_IS_DESKTOP
@@ -124,6 +137,11 @@ static void initGL() {
     pglTexStorage2D = glTexStorage2D;
     pglMapBufferRange = glMapBufferRange;
 #endif
+
+    // macos wine reports opengl 2.1 which must support pbo,
+    // but apparently it actually doesnt and the function pointers are null!
+    if (!pglTexStorage2D) supportsImmutableTex() = false;
+    if (!pglMapBufferRange) supportsPBO() = false;
 }
 
 
