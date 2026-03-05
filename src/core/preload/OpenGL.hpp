@@ -85,8 +85,8 @@ static bool& supportsPBO() {
     static bool does = [] {
         auto [major, minor] = getOpenGLVersion();
 #ifdef GEODE_IS_DESKTOP
-        // PBOs are supported on OpenGL 2.1+
-        if ((major > 2) || (major == 2 && minor >= 1)) {
+        // PBOs are supported on OpenGL 2.1+, but we want glMapBufferRange which is 3.0+
+        if (major >= 3) {
             return true;
         }
 #else
@@ -133,8 +133,7 @@ static void initGL() {
     pglMapBufferRange = glMapBufferRange;
 #endif
 
-    // macos wine reports opengl 2.1 which must support pbo,
-    // but apparently it actually doesnt and the function pointers are null!
+    // double check that the functions are actually available
     if (!pglTexStorage2D) supportsImmutableTex() = false;
     if (!pglMapBufferRange) supportsPBO() = false;
 }
