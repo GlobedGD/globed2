@@ -293,7 +293,6 @@ void CreateRoomPopup::waitForResponse() {
 }
 
 void CreateRoomPopup::stopWaiting(std::optional<std::string> failReason) {
-    log::debug("a {}", m_loadingPopup);
     m_loadingPopup->forceClose();
     m_loadingPopup = nullptr;
     m_failListener.reset();

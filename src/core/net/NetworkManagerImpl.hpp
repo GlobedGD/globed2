@@ -417,7 +417,7 @@ private:
         }
 
         // queue non-safe listeners to be invoked later
-        FunctionQueue::get().queue([this, message = std::forward<T>(message)] mutable {
+        FunctionQueue::get().queue([message = std::forward<T>(message)] mutable {
             MessageEvent<T>(false).send(message);
         });
     }
