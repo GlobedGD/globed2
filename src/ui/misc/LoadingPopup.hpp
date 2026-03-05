@@ -8,12 +8,11 @@ namespace globed {
 
 class LoadingPopup : public BasePopup {
 public:
-    using BasePopup::setTitle;
-
     static LoadingPopup* create();
 
     void setClosable(bool closable);
     void forceClose();
+    void setTitle(geode::ZStringView title);
 
 protected:
     cue::LoadingCircle* m_circle;
