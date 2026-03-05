@@ -27,11 +27,11 @@ inline void waitForMessage(geode::Function<void(const T&)> callback = {}) {
     lp->setUserObject("callback"_spr, wd);
 
     auto listener = NetworkManagerImpl::get().listen<T>([lp, wd](const T& msg) {
-        lp->forceClose();
-
         if (wd->m_callback) {
             wd->m_callback(msg);
         }
+
+        lp->forceClose();
 
         return geode::ListenerResult::Stop;
     }, -250);
