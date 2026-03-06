@@ -19,6 +19,13 @@ enum class InvitesFrom : int {
     Nobody = 2,
 };
 
+enum class PreferConnection : int {
+    Auto = 0,
+    Tcp = 1,
+    Udp = 2,
+    Quic = 3,
+};
+
 // Settings implementation
 
 template <typename T>

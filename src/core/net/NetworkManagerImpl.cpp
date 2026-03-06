@@ -992,20 +992,32 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
 
     FriendListManager::get().refresh();
 
-    bool certVerification = globed::setting<bool>("core.dev.cert-verification");
-    bool useQuic = globed::setting<bool>("core.dev.net-use-quic");
-    bool forceIpv4 = globed::setting<bool>("core.dev.net-use-ipv4");
-    argon::setCertVerification(certVerification);
-
     g_argonData = argon::getGameAccountData();
     m_abortCause.lock()->first.clear();
     m_manualDisconnect.store(false, ::release);
 
-    auto preferredProto = useQuic ? qn::ConnectionType::Quic : qn::ConnectionType::Tcp;
-    m_centralConn->setPreferProtocol(preferredProto);
-    m_gameConn->setPreferProtocol(preferredProto);
+
+    bool certVerification = globed::setting<bool>("core.dev.cert-verification");
+    argon::setCertVerification(certVerification);
+
+    bool forceIpv4 = globed::setting<bool>("core.dev.net-use-ipv4");
     m_centralConn->setIpv6Enabled(!forceIpv4);
     m_gameConn->setIpv6Enabled(!forceIpv4);
+
+    auto preferred = (PreferConnection)globed::setting<int>("core.dev.net-prefer-proto").value();
+    std::optional<qn::ConnectionType> ct;
+    switch (preferred) {
+        case PreferConnection::Auto: break;
+        case PreferConnection::Tcp: ct = qn::ConnectionType::Tcp; break;
+        case PreferConnection::Quic: ct = qn::ConnectionType::Quic; break;
+        case PreferConnection::Udp: ct = qn::ConnectionType::Udp; break;
+        default: break;
+    }
+
+    log::debug("Preferred protocol: {}", ct.has_value() ? connTypeToString(*ct) : "Auto");
+
+    m_centralConn->setPreferProtocol(ct.value_or(qn::ConnectionType::Tcp));
+    m_gameConn->setPreferProtocol(ct.value_or(qn::ConnectionType::Udp));
 
     m_centralConn->setDebugOptions(getConnOpts());
 

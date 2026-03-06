@@ -44,6 +44,14 @@ $execute {
         // globed::NetworkManagerImpl::get().logQunetMessage(level, message);
 
         switch (level) {
+            case qn::log::Level::Trace: {
+#ifdef GLOBED_DEBUG
+                if (debugEnabled) {
+                    log::debug("[Qunet] {}", message);
+                }
+#endif
+            } break;
+
             case qn::log::Level::Debug: {
                 if (debugEnabled) {
                     log::info("[Qunet] {}", message);
