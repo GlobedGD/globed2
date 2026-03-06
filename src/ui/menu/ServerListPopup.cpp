@@ -11,7 +11,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-namespace { namespace $anon {
+namespace { namespace $unity {
 
 static constexpr CCSize LIST_SIZE  {290.f, 180.f };
 constexpr float CELL_HEIGHT = 32.f;
@@ -107,10 +107,10 @@ bool ServerListPopup::init(GlobedMenuLayer* layer) {
 
     m_menuLayer = layer;
 
-    m_list = Build(cue::ListNode::create($anon::LIST_SIZE))
+    m_list = Build(cue::ListNode::create($unity::LIST_SIZE))
         .pos(this->fromCenter(0.f, -10.f))
         .parent(m_mainLayer);
-    m_list->setCellHeight($anon::CELL_HEIGHT);
+    m_list->setCellHeight($unity::CELL_HEIGHT);
 
     this->reloadList();
 
@@ -126,12 +126,12 @@ void ServerListPopup::reloadList() {
 
     size_t i = 0;
     for (auto& server : servers) {
-        m_list->addCell($anon::ListCell::create(server, this, i, activeIdx == i));
+        m_list->addCell($unity::ListCell::create(server, this, i, activeIdx == i));
         i++;
     }
 
     auto* btn = Build<CCSprite>::createSpriteName("GJ_plusBtn_001.png")
-        .with([&](auto btn) { cue::rescaleToMatch(btn, CCSize{$anon::CELL_HEIGHT * 0.85f, $anon::CELL_HEIGHT * 0.85f}); })
+        .with([&](auto btn) { cue::rescaleToMatch(btn, CCSize{$unity::CELL_HEIGHT * 0.85f, $unity::CELL_HEIGHT * 0.85f}); })
         .intoMenuItem([this] {
             if (!globed::swapFlag("core.flags.seen-add-server-warn")) {
                 globed::alert(
@@ -155,10 +155,10 @@ void ServerListPopup::reloadList() {
         .collect();
 
     auto menu = Build<CCMenu>::create()
-        .contentSize($anon::LIST_SIZE.width, $anon::CELL_HEIGHT)
+        .contentSize($unity::LIST_SIZE.width, $unity::CELL_HEIGHT)
         .ignoreAnchorPointForPos(false)
         .intoNewChild(btn)
-        .pos($anon::LIST_SIZE.width / 2.f, $anon::CELL_HEIGHT / 2.f)
+        .pos($unity::LIST_SIZE.width / 2.f, $unity::CELL_HEIGHT / 2.f)
         .intoParent()
         .collect();
 

@@ -165,7 +165,7 @@ def setup_unity(build: Build, gc: GlobedConfig):
         ${PROJECT_NAME} PROPERTIES
         UNITY_BUILD ON
         UNITY_BUILD_MODE GROUP
-        UNITY_BUILD_UNIQUE_ID "$anon"
+        UNITY_BUILD_UNIQUE_ID "$unity"
     )""")
 
     groups = {
@@ -445,8 +445,6 @@ def main(build: Build):
     # setup unity build
     if gc.release:
         setup_unity(build, gc)
-    else:
-        build.add_definition("$anon", "_no_unity")
 
     # cpm overrides
     for name, path in gc.cpm_overrides.items():

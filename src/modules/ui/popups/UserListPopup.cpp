@@ -17,7 +17,7 @@ using namespace asp::time;
 
 namespace globed {
 
-namespace { namespace $anon {
+namespace { namespace $unity {
 
 static constexpr CCSize LIST_SIZE = {370.f, 200.f};
 static constexpr float CELL_HEIGHT = 26.f;
@@ -333,7 +333,7 @@ bool UserListPopup::init() {
 
     m_noElasticity = true;
 
-    m_list = Build(cue::ListNode::create($anon::LIST_SIZE))
+    m_list = Build(cue::ListNode::create($unity::LIST_SIZE))
         .anchorPoint(0.5f, 1.f)
         .pos(this->fromTop(40.f))
         .parent(m_mainLayer);
@@ -462,7 +462,7 @@ void UserListPopup::hardRefresh() {
 
     this->setTitle(fmt::format("Players ({})", players.size() + 1));
 
-    m_list->addCell($anon::PlayerCell::createMyself(this));
+    m_list->addCell($unity::PlayerCell::createMyself(this));
 
     for (auto& [playerId, player] : players) {
         if (playerId == cachedSingleton<GJAccountManager>()->m_accountID) {
@@ -478,7 +478,7 @@ void UserListPopup::hardRefresh() {
                 }
             }
 
-            m_list->addCell($anon::PlayerCell::create(
+            m_list->addCell($unity::PlayerCell::create(
                 data.accountId,
                 data.userId,
                 data.username,
@@ -500,7 +500,7 @@ void UserListPopup::hardRefresh() {
     auto selfId = cachedSingleton<GJAccountManager>()->m_accountID;
     auto& flm = FriendListManager::get();
 
-    m_list->sortAs<$anon::PlayerCell>([&]($anon::PlayerCell* a, $anon::PlayerCell* b) {
+    m_list->sortAs<$unity::PlayerCell>([&]($unity::PlayerCell* a, $unity::PlayerCell* b) {
         if (a->m_accountId == selfId) return true;
         else if (b->m_accountId == selfId) return false;
 
