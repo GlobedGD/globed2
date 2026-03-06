@@ -1497,6 +1497,11 @@ void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reaso
             this->abortConnection("You are not whitelisted on this server!");
         } break;
 
+        case MAINTENANCE: {
+            log::warn("Login failed: maintenance mode");
+            this->abortConnection("Server is currently in maintenance mode and connections are disabled, please try again later.");
+        } break;
+
         default: {
             log::warn("Login failed: unknown reason {}", static_cast<int>(reason));
             this->abortConnection(fmt::format("Login failed due to unknown server error: {}", static_cast<int>(reason)));
