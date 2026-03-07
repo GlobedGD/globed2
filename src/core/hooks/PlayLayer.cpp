@@ -63,7 +63,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
 
         auto& pm = PreloadManager::get();
         if (pm.deathEffectsLoaded()) {
-            auto gm = globed::cachedSingleton<GameManager>();
+            auto gm = globed::singleton<GameManager>();
             int effect = gm->m_playerDeathEffect;
 
             gm->m_loadedDeathEffect = 0;

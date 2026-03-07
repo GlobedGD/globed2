@@ -257,7 +257,7 @@ void CreateRoomPopup::waitForResponse() {
 
     m_successListener = nm.listen<msg::RoomStateMessage>([this](const auto& msg) {
         // small sanity check to make sure it is actually the response we need
-        if (msg.roomOwner == cachedSingleton<GJAccountManager>()->m_accountID) {
+        if (msg.roomOwner == singleton<GJAccountManager>()->m_accountID) {
             this->stopWaiting(std::nullopt);
         }
     }, -100);

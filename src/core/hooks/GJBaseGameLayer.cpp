@@ -66,7 +66,7 @@ static auto& g_settings = CachedSettings::get();
 static std::optional<Instant> g_lastEmoteTime;
 
 static int myAccountId() {
-    return cachedSingleton<GJAccountManager>()->m_accountID;
+    return singleton<GJAccountManager>()->m_accountID;
 }
 
 void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
@@ -927,7 +927,7 @@ PlayLayer* GlobedGJBGL::asPlayLayer() {
 
 GlobedGJBGL* GlobedGJBGL::get(GJBaseGameLayer* base) {
     if (!base) {
-        base = cachedSingleton<GameManager>()->m_gameLayer;
+        base = singleton<GameManager>()->m_gameLayer;
     }
 
     return static_cast<GlobedGJBGL*>(base);
@@ -952,7 +952,7 @@ CameraDirection GlobedGJBGL::getCameraDirection() {
 GameCameraState GlobedGJBGL::getCameraState() {
     GameCameraState state{};
     state.visibleOrigin = CCPoint{0.f, 0.f};
-    state.visibleCoverage = cachedSingleton<CCDirector>()->getWinSize();
+    state.visibleCoverage = singleton<CCDirector>()->getWinSize();
     state.cameraOrigin = m_gameState.m_cameraPosition;
     state.zoom = m_objectLayer->getScale();
 

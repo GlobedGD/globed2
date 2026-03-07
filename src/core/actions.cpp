@@ -172,10 +172,10 @@ void openModPanel(int accountId) {
 }
 
 void openUserProfile(int accountId, int userId, std::string_view username) {
-    bool myself = accountId == cachedSingleton<GJAccountManager>()->m_accountID;
+    bool myself = accountId == singleton<GJAccountManager>()->m_accountID;
 
     if (!myself) {
-        cachedSingleton<GameLevelManager>()->storeUserName(userId, accountId, gd::string(username.data(), username.size()));
+        singleton<GameLevelManager>()->storeUserName(userId, accountId, gd::string(username.data(), username.size()));
     }
 
     ProfilePage::create(accountId, myself)->show();

@@ -16,7 +16,7 @@ void reorderDownloadedLevel(GJGameLevel* level) {
     // this is needed so the level appears at the top of the saved list (unless Manual Level Order is enabled)
 
     CCDictionaryExt<gd::string, GJGameLevel*> levels = GameLevelManager::get()->m_onlineLevels;
-    bool putAtLowest = cachedSingleton<GameManager>()->getGameVariable("0084");
+    bool putAtLowest = singleton<GameManager>()->getGameVariable("0084");
 
     auto iter = asp::iter::from(levels).map([](const auto& pair) {
         return pair.second->m_levelIndex;
@@ -42,7 +42,7 @@ void pushScene(cocos2d::CCLayer* layer) {
 void pushScene(cocos2d::CCScene* scene) {
     // note: (applies to functions below too), fade transition is already removed by gd if fast menu is enabled
     // so we don't need to worry about that here
-    cachedSingleton<CCDirector>()->pushScene(CCTransitionFade::create(.5f, scene));
+    singleton<CCDirector>()->pushScene(CCTransitionFade::create(.5f, scene));
 }
 
 void replaceScene(cocos2d::CCLayer* layer) {
@@ -52,11 +52,11 @@ void replaceScene(cocos2d::CCLayer* layer) {
 }
 
 void replaceScene(cocos2d::CCScene* scene) {
-    cachedSingleton<CCDirector>()->replaceScene(CCTransitionFade::create(.5f, scene));
+    singleton<CCDirector>()->replaceScene(CCTransitionFade::create(.5f, scene));
 }
 
 void popScene() {
-    cachedSingleton<CCDirector>()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
+    singleton<CCDirector>()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
 }
 
 GameLevelKind classifyLevel(int levelId) {
@@ -98,11 +98,11 @@ static std::string gvkey(GameVariable var) {
 }
 
 bool gameVariable(GameVariable var) {
-    return globed::cachedSingleton<GameManager>()->getGameVariable(gvkey(var).c_str());
+    return globed::singleton<GameManager>()->getGameVariable(gvkey(var).c_str());
 }
 
 void setGameVariable(GameVariable var, bool state) {
-    globed::cachedSingleton<GameManager>()->setGameVariable(gvkey(var).c_str(), state);
+    globed::singleton<GameManager>()->setGameVariable(gvkey(var).c_str(), state);
 }
 
 const char* difficultyToString(Difficulty diff) {
@@ -172,7 +172,7 @@ Difficulty calcLevelDifficulty(GJGameLevel* level) {
 }
 
 cue::Icons getPlayerIcons() {
-    auto gm = cachedSingleton<GameManager>();
+    auto gm = singleton<GameManager>();
 
     return cue::Icons {
         .type = IconType::Cube,
@@ -194,7 +194,7 @@ cue::Icons convertPlayerIcons(const PlayerIconData& data) {
 }
 
 PlayerIconData PlayerIconData::getOwn() {
-    auto gm = globed::cachedSingleton<GameManager>();
+    auto gm = globed::singleton<GameManager>();
 
     globed::PlayerIconData out{};
     out.cube = gm->m_playerFrame;
@@ -220,8 +220,8 @@ PlayerIconData PlayerIconData::getOwn() {
 }
 
 PlayerDisplayData PlayerDisplayData::getOwn() {
-    auto gjam = cachedSingleton<GJAccountManager>();
-    auto gm = cachedSingleton<GameManager>();
+    auto gjam = singleton<GJAccountManager>();
+    auto gm = singleton<GameManager>();
     auto icons = getPlayerIcons();
 
     PlayerDisplayData out{};
@@ -266,7 +266,7 @@ private:
 
         m_idle = false;
 
-        auto glm = cachedSingleton<GameLevelManager>();
+        auto glm = singleton<GameLevelManager>();
         glm->m_levelManagerDelegate = this;
         glm->getOnlineLevels(GJSearchObject::create(SearchType::Type26, fmt::to_string(m_requests.front().level)));
     }
@@ -309,7 +309,7 @@ private:
 };
 
 void getOnlineLevel(int id, Downloader::Callback cb) {
-    auto glm = cachedSingleton<GameLevelManager>();
+    auto glm = singleton<GameLevelManager>();
     auto level = glm->getSavedLevel(id);
 
     if (level) {

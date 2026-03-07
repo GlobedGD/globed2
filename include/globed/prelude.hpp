@@ -42,7 +42,7 @@ namespace log = geode::log;
 
 template <typename T>
 T* get() {
-    return globed::cachedSingleton<T>();
+    return globed::singleton<T>();
 }
 
 }

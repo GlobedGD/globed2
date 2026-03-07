@@ -19,7 +19,7 @@ PreloadManager::PreloadManager() {}
 PreloadManager::~PreloadManager() {}
 
 void PreloadManager::initLoadQueue() {
-    auto gm = globed::cachedSingleton<GameManager>();
+    auto gm = globed::singleton<GameManager>();
     m_totalCount = 0;
     m_loadQueue.clear();
 

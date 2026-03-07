@@ -69,7 +69,7 @@ void NotificationPanel::update(float dt) {
     bool shouldShow = this->getChildrenCount() > 0 || !m_queued.empty();
 
     if (shouldShow) {
-        if (auto* pl = globed::cachedSingleton<GameManager>()->m_playLayer) {
+        if (auto* pl = globed::singleton<GameManager>()->m_playLayer) {
             shouldShow = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(pl))->isPaused();
         }
     }

@@ -183,7 +183,7 @@ void GTriggersGJBGL::registerListener() {
         fields.m_firstPacket = false;
 
         if (first) {
-            this->updateCustomItem(ITEM_LAST_JOINED, cachedSingleton<GJAccountManager>()->m_accountID);
+            this->updateCustomItem(ITEM_LAST_JOINED, singleton<GJAccountManager>()->m_accountID);
             this->updateCustomItem(ITEM_INITIALIZED, 1);
         }
 

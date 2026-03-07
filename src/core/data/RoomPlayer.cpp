@@ -19,8 +19,8 @@ cue::Icons MinimalRoomPlayer::toIcons() const {
 }
 
 MinimalRoomPlayer MinimalRoomPlayer::createMyself() {
-    auto gm = cachedSingleton<GameManager>();
-    auto gam = cachedSingleton<GJAccountManager>();
+    auto gm = singleton<GameManager>();
+    auto gam = singleton<GJAccountManager>();
 
     MinimalRoomPlayer out{};
     out.accountData = {

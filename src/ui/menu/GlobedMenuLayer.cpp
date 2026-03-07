@@ -545,7 +545,7 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
     auto& rm = RoomManager::get();
     bool randomize = rm.isInGlobal();
     int roomOwnerId = rm.getRoomOwner();
-    int selfId = cachedSingleton<GJAccountManager>()->m_accountID;
+    int selfId = singleton<GJAccountManager>()->m_accountID;
     std::vector<RoomPlayer> sortedPlayers = players;
 
     // sort all the players
@@ -668,7 +668,7 @@ bool GlobedMenuLayer::trySoftRefresh(const std::vector<RoomPlayer>& players) {
 
     this->addPinnedLevelCell();
 
-    auto selfId = globed::cachedSingleton<GJAccountManager>()->m_accountID;
+    auto selfId = globed::singleton<GJAccountManager>()->m_accountID;
 
     auto scrollPos = m_playerList->getScrollPos();
 
@@ -722,7 +722,7 @@ void GlobedMenuLayer::softRefreshAll() {
 }
 
 void GlobedMenuLayer::softRefreshSelf() {
-    auto selfId = globed::cachedSingleton<GJAccountManager>()->m_accountID;
+    auto selfId = globed::singleton<GJAccountManager>()->m_accountID;
     for (auto cell : m_playerList->iterChecked<$unity::PlayerCell>()) {
         if (cell->m_accountId != selfId) continue;
 

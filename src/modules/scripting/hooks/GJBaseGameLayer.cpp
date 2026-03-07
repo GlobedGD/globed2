@@ -64,7 +64,7 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
         }, 1.0f);
     }
 
-    fields.m_localId = cachedSingleton<GJAccountManager>()->m_accountID;
+    fields.m_localId = singleton<GJAccountManager>()->m_accountID;
 
     this->schedule(schedule_selector(SCBaseGameLayer::processCustomFollowActions));
 }

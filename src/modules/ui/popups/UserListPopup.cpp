@@ -77,7 +77,7 @@ protected:
         m_player = gjbgl->getPlayer(m_accountId);
 
         // add buttons
-        bool self = m_accountId == cachedSingleton<GJAccountManager>()->m_accountID;
+        bool self = m_accountId == singleton<GJAccountManager>()->m_accountID;
 
         bool createBtnHide = !self;
         bool createBtnMute = !self;
@@ -465,7 +465,7 @@ void UserListPopup::hardRefresh() {
     m_list->addCell($unity::PlayerCell::createMyself(this));
 
     for (auto& [playerId, player] : players) {
-        if (playerId == cachedSingleton<GJAccountManager>()->m_accountID) {
+        if (playerId == singleton<GJAccountManager>()->m_accountID) {
             continue;
         } else if (player->isDataInitialized()) {
             auto& data = player->displayData();
@@ -497,7 +497,7 @@ void UserListPopup::hardRefresh() {
         }
     }
 
-    auto selfId = cachedSingleton<GJAccountManager>()->m_accountID;
+    auto selfId = singleton<GJAccountManager>()->m_accountID;
     auto& flm = FriendListManager::get();
 
     m_list->sortAs<$unity::PlayerCell>([&]($unity::PlayerCell* a, $unity::PlayerCell* b) {

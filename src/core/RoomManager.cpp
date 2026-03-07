@@ -69,7 +69,7 @@ bool RoomManager::isInFollowerRoom() {
 }
 
 bool RoomManager::isOwner() {
-    return m_roomOwner == cachedSingleton<GJAccountManager>()->m_accountID;
+    return m_roomOwner == singleton<GJAccountManager>()->m_accountID;
 }
 
 uint32_t RoomManager::getRoomId() {
@@ -97,7 +97,7 @@ std::optional<uint16_t> RoomManager::getTeamIdForPlayer(int player) {
         return std::nullopt;
     }
 
-    if (player == cachedSingleton<GJAccountManager>()->m_accountID) {
+    if (player == singleton<GJAccountManager>()->m_accountID) {
         return m_teamId;
     }
 

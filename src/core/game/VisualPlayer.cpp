@@ -725,7 +725,7 @@ void VisualPlayer::cleanupObjectLayer() {
 }
 
 void VisualPlayer::updateDisplayData() {
-    auto gm = cachedSingleton<GameManager>();
+    auto gm = singleton<GameManager>();
     auto& rm = RoomManager::get();
     auto& ddata = this->displayData();
 
@@ -763,7 +763,7 @@ void VisualPlayer::playDeathEffect() {
 
     this->hideRobotFire();
 
-    auto* gm = globed::cachedSingleton<GameManager>();
+    auto* gm = globed::singleton<GameManager>();
 
     int oldEffect = gm->getPlayerDeathEffect();
     gm->setPlayerDeathEffect(this->icons().deathEffect);
@@ -795,7 +795,7 @@ void VisualPlayer::playDeathEffect() {
 }
 
 void VisualPlayer::handleSpiderTp(const SpiderTeleportData& tp) {
-    auto pl = globed::cachedSingleton<GameManager>()->m_playLayer;
+    auto pl = globed::singleton<GameManager>()->m_playLayer;
     if (!pl || !m_prevNearby) return;
 
     m_playEffects = true;
@@ -810,8 +810,16 @@ void VisualPlayer::handleSpiderTp(const SpiderTeleportData& tp) {
         static_cast<CCNode*>(arr->objectAtIndex(i))->setTag(SPIDER_DASH_CIRCLE_WAVE_TAG);
     }
 
-    auto sfc = cachedSingleton<CCSpriteFrameCache>();
-    auto* spdash1 = sfc->spriteFrameByName("spiderDash_001.png")->getTexture();
+    m_tpColorDelta = 0.f;
+    this->spiderTeleportUpdateColor();
+
+    // mark other sprites with a tag
+
+    auto sfc = singleton<CCSpriteFrameCache>();
+    auto sframe = sfc->spriteFrameByName("spiderDash_001.png");
+    if (!sframe) return;
+
+    auto* spdash1 = sframe->getTexture();
     for (auto child : m_parentLayer->getChildrenExt()) {
         if (child->getZOrder() != 40) continue;
         if (!child->getID().empty()) continue;
@@ -825,9 +833,6 @@ void VisualPlayer::handleSpiderTp(const SpiderTeleportData& tp) {
             sprite->setTag(SPIDER_DASH_SPRITE_TAG);
         }
     }
-
-    m_tpColorDelta = 0.f;
-    this->spiderTeleportUpdateColor();
 }
 
 static inline ccColor3B lerpColor(ccColor3B from, ccColor3B to, float delta) {
@@ -897,7 +902,7 @@ void VisualPlayer::cancelPlatformerJumpAnim() {
 }
 
 void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
-    auto* gm = globed::cachedSingleton<GameManager>();
+    auto* gm = globed::singleton<GameManager>();
     auto& icons = this->icons();
 
     m_color1 = icons.color1.asColor();

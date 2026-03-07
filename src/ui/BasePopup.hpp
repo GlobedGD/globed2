@@ -19,7 +19,7 @@ protected:
         float width, float height, char const* bg = "GJ_square01.png",
         cocos2d::CCRect bgRect = {}
     ) {
-        if (cachedSingleton<GameManager>()->getGameVariable("0168")) {
+        if (singleton<GameManager>()->getGameVariable("0168")) {
             m_noElasticity = true;
         }
         return Popup::init(width, height, bg, bgRect);

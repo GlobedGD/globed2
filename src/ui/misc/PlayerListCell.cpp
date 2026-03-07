@@ -86,8 +86,8 @@ bool PlayerListCell::init(
 }
 
 bool PlayerListCell::initMyself(cocos2d::CCSize cellSize) {
-    auto gam = cachedSingleton<GJAccountManager>();
-    auto gm = cachedSingleton<GameManager>();
+    auto gam = singleton<GJAccountManager>();
+    auto gm = singleton<GameManager>();
 
     auto sud = NetworkManagerImpl::get().getOwnSpecialData();
 
@@ -131,7 +131,7 @@ void PlayerListCell::initGradients(Context ctx) {
     auto& rm = RoomManager::get();
     float iconSize = 16.f;
 
-    if (m_accountId == globed::cachedSingleton<GJAccountManager>()->m_accountID) {
+    if (m_accountId == globed::singleton<GJAccountManager>()->m_accountID) {
         this->setGradient(ctx == Context::Ingame ? CellGradientType::SelfIngame : CellGradientType::Self);
     }
 

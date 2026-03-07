@@ -272,7 +272,7 @@ bool PopupManager::hasPendingPopups() const {
 void PopupManager::update(float dt) {
     m_frameCounter++;
 
-    auto scene = globed::cachedSingleton<CCDirector>()->m_pRunningScene;
+    auto scene = globed::singleton<CCDirector>()->m_pRunningScene;
     if (!scene) return;
 
     if (scene != m_prevScene) {

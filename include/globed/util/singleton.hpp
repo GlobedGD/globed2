@@ -2,6 +2,8 @@
 
 #include <globed/config.hpp>
 
+#include <Geode/binding/ObjectManager.hpp>
+#include <Geode/binding/BitmapFontCache.hpp>
 #include <string_view>
 #include <cocos2d.h>
 #include <fmt/format.h>
@@ -127,9 +129,21 @@ private:
 
 // Singleton cache, for cocos/GD classes
 template <typename T>
-T* cachedSingleton() {
+T* singleton() {
+    // For some types, this is risky as their pointers may get invalidated by purging
+    if constexpr (
+        std::is_same_v<T, cocos2d::CCSpriteFrameCache>
+        || std::is_same_v<T, cocos2d::CCTextureCache>
+        || std::is_same_v<T, cocos2d::CCFileUtils>
+        || std::is_same_v<T, BitmapFontCache>
+        || std::is_same_v<T, ObjectManager>
+    ) {
+        return T::get();
+    }
+
     static auto instance = T::get();
     return instance;
 }
+
 
 }

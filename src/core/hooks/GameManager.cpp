@@ -49,7 +49,7 @@ void HookedGameManager::returnToLastScene(GJGameLevel* level) {
 }
 
 HookedGameManager& HookedGameManager::get() {
-    return static_cast<HookedGameManager&>(*cachedSingleton<GameManager>());
+    return static_cast<HookedGameManager&>(*singleton<GameManager>());
 }
 
 void HookedGameManager::setPopSceneEnum() {

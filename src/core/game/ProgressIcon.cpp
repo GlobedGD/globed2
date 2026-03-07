@@ -21,7 +21,7 @@ void ProgressIcon::updateIcons(const cue::Icons& data) {
     cue::resetNode(m_line);
     cue::resetNode(m_icon);
 
-    auto col1 = cachedSingleton<GameManager>()->colorForIdx(data.color1);
+    auto col1 = singleton<GameManager>()->colorForIdx(data.color1);
 
     m_line = Build<CCLayerColor>::create(ccColor4B{col1.r, col1.g, col1.b, 255}, 2.f, 6.f)
         .pos(0.f, 5.f)
