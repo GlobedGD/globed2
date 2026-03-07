@@ -76,6 +76,10 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
         return false;
     }
 
+    // override some things, because gd sets those from gamemanager
+    m_shipStreakType = ShipStreak::None;
+    cue::resetNode(m_shipStreak);
+
     m_remotePlayer = rp;
     m_isLocalPlayer = localPlayer;
     m_isSecond = isSecond;
