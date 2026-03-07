@@ -16,8 +16,8 @@ Result<> Core::addModule(std::shared_ptr<Module> mod) {
 
 }
 
-#ifdef GLOBED_DEBUG
 $on_mod(Loaded) {
+#ifdef GLOBED_DEBUG
     log::info("===========================================");
     log::info("Globed loaded in debug mode");
     log::info("Globed commit: {}, Geode commit: {}", globed::constant<"globed-commit">(), globed::constant<"geode-commit">());
@@ -25,5 +25,8 @@ $on_mod(Loaded) {
     log::info("Build environment: {}", globed::constant<"build-env">());
     log::info("Build options: {}", globed::constant<"build-opts">());
     log::info("===========================================");
-}
+#else
+    // be more brief, don't spam the log
+    log::info("Globed loaded, commit: {}, Geode: {}", globed::constant<"globed-commit">(), globed::constant<"geode-commit">());
 #endif
+}
