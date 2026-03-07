@@ -22,8 +22,8 @@ bool APSSettingsPopup::init(APSPlayLayer* layer) {
     m_btn = Build(ButtonSprite::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.8f))
         .scale(0.85f)
         .intoMenuItem([this] {
-            m_btn->removeFromParent();
             this->startGame();
+            m_btn->removeFromParent();
         })
         .pos(this->fromBottom(24.f))
         .parent(m_buttonMenu)

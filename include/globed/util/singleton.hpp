@@ -1,6 +1,7 @@
 #pragma once
 
 #include <globed/config.hpp>
+#include <arc/future/PollableMetadata.hpp>
 
 #include <Geode/binding/ObjectManager.hpp>
 #include <Geode/binding/BitmapFontCache.hpp>
@@ -13,18 +14,10 @@ namespace globed {
 [[noreturn]] void destructedSingleton(std::string_view name);
 GLOBED_DLL void scheduleUpdateFor(cocos2d::CCObject* obj);
 
-// had to be copied from util::debug because it includes this file
 template <typename T>
 constexpr std::string_view getTypenameConstexpr() {
-#ifdef __clang__
-    constexpr auto pfx = sizeof("std::string_view globed::getTypenameConstexpr() [T = ") - 1;
-    constexpr auto sfx = sizeof("]") - 1;
-    constexpr auto function = __PRETTY_FUNCTION__;
-    constexpr auto len = sizeof(__PRETTY_FUNCTION__) - pfx - sfx - 1;
-    return {function + pfx, len};
-#else
-    static_assert(false, "well well well");
-#endif
+    auto [p, size] = arc::getTypename<T>();
+    return {p, size};
 }
 
 template <typename Derived>
