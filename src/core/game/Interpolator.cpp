@@ -169,13 +169,27 @@ static bool areVectorsClose(const CCPoint& one, const CCPoint& two) {
 }
 
 struct LerpContext {
-    float t;
+    PlayerState& older;
+    PlayerState& newer;
     CCPoint cameraDelta;
     CCPoint cameraVector;
+    float t;
     bool camStationary;
     bool platformer;
     bool cameraCorrections;
 };
+
+static bool detectRespawnOrTeleport(const PlayerObjectData& older, const PlayerObjectData& newer, const LerpContext& ctx) {
+    if (ctx.older.isDead && !ctx.newer.isDead) {
+        return true;
+    }
+
+    float dx = std::abs(newer.position.x - older.position.x);
+    float dt = ctx.newer.timestamp - ctx.older.timestamp;
+    float rate = dx / (dt > 0 ? dt : 0.001f);
+
+    return rate > 1000.f;
+}
 
 static inline void lerpSpecific(
     PlayerObjectData& older,
@@ -195,12 +209,11 @@ static inline void lerpSpecific(
     out.didJustJump = out.didJustJump || older.didJustJump;
     older.didJustJump = false; // so that it doesn't fire again until next frame
 
-    if (sptp) {
-        out.position.x = std::lerp(older.position.x, newer.position.x, ctx.t);
-        out.position.y = sptp->from.y;
-    } else {
-        out.position = older.position.lerp(newer.position, ctx.t);
-    }
+    bool snapY = sptp.has_value();
+    bool snapX = detectRespawnOrTeleport(older, newer, ctx);
+
+    out.position.x = snapX ? older.position.x : std::lerp(older.position.x, newer.position.x, ctx.t);
+    out.position.y = snapY ? older.position.y : std::lerp(older.position.y, newer.position.y, ctx.t);
 
     // in platformer, a player may rotate by 180 degrees simply by moving left or right,
     // if that happens, do not interpolate the rotation
@@ -275,11 +288,11 @@ static inline void lerpSpecific(
 }
 
 static inline void lerpPlayer(
-    PlayerState& older,
-    PlayerState& newer,
     LerpContext& ctx,
     Interpolator::LerpState& state
 ) {
+    auto& older = ctx.older;
+    auto& newer = ctx.newer;
     auto& out = state.interpolatedState;
     auto& p1spt = state.p1speedTracker;
     auto& p2spt = state.p2speedTracker;
@@ -344,6 +357,7 @@ static inline void lerpPlayer(
 
     // detect death
     if (state.lastDeathCount != older.deathCount) {
+        log::debug("Detected death for {} ({} -> {}), real: {})", older.accountId, older.deathCount, state.lastDeathCount, older.isLastDeathReal);
         state.lastDeathCount = older.deathCount;
         state.lastDeath = PlayerDeath { older.isLastDeathReal };
     }
@@ -412,18 +426,26 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
         float t = frameDelta == 0.0f ? 0.0f : (player.timeCounter - older->timestamp) / frameDelta;
 
         LerpContext ctx {
-            t,
+            *older,
+            *newer,
             cameraDelta,
             cameraVector,
+            t,
             camStationary,
             m_platformer,
             m_cameraCorrections,
         };
-        lerpPlayer(*older, *newer, ctx, player);
+        lerpPlayer(ctx, player);
 
         LERP_LOG("{}: t = {:.3f}, timeCounter = {:.3f}, time = {:.3f} -> {:.3f}",
             playerId, t, player.timeCounter, older->timestamp, newer->timestamp
         );
+        if (older->player1 && newer->player1) {
+            LERP_LOG("pos: ({:.4f}, {:.4f}) -> ({:.4f}, {:.4f})",
+                older->player1->position.x, older->player1->position.y,
+                newer->player1->position.x, newer->player1->position.y
+            );
+        }
 
         player.timeCounter += dt;
     }

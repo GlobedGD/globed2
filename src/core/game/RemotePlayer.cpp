@@ -129,6 +129,13 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
             this->handleDeath(*flags.death);
         }
         CoreImpl::get().onPlayerDeath(GlobedGJBGL::get(), this, *flags.death);
+        m_wasDead = true;
+    }
+
+    // if the player just respawned, call respawn handlers
+    if (m_wasDead && !state.isDead) {
+        CoreImpl::get().onPlayerRespawn(GlobedGJBGL::get(), this);
+        m_wasDead = false;
     }
 
     // if the player teleported, play a spider dash animation

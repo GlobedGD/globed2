@@ -107,6 +107,12 @@ void CoreImpl::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const Pla
     });
 }
 
+void CoreImpl::onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onPlayerRespawn(gjbgl, player);
+    });
+}
+
 void CoreImpl::onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {
     this->forEachEnabled([&](Module& mod) {
         mod.onUserlistSetup(container, accountId, myself, popup);
@@ -121,6 +127,18 @@ bool CoreImpl::shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) {
     });
 
     return should;
+}
+
+void CoreImpl::onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onLocalPlayerDeath(gjbgl, real);
+    });
+}
+
+void CoreImpl::onUpdate(GlobedGJBGL* gjbgl, float dt) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onUpdate(gjbgl, dt);
+    });
 }
 
 void CoreImpl::enableIf(geode::FunctionRef<bool(Module&)>&& func) {

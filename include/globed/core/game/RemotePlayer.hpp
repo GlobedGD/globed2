@@ -55,6 +55,7 @@ private:
     bool m_player1Culled = false;
     bool m_player2Culled = false;
     bool m_localPlayer = false;
+    bool m_wasDead = false;
     cocos2d::CCNode* m_parentNode = nullptr;
     Ref<VisualPlayer> m_player1 = nullptr;
     Ref<VisualPlayer> m_player2 = nullptr;

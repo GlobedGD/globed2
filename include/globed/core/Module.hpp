@@ -127,10 +127,16 @@ protected:
     virtual void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {}
     /// Called when another player dies on the level.
     virtual void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) {}
+    /// Called when another player respawns on the level.
+    virtual void onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) {}
     /// Called on each player when reloading the player list in the pause menu. Use this to add buttons.
     virtual void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {}
     /// Called when a new best popup is shown to the user. Return `true` to make the popup not take extra time
     virtual bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) { return false; }
+    /// Called when the local player dies. Not called for anticheat spike, but is called for fake deaths.
+    virtual void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) {}
+    /// Called every frame when in a level and connected to the server
+    virtual void onUpdate(GlobedGJBGL* gjbgl, float dt) {}
 
 private:
     friend class Core;

@@ -62,6 +62,15 @@ void TwoPlayerModule::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, co
     }
 }
 
+void TwoPlayerModule::onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) {
+    auto& mod = TwoPlayerModule::get();
+
+    if (player && player->id() == m_linkedPlayer) {
+        // respawn now
+        gjbgl->resetLevel();
+    }
+}
+
 void TwoPlayerModule::onUserlistSetup(CCNode* container, int accountId, bool myself, UserListPopup* popup) {
     if (myself) return;
 
@@ -97,6 +106,13 @@ void TwoPlayerModule::onUserlistSetup(CCNode* container, int accountId, bool mys
 void TwoPlayerModule::onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {
     if (accountId == m_linkedPlayer) {
         this->unlink();
+    }
+}
+
+void TwoPlayerModule::onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) {
+    // don't respawn immediately if we are not the main player, instead wait for the main player to respawn us
+    if (real && m_isPlayer2) {
+        gjbgl->cancelLocalRespawn();
     }
 }
 

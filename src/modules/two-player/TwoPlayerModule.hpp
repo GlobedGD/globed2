@@ -55,11 +55,13 @@ private:
 
     void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) override;
     void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) override;
+    void onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) override;
     void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) override;
     void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) override;
     bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) override {
         return true;
     }
+    void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) override;
 
     void sendUnlinkEventTo(int id);
     void sendLinkEventTo(int id, bool player2);

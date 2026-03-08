@@ -552,6 +552,8 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     if constexpr (APPLY_PERCENTAGE_FIX) {
         this->fixProgressBar(state.progress());
     }
+
+    CoreImpl::get().onUpdate(this, dt);
 }
 
 // Note: this takes percent from 0.0 to 1.0
@@ -859,6 +861,8 @@ void GlobedGJBGL::handleLocalPlayerDeath(PlayerObject* obj) {
 
     fields.m_deathCount++;
     fields.m_lastLocalDeathReal = !fields.m_isFakingDeath;
+
+    CoreImpl::get().onLocalPlayerDeath(this, fields.m_lastLocalDeathReal);
 }
 
 void GlobedGJBGL::setPermanentSafeMode() {
@@ -872,11 +876,21 @@ void GlobedGJBGL::killLocalPlayer(bool fake) {
     auto& fields = *m_fields.self();
     log::debug("Killing player");
 
+    // do nothing if already in the middle of a death
+    if (m_player1->m_isDead) {
+        log::debug("Not killing because player is already dead");
+        return;
+    }
+
     fields.m_isFakingDeath = fake;
 
     this->destroyPlayer(m_player1, nullptr);
 
     fields.m_isFakingDeath = false;
+}
+
+void GlobedGJBGL::cancelLocalRespawn() {
+    this->stopActionByTag(0x10); // magic
 }
 
 void GlobedGJBGL::resetSafeMode() {

@@ -139,6 +139,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     /// Kills the local player, by default the death will not be counted as 'real'.
     /// If this is unwanted, pass `false`
     void killLocalPlayer(bool fake = true);
+    /// Cancel automatic respawn after death, to respawn call resetLevel()
+    void cancelLocalRespawn();
 
     void resetSafeMode();
     void enableSafeMode();
@@ -172,7 +174,6 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
 
     bool playSelfEmote(uint32_t id);
     bool playSelfFavoriteEmote(uint32_t which);
-
 
 private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);

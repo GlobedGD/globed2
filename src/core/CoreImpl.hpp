@@ -48,9 +48,13 @@ public:
     void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId);
     // Call when another player dies, calls `onPlayerDeath` on each enabled module
     void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death);
+    // Call when another player respawns, calls `onPlayerRespawn` on each enabled module
+    void onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player);
     void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup);
 
     bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl);
+    void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real);
+    void onUpdate(GlobedGJBGL* gjbgl, float dt);
 
 private:
     std::vector<std::shared_ptr<Module>> m_modules;

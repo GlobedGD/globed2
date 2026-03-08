@@ -64,6 +64,7 @@ bool LinkRequestPopup::init(int accountId, UserListPopup* popup) {
         .intoMenuItem([this] {
             this->link(false);
         })
+        .scaleMult(1.15f)
         .parent(m_reqMenu);
 
     Build<ButtonSprite>::create("Player 2", "bigFont.fnt", "GJ_button_01.png", 0.7f)
@@ -71,6 +72,7 @@ bool LinkRequestPopup::init(int accountId, UserListPopup* popup) {
         .intoMenuItem([this] {
             this->link(true);
         })
+        .scaleMult(1.15f)
         .parent(m_reqMenu);
 
     m_reqMenu->updateLayout();
