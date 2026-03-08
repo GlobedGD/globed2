@@ -891,6 +891,7 @@ void GlobedGJBGL::enableSafeMode() {
 
 void GlobedGJBGL::pausedUpdate(float dt) {
     auto& fields = *m_fields.self();
+    if (!fields.m_active) return;
 
     // unpause dash effects and death effects
     int tag1 = SPIDER_DASH_CIRCLE_WAVE_TAG;
