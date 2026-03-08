@@ -295,7 +295,7 @@ static void commonConnectionSetup(qn::Connection& conn) {
 
 Future<> NetworkManagerImpl::asyncInit() {
     // this does not have to be async but it also must not be in the constructor
-    if (globed::value<bool>("net.dont-override-dns").value_or(false)) {
+    if (globed::setting<bool>("core.dev.net-dont-override-dns")) {
         log::info("Not overriding DNS servers");
     } else {
         qn::Resolver::get().setCustomDnsServers(

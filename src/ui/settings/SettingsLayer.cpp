@@ -239,11 +239,8 @@ void SettingsLayer::addSettings() {
             enableDevPrompt();
         }, CELL_SIZE));
     } else {
-        this->addHeader("core.dev-debug", "Developer", m_globedTab);
+        this->addHeader("core.dev-net", "Developer (Network)", m_globedTab);
 
-        this->addSetting<FloatSettingCell>("core.dev.packet-loss-sim", "Packet Loss Simulation",
-            "Artificially simulate outbound packet loss for testing purposes. Results depend on the transport: for <cy>TCP</c> the data is permanently lost, for <cy>UDP</c> the data may be resent if it was a reliable message, for <cy>QUIC</c> there's no loss as it will be handled by the protocol."
-        );
         this->addSetting<BoolSettingCell>("core.dev.net-stat-dump", "Network Stat Dump",
             "Enables highly detailed network statistics dumping for debugging. This will write very detailed information about all inbound and outbound packets to a log file, and dump exact packet bytes. F7 can be pressed while in the Globed menu to show current connection stats. <cy>This will use a lot of memory</c>."
         );
@@ -258,11 +255,22 @@ void SettingsLayer::addSettings() {
         this->addSetting<BoolSettingCell>("core.dev.net-use-ipv4", "Force IPv4",
             "Forces IPv4 server connections and disallows IPv6."
         );
-        this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Fake Data",
-            "Uses randomly generated data in some places (room list, level list) for testing purposes"
+        this->addSetting<BoolSettingCell>("core.dev.net-dont-override-dns", "Don't Override DNS",
+            "By default, Globed overrides the system DNS servers with 8.8.8.8 and 1.1.1.1. "
+            "This may break on more <cy>restrictive networks</c>, and enabling this option will make Globed use the system DNS servers instead. "
+            "<cy>Note: this requires a restart</c>"
         );
+        this->addSetting<FloatSettingCell>("core.dev.packet-loss-sim", "Packet Loss Simulation",
+            "Artificially simulate outbound packet loss for testing purposes. Results depend on the transport: for <cy>TCP</c> the data is permanently lost, for <cy>UDP</c> the data may be resent if it was a reliable message, for <cy>QUIC</c> there's no loss as it will be handled by the protocol."
+        );
+
+        this->addHeader("core.dev-debug", "Developer (Misc)", m_globedTab);
+
         this->addSetting<BoolSettingCell>("core.dev.ghost-follower", "Ghost Follower",
             "For debugging, enables a ghost player that will follow you in levels."
+        );
+        this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Dummy Data",
+            "Uses randomly generated data in some places (room list, level list) for testing purposes"
         );
 
         this->addSetting(ButtonSettingCell::create(

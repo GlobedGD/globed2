@@ -123,6 +123,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.dev.net-stat-dump", false);
     this->registerSetting("core.dev.net-prefer-proto", (int)PreferConnection::Auto);
     this->registerSetting("core.dev.net-use-ipv4", false);
+    this->registerSetting("core.dev.net-dont-override-dns", false);
     this->registerSetting("core.dev.fake-data", false);
     this->registerSetting("core.dev.cert-verification", true);
     this->registerSetting("core.dev.ghost-follower", false);
