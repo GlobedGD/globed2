@@ -25,10 +25,17 @@
 #include <asp/collections/SmallVec.hpp>
 #include <asp/iter.hpp>
 
+#ifdef GEODE_IS_ANDROID
+# include <jni.h>
+# include <Geode/cocos/platform/android/jni/JniHelper.h>
+#endif
+
 using namespace geode::prelude;
 using enum std::memory_order;
 using namespace asp::time;
 using namespace arc;
+
+static arc::Semaphore g_aresSemaphore{0};
 
 static qn::ConnectionDebugOptions getConnOpts() {
     qn::ConnectionDebugOptions opts{};
@@ -294,6 +301,9 @@ static void commonConnectionSetup(qn::Connection& conn) {
 }
 
 Future<> NetworkManagerImpl::asyncInit() {
+    // wait for main thread to set the DNS thingamajig
+    co_await g_aresSemaphore.acquire();
+
     // this does not have to be async but it also must not be in the constructor
     if (globed::setting<bool>("core.dev.net-dont-override-dns")) {
         log::info("Not overriding DNS servers");
@@ -2535,11 +2545,67 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
 
 }
 
+static void dnsInit();
+
 $on_mod(Loaded) {
     GameEvent(GameEventType::Exiting).listen([] {
         globed::NetworkManagerImpl::get().shutdown();
     }, -10).leak();
 
-    // initialize nm early
+    // initialize the DNS resolver and networkmanager
     globed::NetworkManagerImpl::get();
+    dnsInit();
+
+    g_aresSemaphore.release();
 }
+
+#ifdef QUNET_ADVANCED_DNS
+# ifdef GEODE_IS_ANDROID
+
+// this code is stolen from geode
+void dnsInit() {
+    /// https://c-ares.org/docs/ares_library_init_android.html
+    auto jvm = JniHelper::getJavaVM();
+    JNIEnv* env = nullptr;
+    if (jvm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+        return;
+    }
+
+    jclass fmodClass = env->FindClass("org/fmod/FMOD");
+    auto instanceField = env->GetStaticFieldID(fmodClass, "INSTANCE", "Lorg/fmod/FMOD;");
+    jobject fmodInstance = env->GetStaticObjectField(fmodClass, instanceField);
+
+    auto contextField = env->GetStaticFieldID(fmodClass, "gContext", "Landroid/content/Context;");
+
+    jobject context = env->GetStaticObjectField(fmodClass, contextField);
+    jclass contextClass = env->GetObjectClass(context);
+
+    env->DeleteLocalRef(fmodClass);
+
+    auto getSystemService = env->GetMethodID(contextClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
+    jstring connectivityServiceStr = env->NewStringUTF("connectivity");
+    jobject connectivityManager = env->CallObjectMethod(context, getSystemService, connectivityServiceStr);
+
+    env->DeleteLocalRef(context);
+    env->DeleteLocalRef(contextClass);
+    env->DeleteLocalRef(connectivityServiceStr);
+
+    // leaking global ref is fine as it will be kept for the lifetime of the app
+    auto globalConnectivityManager = env->NewGlobalRef(connectivityManager);
+    env->DeleteLocalRef(connectivityManager);
+
+    qn::Resolver::globalInit(jvm, globalConnectivityManager);
+}
+
+# else
+
+void dnsInit() {
+    qn::Resolver::globalInit(nullptr, nullptr);
+}
+
+# endif // GEODE_IS_ANDROID
+#else
+
+void dnsInit() {}
+
+#endif // QUNET_ADVANCED_DNS
