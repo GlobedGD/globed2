@@ -21,7 +21,7 @@ endif()
 # these have to come early, cant be in geobuild
 set(ARC_FEATURE_NET ON CACHE BOOL "" FORCE)
 set(GEODE_CODEGEN_EXTRA_ARGS "--skip-pugixml" CACHE STRING "" FORCE)
-set(GEODE_ASP_VERSION "#8f03a7c" CACHE STRING "" FORCE)
+set(GEODE_ASP_VERSION "#66a292d" CACHE STRING "" FORCE)
 set(GEODE_NO_PUGIXML_HEADER ON CACHE BOOL "" FORCE)
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
