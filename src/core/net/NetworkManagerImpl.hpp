@@ -359,6 +359,7 @@ private:
     std::optional<ConnectionLogger> m_gameLogger;
     bool m_destructing = false;
     bool m_hasSecure = false;
+    std::atomic<bool> m_debugLogs{false};
     std::atomic<bool> m_gameMustReauth{false};
 
     asp::Mutex<std::optional<ConnectionInfo>> m_connInfo;

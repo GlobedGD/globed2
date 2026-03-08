@@ -205,6 +205,11 @@ NetworkManagerImpl::NetworkManagerImpl() : m_runtime(async::runtime().weakFromTh
     arc::setGlobalRuntime(&async::runtime());
     m_hasSecure = bb_init();
 
+    m_debugLogs = globed::setting<bool>("core.dev.net-debug-logs");
+    globed::SettingsManager::get().listenForChanges<bool>("core.dev.net-debug-logs", [this](bool value) {
+        m_debugLogs = value;
+    });
+
     async::spawn(this->asyncInit());
 }
 
@@ -2490,6 +2495,10 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
                     auto rtt = it->second.elapsed();
                     connInfo.m_gamePlayerDataReqs.erase(it);
                     m_gameConn->updateLatency(rtt);
+
+                    if (m_debugLogs.load(relaxed)) {
+                        log::debug("Game server RTT: {}", rtt);
+                    }
                 }
             }
 
