@@ -7,6 +7,7 @@
 #include <bit>
 
 #ifdef GEODE_IS_WINDOWS
+# include <asp/simd/CPUFeatures.hpp>
 # include <immintrin.h>
 #endif
 
@@ -463,11 +464,14 @@ static __attribute__((target("ssse3"))) void premultiplyIntoSSSE3(const void* so
 
 void premultiplyInto(const void* source, void* dest, size_t bytes) {
 #ifdef GEODE_IS_WINDOWS
-    // assume that any modern pc supports ssse3, it's around 3x faster than scalar
-    premultiplyIntoSSSE3(source, dest, bytes);
-#else
-    premultiplyIntoScalar(source, dest, bytes);
+    // apparently, some people are able to run this game on cpus from 2010 that do not support ssse3
+    static bool support = asp::simd::getFeatures().ssse3;
+    if (support) {
+        premultiplyIntoSSSE3(source, dest, bytes);
+        return;
+    }
 #endif
+    premultiplyIntoScalar(source, dest, bytes);
 }
 
 }
