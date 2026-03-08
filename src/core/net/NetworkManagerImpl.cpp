@@ -35,7 +35,10 @@ using enum std::memory_order;
 using namespace asp::time;
 using namespace arc;
 
-static arc::Semaphore g_aresSemaphore{0};
+static arc::Semaphore& aresSemaphore() {
+    static arc::Semaphore sema{0};
+    return sema;
+}
 
 static qn::ConnectionDebugOptions getConnOpts() {
     qn::ConnectionDebugOptions opts{};
@@ -231,15 +234,19 @@ void NetworkManagerImpl::shutdown() {
 
     // set up a notify so we know when both connections are fully disconnected
     arc::Notify notify;
-    m_centralConn->setConnectionStateCallback([&](qn::ConnectionState state) {
-        notify.notifyOne();
-    });
-    m_gameConn->setConnectionStateCallback([&](qn::ConnectionState state) {
-        notify.notifyOne();
-    });
+    if (m_centralConn) {
+        m_centralConn->setConnectionStateCallback([&](qn::ConnectionState state) {
+            notify.notifyOne();
+        });
+        m_centralConn->disconnect();
+    }
 
-    m_centralConn->disconnect();
-    m_gameConn->disconnect();
+    if (m_gameConn) {
+        m_gameConn->setConnectionStateCallback([&](qn::ConnectionState state) {
+            notify.notifyOne();
+        });
+        m_gameConn->disconnect();
+    }
 
     // allow some short cleanup
     if (auto rt = m_runtime.upgrade()) {
@@ -262,10 +269,14 @@ void NetworkManagerImpl::shutdown() {
         );
     }
 
-    m_centralConn->destroy();
-    m_gameConn->destroy();
-    m_centralConn.reset();
-    m_gameConn.reset();
+    if (m_centralConn) {
+        m_centralConn->destroy();
+        m_centralConn.reset();
+    }
+    if (m_gameConn) {
+        m_gameConn->destroy();
+        m_gameConn.reset();
+    }
 
     m_centralLogger.reset();
     m_gameLogger.reset();
@@ -302,7 +313,7 @@ static void commonConnectionSetup(qn::Connection& conn) {
 
 Future<> NetworkManagerImpl::asyncInit() {
     // wait for main thread to set the DNS thingamajig
-    co_await g_aresSemaphore.acquire();
+    co_await aresSemaphore().acquire();
 
     // this does not have to be async but it also must not be in the constructor
     if (globed::setting<bool>("core.dev.net-dont-override-dns")) {
@@ -2556,7 +2567,7 @@ $on_mod(Loaded) {
     globed::NetworkManagerImpl::get();
     dnsInit();
 
-    g_aresSemaphore.release();
+    aresSemaphore().release();
 }
 
 #ifdef QUNET_ADVANCED_DNS
