@@ -204,7 +204,7 @@ void GlobedGJBGL::setupAudio() {
             .encodedCallback = [this](const auto& frame) {
                 NetworkManagerImpl::get().sendVoiceData(frame);
 
-                if (g_settings.voiceLoopback) {
+                if (g_settings.voiceLoopback && m_fields->m_ghost) {
                     m_fields->m_ghost->playVoiceData(frame);
                 }
             },
@@ -1229,6 +1229,9 @@ void GlobedGJBGL::cleanupGlobedAdditions() {
 }
 
 bool GlobedGJBGL::playSelfEmote(uint32_t id) {
+    auto& fields = *m_fields.self();
+    if (!fields.m_active) return false;
+    
     if (!g_settings.quickChat) {
         return false;
     }
@@ -1240,7 +1243,6 @@ bool GlobedGJBGL::playSelfEmote(uint32_t id) {
     }
     g_lastEmoteTime = now;
 
-    auto& fields = *m_fields.self();
     fields.m_ghost->player1()->playEmote(id);
 
     NetworkManagerImpl::get().sendQuickChat(id);
