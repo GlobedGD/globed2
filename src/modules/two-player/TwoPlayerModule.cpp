@@ -65,7 +65,7 @@ void TwoPlayerModule::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, co
 void TwoPlayerModule::onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) {
     auto& mod = TwoPlayerModule::get();
 
-    if (player && player->id() == m_linkedPlayer) {
+    if (m_isPlayer2 && player && player->id() == m_linkedPlayer) {
         // respawn now
         gjbgl->resetLevel();
     }
