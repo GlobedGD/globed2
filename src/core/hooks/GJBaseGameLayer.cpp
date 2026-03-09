@@ -1231,7 +1231,7 @@ void GlobedGJBGL::cleanupGlobedAdditions() {
 bool GlobedGJBGL::playSelfEmote(uint32_t id) {
     auto& fields = *m_fields.self();
     if (!fields.m_active) return false;
-    
+
     if (!g_settings.quickChat) {
         return false;
     }

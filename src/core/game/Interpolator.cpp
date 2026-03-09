@@ -8,8 +8,8 @@
 # define LERP_LOG(...) do {} while (0)
 #endif
 
-constexpr float TIME_DRIFT_THRESHOLD = 0.20f; // 200ms
-constexpr float TIME_DRIFT_SMALL_THRESHOLD = 0.05f; // 50ms
+constexpr float TIME_DRIFT_THRESHOLD = 0.25f; // 250ms
+constexpr float TIME_DRIFT_SMALL_THRESHOLD = 0.10f; // 100ms
 constexpr float TIME_DRIFT_SMALL_ADJ_DEADLINE = 30.0f; // 30s
 constexpr bool DO_EXTRAPOLATE = false;
 

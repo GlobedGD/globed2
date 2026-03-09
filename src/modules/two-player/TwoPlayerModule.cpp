@@ -116,6 +116,58 @@ void TwoPlayerModule::onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) {
     }
 }
 
+void TwoPlayerModule::onUpdate(GlobedGJBGL* gjbgl, float dt) {
+    PlayerObject* noclipFor = this->isPlayer2() ? gjbgl->m_player1 : gjbgl->m_player2;
+    auto pobj = this->getLinkedPlayerObject(!this->isPlayer2());
+    if (!noclipFor || !pobj) return;
+
+    this->updateFromLinkedPlayer(noclipFor, pobj);
+
+    noclipFor->setVisible(false);
+    noclipFor->m_playEffects = false;
+
+    if (noclipFor->m_regularTrail) noclipFor->m_regularTrail->setVisible(false);
+    if (noclipFor->m_waveTrail) noclipFor->m_waveTrail->setVisible(false);
+    if (noclipFor->m_ghostTrail) noclipFor->m_ghostTrail->setVisible(false);
+    if (noclipFor->m_trailingParticles) noclipFor->m_trailingParticles->setVisible(false);
+    if (noclipFor->m_shipStreak) noclipFor->m_shipStreak->setVisible(false);
+    if (noclipFor->m_playerGroundParticles) noclipFor->m_playerGroundParticles->setVisible(false);
+    if (noclipFor->m_vehicleGroundParticles) noclipFor->m_vehicleGroundParticles->setVisible(false);
+
+    gjbgl->updateCamera(0.f);
+}
+
+void TwoPlayerModule::updateFromLinkedPlayer(PlayerObject* local, VisualPlayer* linked) {
+    bool shouldUpdateArt =
+        (local->m_gravity != linked->m_gravity)
+        || (local->m_isUpsideDown != linked->m_isUpsideDown)
+        || local->m_isGoingLeft != linked->m_isGoingLeft;
+
+    auto pos = linked->getLastPosition();
+    local->m_position = pos;
+    local->m_yVelocity = linked->m_yVelocity;
+    local->m_platformerXVelocity = linked->m_platformerXVelocity;
+    local->m_isOnGround = linked->m_isOnGround;
+    local->m_isGoingLeft = linked->m_isGoingLeft;
+    local->m_isAccelerating = linked->m_isAccelerating;
+    local->m_accelerationOrSpeed = linked->m_accelerationOrSpeed;
+    local->m_fallStartY = linked->m_fallStartY;
+    local->m_gravity = linked->m_gravity;
+    local->m_gravityMod = linked->m_gravityMod;
+    local->m_isOnGround2 = linked->m_isOnGround2;
+    local->m_touchedPad = linked->m_touchedPad;
+    local->m_isUpsideDown = linked->m_isUpsideDown;
+    local->m_maybeIsFalling = linked->m_maybeIsFalling;
+    local->m_fallSpeed = linked->m_fallSpeed;
+    local->m_isOnGround4 = linked->m_isOnGround4;
+    local->setPosition(pos);
+
+    // TODO: doesnt work
+    // if (shouldUpdateArt) {
+    //     this->updatePlayerArt();
+    // }
+}
+
 bool TwoPlayerModule::link(int id, bool player2) {
     if (m_linkAttempt || m_linkedPlayer) {
         globed::toastError("Cannot link while already linked to a player");
