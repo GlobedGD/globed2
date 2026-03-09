@@ -578,10 +578,8 @@ void VisualPlayer::callUpdate(PlayerIconData& icons, PlayerIconType ty) {
     bool doMini = m_defaultMiniIcon && m_prevMini;
 
     switch (ty) {
-        case PlayerIconType::Unknown: break;
-        case PlayerIconType::Cube: {
-            this->updatePlayerFrame(doMini ? 0 : icons.cube);
-        } break;
+        case PlayerIconType::Unknown:
+        case PlayerIconType::Cube: break; // handled later
         case PlayerIconType::Ship: {
             this->updatePlayerShipFrame(icons.ship);
         } break;
@@ -606,6 +604,11 @@ void VisualPlayer::callUpdate(PlayerIconData& icons, PlayerIconType ty) {
         case PlayerIconType::Jetpack: {
             this->updatePlayerJetpackFrame(icons.jetpack);
         } break;
+    }
+
+    // if we are switching to cube or a mode with a passenger, we always call updatePlayerFrame
+    if (ty == PlayerIconType::Cube || ty == PlayerIconType::Ship || ty == PlayerIconType::Ufo || ty == PlayerIconType::Jetpack) {
+        this->updatePlayerFrame(doMini ? 0 : icons.cube);
     }
 }
 
@@ -1018,3 +1021,15 @@ VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp,
 }
 
 }
+
+// Note for self after reversing PlayerObject:
+// - Switching to another mode is done via toggleXXXMode(true, false), and then updatePlayerXXXFrame
+// - Switching to variants with passengers (ufo, ship) also seems to call updatePlayerFrame afterwards
+// - update frame methods do the following:
+// 1. clamp icon id and call GameManager::loadIcon
+// 2. obtain sprite frames from the cache and set them to the appropriate sprites
+// 3. sometimes call extra funcs, e.g. updatePlayerSpriteExtra
+// - toggle methods do the following:
+// 1. bail out if the same mode already
+// 2. call switchedToMode (which toggles all modes off?)
+// 3. calls other stuff like updating frames, doing stuff with streaks/particles
