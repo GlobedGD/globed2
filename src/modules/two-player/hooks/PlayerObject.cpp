@@ -29,20 +29,7 @@ struct GLOBED_MODIFY_ATTR TPPlayerObject : geode::Modify<TPPlayerObject, PlayerO
         PlayerObject* noclipFor = mod.isPlayer2() ? gameLayer->m_player1 : gameLayer->m_player2;
 
         if (this == noclipFor) {
-            if (m_bVisible) this->setVisible(false);
-
-            if (m_ghostType != GhostType::Disabled) {
-                this->toggleGhostEffect(GhostType::Disabled);
-            }
-
-            m_playEffects = false;
-
-            if (m_regularTrail) m_regularTrail->setVisible(false);
-            if (m_waveTrail) m_waveTrail->setVisible(false);
-            if (m_trailingParticles) m_trailingParticles->setVisible(false);
-            if (m_shipStreak) m_shipStreak->setVisible(false);
-            if (m_playerGroundParticles) m_playerGroundParticles->setVisible(false);
-            if (m_vehicleGroundParticles) m_vehicleGroundParticles->setVisible(false);
+            forceHidePlayer(this);
         }
     }
 };

@@ -382,19 +382,6 @@ void APSPlayLayer::handleUpdate() {
         }
     }
 
-    if (controller.m_activePlayer != 0) {
-        bool p1vis = controller.m_meActive;
-        bool p2vis = controller.m_meActive && m_gameState.m_isDualMode;
-
-        m_player1->setVisible(p1vis);
-        if (m_player1->m_shipStreak) m_player1->m_shipStreak->setVisible(p1vis);
-        if (m_player1->m_regularTrail) m_player1->m_regularTrail->setVisible(p1vis);
-
-        m_player2->setVisible(p2vis);
-        if (m_player2->m_shipStreak) m_player2->m_shipStreak->setVisible(p2vis);
-        if (m_player2->m_regularTrail) m_player2->m_regularTrail->setVisible(p2vis);
-    }
-
     if (!controller.m_meActive && controller.m_activePlayer != 0) {
         auto rp = self->getPlayer(controller.m_activePlayer);
         if (rp) {
@@ -405,6 +392,8 @@ void APSPlayLayer::handleUpdate() {
             controller.m_activePlayer = 0;
         }
     }
+
+    this->updateCamera(0.f);
 }
 
 void APSPlayLayer::handleUpdateFromRp(PlayerObject* local, RemotePlayer* rp, bool isPlayer2) {
@@ -453,13 +442,6 @@ void APSGJBGL::handleButton(bool a, int b, bool c) {
     }
 }
 
-void APSGJBGL::update(float dt) {
-    GJBaseGameLayer::update(dt);
-
-    auto pl = APSPlayLayer::get(this);
-    if (pl) pl->handleUpdate();
-}
-
 // PauseLayer
 
 void APSPauseLayer::customSetup() {
@@ -492,6 +474,25 @@ void APSPauseLayer::customSetup() {
         .parent(menu);
 
     menu->updateLayout();
+}
+
+void APSPlayerObject::update(float dt) {
+    PlayerObject::update(dt);
+
+    auto gameLayer = APSPlayLayer::get(m_gameLayer);
+    if (!gameLayer || !(this == gameLayer->m_player1 || this == gameLayer->m_player2)) return;
+
+    auto& cont = gameLayer->m_fields->m_controller;
+    if (cont.m_activePlayer == 0) return;
+
+    bool show = cont.m_meActive;
+
+    if (show) {
+        this->setVisible(true);
+        // ?
+    } else {
+        forceHidePlayer(this);
+    }
 }
 
 }

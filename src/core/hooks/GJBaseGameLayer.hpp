@@ -185,4 +185,6 @@ private:
     void fixProgressBar(float percent);
 };
 
+void forceHidePlayer(PlayerObject* obj);
+
 }

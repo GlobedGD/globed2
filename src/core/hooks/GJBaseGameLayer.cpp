@@ -1259,4 +1259,21 @@ bool GlobedGJBGL::playSelfFavoriteEmote(uint32_t which) {
     return false;
 }
 
+void forceHidePlayer(PlayerObject* obj) {
+    if (obj->m_bVisible) obj->setVisible(false);
+
+    if (obj->m_ghostType != GhostType::Disabled) {
+        obj->toggleGhostEffect(GhostType::Disabled);
+    }
+
+    obj->m_playEffects = false;
+
+    if (obj->m_regularTrail) obj->m_regularTrail->setVisible(false);
+    if (obj->m_waveTrail) obj->m_waveTrail->setVisible(false);
+    if (obj->m_trailingParticles) obj->m_trailingParticles->setVisible(false);
+    if (obj->m_shipStreak) obj->m_shipStreak->setVisible(false);
+    if (obj->m_playerGroundParticles) obj->m_playerGroundParticles->setVisible(false);
+    if (obj->m_vehicleGroundParticles) obj->m_vehicleGroundParticles->setVisible(false);
+}
+
 }

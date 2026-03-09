@@ -10,6 +10,7 @@
 #include <Geode/modify/PauseLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
+#include <Geode/modify/PlayerObject.hpp>
 
 namespace globed {
 
@@ -105,7 +106,6 @@ struct GLOBED_MODIFY_ATTR APSGJBGL : geode::Modify<APSGJBGL, GJBaseGameLayer> {
     static void onModify(auto& self) {
         GLOBED_CLAIM_HOOKS(APSModule::get(), self,
             "GJBaseGameLayer::handleButton",
-            "GJBaseGameLayer::update"
         );
     }
 
@@ -113,9 +113,6 @@ struct GLOBED_MODIFY_ATTR APSGJBGL : geode::Modify<APSGJBGL, GJBaseGameLayer> {
     // according to prevter handlebutton would break a bunch of bots and likely have incompat with cbf
     $override
     void handleButton(bool a, int b, bool c);
-
-    $override
-    void update(float dt);
 };
 
 struct GLOBED_MODIFY_ATTR APSPauseLayer : geode::Modify<APSPauseLayer, PauseLayer> {
@@ -127,6 +124,17 @@ struct GLOBED_MODIFY_ATTR APSPauseLayer : geode::Modify<APSPauseLayer, PauseLaye
 
     $override
     void customSetup();
+};
+
+struct GLOBED_MODIFY_ATTR APSPlayerObject : geode::Modify<APSPlayerObject, PlayerObject> {
+    static void onModify(auto& self) {
+        GLOBED_CLAIM_HOOKS(APSModule::get(), self,
+            "PlayerObject::update"
+        );
+    }
+
+    $override
+    void update(float dt);
 };
 
 }
