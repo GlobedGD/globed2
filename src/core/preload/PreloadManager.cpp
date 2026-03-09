@@ -192,7 +192,12 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
     for (auto& item : items) {
         pool.pushTask([&item, state, texCache, this] {
             StringBuffer<512> buf;
-            buf.append("{}.png", item.image);
+
+            if (item.image.ends_with(".png")) {
+                buf.append("{}", item.image);
+            } else {
+                buf.append("{}.png", item.image);
+            }
 
             auto fullPath = this->fullPathForFilename(buf.view());
             if (fullPath.empty()) {
