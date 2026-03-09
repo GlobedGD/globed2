@@ -167,7 +167,7 @@ std::optional<T> parseNode(pugi::xml_node node) {
     } else if constexpr (std::is_same_v<T, int>) {
         return geode::utils::numFromString<int>(str).ok();
     } else if constexpr (std::is_same_v<T, bool>) {
-        return strncmp(node.name(), "true", 5) == 0;
+        return std::string_view{node.name()} == "true";
     } else if constexpr (std::is_same_v<T, CCPoint> || std::is_same_v<T, CCSize>) {
         return parseCCPoint<T>(str);
     } else if constexpr(std::is_same_v<T, CCRect>) {
@@ -238,6 +238,8 @@ bool parseSpriteFrameV0(pugi::xml_node node, SpriteFrame& sframe) {
                 assign_or_bail(sframe.sourceSize.height, (parseNode<int>(valueNode)));
                 sframe.sourceSize.height = std::abs(sframe.sourceSize.height);
             } break;
+
+            default: break;
         }
     }
 
@@ -274,6 +276,8 @@ bool parseSpriteFrameV1_2(pugi::xml_node node, SpriteFrame& sframe, int format) 
             case STRING_HASH("sourceSize"): {
                 assign_or_bail(sframe.sourceSize, parseNode<cocos2d::CCSize>(valueNode));
             } break;
+
+            default: break;
         }
     }
 
@@ -298,17 +302,20 @@ bool parseSpriteFrameV3(pugi::xml_node node, SpriteFrame& sframe) {
                 assign_or_bail(sframe.offset, parseNode<cocos2d::CCPoint>(valueNode));
             } break;
 
-            // Apparently unused?
-            // case STRING_HASH("spriteSize"): {
-            //     sframe.size = parseNode<cocos2d::CCSize>(valueNode);
-            // } break;
+            case STRING_HASH("spriteSize"): {
+                assign_or_bail(sframe.textureRect.size, parseNode<cocos2d::CCSize>(valueNode));
+            } break;
 
             case STRING_HASH("spriteSourceSize"): {
                 assign_or_bail(sframe.sourceSize, parseNode<cocos2d::CCSize>(valueNode));
             } break;
 
             case STRING_HASH("textureRect"): {
-                assign_or_bail(sframe.textureRect, parseNode<cocos2d::CCRect>(valueNode));
+                if (auto tr = parseNode<cocos2d::CCRect>(valueNode)) {
+                    sframe.textureRect.origin = tr->origin;
+                } else {
+                    return false;
+                }
             } break;
 
             case STRING_HASH("textureRotated"): {
@@ -321,6 +328,8 @@ bool parseSpriteFrameV3(pugi::xml_node node, SpriteFrame& sframe) {
                     sframe.aliases.push_back(aliasNode.child_value());
                 }
             } break;
+
+            default: break;
         }
     }
 
@@ -410,6 +419,8 @@ Result<std::unique_ptr<SpriteFrameData>> parseSpriteFrames(void* data, size_t si
             case STRING_HASH("textureFileName"): {
                 sfdata->metadata.textureFileName = valueNode.child_value();
             } break;
+
+            default: break;
         }
     }
 
