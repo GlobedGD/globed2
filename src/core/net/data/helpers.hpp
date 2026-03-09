@@ -929,11 +929,15 @@ $implDecode(msg::FeaturedListMessage, main::FeaturedListMessage::Reader& reader)
     msg::FeaturedListMessage out{};
     auto levelIds = reader.getLevelIds();
     auto rateTiers = reader.getRateTiers();
+    auto featureTimes = reader.getFeatureTimes();
 
-    for (size_t i = 0; i < std::min(levelIds.size(), rateTiers.size()); i++) {
+    size_t ents = std::min({levelIds.size(), rateTiers.size(), featureTimes.size()});
+
+    for (size_t i = 0; i < ents; i++) {
         out.levels.push_back(FeaturedLevelMeta {
             .levelId = levelIds[i],
             .rateTier = decodeFeatureTier(rateTiers[i]),
+            .featuredAt = featureTimes[i],
         });
     }
 

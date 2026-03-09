@@ -13,6 +13,7 @@ struct FeaturedLevelMeta {
     int levelId;
     int edition;
     FeatureTier rateTier;
+    uint64_t featuredAt;
 };
 
 }
