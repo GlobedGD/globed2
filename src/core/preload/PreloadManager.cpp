@@ -389,8 +389,8 @@ void PreloadManager::initSessionState() {
         idx++;
     }
 
-    // spawn from 4 threads up to the cpu count
-    size_t workers = std::max<size_t>(std::thread::hardware_concurrency(), 4);
+    // spawn ncpus+4 threads, since some amount of time is spent on blocking (mutexes, file io)
+    size_t workers = std::thread::hardware_concurrency() + 4;
     m_sstate.threadPool = std::make_unique<asp::ThreadPool>(workers);
     m_sstate.initialized = true;
     m_sstate.postInitTime = Instant::now();

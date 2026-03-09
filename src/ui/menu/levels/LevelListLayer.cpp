@@ -316,7 +316,7 @@ void LevelListLayer::onOpenFilters() {
 }
 
 void LevelListLayer::onNextPage() {
-    m_currentPage = std::min<size_t>(m_currentPage + 1, m_allLevelIds.size() / m_pageSize); // TODO idk if this is correcto
+    m_currentPage = std::min<size_t>(m_currentPage + 1, m_allLevelIds.size() / m_pageSize);
     this->startLoadingForPage();
 }
 
