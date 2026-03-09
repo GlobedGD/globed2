@@ -45,7 +45,7 @@ VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
     m_unk4C8 = -1;
     m_unk4CC = -1;
     m_unk50C = 1.0f;
-    m_defaultZLayer= ZLayer::T1;
+    m_defaultZLayer = ZLayer::T1;
     m_pixelScaleX = 1.0f;
     m_areaOpacityValue = 1.0f;
 
@@ -580,8 +580,7 @@ void VisualPlayer::callUpdate(PlayerIconData& icons, PlayerIconType ty) {
     switch (ty) {
         case PlayerIconType::Unknown: break;
         case PlayerIconType::Cube: {
-            // for some reason default mini icon does not work on the first player with cube, replicate rob's bug (or not bug??)
-            this->updatePlayerFrame(doMini && m_isSecond ? 0 : icons.cube);
+            this->updatePlayerFrame(doMini ? 0 : icons.cube);
         } break;
         case PlayerIconType::Ship: {
             this->updatePlayerShipFrame(icons.ship);
