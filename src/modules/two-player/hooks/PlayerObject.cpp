@@ -30,11 +30,15 @@ struct GLOBED_MODIFY_ATTR TPPlayerObject : geode::Modify<TPPlayerObject, PlayerO
 
         if (this == noclipFor) {
             if (m_bVisible) this->setVisible(false);
+
+            if (m_ghostType != GhostType::Disabled) {
+                this->toggleGhostEffect(GhostType::Disabled);
+            }
+
             m_playEffects = false;
 
             if (m_regularTrail) m_regularTrail->setVisible(false);
             if (m_waveTrail) m_waveTrail->setVisible(false);
-            if (m_ghostTrail) m_ghostTrail->setVisible(false);
             if (m_trailingParticles) m_trailingParticles->setVisible(false);
             if (m_shipStreak) m_shipStreak->setVisible(false);
             if (m_playerGroundParticles) m_playerGroundParticles->setVisible(false);
