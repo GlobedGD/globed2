@@ -186,5 +186,6 @@ private:
 };
 
 void forceHidePlayer(PlayerObject* obj);
+void forceShowPlayer(PlayerObject* obj);
 
 }

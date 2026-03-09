@@ -488,8 +488,7 @@ void APSPlayerObject::update(float dt) {
     bool show = cont.m_meActive;
 
     if (show) {
-        this->setVisible(true);
-        // ?
+        forceShowPlayer(this);
     } else {
         forceHidePlayer(this);
     }

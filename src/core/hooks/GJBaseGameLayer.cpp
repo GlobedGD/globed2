@@ -1276,4 +1276,17 @@ void forceHidePlayer(PlayerObject* obj) {
     if (obj->m_vehicleGroundParticles) obj->m_vehicleGroundParticles->setVisible(false);
 }
 
+void forceShowPlayer(PlayerObject* obj) {
+    if (!obj->m_bVisible) obj->setVisible(true);
+
+    obj->m_playEffects = true;
+
+    if (obj->m_regularTrail) obj->m_regularTrail->setVisible(true);
+    if (obj->m_waveTrail) obj->m_waveTrail->setVisible(true);
+    if (obj->m_trailingParticles) obj->m_trailingParticles->setVisible(true);
+    if (obj->m_shipStreak) obj->m_shipStreak->setVisible(true);
+    if (obj->m_playerGroundParticles) obj->m_playerGroundParticles->setVisible(true);
+    if (obj->m_vehicleGroundParticles) obj->m_vehicleGroundParticles->setVisible(true);
+}
+
 }
