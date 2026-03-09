@@ -122,18 +122,6 @@ void TwoPlayerModule::onUpdate(GlobedGJBGL* gjbgl, float dt) {
     if (!noclipFor || !pobj) return;
 
     this->updateFromLinkedPlayer(noclipFor, pobj);
-
-    noclipFor->setVisible(false);
-    noclipFor->m_playEffects = false;
-
-    if (noclipFor->m_regularTrail) noclipFor->m_regularTrail->setVisible(false);
-    if (noclipFor->m_waveTrail) noclipFor->m_waveTrail->setVisible(false);
-    if (noclipFor->m_ghostTrail) noclipFor->m_ghostTrail->setVisible(false);
-    if (noclipFor->m_trailingParticles) noclipFor->m_trailingParticles->setVisible(false);
-    if (noclipFor->m_shipStreak) noclipFor->m_shipStreak->setVisible(false);
-    if (noclipFor->m_playerGroundParticles) noclipFor->m_playerGroundParticles->setVisible(false);
-    if (noclipFor->m_vehicleGroundParticles) noclipFor->m_vehicleGroundParticles->setVisible(false);
-
     gjbgl->updateCamera(0.f);
 }
 
