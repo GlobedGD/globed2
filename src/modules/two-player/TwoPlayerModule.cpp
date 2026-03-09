@@ -245,9 +245,11 @@ void TwoPlayerModule::handleEvent(const InEvent& event) {
 }
 
 void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkRequestEvent& event) {
-    // are we already linked? if so, ignore this event
+    // are we already linked? if so, send an unlink if it's a different player (rejecting the link attempt)
     if (m_linkedPlayer) {
-        this->sendUnlinkEventTo(event.playerId);
+        if (*m_linkedPlayer != event.playerId) {
+            this->sendUnlinkEventTo(event.playerId);
+        }
         return;
     }
 
