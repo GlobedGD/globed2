@@ -34,7 +34,8 @@ public:
         const PlayerState& state,
         const GameCameraState& camState,
         bool forceHideIcon,
-        bool forceHideEverything
+        bool forceHideEverything,
+        bool noCulling
     );
     void cleanupObjectLayer();
 

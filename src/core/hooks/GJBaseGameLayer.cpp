@@ -426,7 +426,7 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
 
         OutFlags flags{};
         auto& vstate = fields.m_interpolator.getPlayerState(playerId, flags);
-        player->update(vstate, camState, flags, fields.m_playersHidden);
+        player->update(vstate, camState, flags, fields.m_playersHidden, fields.m_noGlobalCulling);
 
         // if we don't know player's data yet (username, icons, etc.), request it
         bool dataInit = player->isDataInitialized();
@@ -1095,6 +1095,24 @@ void GlobedGJBGL::customUnscheduleAll() {
     }
 
     fields.m_customSchedules.clear();
+}
+
+void GlobedGJBGL::setCameraFollowPlayer(PlayerObject* player) {
+    m_fields->m_cameraFollows = player;
+}
+
+void GlobedGJBGL::updateCamera(float dt) {
+    auto& follows = m_fields->m_cameraFollows;
+    auto pl = follows.lock();
+
+    if (!pl) {
+        return GJBaseGameLayer::updateCamera(dt);
+    }
+
+    auto prevPos = m_player1->getPosition();
+    m_player1->setPosition(pl->getPosition());
+    GJBaseGameLayer::updateCamera(dt);
+    m_player1->setPosition(prevPos);
 }
 
 void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {

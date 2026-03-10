@@ -28,7 +28,9 @@ public:
 private:
     void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) override;
     void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) override;
-    void onUpdate(GlobedGJBGL* gjbgl, float dt) override;
+    void onPreUpdate(GlobedGJBGL* gjbgl, float dt) override;
+    void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) override;
+    void onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) override;
 };
 
 }

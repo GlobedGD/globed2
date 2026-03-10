@@ -86,6 +86,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         Ref<VoiceOverlay> m_voiceOverlay;
         Ref<PingOverlay> m_pingOverlay;
         Ref<CCSprite> m_noticeAlert;
+        geode::WeakRef<PlayerObject> m_cameraFollows;
     };
 
     // Setup functions
@@ -108,6 +109,9 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     // Hooks
     $override
     bool init(GJGameLevel* level);
+
+    $override
+    void updateCamera(float dt);
 
     void onEnterHook();
 
@@ -166,6 +170,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void customSchedule(const std::string& id, float interval, geode::Function<void(GlobedGJBGL*, float)>&& f);
     void customUnschedule(const std::string& id);
     void customUnscheduleAll();
+
+    void setCameraFollowPlayer(PlayerObject* player);
 
     bool playSelfEmote(uint32_t id);
     bool playSelfFavoriteEmote(uint32_t which);

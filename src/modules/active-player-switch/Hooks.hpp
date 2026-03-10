@@ -85,7 +85,7 @@ struct GLOBED_MODIFY_ATTR APSPlayLayer : geode::Modify<APSPlayLayer, PlayLayer> 
     void destroyPlayer(PlayerObject* player, GameObject* obj);
 
     void handlePlayerDeath(const PlayerDeath& death, RemotePlayer* player);
-    void handleUpdate();
+    void handleUpdate(float dt);
     void handleUpdateFromRp(PlayerObject* local, RemotePlayer* rp, bool p2);
 
     void customResetLevel();

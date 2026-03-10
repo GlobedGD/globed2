@@ -152,7 +152,8 @@ void VisualPlayer::updateFromData(
     const PlayerState& state,
     const GameCameraState& camState,
     bool forceHideIcon,
-    bool forceHideEverything
+    bool forceHideEverything,
+    bool noCulling
 ) {
     if (lerpDebug()) {
         this->updateLerpTrajectory(data);
@@ -204,7 +205,7 @@ void VisualPlayer::updateFromData(
         m_playingDeathEffect = false;
     }
 
-    bool isNearby = this->isPlayerNearby(data, camState);
+    bool isNearby = noCulling ? true : this->isPlayerNearby(data, camState);
 
     bool cameNearby = isNearby && !m_prevNearby;
     m_prevNearby = isNearby;

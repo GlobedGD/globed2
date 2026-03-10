@@ -75,7 +75,7 @@ RemotePlayer::~RemotePlayer() {
     m_player2->removeFromParent();
 }
 
-void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState, const OutFlags& flags, bool forceHide) {
+void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState, const OutFlags& flags, bool forceHide, bool noCulling) {
     forceHide = forceHide || m_forceHide;
 
     bool hideIcon = forceHide;
@@ -92,13 +92,13 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
     m_player2Culled = !m_state.player2;
 
     if (m_state.player1) {
-        m_player1->updateFromData(*m_state.player1, m_state, camState, hideIcon, hideEverything);
+        m_player1->updateFromData(*m_state.player1, m_state, camState, hideIcon, hideEverything, noCulling);
     } else {
         m_player1->setVisible(false);
     }
 
     if (m_state.player2) {
-        m_player2->updateFromData(*m_state.player2, m_state, camState, hideIcon, hideEverything);
+        m_player2->updateFromData(*m_state.player2, m_state, camState, hideIcon, hideEverything, noCulling);
     } else {
         m_player2->setVisible(false);
     }

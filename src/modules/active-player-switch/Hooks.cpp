@@ -370,7 +370,7 @@ void APSPlayLayer::updateSettings(const APSSettings& settings) {
     set.m_warningDelay = std::min(set.m_warningDelay, set.m_interval - 1.f);
 }
 
-void APSPlayLayer::handleUpdate() {
+void APSPlayLayer::handleUpdate(float dt) {
     auto& fields = *m_fields.self();
     auto& controller = fields.m_controller;
     auto self = GlobedGJBGL::get(this);
@@ -382,18 +382,27 @@ void APSPlayLayer::handleUpdate() {
         }
     }
 
+    bool takeOverCamera = false;
     if (!controller.m_meActive && controller.m_activePlayer != 0) {
         auto rp = self->getPlayer(controller.m_activePlayer);
         if (rp) {
             this->handleUpdateFromRp(m_player1, rp.get(), false);
             this->handleUpdateFromRp(m_player2, rp.get(), true);
+            self->setCameraFollowPlayer(rp->player1());
+            takeOverCamera = true;
         } else {
             log::warn("active player {} not found!", controller.m_activePlayer);
             controller.m_activePlayer = 0;
         }
     }
 
-    this->updateCamera(0.f);
+    if (!takeOverCamera) {
+        self->setCameraFollowPlayer(nullptr);
+    }
+
+    setPlayerHidden(m_player1, takeOverCamera);
+    setPlayerHidden(m_player2, takeOverCamera);
+    setPlayerHidden(self->m_fields->m_ghost.get(), takeOverCamera);
 }
 
 void APSPlayLayer::handleUpdateFromRp(PlayerObject* local, RemotePlayer* rp, bool isPlayer2) {
@@ -478,20 +487,6 @@ void APSPauseLayer::customSetup() {
 
 void APSPlayerObject::update(float dt) {
     PlayerObject::update(dt);
-
-    auto gameLayer = APSPlayLayer::get(m_gameLayer);
-    if (!gameLayer || !(this == gameLayer->m_player1 || this == gameLayer->m_player2)) return;
-
-    auto& cont = gameLayer->m_fields->m_controller;
-    if (cont.m_activePlayer == 0) return;
-
-    bool show = cont.m_meActive;
-
-    if (show) {
-        forceShowPlayer(this);
-    } else {
-        forceHidePlayer(this);
-    }
 }
 
 }
