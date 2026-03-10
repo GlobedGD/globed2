@@ -20,9 +20,6 @@ struct GLOBED_MODIFY_ATTR TPMBaseGameLayer : geode::Modify<TPMBaseGameLayer, GJB
     $override
     void updateCamera(float dt) {
         auto& mod = TwoPlayerModule::get();
-        auto& lerper = GlobedGJBGL::get(this)->m_fields->m_interpolator;
-
-        lerper.setCameraCorrections(!mod.isPlayer2());
 
         bool fixCamera = m_gameState.m_isDualMode && mod.isLinked() && mod.isPlayer2();
         if (!fixCamera) {

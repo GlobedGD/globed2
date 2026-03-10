@@ -20,17 +20,6 @@ struct GLOBED_MODIFY_ATTR TPPlayerObject : geode::Modify<TPPlayerObject, PlayerO
     $override
     void update(float dt) {
         PlayerObject::update(dt);
-
-        auto& mod = TwoPlayerModule::get();
-        auto gameLayer = GlobedGJBGL::get();
-
-        if (!gameLayer || !mod.isLinked()) return;
-
-        PlayerObject* noclipFor = mod.isPlayer2() ? gameLayer->m_player1 : gameLayer->m_player2;
-
-        if (this == noclipFor) {
-            forceHidePlayer(this);
-        }
     }
 };
 

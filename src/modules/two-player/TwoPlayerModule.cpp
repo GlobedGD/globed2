@@ -63,8 +63,6 @@ void TwoPlayerModule::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, co
 }
 
 void TwoPlayerModule::onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) {
-    auto& mod = TwoPlayerModule::get();
-
     if (m_isPlayer2 && player && player->id() == m_linkedPlayer) {
         // respawn now
         gjbgl->resetLevel();
@@ -116,13 +114,28 @@ void TwoPlayerModule::onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) {
     }
 }
 
-void TwoPlayerModule::onUpdate(GlobedGJBGL* gjbgl, float dt) {
+void TwoPlayerModule::onPreUpdate(GlobedGJBGL* gjbgl, float dt) {
+    auto ghost = gjbgl->m_fields->m_ghost.get();
     PlayerObject* noclipFor = this->isPlayer2() ? gjbgl->m_player1 : gjbgl->m_player2;
+    PlayerObject* noclipForVP = this->isPlayer2() ? ghost->player1() : ghost->player2();
     auto pobj = this->getLinkedPlayerObject(!this->isPlayer2());
     if (!noclipFor || !pobj) return;
 
+    auto& lerper = gjbgl->m_fields->m_interpolator;
+    lerper.setCameraCorrections(!this->isPlayer2());
+
     this->updateFromLinkedPlayer(noclipFor, pobj);
-    gjbgl->updateCamera(0.f);
+    if (!gjbgl->m_gameState.m_isDualMode && this->isPlayer2()) {
+        gjbgl->setCameraFollowPlayer(pobj);
+    } else {
+        gjbgl->setCameraFollowPlayer(nullptr);
+    }
+
+    // hide player1 if we are player 2
+    setPlayerHidden(gjbgl->m_player1, this->isPlayer2());
+
+    setPlayerHidden(noclipFor, true);
+    setPlayerHidden(noclipForVP, true);
 }
 
 void TwoPlayerModule::updateFromLinkedPlayer(PlayerObject* local, VisualPlayer* linked) {

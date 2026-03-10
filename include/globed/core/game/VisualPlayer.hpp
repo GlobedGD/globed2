@@ -56,6 +56,7 @@ public:
 
     void setVisible(bool icon, bool misc);
     void setVisible(bool vis) override;
+    bool isVisible() override;
 
 private:
     friend class RemotePlayer;

@@ -1002,6 +1002,10 @@ void VisualPlayer::setVisible(bool vis) {
     this->setVisible(vis, vis);
 }
 
+bool VisualPlayer::isVisible() {
+    return m_bVisible && !this->getUserFlag("hidden"_spr);
+}
+
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
     auto data = operator new(sizeof(VisualPlayer));
     std::memset(data, 0, sizeof(VisualPlayer));

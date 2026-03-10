@@ -62,7 +62,7 @@ private:
         return true;
     }
     void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) override;
-    void onUpdate(GlobedGJBGL* gjbgl, float dt) override;
+    void onPreUpdate(GlobedGJBGL* gjbgl, float dt) override;
 
     void sendUnlinkEventTo(int id);
     void sendLinkEventTo(int id, bool player2);
