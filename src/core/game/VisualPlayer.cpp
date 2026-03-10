@@ -212,8 +212,9 @@ void VisualPlayer::updateFromData(
     // determine if the player should be visible
     bool shouldMiscVisible = !forceHideEverything;
     bool shouldIconVisible = !forceHideIcon && !forceHideEverything;
+    bool hasHiddenFlag = this->getUserFlag("hidden"_spr);
 
-    if (state.isPracticing && g_settings.hidePracticing) {
+    if ((state.isPracticing && g_settings.hidePracticing) || hasHiddenFlag) {
         shouldIconVisible = shouldMiscVisible = false;
     } else if (!forceHideEverything) {
         shouldMiscVisible = ((data.isVisible && !m_playingDeathEffect) || g_settings.forceVisibility) && isNearby;
