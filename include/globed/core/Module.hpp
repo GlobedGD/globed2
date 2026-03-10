@@ -137,6 +137,8 @@ protected:
     virtual void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) {}
     /// Called every frame when in a level and connected to the server
     virtual void onUpdate(GlobedGJBGL* gjbgl, float dt) {}
+    /// Called every frame when in a level and connected to the server, before onUpdate. Deltatime here is more accurate.
+    virtual void onPreUpdate(GlobedGJBGL* gjbgl, float dt) {}
 
 private:
     friend class Core;

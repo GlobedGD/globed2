@@ -15,6 +15,7 @@
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/game/SettingCache.hpp>
 
+#include <Geode/modify/CCNode.hpp>
 #include <Geode/loader/GameEvent.hpp>
 #include <Geode/loader/SettingV3.hpp>
 #include <Geode/utils/VMTHookManager.hpp>
@@ -106,7 +107,6 @@ void GlobedGJBGL::setupPostInit() {
     // setup everything else
     this->setupAssetLoading();
     this->setupAudio();
-    this->setupUpdateLoop();
     this->setupUi();
     this->setupKeybinds();
 
@@ -240,29 +240,6 @@ void GlobedGJBGL::setupAudio() {
     }
 }
 
-void GlobedGJBGL::setupUpdateLoop() {
-    auto& fields = *m_fields.self();
-
-    // this has to be deferred. why? i don't know! but bugs happen otherwise
-    FunctionQueue::get().queue([this] {
-        auto self = GlobedGJBGL::get();
-        if (!self || !self->active()) {
-            return;
-        }
-
-        auto& fields = *self->m_fields.self();
-
-        if (auto p = this->getParent()) {
-            p->schedule(schedule_selector(GlobedGJBGL::selUpdateProxy), 0.f);
-            fields.m_didSchedule = true;
-        } else {
-            log::warn("Failed to schedule update loop, parent is null, will try again later");
-        }
-
-        self->scheduleOnce(schedule_selector(GlobedGJBGL::selPostInitActions), 0.25f);
-    });
-}
-
 void GlobedGJBGL::setupUi() {
     auto& fields = *m_fields.self();
 
@@ -390,13 +367,7 @@ void GlobedGJBGL::onQuit() {
     RoomManager::get().leaveLevel();
 }
 
-void GlobedGJBGL::selUpdateProxy(float dt) {
-    if (auto self = GlobedGJBGL::get()) {
-        self->selUpdate(dt);
-    }
-}
-
-void GlobedGJBGL::selUpdate(float tsdt) {
+void GlobedGJBGL::selPreUpdate(float tsdt) {
     auto& fields = *m_fields.self();
 
     if (!fields.m_active) {
@@ -527,6 +498,15 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         }
     }
 
+    CoreImpl::get().onPreUpdate(this, dt);
+}
+
+void GlobedGJBGL::selPostUpdate(float dt) {
+    auto& fields = *m_fields.self();
+    if (!fields.m_active) return;
+
+    auto camState = this->getCameraState();
+
     // send player data to the server
     auto state = this->getPlayerState();
     auto& sendInterval = fields.m_throttleUpdates
@@ -598,19 +578,6 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
 
     if (prevThrottle != fields.m_throttleUpdates) {
         log::info("updating data send interval to {}", fields.m_throttleUpdates ? "throttled" : "normal");
-    }
-}
-
-void GlobedGJBGL::selPostInitActions(float dt) {
-    auto& fields = *m_fields.self();
-
-    if (!fields.m_didSchedule) {
-        if (auto p = this->getParent()) {
-            p->schedule(schedule_selector(GlobedGJBGL::selUpdateProxy), 0.f);
-            fields.m_didSchedule = true;
-        } else {
-            log::error("Failed to schedule update loop, parent is null again");
-        }
     }
 }
 
@@ -1259,34 +1226,67 @@ bool GlobedGJBGL::playSelfFavoriteEmote(uint32_t which) {
     return false;
 }
 
-void forceHidePlayer(PlayerObject* obj) {
-    if (obj->m_bVisible) obj->setVisible(false);
-
-    if (obj->m_ghostType != GhostType::Disabled) {
-        obj->toggleGhostEffect(GhostType::Disabled);
-    }
-
-    obj->m_playEffects = false;
-
-    if (obj->m_regularTrail) obj->m_regularTrail->setVisible(false);
-    if (obj->m_waveTrail) obj->m_waveTrail->setVisible(false);
-    if (obj->m_trailingParticles) obj->m_trailingParticles->setVisible(false);
-    if (obj->m_shipStreak) obj->m_shipStreak->setVisible(false);
-    if (obj->m_playerGroundParticles) obj->m_playerGroundParticles->setVisible(false);
-    if (obj->m_vehicleGroundParticles) obj->m_vehicleGroundParticles->setVisible(false);
+static void hideNode(CCNode* node, bool hide) {
+    if (!node) return;
+    node->setUserFlag("hidden"_spr, hide);
 }
 
-void forceShowPlayer(PlayerObject* obj) {
-    if (!obj->m_bVisible) obj->setVisible(true);
+void setPlayerHidden(PlayerObject* obj, bool hidden) {
+    if (!obj) return;
+    hideNode(obj, hidden);
+    obj->setVisible(obj->m_bVisible);
 
-    obj->m_playEffects = true;
+    if (hidden) {
+        if (obj->m_ghostType != GhostType::Disabled) {
+            obj->toggleGhostEffect(GhostType::Disabled);
+        }
+    }
 
-    if (obj->m_regularTrail) obj->m_regularTrail->setVisible(true);
-    if (obj->m_waveTrail) obj->m_waveTrail->setVisible(true);
-    if (obj->m_trailingParticles) obj->m_trailingParticles->setVisible(true);
-    if (obj->m_shipStreak) obj->m_shipStreak->setVisible(true);
-    if (obj->m_playerGroundParticles) obj->m_playerGroundParticles->setVisible(true);
-    if (obj->m_vehicleGroundParticles) obj->m_vehicleGroundParticles->setVisible(true);
+    obj->m_playEffects = !hidden;
+    hideNode(obj->m_regularTrail, hidden);
+    hideNode(obj->m_waveTrail, hidden);
+    hideNode(obj->m_trailingParticles, hidden);
+    hideNode(obj->m_shipStreak, hidden);
+    hideNode(obj->m_playerGroundParticles, hidden);
+    hideNode(obj->m_vehicleGroundParticles, hidden);
+}
+
+void setPlayerHidden(RemotePlayer* obj, bool hidden) {
+    if (!obj) return;
+    setPlayerHidden(obj->player1(), hidden);
+    setPlayerHidden(obj->player2(), hidden);
+}
+
+// TODO: temporary, please use vmt hook manager
+class $modify(CCNode) {
+    void visit() {
+        if (this->getUserFlag("hidden"_spr)) {
+            return;
+        }
+
+        CCNode::visit();
+    }
+};
+
+class GJBGLUpdater : public CCObject {
+public:
+    void update(float dt) override {
+        if (auto gjbgl = GlobedGJBGL::get()) {
+            gjbgl->selPreUpdate(dt);
+        }
+    }
+
+    void postUpdate(float dt) {
+        if (auto gjbgl = GlobedGJBGL::get()) {
+            gjbgl->selPostUpdate(dt);
+        }
+    }
+};
+
+$on_mod(Loaded) {
+    auto updater = new GJBGLUpdater();
+    CCScheduler::get()->scheduleUpdateForTarget(updater, -100, false);
+    CCScheduler::get()->scheduleSelector(schedule_selector(GJBGLUpdater::postUpdate), updater, 0.f, false);
 }
 
 }

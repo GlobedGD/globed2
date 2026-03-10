@@ -55,6 +55,7 @@ public:
     bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl);
     void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real);
     void onUpdate(GlobedGJBGL* gjbgl, float dt);
+    void onPreUpdate(GlobedGJBGL* gjbgl, float dt);
 
 private:
     std::vector<std::shared_ptr<Module>> m_modules;

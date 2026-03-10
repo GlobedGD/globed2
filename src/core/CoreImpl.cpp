@@ -141,6 +141,12 @@ void CoreImpl::onUpdate(GlobedGJBGL* gjbgl, float dt) {
     });
 }
 
+void CoreImpl::onPreUpdate(GlobedGJBGL* gjbgl, float dt) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onPreUpdate(gjbgl, dt);
+    });
+}
+
 void CoreImpl::enableIf(geode::FunctionRef<bool(Module&)>&& func) {
     for (auto& mod : m_modules) {
         if (func(*mod)) {

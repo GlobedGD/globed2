@@ -41,7 +41,6 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_active = false;
         bool m_cleanedUp = false;
         bool m_editor = false;
-        bool m_didSchedule = false;
         bool m_quitting = false;
         bool m_throttleUpdates = false;
         float m_periodicalDelta = 0.f;
@@ -99,8 +98,6 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void setupAssetLoading();
     /// Setup audio
     void setupAudio();
-    /// Setup the update loop and other schedules
-    void setupUpdateLoop();
     /// Setup UI
     void setupUi();
     /// Setup message listeners
@@ -115,11 +112,9 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void onEnterHook();
 
     // Schedules
-    void selUpdateProxy(float dt);
-    void selUpdate(float dt);
+    void selPreUpdate(float dt);
+    void selPostUpdate(float dt);
     void selPeriodicalUpdate(float dt);
-
-    void selPostInitActions(float dt);
 
     // Misc
     PlayerState getPlayerState();
@@ -185,7 +180,7 @@ private:
     void fixProgressBar(float percent);
 };
 
-void forceHidePlayer(PlayerObject* obj);
-void forceShowPlayer(PlayerObject* obj);
+void setPlayerHidden(PlayerObject* obj, bool hidden);
+void setPlayerHidden(RemotePlayer* obj, bool hidden);
 
 }
