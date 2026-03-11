@@ -22,6 +22,12 @@
         "online"
     ],
     "settings": {
+        "force-no-preload": {
+            "type": "bool",
+            "name": "Disable Preloading",
+            "description": "Forcibly disables asset preloading, overriding any other option set in Globed settings. This should only be set if Globed crashes on launch due to preloading.",
+            "default": false
+        },
         "keybinds-title": {
             "type": "title",
             "name": "Keybinds"

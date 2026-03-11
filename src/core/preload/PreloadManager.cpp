@@ -23,7 +23,7 @@ void PreloadManager::initLoadQueue() {
     m_totalCount = 0;
     m_loadQueue.clear();
 
-    if (!globed::setting<bool>("core.preload.enabled")) {
+    if (!globed::setting<bool>("core.preload.enabled") || Mod::get()->getSettingValue<bool>("force-no-preload")) {
         // preloading is disabled, skip everything
         return;
     }
