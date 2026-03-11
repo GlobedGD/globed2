@@ -360,11 +360,12 @@ void AudioManager::updatePlayback(CCPoint playerPos, bool voiceProximity) {
     }
 }
 
+void AudioManager::updatePlayback() {
+    this->updatePlayback(m_lastPos, m_lastProximity);
+}
+
 void AudioManager::registerPlaybackSource(std::shared_ptr<AudioSource> source) {
     m_playbackSources.insert(source);
-
-    // always update playback sources when a new one is added, so that the volume gets set correctly immediately
-    this->updatePlayback(m_lastPos, m_lastProximity);
 }
 
 void AudioManager::setDeafen(bool deafen) {

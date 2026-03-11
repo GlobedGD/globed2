@@ -23,6 +23,8 @@ public:
     void stop() override;
     bool isPlaying() const override;
 
+    virtual void setPaused(bool paused);
+
 protected:
     FMOD::Sound* m_sound = nullptr;
     FMOD::Channel* m_channel = nullptr;

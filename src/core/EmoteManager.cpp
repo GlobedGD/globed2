@@ -74,16 +74,21 @@ std::shared_ptr<Sound> EmoteManager::playEmoteSfx(uint32_t id, std::shared_ptr<R
     }
 
     auto res = player
-        ? PlayerSound::create(it->second.c_str(), player).map([] (auto s) -> std::shared_ptr<Sound> { return s; })
-        : Sound::create(it->second.c_str());
+        ? PlayerSound::create(it->second.c_str(), player, true).map([] (auto s) -> std::shared_ptr<Sound> { return s; })
+        : Sound::create(it->second.c_str(), true);
 
     if (!res) {
-        log::warn("Failed to create emote sfx {}: {}", id, res.unwrapErr());
+        log::warn("Failed to create emote sfx {} ({}): {}", id, it->second, res.unwrapErr());
         return nullptr;
     }
 
     auto sound = std::move(res).unwrap();
     sound->setKind(AudioKind::EmoteSfx);
+
+    // call updatePlayback so the volume of the sound is immediately assigned, and then unpause it
+    auto& am = AudioManager::get();
+    am.updatePlayback();
+    sound->setPaused(false);
 
     return sound;
 }

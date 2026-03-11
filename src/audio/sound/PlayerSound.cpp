@@ -21,8 +21,11 @@ Result<std::shared_ptr<PlayerSound>> PlayerSound::create(
     std::shared_ptr<RemotePlayer> player,
     bool paused
 ) {
+    auto raw = createRaw(path).mapErr([](auto err) {
+        return fmt::format("createSound failed: {}", err);
+    });
     auto s = std::make_shared<PlayerSound>(
-        GEODE_UNWRAP(createRaw(path)),
+        GEODE_UNWRAP(std::move(raw)),
         player,
         player ? player->player1()->getLastPosition() : CCPoint{}
     );
@@ -30,7 +33,9 @@ Result<std::shared_ptr<PlayerSound>> PlayerSound::create(
     // pre emptively register the sound so stop() gets called
     s->registerSelf(s);
 
-    GEODE_UNWRAP(s->play(paused));
+    GEODE_UNWRAP(s->play(paused).mapErr([](auto err) {
+        return fmt::format("playSound failed: {}", err);
+    }));
     return Ok(s);
 }
 

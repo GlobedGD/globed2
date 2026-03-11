@@ -119,4 +119,11 @@ Result<> Sound::play(bool paused) {
     return Ok();
 }
 
+
+void Sound::setPaused(bool paused) {
+    if (m_channel) {
+        m_channel->setPaused(paused);
+    }
+}
+
 }

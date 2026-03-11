@@ -95,6 +95,7 @@ public:
 
     // Updates all playback sources, removing finished ones and updating volumes of proximity sources
     void updatePlayback(CCPoint playerPos, bool voiceProximity);
+    void updatePlayback();
     void registerPlaybackSource(std::shared_ptr<AudioSource> source);
 
     void setDeafen(bool deafen);
