@@ -70,13 +70,12 @@ src/modules/comm
 
 _old-src
 resources-old
-bloaty.sh
 bloaty-*.txt
 mod.json
 !libs/bb/*
-symstone.sh
 
 *.py
+*.sh
 !geobuild.py
 !rescale.py
 
