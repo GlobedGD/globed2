@@ -341,6 +341,9 @@ float AudioManager::calculateVolume(AudioSource& src, const CCPoint& playerPos, 
 }
 
 void AudioManager::updatePlayback(CCPoint playerPos, bool voiceProximity) {
+    m_lastPos = playerPos;
+    m_lastProximity = voiceProximity;
+
     for (auto it = m_playbackSources.begin(); it != m_playbackSources.end(); ) {
         auto& src = *it;
         if (!src->isPlaying()) {
@@ -359,6 +362,9 @@ void AudioManager::updatePlayback(CCPoint playerPos, bool voiceProximity) {
 
 void AudioManager::registerPlaybackSource(std::shared_ptr<AudioSource> source) {
     m_playbackSources.insert(source);
+
+    // always update playback sources when a new one is added, so that the volume gets set correctly immediately
+    this->updatePlayback(m_lastPos, m_lastProximity);
 }
 
 void AudioManager::setDeafen(bool deafen) {

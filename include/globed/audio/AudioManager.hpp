@@ -160,10 +160,12 @@ private:
 
     /* playback */
     std::unordered_set<std::shared_ptr<AudioSource>> m_playbackSources;
+    CCPoint m_lastPos;
     float m_vcVolume = 1.f;
     float m_sfxVolume = 1.f;
     int m_focusedPlayer = -1;
     bool m_deafen = false;
+    bool m_lastProximity = false;
 };
 
 }
