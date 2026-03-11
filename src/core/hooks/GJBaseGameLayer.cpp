@@ -504,7 +504,7 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
             fields.m_sendInterval.setInterval(interval);
             fields.m_sendThrottledInterval.setInterval(interval * 8.f);
 
-            log::info("Data send interval: {:.3}s (tickrate: {})", val, tr);
+            log::debug("Data send interval: {:.3}s (tickrate: {})", val, tr);
         }
     }
 
@@ -587,7 +587,7 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
     fields.m_throttleUpdates = state == GameState::Closed || fields.m_players.empty();
 
     if (prevThrottle != fields.m_throttleUpdates) {
-        log::info("updating data send interval to {}", fields.m_throttleUpdates ? "throttled" : "normal");
+        log::debug("updating data send interval to {}", fields.m_throttleUpdates ? "throttled" : "normal");
     }
 }
 

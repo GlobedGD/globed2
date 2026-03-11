@@ -62,7 +62,7 @@ void CoreImpl::onServerDisconnected() {
 }
 
 void CoreImpl::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
-    log::debug("Enabling Level modules");
+    log::trace("Enabling Level modules");
     this->enableIf([](const Module& mod) {
         return mod.m_autoEnableMode == AutoEnableMode::Level;
     });
@@ -79,7 +79,7 @@ void CoreImpl::onJoinLevelPostInit(GlobedGJBGL* gjbgl) {
 }
 
 void CoreImpl::onLeaveLevel(GlobedGJBGL* gjbgl, bool editor) {
-    log::debug("Disabling Level modules");
+    log::trace("Disabling Level modules");
     this->disableIf([](const Module& mod) {
         return mod.m_autoEnableMode == AutoEnableMode::Level;
     });
