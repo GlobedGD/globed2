@@ -30,6 +30,11 @@ void EmoteManager::registerSfx(uint32_t id, const std::filesystem::path& name) {
 }
 
 CCSprite* EmoteManager::createEmote(uint32_t id) {
+    // emote 0 is not registered as a real emote but still used in some places in the UI
+    if (id == 0) {
+        return CCSprite::createWithSpriteFrameName("emote_0.png"_spr);
+    }
+
     auto it = m_emoteNames.find(id);
     if (it == m_emoteNames.end()) {
         return nullptr;
@@ -88,7 +93,7 @@ $on_game(Loaded) {
     auto& em = EmoteManager::get();
 
     std::initializer_list<std::pair<uint32_t, uint32_t>> ranges = {
-        {0, 100},
+        {1, 100},
         {200, 100},
         {300, 100},
         {400, 100},
@@ -99,15 +104,14 @@ $on_game(Loaded) {
 
     auto sfc = CCSpriteFrameCache::get();
 
-    char buf[256];
-
     for (auto& [start, count] : ranges) {
         for (auto i = start; i < start + count; i++) {
-            auto name = asp::local_format(buf, "emote_{}.png"_spr, i);
+            StringBuffer<80> buf;
+            buf.append("emote_{}.png"_spr, i);
 
-            if (auto frame = sfc->spriteFrameByName(name.data())) {
+            if (auto frame = sfc->spriteFrameByName(buf.c_str())) {
                 if (frame->getTag() != 105871529) { // textureldr magic number
-                    em.registerEmote(i, std::string(name));
+                    em.registerEmote(i, buf.str());
                 }
             }
         }

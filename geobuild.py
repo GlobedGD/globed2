@@ -32,6 +32,7 @@ class GlobedConfig:
     cmake_vars : dict[str, str] = field(default_factory=dict)
     debug: bool = False
     release: bool = False
+    asan: bool = False
     oss: bool = False
     voice: bool = True
     quic: bool = True
@@ -67,6 +68,7 @@ class GlobedConfig:
             out.debug = get_or(build, "debug", out.debug)
             out.release = get_or(build, "release", out.release)
             out.oss = get_or(build, "oss", out.oss)
+            out.asan = get_or(build, "asan", out.asan)
             out.voice = get_or(build, "voice", out.voice)
             out.quic = get_or(build, "quic", out.quic)
             out.advanced_dns = get_or(build, "advanced_dns", out.advanced_dns)
@@ -318,6 +320,12 @@ def main(build: Build):
     # Compile definitions / variables
     if gc.release:
         build.enable_lto()
+
+    # if gc.asan and build.platform.is_android():
+    #     print("Enabling UBSan flags")
+    #     build.add_raw_statement('set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")')
+    #     build.add_raw_statement('set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined")')
+    #     build.add_raw_statement('set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=undefined")')
 
     build.add_definition("GLOBED_BUILD")
     build.add_definition("GLOBED_DEFAULT_MAIN_SERVER_URL", f'"{gc.server_url}"')

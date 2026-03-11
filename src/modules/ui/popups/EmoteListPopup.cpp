@@ -16,7 +16,7 @@ namespace globed {
 static constexpr CCSize LIST_SIZE = {280.f, 130.f};
 static constexpr float CELL_HEIGHT = 40.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
-const int EMOTES_PER_PAGE = 18;
+static constexpr size_t EMOTES_PER_PAGE = 18;
 
 static bool isEmoteKeyBound(uint32_t slot) {
     auto key = fmt::format("keybind-emote-{}", slot);
