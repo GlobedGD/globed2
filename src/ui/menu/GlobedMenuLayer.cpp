@@ -373,6 +373,7 @@ bool GlobedMenuLayer::init() {
 
     m_roomNameButton = Build<Label>::create("", "goldFont.fnt")
         .scale(0.7f)
+        .anchorPoint(0.f, 0.f)
         .store(m_roomNameLabel)
         .intoMenuItem([this] {
             this->copyRoomIdToClipboard();
@@ -514,10 +515,8 @@ void GlobedMenuLayer::updateRoom(uint32_t id, const std::string& name, const std
     if (m_roomNameLabel->getString() != labelText) {
         m_roomNameLabel->setString(labelText);
         m_roomNameLabel->limitLabelWidth(320.f, 0.7f, 0.35f);
-        auto size = m_roomNameLabel->getContentSize();
-
-        m_roomNameLabel->setPosition(size / 2.f);
-        m_roomNameButton->setContentSize(size);
+        m_roomNameLabel->setAnchorPoint({0.f, 0.f});
+        m_roomNameButton->setContentSize(m_roomNameLabel->getScaledContentSize());
     }
 
     this->updatePlayerList(players);
