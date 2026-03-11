@@ -70,10 +70,33 @@ static int myAccountId() {
     return singleton<GJAccountManager>()->m_accountID;
 }
 
+GlobedGJBGL::Fields::~Fields() {
+    if (m_self && m_active) {
+        this->cleanup();
+    }
+}
+
+void GlobedGJBGL::Fields::cleanup() {
+    auto& am = AudioManager::get();
+    am.haltRecording();
+    am.stopAllOutputSources();
+
+    if (!m_active) {
+        return;
+    }
+
+    m_active = false;
+    m_cleanedUp = true; // don't do any extra cleanup if quitting
+
+    CoreImpl::get().onLeaveLevel(m_self, m_editor);
+    RoomManager::get().leaveLevel();
+}
+
 void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     auto& fields = *m_fields.self();
     auto& nm = NetworkManagerImpl::get();
     fields.m_editor = editor;
+    fields.m_self = this;
 
     g_settings.reload();
 
@@ -349,22 +372,9 @@ void GlobedGJBGL::onEnterHook() {
 }
 
 void GlobedGJBGL::onQuit() {
-    auto& am = AudioManager::get();
-    am.haltRecording();
-    am.stopAllOutputSources();
-
     auto& fields = *m_fields.self();
     fields.m_quitting = true;
-
-    if (!fields.m_active) {
-        return;
-    }
-
-    fields.m_active = false;
-    fields.m_cleanedUp = true; // don't do any extra cleanup if quitting
-
-    CoreImpl::get().onLeaveLevel(this, fields.m_editor);
-    RoomManager::get().leaveLevel();
+    fields.cleanup();
 }
 
 void GlobedGJBGL::selPreUpdate(float tsdt) {

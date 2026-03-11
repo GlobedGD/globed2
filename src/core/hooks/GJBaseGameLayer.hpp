@@ -38,6 +38,9 @@ struct GameCameraState {
 
 struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     struct Fields {
+        ~Fields();
+        void cleanup();
+
         bool m_active = false;
         bool m_cleanedUp = false;
         bool m_editor = false;
@@ -82,6 +85,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         BoolExt m_didJustJump1, m_didJustJump2;
 
         CCNode* m_playerNode = nullptr;
+        GlobedGJBGL* m_self = nullptr;
         Ref<CCNode> m_progressBarContainer;
         Ref<VoiceOverlay> m_voiceOverlay;
         Ref<PingOverlay> m_pingOverlay;

@@ -24,7 +24,7 @@ struct Assigner {
         auto fullName = asp::local_format(buf, "{}.{}", cat, name);
 
 #ifdef GLOBED_DEBUG
-        log::debug("Adding soft api function: '{}'", fullName);
+        log::trace("Adding soft api function: '{}'", fullName);
 #endif
 
         s_functionTable.insert(fullName, std::forward<T>(func));
