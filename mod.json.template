@@ -12,13 +12,9 @@
     },
     "description": "Feature-rich multiplayer mod",
     "dependencies": {},
-    "incompatibilities": [
-        {
-            "id": "weebify.separate_dual_icons",
-            "version": "1.4.1",
-            "importance": "breaking"
-        }
-    ],
+    "incompatibilities": {
+        "weebify.separate_dual_icons": "1.4.1"
+    },
     "links": {
         "homepage": "https://globed.dev",
         "source": "https://github.com/GlobedGD/globed2",
