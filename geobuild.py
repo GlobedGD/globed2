@@ -20,7 +20,7 @@ import sys
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v5.3.0"
 XTLS_VERSION = "8f34f23"
-QUNET_VERSION = "645946a"
+QUNET_VERSION = "667e546"
 SERVER_SHARED_VERSION = "160f2e5"
 CUE_VERSION = "55a3118"
 
@@ -451,7 +451,7 @@ def main(build: Build):
     if config.platform.is_android():
         build.link_libraries("EGL", "GLESv2")
     elif config.platform.is_apple():
-        build.link_libraries("-framework Security")
+        build.add_raw_statement(f"target_link_libraries({config.project_name} PRIVATE \"-framework Security\")")
 
     build.silence_warnings_for("kj")
     build.silence_warnings_for("capnp")
