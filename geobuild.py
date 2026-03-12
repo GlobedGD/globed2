@@ -453,7 +453,6 @@ def main(build: Build):
 
     build.silence_warnings_for("kj")
     build.silence_warnings_for("capnp")
-    build.silence_warnings_for("libzstd_static")
     build.silence_warnings_for("opus")
 
     # setup unity build

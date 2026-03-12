@@ -43,7 +43,7 @@ else()
     set(net_libs_zstd ${net_libs_bin_SOURCE_DIR}/libzstd.a)
 endif()
 
-set(lib_names "c-ares" "crypto" "ssl" "ngtcp2_static" "ngtcp2_crypto_ossl_static" "zstd")
+set(lib_names "c-ares" "crypto" "ssl" "ngtcp2_static" "ngtcp2_crypto_ossl_static" "libzstd_static")
 set(lib_vars  "net_libs_cares" "net_libs_libcrypto" "net_libs_libssl" "net_libs_ngtcp2" "net_libs_ngtcp2_crypto_ossl" "net_libs_zstd")
 
 foreach(target_name lib_path_var IN ZIP_LISTS lib_names lib_vars)
