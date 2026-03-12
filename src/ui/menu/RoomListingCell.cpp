@@ -1,8 +1,10 @@
 #include "RoomListingCell.hpp"
 #include <globed/core/actions.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <globed/core/FriendListManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/NameLabel.hpp>
+#include <ui/misc/CellGradients.hpp>
 #include <ui/admin/Common.hpp>
 
 #include <UIBuilder.hpp>
@@ -268,6 +270,12 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
         .parent(playerCountWrapper)
         .anchorPoint(0.5f, 0.5f)
         .pos(playerCountWrapper->getScaledContentSize() / 2.f);
+
+    // add a green gradient if this is a room made by a friend
+    auto& flm = FriendListManager::get();
+    if (flm.isFriend(this->getOwner())) {
+        globed::addCellGradient(this, CellGradientType::Friend);
+    }
 
     return true;
 }
