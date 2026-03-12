@@ -1,5 +1,7 @@
 # https://github.com/geode-sdk/geode/blob/main/loader/DownloadNetLibs.cmake
 
+option(GLOBED_USE_WOLFSSL "" ON)
+
 if (GEODE_TARGET_PLATFORM STREQUAL "iOS")
 	set(net_libs_plat "ios")
 	set(net_libs_hash "SHA256=cae7b36070b4cbb859dc1bf6cfda9d1bf08b4dfaf5520d9d4f2f37509941e4fa")
@@ -43,8 +45,38 @@ else()
     set(net_libs_zstd ${net_libs_bin_SOURCE_DIR}/libzstd.a)
 endif()
 
-set(lib_names "c-ares" "crypto" "ssl" "ngtcp2_static" "ngtcp2_crypto_ossl_static" "libzstd_static")
-set(lib_vars  "net_libs_cares" "net_libs_libcrypto" "net_libs_libssl" "net_libs_ngtcp2" "net_libs_ngtcp2_crypto_ossl" "net_libs_zstd")
+set(lib_names "c-ares" "crypto" "ssl" "libzstd_static")
+set(lib_vars  "net_libs_cares" "net_libs_libcrypto" "net_libs_libssl" "net_libs_zstd")
+
+if (GLOBED_USE_WOLFSSL)
+    CPMAddPackage(
+        URI "gh:wolfSSL/wolfssl@5.8.4-stable"
+        OPTIONS "WOLFSSL_QUIC ON"
+                "WOLFSSL_HARDEN OFF"
+                "WOLFSSL_OLD_TLS OFF"
+                "WOLFSSL_TLSV12 OFF"
+                "WOLFSSL_SESSION_TICKET ON"
+                "WOLFSSL_INSTALL OFF"
+                "WOLFSSL_CRYPT_TESTS OFF"
+                "WOLFSSL_EXAMPLES OFF"
+                "WOLFSSL_ALT_CERT_CHAINS ON" # needed for tls, not sure why /shrug
+                "BUILD_SHARED_LIBS OFF"
+    )
+
+    get_target_property(WOLFSSL_INCLUDE_DIRS2 wolfssl INCLUDE_DIRECTORIES)
+    set(WOLFSSL_INCLUDE_DIRS ${WOLFSSL_INCLUDE_DIRS2} CACHE STRING "" FORCE)
+
+    if (MSVC)
+        target_compile_options(wolfssl PRIVATE /w)
+    else()
+        target_compile_options(wolfssl PRIVATE -w)
+    endif()
+else()
+    list(APPEND lib_names "ngtcp2_crypto_ossl_static")
+    list(APPEND lib_names "ngtcp2_static")
+    list(APPEND lib_vars "net_libs_ngtcp2_crypto_ossl")
+    list(APPEND lib_vars "net_libs_ngtcp2")
+endif()
 
 foreach(target_name lib_path_var IN ZIP_LISTS lib_names lib_vars)
     if(NOT TARGET ${target_name})
@@ -56,7 +88,10 @@ foreach(target_name lib_path_var IN ZIP_LISTS lib_names lib_vars)
     endif()
 endforeach()
 
-set_target_properties(ssl PROPERTIES INTERFACE_LINK_LIBRARIES "crypto")
-set_target_properties(ngtcp2_crypto_ossl_static PROPERTIES INTERFACE_LINK_LIBRARIES "ngtcp2_static;ssl;crypto")
-set(OPENSSL_ROOT_DIR "${net_libs_bin_SOURCE_DIR}" CACHE STRING "" FORCE)
-set(OPENSSL_USE_STATIC_LIBS OFF CACHE STRING "" FORCE)
+if (GLOBED_USE_WOLFSSL)
+else()
+    set_target_properties(ssl PROPERTIES INTERFACE_LINK_LIBRARIES "crypto")
+    set_target_properties(ngtcp2_crypto_ossl_static PROPERTIES INTERFACE_LINK_LIBRARIES "ngtcp2_static;ssl;crypto")
+    set(OPENSSL_ROOT_DIR "${net_libs_bin_SOURCE_DIR}" CACHE STRING "" FORCE)
+    set(OPENSSL_USE_STATIC_LIBS OFF CACHE STRING "" FORCE)
+endif()

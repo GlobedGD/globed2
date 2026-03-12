@@ -420,14 +420,15 @@ def main(build: Build):
     }, link_name="CapnProto::capnp")
     build.add_cpm_dep("GlobedGD/server-shared", SERVER_SHARED_VERSION, link_name="ServerShared")
     build.add_cpm_dep("dankmeme01/xtls", XTLS_VERSION, {
-        "XTLS_ENABLE_OPENSSL": "ON"
+        "XTLS_ENABLE_WOLFSSL": "ON",
     })
     build.add_cpm_dep("dankmeme01/qunet-cpp", QUNET_VERSION, {
         "QUNET_QUIC_SUPPORT": "ON" if gc.quic else "OFF",
         "QUNET_TLS_SUPPORT": "ON",
         "QUNET_ADVANCED_DNS": "ON" if gc.advanced_dns else "OFF",
         "QUNET_DEBUG": "ON" if gc.debug else "OFF",
-        "QUNET_ENABLE_OPENSSL": "ON"
+        "QUNET_ENABLE_WOLFSSL": "ON",
+        "QUNET_ENABLE_OPENSSL": "OFF",
     }, link_name="qunet")
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
