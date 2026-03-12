@@ -450,6 +450,8 @@ def main(build: Build):
 
     if config.platform.is_android():
         build.link_libraries("EGL", "GLESv2")
+    elif config.platform.is_apple():
+        build.link_libraries("-framework Security")
 
     build.silence_warnings_for("kj")
     build.silence_warnings_for("capnp")
