@@ -1,6 +1,10 @@
 #include <globed/core/Core.hpp>
 #include "CoreImpl.hpp"
 
+#ifdef QUNET_TLS_SUPPORT
+# include <xtls/Backend.hpp>
+#endif
+
 using namespace geode::prelude;
 
 namespace globed {
@@ -24,6 +28,9 @@ $on_mod(Loaded) {
     log::info("Build date: {} (imprecise)", globed::constant<"build-time">());
     log::info("Build environment: {}", globed::constant<"build-env">());
     log::info("Build options: {}", globed::constant<"build-opts">());
+#ifdef QUNET_TLS_SUPPORT
+    log::info("TLS backend: {}", xtls::Backend::get().description());
+#endif
     log::info("===========================================");
 #else
     // be more brief, don't spam the log

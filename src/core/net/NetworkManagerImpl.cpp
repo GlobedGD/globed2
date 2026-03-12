@@ -450,6 +450,7 @@ void NetworkManagerImpl::initializeTls() {
 
     auto qctx = std::move(qRes).unwrap();
     (void) qctx->setCertVerification(false);
+    (void) qn::setupQuicContext(*qctx);
 
     m_centralConn->setQuicTlsContext(qctx);
     m_gameConn->setQuicTlsContext(qctx);

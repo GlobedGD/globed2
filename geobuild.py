@@ -20,7 +20,7 @@ import sys
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v5.3.0"
 XTLS_VERSION = "8f34f23"
-QUNET_VERSION = "040efde"
+QUNET_VERSION = "645946a"
 SERVER_SHARED_VERSION = "160f2e5"
 CUE_VERSION = "55a3118"
 
@@ -404,7 +404,7 @@ def main(build: Build):
         build.add_definition("GLOBED_OSS_BUILD", "1")
     else:
         if config.platform.is_windows():
-            build.link_libraries("libs/bb/bb.lib", "ntdll.lib", "userenv.lib", "runtimeobject.lib", "Iphlpapi.lib", "bcrypt.lib")
+            build.link_libraries("libs/bb/bb.lib", "ntdll.lib", "userenv.lib", "runtimeobject.lib", "Iphlpapi.lib", "bcrypt.lib", "crypt32.lib")
         else:
             build.link_library(f"libs/bb/bb-{config.platform.platform_str(include_bit=True)}.a")
 
