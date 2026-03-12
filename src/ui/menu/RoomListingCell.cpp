@@ -304,6 +304,10 @@ size_t RoomListingCell::getPlayerCount() {
     return m_info.playerCount;
 }
 
+int RoomListingCell::getOwner() {
+    return m_info.roomOwner.accountData.accountId;
+}
+
 void RoomListingCell::toggleModActions(bool enabled) {
     if (m_modActions == enabled) {
         return; // no change

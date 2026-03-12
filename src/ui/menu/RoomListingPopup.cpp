@@ -3,6 +3,7 @@
 
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <globed/core/FriendListManager.hpp>
 #include <Geode/utils/random.hpp>
 #include <ui/misc/InputPopup.hpp>
 #include <ui/misc/LoadingPopup.hpp>
@@ -244,7 +245,19 @@ void RoomListingPopup::populateList() {
 
     this->updateTitle(m_totalRooms ?: m_list->size());
 
-    m_list->sortAs<RoomListingCell>([](RoomListingCell* a, RoomListingCell* b) {
+    auto& flm = FriendListManager::get();
+    m_list->sortAs<RoomListingCell>([&](RoomListingCell* a, RoomListingCell* b) {
+        // put friends' rooms at the top of the first page
+        if (m_page == 0) {
+            int aOwner = a->getOwner();
+            int bOwner = b->getOwner();
+            bool aFriend = flm.isFriend(aOwner);
+            bool bFriend = flm.isFriend(bOwner);
+
+            if (aFriend && !bFriend) return true;
+            if (bFriend && !aFriend) return false;
+        }
+
         return a->getPlayerCount() > b->getPlayerCount();
     });
 
@@ -402,9 +415,11 @@ void RoomListingPopup::doRemoveCell(RoomListingCell* cell) {
 }
 
 static std::vector<RoomListingInfo> makeFakeData() {
-    std::vector<RoomListingInfo> rooms;
-
     size_t count = utils::random::generate<size_t>(500, 1000);
+
+    std::vector<RoomListingInfo> rooms;
+    rooms.reserve(count);
+
     for (size_t i = 0; i < count; i++) {
         rooms.push_back(RoomListingInfo {
             .roomId = utils::random::generate<uint32_t>(100000, 999999),

@@ -14,6 +14,7 @@ public:
     static RoomListingCell* create(const RoomListingInfo& info, RoomListingPopup* popup);
     void toggleModActions(bool enabled);
     size_t getPlayerCount();
+    int getOwner();
 
 private:
     RoomListingPopup* m_popup;
