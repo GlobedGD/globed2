@@ -72,7 +72,7 @@ These are the libraries used by Globed, either directly or indirectly by one of 
 * [BLAKE3](https://github.com/BLAKE3-team/BLAKE3)
 * [nontype_functional](https://github.com/zhihaoy/nontype_functional)
 * [c-ares](https://github.com/c-ares/c-ares)
-* [wolfSSL](https://github.com/wolfSSL/wolfssl)
+* [OpenSSL](https://openssl.org/)
 * [ngtcp2](https://github.com/ngtcp2/ngtcp2)
 * [Qunet](https://github.com/dankmeme01/qunet-cpp) (by dankmeme01)
 * [asp2](https://github.com/dankmeme01/asp2) (by dankmeme01)

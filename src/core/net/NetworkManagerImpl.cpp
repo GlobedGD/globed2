@@ -29,6 +29,9 @@
 # include <jni.h>
 # include <Geode/cocos/platform/android/jni/JniHelper.h>
 #endif
+#ifdef QUNET_TLS_SUPPORT
+# include <xtls/xtls.hpp>
+#endif
 
 using namespace geode::prelude;
 using enum std::memory_order;
@@ -425,30 +428,31 @@ Future<> NetworkManagerImpl::asyncInit() {
 void NetworkManagerImpl::initializeTls() {
     // create insecure tls contexts, allow server to use self signed certs
 
-    qn::TcpTlsOptions topts;
-    topts.insecure = true;
-    auto tres = qn::TcpTlsContext::create(topts);
+    auto& b = xtls::Backend::get();
+    auto tcpRes = b.createContext(xtls::ContextType::Client1_3);
 
-    if (!tres) {
-        log::error("failed to create tcp tls context: {}", tres.unwrapErr());
-    } else {
-        auto ctx = std::move(tres).unwrap();
-        m_centralConn->setTlsContext(ctx);
-        m_gameConn->setTlsContext(ctx);
+    if (!tcpRes) {
+        log::error("failed to create tcp tls context: {}", tcpRes.unwrapErr().message);
+        return;
     }
+
+    auto ctx = std::move(tcpRes).unwrap();
+    (void) ctx->setCertVerification(false);
+    m_centralConn->setTlsContext(ctx);
+    m_gameConn->setTlsContext(ctx);
 
 #ifdef GLOBED_QUIC_SUPPORT
-    qn::QuicTlsOptions qopts;
-    qopts.insecure = true;
-    auto qres = qn::QuicTlsContext::create(qopts);
-
-    if (!qres) {
-        log::error("failed to create quic tls context: {}", qres.unwrapErr());
-    } else {
-        auto& ctx = qres.unwrap();
-        m_centralConn->setQuicTlsContext(ctx);
-        m_gameConn->setQuicTlsContext(ctx);
+    auto qRes = b.createContext(xtls::ContextType::Client1_3);
+    if (!qRes) {
+        log::error("failed to create quic tls context: {}", qRes.unwrapErr().message);
+        return;
     }
+
+    auto qctx = std::move(qRes).unwrap();
+    (void) qctx->setCertVerification(false);
+
+    m_centralConn->setQuicTlsContext(qctx);
+    m_gameConn->setQuicTlsContext(qctx);
 #endif
 }
 

@@ -19,7 +19,8 @@ import sys
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v5.3.0"
-QUNET_VERSION = "5f81895"
+XTLS_VERSION = "8f34f23"
+QUNET_VERSION = "040efde"
 SERVER_SHARED_VERSION = "160f2e5"
 CUE_VERSION = "55a3118"
 
@@ -260,6 +261,7 @@ def setup_unity(build: Build, gc: GlobedConfig):
 
     unity_dep("capnp")
     unity_dep("kj")
+    unity_dep("xtls")
 
 def main(build: Build):
     if build.config.bool_var("GLOBED_RELEASE"):
@@ -417,11 +419,15 @@ def main(build: Build):
         "WITH_FIBERS": "OFF",
     }, link_name="CapnProto::capnp")
     build.add_cpm_dep("GlobedGD/server-shared", SERVER_SHARED_VERSION, link_name="ServerShared")
+    build.add_cpm_dep("dankmeme01/xtls", XTLS_VERSION, {
+        "XTLS_ENABLE_OPENSSL": "ON"
+    })
     build.add_cpm_dep("dankmeme01/qunet-cpp", QUNET_VERSION, {
         "QUNET_QUIC_SUPPORT": "ON" if gc.quic else "OFF",
         "QUNET_TLS_SUPPORT": "ON",
         "QUNET_ADVANCED_DNS": "ON" if gc.advanced_dns else "OFF",
         "QUNET_DEBUG": "ON" if gc.debug else "OFF",
+        "QUNET_ENABLE_OPENSSL": "ON"
     }, link_name="qunet")
     build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)

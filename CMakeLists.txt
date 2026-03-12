@@ -23,7 +23,11 @@ set(ARC_FEATURE_NET ON CACHE BOOL "" FORCE)
 set(GEODE_CODEGEN_EXTRA_ARGS "--skip-pugixml" CACHE STRING "" FORCE)
 set(GEODE_ASP_VERSION "#66a292d" CACHE STRING "" FORCE)
 set(GEODE_NO_PUGIXML_HEADER ON CACHE BOOL "" FORCE)
+
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
+
+## Download net libs (ngtcp2, c-ares, openssl, zstd)
+include(cmake/DownloadNetLibs.cmake)
 
 CPMAddPackage("gh:dankmeme01/geobuild#cf2207a")
 include("${CMAKE_CURRENT_BINARY_DIR}/geobuild-gen.cmake")
