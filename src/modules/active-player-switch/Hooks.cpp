@@ -33,6 +33,16 @@ void APSController::restart() {
 }
 
 void APSController::handleStateEvent(const SwitcherooFullStateEvent& event) {
+    // is the settings popup currently open? if so, delay this till next frame to fix a nasty touch prio bug
+    if (CCScene::get()->getChildByType<APSSettingsPopup>(0)) {
+        FunctionQueue::get().queue([sr = WeakRef(m_pl), event] {
+            auto pl = sr.lock();
+            if (!pl) return;
+            pl->m_fields->m_controller.handleStateEvent(event);
+        });
+        return;
+    }
+
     log::debug(
         "(APS) State: game {}, player {}, indication {}, restarting {}",
         event.gameActive, event.activePlayer, event.playerIndication, event.restarting
@@ -200,7 +210,7 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
                 controller.handleSwitchEvent(event.as<SwitcherooSwitchEvent>());
             }
         }
-    });
+    }, -10);
 
     float glowScale = 1.5f;
 
@@ -321,6 +331,9 @@ void APSPlayLayer::customResetLevel() {
         pauselayer = scene->getChildByType<PauseLayer>(0);
     }
 
+    if (pauselayer) {
+        pauselayer->decrementForcePrio();
+    }
     this->resumeAndRestart(true);
 
     if (pauselayer) {

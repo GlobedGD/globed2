@@ -196,7 +196,7 @@ void APSSettingsPopup::startGame() {
     auto circle = Build<cue::LoadingCircle>::create(true)
         .scale(0.7f)
         .parent(m_mainLayer)
-        .pos(this->fromBottom(48.f));
+        .pos(this->fromBottom(36.f));
 
     m_buttonMenu->setEnabled(false);
 
@@ -206,7 +206,7 @@ void APSSettingsPopup::startGame() {
                 this->onClose(nullptr);
             }
         }
-    });
+    }, 1);
 }
 
 void APSSettingsPopup::apply() {
