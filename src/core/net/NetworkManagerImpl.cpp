@@ -988,6 +988,7 @@ Result<> NetworkManagerImpl::sendMessageToConnection(
 }
 
 void NetworkManagerImpl::sendToCentral(geode::FunctionRef<void(CentralMessage::Builder&)>&& func) {
+    if (!m_centralConn) return;
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<CentralMessage>();
     func(root);
@@ -1000,6 +1001,7 @@ void NetworkManagerImpl::sendToCentral(geode::FunctionRef<void(CentralMessage::B
 }
 
 void NetworkManagerImpl::sendToGame(geode::FunctionRef<void(GameMessage::Builder&)>&& func, bool reliable, bool uncompressed) {
+    if (!m_gameConn) return;
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<GameMessage>();
     func(root);
