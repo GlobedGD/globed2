@@ -870,6 +870,27 @@ void GlobedGJBGL::cancelLocalRespawn() {
     this->stopActionByTag(0x10); // magic
 }
 
+void GlobedGJBGL::causeLocalRespawn(bool full) {
+    auto pl = this->asPlayLayer();
+    if (!pl) return;
+
+    auto scene = CCScene::get();
+    auto pauselayer = scene->getChildByType<PauseLayer>(0);
+    if (!pauselayer) {
+        pl->pauseGame(false);
+        pauselayer = scene->getChildByType<PauseLayer>(0);
+    }
+
+    if (pauselayer) {
+        pauselayer->decrementForcePrio();
+    }
+    pl->resumeAndRestart(true);
+
+    if (pauselayer) {
+        pauselayer->removeFromParent();
+    }
+}
+
 void GlobedGJBGL::resetSafeMode() {
     auto& fields = *m_fields.self();
     fields.m_safeMode = fields.m_permanentSafeMode;

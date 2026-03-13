@@ -144,6 +144,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void killLocalPlayer(bool fake = true);
     /// Cancel automatic respawn after death, to respawn call resetLevel()
     void cancelLocalRespawn();
+    /// Essentially calls resetLevel (restarting the level), but in a less breaking manner
+    void causeLocalRespawn(bool full = false);
 
     void resetSafeMode();
     void enableSafeMode();

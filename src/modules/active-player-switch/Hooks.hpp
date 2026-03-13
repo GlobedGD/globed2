@@ -88,7 +88,6 @@ struct GLOBED_MODIFY_ATTR APSPlayLayer : geode::Modify<APSPlayLayer, PlayLayer> 
     void handleUpdate(float dt);
     void handleUpdateFromRp(PlayerObject* local, RemotePlayer* rp, bool p2);
 
-    void customResetLevel();
     bool shouldBlockInput();
 
     void showSwitchEffect();

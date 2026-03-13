@@ -54,7 +54,7 @@ void APSController::handleStateEvent(const SwitcherooFullStateEvent& event) {
     m_meActive = event.activePlayer == m_pl->m_fields->m_myAccountId;
 
     if (event.restarting) {
-        m_pl->customResetLevel();
+        m_gjbgl->causeLocalRespawn();
     }
 
     this->rehidePlayers();
@@ -319,25 +319,6 @@ void APSPlayLayer::handlePlayerDeath(const PlayerDeath& death, RemotePlayer* pla
         g_ignoreNoclip = true;
         GlobedGJBGL::get(this)->killLocalPlayer();
         g_ignoreNoclip = false;
-    }
-}
-
-void APSPlayLayer::customResetLevel() {
-    auto scene = CCScene::get();
-
-    auto pauselayer = scene->getChildByType<PauseLayer>(0);
-    if (!pauselayer) {
-        this->pauseGame(false);
-        pauselayer = scene->getChildByType<PauseLayer>(0);
-    }
-
-    if (pauselayer) {
-        pauselayer->decrementForcePrio();
-    }
-    this->resumeAndRestart(true);
-
-    if (pauselayer) {
-        pauselayer->removeFromParent();
     }
 }
 

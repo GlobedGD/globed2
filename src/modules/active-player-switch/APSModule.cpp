@@ -44,7 +44,7 @@ void APSModule::onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) {
     // don't respawn immediately if we are not the main player, instead wait for the main player to respawn us
     auto apl = APSPlayLayer::get(gjbgl);
     auto& cont = apl->m_fields->m_controller;
-    if (real && cont.m_gameActive && cont.m_activePlayer != 0 && !cont.m_meActive) {
+    if (cont.m_gameActive && cont.m_activePlayer != 0 && !cont.m_meActive) {
         gjbgl->cancelLocalRespawn();
     }
 }
@@ -55,7 +55,7 @@ void APSModule::onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) {
 
     // if the active player respawned, we respawn too
     if (cont.m_gameActive && !cont.m_meActive && cont.m_activePlayer == player->id()) {
-        gjbgl->resetLevel();
+        gjbgl->causeLocalRespawn();
     }
 }
 
