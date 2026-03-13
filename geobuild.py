@@ -21,7 +21,7 @@ import sys
 REQUIRED_GEODE_VERSION = "v5.3.0"
 XTLS_VERSION = "228eebd"
 QUNET_VERSION = "da2b650"
-SERVER_SHARED_VERSION = "160f2e5"
+SERVER_SHARED_VERSION = "9d75524"
 CUE_VERSION = "55a3118"
 
 if sys.version_info < (3, 12):
@@ -413,7 +413,7 @@ def main(build: Build):
 
     ## Add cmake dependencies ##
 
-    build.add_cpm_dep("capnproto/capnproto", "v1.2.0", {
+    build.add_cpm_dep("capnproto/capnproto", "v1.4.0", {
         "CAPNP_LITE": "ON",
         "BUILD_TESTING": "OFF",
         "WITH_FIBERS": "OFF",
@@ -435,7 +435,7 @@ def main(build: Build):
     build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static", options = {
         "PUGIXML_NO_EXCEPTIONS": "ON",
     })
-    build.add_cpm_dep("GlobedGD/argon", "v1.4.5")
+    build.add_cpm_dep("GlobedGD/argon", "v1.4.6")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
     build.add_cpm_dep("Prevter/AdvancedLabel", "7e0eff9", link_name="advanced_label")
 
