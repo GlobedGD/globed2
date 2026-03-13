@@ -232,7 +232,7 @@ void VisualPlayer::updateFromData(
         if (m_shipStreak) m_shipStreak->setVisible(false);
     }
 
-    bool extraProcessing = anyVisible || m_isLocalPlayer;
+    bool extraProcessing = anyVisible || m_isLocalPlayer || noCulling;
 
     // XXX: sticky is pretty broken so not handled
 
@@ -245,13 +245,11 @@ void VisualPlayer::updateFromData(
 
     auto gjbgl = GLOBED_LAZY(GlobedGJBGL::get());
 
-    if (shouldIconVisible) {
+    if (extraProcessing) {
         this->setPosition(data.position);
         this->setRotation(data.rotation);
         m_mainLayer->setRotation(innerRot);
-    }
 
-    if (extraProcessing) {
         // rotate the name label together with the camera
         bool rotateNames = g_settings.rotateNames;
         CameraDirection dir{};
