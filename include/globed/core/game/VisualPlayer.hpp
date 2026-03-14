@@ -41,6 +41,7 @@ public:
 
     PlayerIconData& icons();
     PlayerDisplayData& displayData();
+    RemotePlayer* getRemotePlayer();
 
     void setStickyState(bool p1, bool sticky);
 
@@ -99,7 +100,7 @@ private:
     bool m_prevRotating = false;
     bool m_prevMini = false;
 
-    CCPoint m_prevPosition{};
+    CCPoint m_prevPosition;
     float m_prevRotation = 0.f;
 
     //

@@ -946,6 +946,11 @@ GlobedGJBGL* GlobedGJBGL::get(GJBaseGameLayer* base) {
     return static_cast<GlobedGJBGL*>(base);
 }
 
+GlobedGJBGL* GlobedGJBGL::getActive(GJBaseGameLayer* base) {
+    auto gjbgl = get(base);
+    return gjbgl && gjbgl->active() ? gjbgl : nullptr;
+}
+
 bool GlobedGJBGL::active() {
     return m_fields->m_active;
 }

@@ -5,6 +5,7 @@
 #include "../core/data/UserRole.hpp"
 #include "../core/data/Event.hpp"
 #include "../core/data/FeaturedLevel.hpp"
+#include "../core/data/PlayerIconData.hpp"
 
 #include <Geode/utils/function.hpp>
 #include "../core/net/MessageListener.hpp"
@@ -35,6 +36,8 @@
 namespace globed {
 
 struct GlobedApiTable;
+class RemotePlayer;
+class VisualPlayer;
 
 struct NetSubtable : public FunctionTableSubcat<GlobedApiTable> {
     API_TABLE_FN(void, disconnect);
@@ -49,8 +52,8 @@ struct NetSubtable : public FunctionTableSubcat<GlobedApiTable> {
     API_TABLE_FN(std::vector<UserRole>, getUserRoles);
     API_TABLE_FN(std::vector<uint8_t>, getUserRoleIds);
     API_TABLE_FN(std::optional<UserRole>, getUserHighestRole);
-    API_TABLE_FN(std::optional<UserRole>, findRole, uint8_t);
-    API_TABLE_FN(std::optional<UserRole>, findRole, std::string_view);
+    API_TABLE_FN(std::optional<UserRole>, findRole, uint8_t /* numeric id */);
+    API_TABLE_FN(std::optional<UserRole>, findRoleStr, std::string_view /* string id */);
     API_TABLE_FN(bool, isModerator);
     API_TABLE_FN(bool, isAuthorizedModerator);
 
@@ -59,6 +62,7 @@ struct NetSubtable : public FunctionTableSubcat<GlobedApiTable> {
 
     API_TABLE_FN(std::optional<FeaturedLevelMeta>, getFeaturedLevel);
     API_TABLE_FN(void, queueGameEvent, OutEvent&&);
+    API_TABLE_FN(void, sendQuickChat, uint32_t /* emote id */);
 
     // threadSafe = true means event will be invoked earlier and on the arc thread
     template <typename T, typename F>
@@ -71,11 +75,81 @@ struct NetSubtable : public FunctionTableSubcat<GlobedApiTable> {
     geode::ListenerHandle listenGlobal(F&& callback, int priority = 0, bool threadSafe = false) {
         return MessageEvent<T>(threadSafe).listen(std::forward<F>(callback), priority).leak();
     }
+};
 
+struct GameSubtable : public FunctionTableSubcat<GlobedApiTable> {
+    /// Returns whether the user is currently in a level and Globed is active
+    API_TABLE_FN(bool, isActive);
+    /// Returns if Globed safe mode is enabled (e.g. because of certain room modifiers)
+    API_TABLE_FN(bool, isSafeMode);
+    /// Kills the local player, pass 'true' to fake the death (won't trigger deaths of others in death link for example)
+    API_TABLE_FN(void, killLocalPlayer, bool /* fake */);
+    /// Cancels automatic respawn after death
+    API_TABLE_FN(void, cancelLocalRespawn);
+    /// Respawns the player, resetting the level
+    API_TABLE_FN(void, causeLocalRespawn, bool /* full reset */);
+    /// Enables safe mode until the next player death.
+    /// Use `enablePermanentSafeMode` for a safe mode that lasts until player leaves the level.
+    API_TABLE_FN(void, enableSafeMode);
+    /// Resets safe mode. This does nothing if `enablePermanentSafeMode` was called before.
+    API_TABLE_FN(void, resetSafeMode);
+    /// Enables safe mode until the player leaves the level fully.
+    API_TABLE_FN(void, enablePermanentSafeMode);
+    /// Enable / disable whether player culling is enabled. By default, it is enabled.
+    /// Disabling it can help in certain gamemodes, but it will use more bandwidth and CPU usage.
+    API_TABLE_FN(void, toggleCullingEnabled, bool /* culling */);
+    /// Enable / disable whether extra data is sent for players. By default, is disabled.
+    API_TABLE_FN(void, toggleExtendedData, bool /* extended */);
+
+    /// Plays an emote given an emote ID. Returns false if on cooldown or the emote is invalid.
+    API_TABLE_FN(bool, playSelfEmote, uint32_t /* emote id */);
+    /// Plays a favorite emote given its slot number (0 to 7)
+    API_TABLE_FN(bool, playSelfFavoriteEmote, uint32_t /* which */);
+
+    /// Returns a RemotePlayer* object for the given player ID.
+    /// It should be treated in an opaque way and only used with the player functions.
+    API_TABLE_FN(RemotePlayer*, getPlayer, int /* player id */);
+};
+
+struct PlayerSubtable : public FunctionTableSubcat<GlobedApiTable> {
+    /// Returns whether the given PlayerObject* belongs to Globed.
+    /// This is a quick, inlined tag check and may lead to false positives if someone else uses the same tag.
+    inline bool isGlobedPlayerFast(PlayerObject* player) {
+        return player && player->getTag() == 3458738;
+    }
+
+    /// Returns whether the given PlayerObject* *certainly* belongs to Globed.
+    API_TABLE_FN(bool, isGlobedPlayer, PlayerObject*);
+
+    /// Returns the player 1 of this RemotePlayer.
+    /// Unlike RemotePlayer, VisualPlayer is a node, and if you don't want to include the VisualPlayer.hpp header,
+    /// it is safe to cast it to CCNode* and use as such.
+    API_TABLE_FN(VisualPlayer*, getFirst, RemotePlayer*);
+    /// Returns the player 2 of this RemotePlayer.
+    API_TABLE_FN(VisualPlayer*, getSecond, RemotePlayer*);
+    /// Returns the RemotePlayer belonging to this VisualPlayer*.
+    /// If you only have a PlayerObject*, you can first call `isGlobedPlayer` to ensure it's a Globed player,
+    /// and then cast and call this function.
+    API_TABLE_FN(RemotePlayer*, getRemote, VisualPlayer*);
+
+    /// Checks whether this player is a teammate. This only works if in a room with teams enabled.
+    /// When not in such a room, this will return true for every player.
+    API_TABLE_FN(bool, isTeammate, RemotePlayer*);
+    /// Returns the account ID of this player.
+    API_TABLE_FN(int, getAccountId, RemotePlayer*);
+    /// Returns the username of this player.
+    API_TABLE_FN(std::string, getUsername, RemotePlayer*);
+    /// Returns the icons of this player.
+    API_TABLE_FN(const PlayerIconData&, getIcons, RemotePlayer*);
+
+    /// Set whether this player should be forcibly hidden
+    API_TABLE_FN(void, setForceHide, RemotePlayer*, bool /* hidden */);
 };
 
 struct GlobedApiTable : public FunctionTable {
     NetSubtable net{this, "net"};
+    GameSubtable game{this, "game"};
+    PlayerSubtable player{this, "player"};
 };
 
 }

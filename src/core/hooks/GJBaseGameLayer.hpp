@@ -142,7 +142,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     /// Kills the local player, by default the death will not be counted as 'real'.
     /// If this is unwanted, pass `false`
     void killLocalPlayer(bool fake = true);
-    /// Cancel automatic respawn after death, to respawn call resetLevel()
+    /// Cancel automatic respawn after death, to respawn call causeLocalRespawn()
     void cancelLocalRespawn();
     /// Essentially calls resetLevel (restarting the level), but in a less breaking manner
     void causeLocalRespawn(bool full = false);
@@ -156,6 +156,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
 
     // Functions for the outside :tm:
     static GlobedGJBGL* get(GJBaseGameLayer* base = nullptr);
+    static GlobedGJBGL* getActive(GJBaseGameLayer* base = nullptr);
+
     bool active();
     CameraDirection getCameraDirection();
     GameCameraState getCameraState();

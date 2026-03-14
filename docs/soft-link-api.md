@@ -10,8 +10,8 @@ Add Globed as a dependency in your mod's `mod.json`:
 {
     "dependencies": {
         "dankmeme.globed2": {
-            "importance": "suggested",
-            "version": ">=2.0.0"
+            "version": ">=2.0.0",
+            "required": false
         }
     }
 }
@@ -33,6 +33,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/g
 Result<bool> res = globed::api()->net.isConnected();
 ```
 
-You can take a look at other available functions in your intellisense.
+You can take a look at other available functions in your intellisense. Current available subtables are: `net`, `game`, `player`.
 
-This API is currently **very incomplete**, and only a small subset of functions are available. If you want to use something not exposed here, use the Link API or make a PR or an issue asking what should be added.
+This API is currently not very complete, and a fairly small subset of functions are available. If you want to use something not exposed here, use the Link API or make a PR or an issue telling us what should be added.

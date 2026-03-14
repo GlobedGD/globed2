@@ -470,6 +470,10 @@ PlayerDisplayData& VisualPlayer::displayData() {
     return m_remotePlayer->m_data;
 }
 
+RemotePlayer* VisualPlayer::getRemotePlayer() {
+    return m_remotePlayer;
+}
+
 void VisualPlayer::setStickyState(bool p1, bool sticky) {
     if (p1) {
         m_p1Sticky = sticky;
