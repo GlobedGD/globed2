@@ -33,33 +33,6 @@ constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 constexpr auto EMOTE_COOLDOWN = Duration::fromMillis(2500);
 static constexpr bool APPLY_PERCENTAGE_FIX = true;
 
-namespace {
-
-class CustomSchedule : public CCObject {
-public:
-    using Fn = geode::Function<void(globed::GlobedGJBGL*, float)>;
-
-    static CustomSchedule* create(Fn&& fn, float interval, globed::GlobedGJBGL* gjbgl) {
-        auto ret = new CustomSchedule;
-        ret->m_fn = std::move(fn);
-        ret->m_gjbgl = gjbgl;
-        ret->autorelease();
-        CCScheduler::get()->scheduleSelector(schedule_selector(CustomSchedule::invoke), ret, interval, false);
-        return ret;
-    }
-private:
-    Fn m_fn;
-    globed::GlobedGJBGL* m_gjbgl;
-
-    CustomSchedule() {}
-
-    void invoke(float dt) {
-        m_fn(m_gjbgl, dt);
-    }
-};
-
-}
-
 namespace globed {
 
 static auto& g_settings = CachedSettings::get();
@@ -586,6 +559,10 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
     bool prevThrottle = fields.m_throttleUpdates;
     fields.m_throttleUpdates = state == GameState::Closed || fields.m_players.empty();
 
+    if (fields.m_disallowThrottle) {
+        fields.m_throttleUpdates = false;
+    }
+
     if (prevThrottle != fields.m_throttleUpdates) {
         log::debug("updating data send interval to {}", fields.m_throttleUpdates ? "throttled" : "normal");
     }
@@ -765,6 +742,10 @@ bool GlobedGJBGL::isEditor() {
 
 bool GlobedGJBGL::isSpectating() {
     return m_fields->m_spectating;
+}
+
+void GlobedGJBGL::setDisallowThrottleUpdates() {
+    m_fields->m_disallowThrottle = true;
 }
 
 void GlobedGJBGL::setSpectating(bool spectate) {
@@ -1104,33 +1085,6 @@ void GlobedGJBGL::pauseVoiceRecording() {
 #ifdef GLOBED_VOICE_CAN_TALK
     AudioManager::get().pausePassiveRecording();
 #endif
-}
-
-void GlobedGJBGL::customSchedule(const std::string& id, geode::Function<void(GlobedGJBGL*, float)>&& f, float interval) {
-    this->customSchedule(id, interval, std::move(f));
-}
-
-void GlobedGJBGL::customSchedule(const std::string& id, float interval, geode::Function<void(GlobedGJBGL*, float)>&& f) {
-    auto sched = CustomSchedule::create(std::move(f), interval, this);
-    this->setUserObject(id, sched);
-}
-
-void GlobedGJBGL::customUnschedule(const std::string& id) {
-    this->setUserObject(id, nullptr);
-
-    auto& fields = *m_fields.self();
-    fields.m_customSchedules.erase(std::find_if(fields.m_customSchedules.begin(), fields.m_customSchedules.end(), [&](const auto& s) {
-        return s == id;
-    }));
-}
-
-void GlobedGJBGL::customUnscheduleAll() {
-    auto& fields = *m_fields.self();
-    for (auto& id : fields.m_customSchedules) {
-        this->setUserObject(id, nullptr);
-    }
-
-    fields.m_customSchedules.clear();
 }
 
 void GlobedGJBGL::setCameraFollowPlayer(PlayerObject* player) {

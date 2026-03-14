@@ -25,6 +25,9 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
     auto& nm = NetworkManagerImpl::get();
     auto& fields = *m_fields.self();
 
+    auto gjbgl = GlobedGJBGL::get(this);
+    gjbgl->setDisallowThrottleUpdates();
+
     fields.m_listener = nm.listen<msg::LevelDataMessage>([this](const auto& msg) {
         auto& fields = *m_fields.self();
 
@@ -35,8 +38,6 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
 
     fields.m_logsListener = nm.listen<msg::ScriptLogsMessage>([this](const auto& msg) {
         auto& fields = *m_fields.self();
-
-        log::debug("Received {} logs from game server, mem usage: {}", msg.logs.size(), msg.memUsage * 100.f);
 
         for (auto& log : msg.logs) {
             log::debug("(Script) {}", log);
@@ -58,10 +59,7 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
         nm.queueLevelScript(scripts);
         fields.m_scriptsSent = true;
 
-        auto gjbgl = GlobedGJBGL::get(this);
-        gjbgl->customSchedule("2p-send-log-request"_spr, [this](GlobedGJBGL*, float dt) {
-            this->sendLogRequest(dt);
-        }, 1.0f);
+        this->schedule(schedule_selector(SCBaseGameLayer::sendLogRequest), 1.0f);
     }
 
     fields.m_localId = singleton<GJAccountManager>()->m_accountID;

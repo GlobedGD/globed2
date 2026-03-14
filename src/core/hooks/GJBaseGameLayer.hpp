@@ -46,8 +46,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_editor = false;
         bool m_quitting = false;
         bool m_throttleUpdates = false;
+        bool m_disallowThrottle = false;
         float m_periodicalDelta = 0.f;
-        std::vector<std::string> m_customSchedules;
 
         float m_timeCounter = 0.0f;
         float m_lastServerUpdate = 0.0f;
@@ -137,6 +137,9 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void handlePlayerLeave(int playerId, bool removeFromMap = true);
     void handleLocalPlayerDeath(PlayerObject*);
     void setPermanentSafeMode();
+    /// Forces update events to be sent exactly 30 times a second (or whatever the server tickrate is).
+    /// By default, the send rate is throttled if no other players are on the level.
+    void setDisallowThrottleUpdates();
     void setSpectating(bool spectate);
     void sendPlayerData(const PlayerState& state);
     /// Kills the local player, by default the death will not be counted as 'real'.
@@ -173,11 +176,6 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void toggleDeafen();
     void resumeVoiceRecording();
     void pauseVoiceRecording();
-
-    void customSchedule(const std::string& id, geode::Function<void(GlobedGJBGL*, float)>&& f, float interval);
-    void customSchedule(const std::string& id, float interval, geode::Function<void(GlobedGJBGL*, float)>&& f);
-    void customUnschedule(const std::string& id);
-    void customUnscheduleAll();
 
     void setCameraFollowPlayer(PlayerObject* player);
 
