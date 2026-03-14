@@ -75,10 +75,6 @@ Result<MoveGroupEvent> MoveGroupEvent::decode(qn::ByteReader& reader) {
     return Ok(GEODE_UNWRAP(decodeMoveGroupData(reader)));
 }
 
-Result<MoveGroupAbsoluteEvent> MoveGroupAbsoluteEvent::decode(qn::ByteReader& reader) {
-    return Ok(GEODE_UNWRAP(decodeMoveAbsGroupData(reader)));
-}
-
 Result<FollowPlayerEvent> FollowPlayerEvent::decode(qn::ByteReader& reader) {
     return Ok(GEODE_UNWRAP(decodeFollowPlayerData(reader)));
 }
@@ -138,7 +134,6 @@ Result<InEvent> InEvent::decode(ByteReader& reader) {
         MAP_TO(EVENT_SCR_SPAWN_GROUP, SpawnGroupEvent);
         MAP_TO(EVENT_SCR_SET_ITEM, SetItemEvent);
         MAP_TO(EVENT_SCR_MOVE_GROUP, MoveGroupEvent);
-        MAP_TO(EVENT_SCR_MOVE_GROUP_ABSOLUTE, MoveGroupAbsoluteEvent);
         MAP_TO(EVENT_SCR_FOLLOW_PLAYER, FollowPlayerEvent);
         MAP_TO(EVENT_SCR_FOLLOW_ROTATION, FollowRotationEvent);
         MAP_TO(EVENT_2P_LINK_REQUEST, TwoPlayerLinkRequestEvent);

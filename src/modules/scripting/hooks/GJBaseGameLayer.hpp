@@ -32,6 +32,13 @@ struct CustomFollowAction {
     bool operator==(const CustomFollowAction&) const = default;
 };
 
+struct CustomMoveAction {
+    int m_groupId;
+    float m_durationRem;
+    /// How much to move per second
+    double m_dx, m_dy;
+};
+
 struct CustomFollowedData {
     cocos2d::CCPoint pos;
     float rot;
@@ -46,6 +53,7 @@ struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBas
 
         // std::unordered_map<uint16_t, std::vector<int>> m_customListeners;
         std::vector<CustomFollowAction> m_followActions;
+        std::vector<CustomMoveAction> m_moveActions;
         std::unordered_map<int, CustomFollowedData> m_lastPlayerPositions;
         int m_localId = 0;
         bool m_hasScripts = false;
@@ -62,8 +70,8 @@ struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBas
     std::vector<std::string>& getLogs();
     std::deque<std::pair<asp::time::SystemTime, float>>& getMemLimitBuffer();
 
-    void customMoveBy(int group, double dx, double dy);
-    void customMoveTo(int group, int center, double x, double y);
+    void customMoveBy(int group, double dx, double dy, float duration = 0.f);
+    void customMoveTo(int group, int center, double x, double y, float duration = 0.f);
     void customMoveDirection(
         int group,
         int targetPosGroup,
@@ -87,7 +95,9 @@ struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBas
     CustomFollowedData positionForPlayer(int player);
 
     void unfollowAllForPlayer(int id);
+    void processCustomActions(float);
     void processCustomFollowActions(float);
+    void processCustomMoveActions(float);
 
     void rotateObjects(cocos2d::CCArray* p0, float p1, cocos2d::CCPoint p2, cocos2d::CCPoint p3, bool p4, bool p5) {
         geode::log::debug("rotateObjects({}, {}, {}, {}, {}, {})", p0, p1, p2, p3, p4, p5);

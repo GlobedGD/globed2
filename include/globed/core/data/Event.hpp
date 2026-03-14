@@ -29,7 +29,6 @@ constexpr uint16_t EVENT_SCR_SPAWN_GROUP = 0xf010;
 constexpr uint16_t EVENT_SCR_SET_ITEM = 0xf011;
 constexpr uint16_t EVENT_SCR_REQUEST_SCRIPT_LOGS = 0xf012;
 constexpr uint16_t EVENT_SCR_MOVE_GROUP = 0xf013;
-constexpr uint16_t EVENT_SCR_MOVE_GROUP_ABSOLUTE = 0xf014;
 constexpr uint16_t EVENT_SCR_FOLLOW_PLAYER = 0xf015;
 constexpr uint16_t EVENT_SCR_FOLLOW_ROTATION = 0xf016;
 
@@ -96,12 +95,6 @@ struct MoveGroupEvent {
     static Result<MoveGroupEvent> decode(qn::ByteReader& reader);
 };
 
-struct MoveGroupAbsoluteEvent {
-    MoveAbsGroupData data;
-
-    static Result<MoveGroupAbsoluteEvent> decode(qn::ByteReader& reader);
-};
-
 struct FollowPlayerEvent {
     FollowPlayerData data;
 
@@ -145,7 +138,6 @@ struct InEvent {
         SpawnGroupEvent,
         SetItemEvent,
         MoveGroupEvent,
-        MoveGroupAbsoluteEvent,
         FollowPlayerEvent,
         FollowRotationEvent,
         TwoPlayerLinkRequestEvent,

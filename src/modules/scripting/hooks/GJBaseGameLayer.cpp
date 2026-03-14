@@ -64,18 +64,29 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
 
     fields.m_localId = singleton<GJAccountManager>()->m_accountID;
 
-    this->schedule(schedule_selector(SCBaseGameLayer::processCustomFollowActions));
+    this->schedule(schedule_selector(SCBaseGameLayer::processCustomActions));
 }
 
 void SCBaseGameLayer::sendLogRequest(float) {
     NetworkManagerImpl::get().queueGameEvent(RequestScriptLogsEvent{});
 }
 
-void SCBaseGameLayer::customMoveBy(int group, double dx, double dy) {
-    this->moveObjectsSilent(group, dx, dy);
+void SCBaseGameLayer::customMoveBy(int group, double dx, double dy, float duration) {
+    if (duration <= 0.f) {
+        this->moveObjectsSilent(group, dx, dy);
+        return;
+    }
+
+    // uhh
+    m_fields->m_moveActions.emplace_back(CustomMoveAction {
+        .m_groupId = group,
+        .m_durationRem = duration,
+        .m_dx = dx / duration,
+        .m_dy = dy / duration,
+    });
 }
 
-void SCBaseGameLayer::customMoveTo(int group, int center, double x, double y) {
+void SCBaseGameLayer::customMoveTo(int group, int center, double x, double y, float duration) {
     auto centerGroup = this->getGroup(center);
     if (!centerGroup || centerGroup->count() == 0) return;
 
@@ -92,7 +103,7 @@ void SCBaseGameLayer::customMoveTo(int group, int center, double x, double y) {
     double dx = x - centerObj->m_positionX;
     double dy = y - centerObj->m_positionY;
 
-    this->customMoveBy(group, dx, dy);
+    this->customMoveBy(group, dx, dy, duration);
 }
 
 void SCBaseGameLayer::customMoveDirection(
@@ -266,6 +277,11 @@ CustomFollowedData SCBaseGameLayer::positionForPlayer(int player) {
     }
 }
 
+void SCBaseGameLayer::processCustomActions(float dt) {
+    this->processCustomFollowActions(dt);
+    this->processCustomMoveActions(dt);
+}
+
 void SCBaseGameLayer::processCustomFollowActions(float) {
     auto& fields = *m_fields.self();
     auto gjbgl = GlobedGJBGL::get(this);
@@ -304,6 +320,28 @@ void SCBaseGameLayer::processCustomFollowActions(float) {
     for (auto& it : fields.m_lastPlayerPositions) {
         auto pos = this->positionForPlayer(it.first);
         it.second = pos;
+    }
+}
+
+void SCBaseGameLayer::processCustomMoveActions(float dt) {
+    auto& fields = *m_fields.self();
+    auto gjbgl = GlobedGJBGL::get(this);
+
+    for (size_t i = 0; i < fields.m_moveActions.size();) {
+        auto& action = fields.m_moveActions[i];
+
+        float mdt = std::clamp(dt, 0.0f, action.m_durationRem);
+        action.m_durationRem -= mdt;
+
+        float dx = action.m_dx * mdt;
+        float dy = action.m_dy * mdt;
+        this->customMoveBy(action.m_groupId, dx, dy);
+
+        if (action.m_durationRem <= 0.f) {
+            fields.m_moveActions.erase(fields.m_moveActions.begin() + i);
+        } else {
+            i++;
+        }
     }
 }
 
@@ -357,12 +395,11 @@ void SCBaseGameLayer::handleEvent(const InEvent& event) {
         this->updateCounters(data.itemId, data.value);
     } else if (event.is<MoveGroupEvent>()) {
         auto& data = event.as<MoveGroupEvent>().data;
-
-        this->customMoveBy(data.group, data.x, data.y);
-    } else if (event.is<MoveGroupAbsoluteEvent>()) {
-        auto& data = event.as<MoveGroupAbsoluteEvent>().data;
-
-        this->customMoveTo(data.group, data.center, data.x, data.y);
+        if (data.absolute) {
+            this->customMoveTo(data.group, data.center, data.x, data.y, data.duration);
+        } else {
+            this->customMoveBy(data.group, data.x, data.y, data.duration);
+        }
     } else if (event.is<FollowPlayerEvent>()) {
         auto& data = event.as<FollowPlayerEvent>().data;
 
