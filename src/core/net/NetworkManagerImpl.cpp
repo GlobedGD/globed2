@@ -357,8 +357,14 @@ Future<> NetworkManagerImpl::asyncInit() {
         qn::ByteReader breader{bytes};
         size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
 
+        size_t remBytes = bytes.size() - breader.position();
+        if (remBytes == 0) {
+            log::warn("received empty message from central server, dropping");
+            return;
+        }
+
         CapnpExceptionHandler errHandler;
-        kj::ArrayInputStream ais{{bytes.data() + breader.position(), bytes.size() - breader.position()}};
+        kj::ArrayInputStream ais{{bytes.data() + breader.position(), remBytes}};
         capnp::PackedMessageReader reader{ais};
         CentralMessage::Reader msg = reader.getRoot<CentralMessage>();
 
@@ -390,8 +396,14 @@ Future<> NetworkManagerImpl::asyncInit() {
         qn::ByteReader breader{bytes};
         size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
 
+        size_t remBytes = bytes.size() - breader.position();
+        if (remBytes == 0) {
+            log::warn("received empty message from game server, dropping");
+            return;
+        }
+
         CapnpExceptionHandler errHandler;
-        kj::ArrayInputStream ais{{bytes.data() + breader.position(), bytes.size() - breader.position()}};
+        kj::ArrayInputStream ais{{bytes.data() + breader.position(), remBytes}};
         capnp::PackedMessageReader reader{ais};
         GameMessage::Reader msg = reader.getRoot<GameMessage>();
 
