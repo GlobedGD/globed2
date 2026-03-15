@@ -15,11 +15,13 @@ bool PingOverlay::init() {
         .parent(this)
         .id("ping-label"_spr);
 
-#ifdef GLOBED_DEBUG
-    m_versionLabel = Build<Label>::create(Mod::get()->getVersion().toVString(), "bigFont.fnt")
-        .parent(this)
-        .id("version-label"_spr);
-#endif
+    // show version label for any version that isn't a release
+    auto version = Mod::get()->getVersion();
+    if (version.getTag()) {
+        m_versionLabel = Build<Label>::create(version.toVString(), "bigFont.fnt")
+            .parent(this)
+            .id("version-label"_spr);
+    }
 
     this->setContentHeight(winSize.height);
     this->reloadFromSettings();
