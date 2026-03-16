@@ -685,6 +685,8 @@ PlayerState GlobedGJBGL::getPlayerState() {
         out.isSideways = obj->m_isSideways;
         out.didJustJump = (player1 ? fields.m_didJustJump1 : fields.m_didJustJump2).take();
         out.isFlipped = obj->m_mainLayer->getScaleY() < -0.f;
+        auto& hb = obj->m_holdingButtons;
+        out.isHolding = hb.contains(1) && hb.at(1);
 
         if (fields.m_sendExtData) {
             // gather some extra data

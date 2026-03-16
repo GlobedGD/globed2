@@ -50,6 +50,7 @@ struct PlayerObjectData {
     bool isSideways;
     bool didJustJump;
     bool isFlipped;
+    bool isHolding;
 
     std::optional<ExtendedPlayerData> extData;
 
@@ -68,6 +69,7 @@ struct PlayerObjectData {
         isSideways = other.isSideways;
         didJustJump = other.didJustJump;
         isFlipped = other.isFlipped;
+        isHolding = other.isHolding;
     }
 };
 
