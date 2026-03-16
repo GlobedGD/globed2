@@ -2,6 +2,7 @@
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/misc/InputPopup.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <globed/util/RateLimiter.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -14,6 +15,7 @@ namespace { namespace $unity {
 static constexpr CCSize LIST_SIZE { 336.f, 220.f };
 static constexpr float CELL_HEIGHT = 27.f;
 static constexpr CCSize CELL_SIZE{LIST_SIZE.width, CELL_HEIGHT};
+static auto g_rateLimiter = RateLimiter::createPrecise(3'000'000'000, 5);
 
 class PlayerCell : public PlayerListCell {
 public:
@@ -41,8 +43,39 @@ protected:
 
         Build<CCSprite>::create("icon-invite.png"_spr)
             .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
-            .intoMenuItem([this] {
-                NetworkManagerImpl::get().sendInvitePlayer(m_accountId);
+            .intoMenuItem([this](auto btn) {
+                if (g_rateLimiter.consume()) {
+                    NetworkManagerImpl::get().sendInvitePlayer(m_accountId);
+                } else {
+                    // tint the button to red and then back, also shake the button
+                    btn->stopAllActions();
+                    btn->setRotation(0.f);
+                    btn->setScale(1.f);
+
+                    auto tint = CCSequence::create(
+                        CCTintTo::create(0.1f, 255, 50, 50),
+                        CCTintTo::create(0.1f, 255, 255, 255),
+                        nullptr
+                    );
+
+                    auto shake = CCRepeat::create(
+                        CCSequence::create(
+                            CCRotateBy::create(0.05f, 15.f),
+                            CCRotateBy::create(0.05f, -30.f),
+                            CCRotateBy::create(0.05f, 15.f),
+                            nullptr
+                        ),
+                        2
+                    );
+
+                    btn->runAction(tint);
+
+                    btn->runAction(CCSequence::create(
+                        shake,
+                        CCRotateTo::create(0.1f, 0.f),
+                        nullptr
+                    ));
+                }
             })
             .zOrder(9)
             .scaleMult(1.1f)
