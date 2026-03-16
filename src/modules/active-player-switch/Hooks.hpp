@@ -45,6 +45,7 @@ struct APSController {
     void handleStateEvent(const SwitcherooFullStateEvent& event);
     void handleSwitchEvent(const SwitcherooSwitchEvent& event);
     void rehidePlayers();
+    void repushButtons();
 
     std::optional<SwitcherooSwitchEvent> poll();
 
@@ -112,6 +113,9 @@ struct GLOBED_MODIFY_ATTR APSGJBGL : geode::Modify<APSGJBGL, GJBaseGameLayer> {
     // according to prevter handlebutton would break a bunch of bots and likely have incompat with cbf
     $override
     void handleButton(bool a, int b, bool c);
+
+    $override
+    void processQueuedButtons(float dt, bool clearInputQueue);
 };
 
 struct GLOBED_MODIFY_ATTR APSPauseLayer : geode::Modify<APSPauseLayer, PauseLayer> {

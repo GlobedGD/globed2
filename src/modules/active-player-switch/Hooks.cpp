@@ -18,6 +18,9 @@ static bool g_ignoreButtonBlock = true;
 static bool g_p1Held = false;
 static bool g_p2Held = false;
 
+static bool g_realP1Held = false;
+static bool g_realP2Held = false;
+
 // when respawning player becomes visible again
 
 namespace globed {
@@ -97,6 +100,7 @@ void APSController::handleSwitchEvent(const SwitcherooSwitchEvent& event) {
         }
 
         this->rehidePlayers();
+        this->repushButtons();
     }
 }
 
@@ -105,6 +109,11 @@ void APSController::rehidePlayers() {
         player->setForceHide(id != m_activePlayer);
     }
     m_gjbgl->setSpectating(!m_meActive);
+}
+
+void APSController::repushButtons() {
+    buttonPress(m_gjbgl, g_realP1Held, false);
+    buttonPress(m_gjbgl, g_realP2Held, true);
 }
 
 std::optional<SwitcherooSwitchEvent> APSController::poll() {
@@ -454,6 +463,20 @@ void APSGJBGL::handleButton(bool a, int b, bool p1) {
         auto& b = p1 ? g_p1Held : g_p2Held;
         b = a;
     }
+}
+
+// TODO: also fyi player2 field is not flipped
+// if like flip 2p controls is enabled
+void APSGJBGL::processQueuedButtons(float dt, bool clearInputQueue) {
+    for (auto& btn : m_queuedButtons) {
+        if (btn.m_isPlayer2) {
+            auto& v = m_gameState.m_isDualMode ? g_realP2Held : g_realP1Held;
+            v = btn.m_isPush;
+        } else {
+            g_realP1Held = btn.m_isPush;
+        }
+    }
+    GJBaseGameLayer::processQueuedButtons(dt, clearInputQueue);
 }
 
 // PauseLayer
