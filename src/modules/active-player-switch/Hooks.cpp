@@ -15,13 +15,23 @@ using namespace geode::prelude;
 
 static bool g_ignoreNoclip = false;
 static bool g_ignoreButtonBlock = true;
-
+static bool g_p1Held = false;
+static bool g_p2Held = false;
 
 // when respawning player becomes visible again
 
 namespace globed {
 
 using SwitchType = SwitcherooSwitchEvent::Type;
+
+static void buttonPress(GlobedGJBGL* gjbgl, bool held, bool p2) {
+    auto& b = p2 ? g_p2Held : g_p1Held;
+    if (held == b) return;
+
+    g_ignoreButtonBlock = true;
+    gjbgl->handleButton(held, 1, !p2);
+    g_ignoreButtonBlock = false;
+}
 
 // Game controller
 
@@ -84,12 +94,6 @@ void APSController::handleSwitchEvent(const SwitcherooSwitchEvent& event) {
 
         if (m_meActive) {
             m_pl->showSwitchEffect();
-        } else {
-            // switched away from us, cancel inputs
-            bool prev = g_ignoreButtonBlock;
-            g_ignoreButtonBlock = true;
-            m_gjbgl->handleButton(false, 0, true);
-            g_ignoreButtonBlock = prev;
         }
 
         this->rehidePlayers();
@@ -384,6 +388,9 @@ void APSPlayLayer::handleUpdate(float dt) {
             this->handleUpdateFromRp(m_player2, rp.get(), true);
             self->setCameraFollowPlayer(rp->player1());
             takeOverCamera = true;
+
+            buttonPress(self, rp->player1()->isHolding(), false);
+            buttonPress(self, rp->player2()->isHolding(), true);
         } else {
             log::warn("active player {} not found!", controller.m_activePlayer);
             controller.m_activePlayer = 0;
@@ -438,10 +445,14 @@ APSPlayLayer* APSPlayLayer::get(GJBaseGameLayer* gjbgl) {
 
 // GJBGL
 
-void APSGJBGL::handleButton(bool a, int b, bool c) {
+void APSGJBGL::handleButton(bool a, int b, bool p1) {
     auto pl = APSPlayLayer::get(this);
     if (!pl || !pl->shouldBlockInput() || g_ignoreButtonBlock) {
-        GJBaseGameLayer::handleButton(a, b, c);
+        GJBaseGameLayer::handleButton(a, b, p1);
+
+        // log::debug("(APS) Button {} {} {}", a, b, p1);
+        auto& b = p1 ? g_p1Held : g_p2Held;
+        b = a;
     }
 }
 

@@ -42,6 +42,7 @@ public:
     PlayerIconData& icons();
     PlayerDisplayData& displayData();
     RemotePlayer* getRemotePlayer();
+    bool isHolding();
 
     void setStickyState(bool p1, bool sticky);
 
@@ -75,6 +76,7 @@ private:
     bool m_isLocalPlayer = false;
     bool m_isSecond = false;
     bool m_isEditor = false;
+    bool m_isHolding = false;
     bool m_forceHideName = false;
     bool m_playingDeathEffect = false;
 

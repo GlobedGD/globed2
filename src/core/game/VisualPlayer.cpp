@@ -172,6 +172,7 @@ void VisualPlayer::updateFromData(
     m_isDead = state.isDead;
     m_isUpsideDown = data.isUpsideDown;
     m_isOnGround = data.isGrounded;
+    m_isHolding = data.isHolding;
     // m_isRotating = data.isRotating;
     // m_isSideways = data.isSideways;
 
@@ -472,6 +473,10 @@ PlayerDisplayData& VisualPlayer::displayData() {
 
 RemotePlayer* VisualPlayer::getRemotePlayer() {
     return m_remotePlayer;
+}
+
+bool VisualPlayer::isHolding() {
+    return m_isHolding;
 }
 
 void VisualPlayer::setStickyState(bool p1, bool sticky) {
