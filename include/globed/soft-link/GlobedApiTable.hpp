@@ -146,10 +146,15 @@ struct PlayerSubtable : public FunctionTableSubcat<GlobedApiTable> {
     API_TABLE_FN(void, setForceHide, RemotePlayer*, bool /* hidden */);
 };
 
+struct MiscSubtable : public FunctionTableSubcat<GlobedApiTable> {
+    API_TABLE_FN(gd::string, fullPathForFilename, std::string_view, bool);
+};
+
 struct GlobedApiTable : public FunctionTable {
     NetSubtable net{this, "net"};
     GameSubtable game{this, "game"};
     PlayerSubtable player{this, "player"};
+    MiscSubtable misc{this, "misc"};
 };
 
 }

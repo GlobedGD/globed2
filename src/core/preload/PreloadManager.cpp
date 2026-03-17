@@ -80,6 +80,8 @@ void PreloadManager::initLoadQueue() {
         addIcons(IconType::Jetpack, 1, 8);
     }
 
+
+    log::debug("Hi test 3 {}", m_loadQueue.size());;
     m_totalCount = m_loadQueue.size();
 }
 
@@ -455,22 +457,36 @@ void PreloadManager::setCachedIcon(int iconType, int id, cocos2d::CCTexture2D* t
     m_loadedIcons[key] = texture;
 }
 
-// transforms a string like "icon-41" into "icon-41-hd.png" depending on the current texture quality.
-static void appendQualitySuffix(std::string& out, TextureQuality quality, bool plist) {
+// returns the quality suffix for the given quality, e.g. "", "-hd", "-uhd"
+static std::string_view getQualitySuffix(TextureQuality quality) {
     switch (quality) {
         case TextureQuality::Low: {
-            if (plist) out.append(".plist");
-            else out.append(".png");
+            return "";
         } break;
         case TextureQuality::Medium: {
-            if (plist) out.append("-hd.plist");
-            else out.append("-hd.png");
+            return "-hd";
         } break;
         case TextureQuality::High: {
-            if (plist) out.append("-uhd.plist");
-            else out.append("-uhd.png");
+            return "-uhd";
         } break;
     }
+}
+
+static uint64_t fnv1aHash(std::string_view s) {
+    uint64_t hash = 0xcbf29ce484222325;
+    for (char c : s) {
+        hash ^= static_cast<uint64_t>(c);
+        hash *= 0x100000001b3;
+    }
+    return hash;
+}
+
+template <size_t N>
+static void appendToBuf(std::array<char, N>& buf, size_t& offset, std::string_view str) {
+    size_t toCopy = std::min(str.size(), N - offset - 1);
+    std::memcpy(buf.data() + offset, str.data(), toCopy);
+    offset += toCopy;
+    buf[offset] = '\0';
 }
 
 // this function scares me
@@ -496,37 +512,44 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
 #endif
 
     // add the quality suffix if needed
-    std::string filename;
+    std::array<char, 1024> filenameBuf;
+    filenameBuf[0] = '\0';
+    size_t filenameOffset = 0;
+
+    auto append = [&](std::string_view str) {
+        appendToBuf(filenameBuf, filenameOffset, str);
+    };
 
     if (!ignoreSuffix) {
-        bool hasQualitySuffix = input.ends_with("-hd.png") ||
-                                input.ends_with("-uhd.png") ||
-                                input.ends_with("-hd.plist") ||
-                                input.ends_with("-uhd.plist");
+        auto period = input.find_last_of('.');
+        std::string_view base = input.substr(0, period);
+
+        bool hasQualitySuffix = base.ends_with("-uhd") || base.ends_with("-hd");
 
         if (!hasQualitySuffix) {
-            if (input.ends_with(".plist")) {
-                filename = input.substr(0, input.find(".plist"));
-                appendQualitySuffix(filename, getTextureQuality(), true);
-            } else {
-                filename = input.substr(0, input.find(".png"));
-                appendQualitySuffix(filename, getTextureQuality(), false);
+            append(base);
+            append(getQualitySuffix(getTextureQuality()));
+
+            if (period != std::string::npos) {
+                std::string_view extension = input.substr(period);
+                append(extension);
             }
         }
     }
 
-    if (filename.empty()) {
-        filename = input;
+    if (filenameOffset == 0) {
+        append(input);
     }
 
     // we disregard CCFileUtils m_pFilenameLookupDict / getNewFilename() here,
     // no one uses it anyway fortunately
 
+    std::string_view filename{filenameBuf.data(), filenameOffset};
     auto& searchPaths = fu.getSearchPaths();
 
     // we discard resolution directories here, since no one uses them
 #define TRY_PATH(sp) \
-    auto _fp = fu.getPathForFilename(filename, "", sp); \
+    auto _fp = fu.getPathForFilename2(filename, "", sp); \
     if (!_fp.empty()) { \
         return _fp; \
     }
@@ -552,7 +575,11 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
 
     // if all else fails, accept defeat
     log::warn("PreloadManager: could not find full path for '{}' (transformed: '{}')", input, filename);
-    return filename;
+    if (!ignoreSuffix) {
+        log::warn("PreloadManager: will try again without suffix");
+        return this->fullPathForFilename(input, true);
+    }
+    return {};
 }
 
 TextureQuality getTextureQuality() {

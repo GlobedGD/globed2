@@ -4,6 +4,7 @@
 #include <globed/core/net/NetworkManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <core/preload/PreloadManager.hpp>
 #include <asp/format.hpp>
 
 using namespace geode::prelude;
@@ -279,10 +280,19 @@ static void addPlayerFunctions() {
     };
 }
 
+static void addMiscFunctions() {
+    auto category = "misc";
+
+    TABLE_FN(gd::string, fullPathForFilename, std::string_view filename, bool ignoreSuffix) {
+        return Ok(PreloadManager::get().fullPathForFilename(filename, ignoreSuffix));
+    };
+}
+
 $execute {
     addNetFunctions();
     addGameFunctions();
     addPlayerFunctions();
+    addMiscFunctions();
 
     // TODO more stuff
 

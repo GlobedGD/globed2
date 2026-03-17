@@ -73,6 +73,8 @@ public:
     cocos2d::CCTexture2D* getCachedIcon(int iconType, int id);
     void setCachedIcon(int iconType, int id, cocos2d::CCTexture2D* texture);
 
+    gd::string fullPathForFilename(std::string_view input, bool ignoreSuffix = false);
+
 private:
     friend class SingletonBase;
     friend struct PreloadItemState;
@@ -106,8 +108,6 @@ private:
     void initLoadQueue();
     void doLoadBatch(std::vector<PreloadItem> items, PreloadOptions options);
     void initSessionState();
-
-    gd::string fullPathForFilename(std::string_view input, bool ignoreSuffix = false);
 };
 
 }
