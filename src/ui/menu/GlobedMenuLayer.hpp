@@ -41,6 +41,7 @@ private:
     CCNode* m_playerListMenu;
     cue::ListNode* m_playerList;
     Label* m_roomNameLabel;
+    Label* m_preferredServerLabel;
     CCMenuItemSpriteExtra* m_roomNameButton;
     CCMenu* m_roomButtonsMenu;
     CCMenu* m_rightSideMenu = nullptr;
@@ -79,6 +80,7 @@ private:
     void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings);
     void updateRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players, size_t playerCount, const RoomSettings& settings);
     void updatePlayerList(const std::vector<RoomPlayer>& players);
+    void updatePreferredServerLabel(bool connected);
     bool trySoftRefresh(const std::vector<RoomPlayer>& players);
     void softRefreshAll();
     void softRefreshSelf();

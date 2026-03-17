@@ -30,6 +30,7 @@
 #include <ui/settings/SettingsLayer.hpp>
 #include <ui/misc/Badges.hpp>
 #include <ui/misc/CellGradients.hpp>
+#include <ui/Core.hpp>
 
 #include <argon/argon.hpp>
 #include <cue/RepeatingBackground.hpp>
@@ -231,16 +232,30 @@ bool GlobedMenuLayer::init() {
         .store(m_background);
 
     auto winSize = CCDirector::get()->getWinSize();
+    auto& nm = NetworkManagerImpl::get();
 
-    // add a small version label in top right
-    Build<Label>::create(fmt::format("{}", Mod::get()->getVersion().toVString()), "chatFont.fnt")
-        .opacity(127)
-        .scale(0.55f)
+    // add a small version + server label in top right
+    auto versionContainer = Build(ColumnContainer::create(1.f))
         .anchorPoint(1.f, 1.f)
         .pos(winSize - CCSize{4.f, 2.f})
         .zOrder(111)
+        .parent(this)
+        .collect();
+    versionContainer->layout()->setCrossAxisAlignment(CrossAxisAlignment::End);
+
+    Build<Label>::create(fmt::format("{}", Mod::get()->getVersion().toVString()), "chatFont.fnt")
+        .opacity(127)
+        .scale(0.55f)
         .id("version-label")
-        .parent(this);
+        .parent(versionContainer);
+
+    m_preferredServerLabel = Build<Label>::create("", "chatFont.fnt")
+        .opacity(127)
+        .scale(0.55f)
+        .id("server-label")
+        .parent(versionContainer);
+
+    versionContainer->updateLayout();
 
     // create the connection menu
     auto connectMenuLayout = ColumnLayout::create()->setAutoScale(false)->setAxisReverse(true)->setGap(10.f);
@@ -446,8 +461,6 @@ bool GlobedMenuLayer::init() {
         .pos(winSize.width - 16.f, 18.f)
         .anchorPoint(1.f, 0.f)
         .parent(this);
-
-    auto& nm = NetworkManagerImpl::get();
 
     m_roomStateListener = nm.listen<msg::RoomStateMessage>([this](const auto& msg) {
         if (msg.roomId != m_roomId) {
@@ -1285,7 +1298,10 @@ void GlobedMenuLayer::update(float dt) {
 
     this->setMenuState(newState);
 
-    if (newState == MenuState::Connected) {
+    bool connected = newState == MenuState::Connected;
+    this->updatePreferredServerLabel(connected);
+
+    if (connected) {
         auto scpos = m_playerList->getScrollPos();
         bool changed = !m_lastScrollPos || m_lastScrollPos.value() != scpos;
         m_lastScrollPos = scpos;
@@ -1300,6 +1316,23 @@ void GlobedMenuLayer::update(float dt) {
             this->requestRoomState();
         }
     }
+}
+
+void GlobedMenuLayer::updatePreferredServerLabel(bool connected) {
+    auto& nm = NetworkManagerImpl::get();
+    if (!connected) {
+        m_preferredServerLabel->setString("");
+        return;
+    }
+
+    auto preferredId = nm.getPreferredServer().value_or(0);
+    auto preferredServer = nm.getGameServer(preferredId);
+    if (preferredServer) {
+        m_preferredServerLabel->setString(preferredServer->name);
+    } else {
+        m_preferredServerLabel->setString("");
+    }
+    m_preferredServerLabel->getParent()->updateLayout();
 }
 
 void GlobedMenuLayer::setMenuState(MenuState state, bool force) {
