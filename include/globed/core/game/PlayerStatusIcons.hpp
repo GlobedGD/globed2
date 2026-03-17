@@ -1,6 +1,6 @@
 #pragma once
 
-#include <globed/prelude.hpp>
+#include "../../prelude.hpp"
 #include <Geode/Geode.hpp>
 
 namespace globed {

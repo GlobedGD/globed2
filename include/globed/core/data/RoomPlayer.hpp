@@ -1,8 +1,8 @@
 #pragma once
 #include "PlayerAccountData.hpp"
 #include "SpecialUserData.hpp"
-#include <globed/core/data/ColorId.hpp>
-#include <globed/core/SessionId.hpp>
+#include "../../core/data/ColorId.hpp"
+#include "../../core/SessionId.hpp"
 
 #ifdef GLOBED_BUILD
 # include <cue/PlayerIcon.hpp>

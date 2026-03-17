@@ -1,8 +1,8 @@
 #pragma once
 
-#include <globed/config.hpp>
-#include <globed/util/singleton.hpp>
-#include <globed/util/assert.hpp>
+#include "../config.hpp"
+#include "../util/singleton.hpp"
+#include "../util/assert.hpp"
 #include "ValueManager.hpp"
 
 #include <Geode/utils/terminate.hpp>

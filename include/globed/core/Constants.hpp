@@ -1,5 +1,5 @@
 #pragma once
-#include <globed/util/ConstexprString.hpp>
+#include "../util/ConstexprString.hpp"
 #include <stdint.h>
 #include <stddef.h>
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <globed/util/singleton.hpp>
-#include <globed/core/data/PlayerDisplayData.hpp>
-#include <globed/core/data/SpecialUserData.hpp>
+#include "../util/singleton.hpp"
+#include "../core/data/PlayerDisplayData.hpp"
+#include "../core/data/SpecialUserData.hpp"
 
 namespace globed {
 
