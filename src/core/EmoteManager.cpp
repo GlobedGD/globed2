@@ -98,13 +98,14 @@ $on_game(Loaded) {
     auto& em = EmoteManager::get();
 
     std::initializer_list<std::pair<uint32_t, uint32_t>> ranges = {
-        {1, 100},
-        {200, 100},
-        {300, 100},
-        {400, 100},
-        {500, 100},
-        {600, 100},
-        {700, 100},
+        // {1, 100},
+        // {200, 100},
+        // {300, 100},
+        // {400, 100},
+        // {500, 100},
+        // {600, 100},
+        // {700, 100},
+        {1, 2000},
     };
 
     auto sfc = CCSpriteFrameCache::get();
