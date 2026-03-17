@@ -431,7 +431,7 @@ void EmoteListPopup::loadFavoriteEmotesList() {
         auto sprite = EmoteManager::get().createEmote(emoteId);
         if (!sprite) {
             log::warn("Emote ID {} is missing its sprite!", emoteId);
-            continue;
+            sprite = EmoteManager::get().createEmote(0);
         }
 
         CCMenuItemSpriteExtra* emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
