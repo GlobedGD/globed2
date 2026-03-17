@@ -14,7 +14,7 @@
 #include "Credits.hpp"
 #include "ExtendedUserData.hpp"
 #include "PunishReasons.hpp"
-#include <globed/audio/EncodedAudioFrame.hpp>
+#include "../../audio/EncodedAudioFrame.hpp"
 
 namespace globed::msg {
 

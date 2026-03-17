@@ -1,7 +1,7 @@
 #pragma once
 #include "Module.hpp"
 #include "Core.hpp"
-#include <globed/util/singleton.hpp>
+#include "../util/singleton.hpp"
 
 namespace globed {
 

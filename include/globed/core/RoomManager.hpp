@@ -1,9 +1,9 @@
 #pragma once
 
-#include <globed/util/singleton.hpp>
-#include <globed/core/data/RoomSettings.hpp>
-#include <globed/core/data/RoomTeam.hpp>
-#include <globed/core/SessionId.hpp>
+#include "../util/singleton.hpp"
+#include "../core/data/RoomSettings.hpp"
+#include "../core/data/RoomTeam.hpp"
+#include "../core/SessionId.hpp"
 
 namespace globed {
 

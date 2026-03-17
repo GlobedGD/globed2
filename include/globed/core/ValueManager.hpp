@@ -1,7 +1,7 @@
 #pragma once
 
-#include <globed/util/singleton.hpp>
-#include <globed/util/ConstexprString.hpp>
+#include "../util/singleton.hpp"
+#include "../util/ConstexprString.hpp"
 #include "Constants.hpp"
 
 #include <matjson.hpp>

@@ -1,8 +1,8 @@
 #pragma once
-#include <globed/core/SessionId.hpp>
-#include <globed/core/data/RoomPlayer.hpp>
-#include <globed/config.hpp>
-#include <globed/util/CCData.hpp>
+#include "../core/SessionId.hpp"
+#include "../core/data/RoomPlayer.hpp"
+#include "../config.hpp"
+#include "../util/CCData.hpp"
 #include <asp/time/Instant.hpp>
 
 namespace globed {

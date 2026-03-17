@@ -1,8 +1,8 @@
 #pragma once
 
-#include <globed/util/singleton.hpp>
-#include <globed/core/game/RemotePlayer.hpp>
-#include <globed/audio/sound/PlayerSound.hpp>
+#include "../util/singleton.hpp"
+#include "../core/game/RemotePlayer.hpp"
+#include "../audio/sound/PlayerSound.hpp"
 
 namespace globed {
 

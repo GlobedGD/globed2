@@ -3,7 +3,7 @@
 #include "EncodedAudioFrame.hpp"
 #include "AudioSampleQueue.hpp"
 #include "sound/AudioSource.hpp"
-#include <globed/prelude.hpp>
+#include "../prelude.hpp"
 
 #include <Geode/utils/async.hpp>
 #include <arc/sync/mpsc.hpp>

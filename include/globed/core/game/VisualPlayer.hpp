@@ -1,9 +1,9 @@
 #pragma once
 
-#include <globed/prelude.hpp>
-#include <globed/core/data/PlayerState.hpp>
-#include <globed/core/data/PlayerDisplayData.hpp>
-#include <globed/core/game/PlayerStatusIcons.hpp>
+#include "../../prelude.hpp"
+#include "../../core/data/PlayerState.hpp"
+#include "../../core/data/PlayerDisplayData.hpp"
+#include "../../core/game/PlayerStatusIcons.hpp"
 #include <Geode/Geode.hpp>
 
 namespace globed {

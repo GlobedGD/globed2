@@ -2,7 +2,7 @@
 #include "VisualPlayer.hpp"
 #include "ProgressArrow.hpp"
 #include "ProgressIcon.hpp"
-#include <globed/audio/sound/VoiceStream.hpp>
+#include "../../audio/sound/VoiceStream.hpp"
 
 #include <cocos2d.h>
 

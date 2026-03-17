@@ -1,6 +1,6 @@
 #pragma once
 
-#include <globed/config.hpp>
+#include "../../config.hpp"
 #include <Geode/loader/Event.hpp>
 #include <Geode/utils/function.hpp>
 

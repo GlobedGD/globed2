@@ -1,6 +1,6 @@
 #pragma once
 
-#include <globed/util/singleton.hpp>
+#include "../util/singleton.hpp"
 #include <asp/sync/Mutex.hpp>
 #include <Geode/Bindings.hpp>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <globed/config.hpp>
+#include "../config.hpp"
 #include <stdint.h>
 
 namespace globed {

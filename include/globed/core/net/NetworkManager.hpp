@@ -1,12 +1,12 @@
 #pragma once
 
-#include <globed/util/singleton.hpp>
-#include <globed/core/net/MessageListener.hpp>
-#include <globed/core/data/UserRole.hpp>
-#include <globed/core/data/Event.hpp>
-#include <globed/core/data/UserPermissions.hpp>
-#include <globed/core/data/SpecialUserData.hpp>
-#include <globed/core/data/FeaturedLevel.hpp>
+#include "../../util/singleton.hpp"
+#include "../../core/net/MessageListener.hpp"
+#include "../../core/data/UserRole.hpp"
+#include "../../core/data/Event.hpp"
+#include "../../core/data/UserPermissions.hpp"
+#include "../../core/data/SpecialUserData.hpp"
+#include "../../core/data/FeaturedLevel.hpp"
 #include "ConnectionState.hpp"
 
 #include <asp/time/Duration.hpp>

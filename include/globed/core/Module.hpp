@@ -2,9 +2,9 @@
 
 #include <Geode/Result.hpp>
 #include <Geode/utils/terminate.hpp>
-#include <globed/core/data/PlayerDisplayData.hpp>
-#include <globed/core/data/PlayerState.hpp>
-#include <globed/config.hpp>
+#include "../core/data/PlayerDisplayData.hpp"
+#include "../core/data/PlayerState.hpp"
+#include "../config.hpp"
 
 #define GLOBED_CLAIM_HOOKS(module, modify, ...) \
     do { \

@@ -2,7 +2,7 @@
 
 #include <matjson.hpp>
 #include <matjson/std.hpp>
-#include <globed/util/singleton.hpp>
+#include "../util/singleton.hpp"
 
 namespace globed {
 

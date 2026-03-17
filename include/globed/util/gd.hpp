@@ -1,7 +1,7 @@
 #pragma once
 
-#include <globed/core/data/PlayerIconData.hpp>
-#include <globed/config.hpp>
+#include "../core/data/PlayerIconData.hpp"
+#include "../config.hpp"
 
 #include <Geode/Geode.hpp>
 
