@@ -86,7 +86,8 @@ struct HookedFileUtils : public cocos2d::CCFileUtils {
         return getPathForFilename2(filename, resolutionDirectory, searchPath);
     }
 
-    gd::string getPathForFilename2(std::string_view file, std::string_view resolutionDirectory, std::string_view searchPath) {
+    gd::string getPathForFilename2(std::string_view filename, std::string_view resolutionDirectory, std::string_view searchPath) {
+        std::string_view file = filename;
         std::string_view filePath;
 
         size_t slashPos = file.find_last_of('/');
