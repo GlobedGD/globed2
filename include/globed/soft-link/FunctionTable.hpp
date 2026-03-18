@@ -44,11 +44,11 @@ public:
     }
 
     template <typename T, typename... Args>
-    inline geode::Result<T> invoke(std::string_view name, Args&&... args) {
+    inline geode::Result<T> invoke(std::string_view name, Args... args) {
         using FTy = geode::Result<T>(*)(Args...);
         GEODE_UNWRAP_INTO(auto func, this->getFunction<FTy>(name));
 
-        return func(std::forward<Args>(args)...);
+        return func(std::move(args)...);
     }
 
 private:
@@ -63,12 +63,12 @@ struct FunctionTableSubcat {
     std::string_view name;
 
     template <typename T, typename... Args>
-    inline geode::Result<T> invoke(std::string_view name, Args&&... args) {
+    inline geode::Result<T> invoke(std::string_view name, Args... args) {
         char combined[128];
         auto res = fmt::format_to(combined, "{}.{}", this->name, name);
 
         std::string_view sv{combined, res.out};
-        return table->template invoke<T>(sv, std::forward<Args>(args)...);
+        return table->template invoke<T, Args...>(sv, std::move(args)...);
     }
 
     template <typename FTy>

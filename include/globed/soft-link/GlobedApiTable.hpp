@@ -11,27 +11,16 @@
 #include "../core/net/MessageListener.hpp"
 
 #define API_TABLE_FN(...) GEODE_INVOKE(GEODE_CONCAT(API_TABLE_FN_, GEODE_NUMBER_OF_ARGS(__VA_ARGS__)), __VA_ARGS__)
-
 #define API_TABLE_FN_2(ret, name) \
     inline ::geode::Result<ret> name() { return this->invoke<ret>(#name); }
 #define API_TABLE_FN_3(ret, name, p1) \
-    inline ::geode::Result<ret> name(p1 a1) { return this->invoke<ret>(#name, a1); }
+    inline ::geode::Result<ret> name(p1 a1) { return this->invoke<ret, p1>(#name, std::move(a1)); }
 #define API_TABLE_FN_4(ret, name, p1, p2) \
-    inline ::geode::Result<ret> name(p1 a1, p2 a2) { return this->invoke<ret>(#name, a1, a2); }
+    inline ::geode::Result<ret> name(p1 a1, p2 a2) { return this->invoke<ret, p1, p2>(#name, std::move(a1), std::move(a2)); }
 #define API_TABLE_FN_5(ret, name, p1, p2, p3) \
-    inline ::geode::Result<ret> name(p1 a1, p2 a2, p3 a3) { return this->invoke<ret>(#name, a1, a2, a3); }
+    inline ::geode::Result<ret> name(p1 a1, p2 a2, p3 a3) { return this->invoke<ret, p1, p2, p3>(#name, std::move(a1), std::move(a2), std::move(a3)); }
 #define API_TABLE_FN_6(ret, name, p1, p2, p3, p4) \
-    inline ::geode::Result<ret> name(p1 a1, p2 a2, p3 a3, p4 a4) { return this->invoke<ret>(#name, a1, a2, a3, a4); }
-#define API_TABLE_FN_7(ret, name, p1, p2, p3, p4, p5) \
-    inline ::geode::Result<ret> name(p1 a1, p2 a2, p3 a3, p4 a4, p5 a5) { return this->invoke<ret>(#name, a1, a2, a3, a4, a5); }
-#define API_TABLE_FN_8(ret, name, p1, p2, p3, p4, p5, p6) \
-    inline ::geode::Result<ret> name(p1 a1, p2 a2, p3 a3, p4 a4, p5 a5, p6 a6) { return this->invoke<ret>(#name, a1, a2, a3, a4, a5, a6); }
-#define API_TABLE_FN_9(ret, name, p1, p2, p3, p4, p5, p6, p7) \
-    inline ::geode::Result<ret> name(p1 a1, p2 a2, p3 a3, p4 a4, p5 a5, p6 a6, p7 a7) { return this->invoke<ret>(#name, a1, a2, a3, a4, a5, a6, a7); }
-#define API_TABLE_FN_10(ret, name, p1, p2, p3, p4, p5, p6, p7, p8) \
-    inline ::geode::Result<ret> name(p1 a1, p2 a2, p3 a3, p4 a4, p5 a5, p6 a6, p7 a7, p8 a8) { return this->invoke<ret>(#name, a1, a2, a3, a4, a5, a6, a7, a8); }
-#define API_TABLE_FN_11(ret, name, p1, p2, p3, p4, p5, p6, p7, p8, p9) \
-    inline ::geode::Result<ret> name(p1 a1, p2 a2, p3 a3, p4 a4, p5 a5, p6 a6, p7 a7, p8 a8, p9 a9) { return this->invoke<ret>(#name, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+    inline ::geode::Result<ret> name(p1 a1, p2 a2, p3 a3, p4 a4) { return this->invoke<ret, p1, p2, p3, p4>(#name, std::move(a1), std::move(a2), std::move(a3), std::move(a4)); }
 
 namespace globed {
 
