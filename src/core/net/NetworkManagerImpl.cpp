@@ -1356,6 +1356,7 @@ void NetworkManagerImpl::invalidateIcons() {
     if (info) {
         info->m_sentIcons = false;
     }
+    m_workerNotify.notifyOne();
 }
 
 void NetworkManagerImpl::invalidateFriendList() {
@@ -1363,6 +1364,7 @@ void NetworkManagerImpl::invalidateFriendList() {
     if (info) {
         info->m_sentFriendList = false;
     }
+    m_workerNotify.notifyOne();
 }
 
 void NetworkManagerImpl::markAuthorizedModerator() {
