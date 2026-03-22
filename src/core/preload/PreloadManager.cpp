@@ -107,7 +107,7 @@ void PreloadManager::loadNextBatch(PreloadOptions options) {
             case TextureQuality::High: qualityFactor = 1.f; break;
         }
 
-        size_t base = 100;
+        size_t base = 250;
 
         return (float)base * deviceFactor * threadFactor * qualityFactor;
 
