@@ -1199,7 +1199,7 @@ void GlobedGJBGL::cleanupGlobedAdditions() {
         fields.m_pingOverlay->updateWithDisconnected();
     }
 
-    for (auto it = fields.m_players.begin(); it != fields.m_players.end(); ++it) {
+    for (auto it = fields.m_players.begin(); it != fields.m_players.end();) {
         this->handlePlayerLeave(it->first, false);
         it = fields.m_players.erase(it);
     }
