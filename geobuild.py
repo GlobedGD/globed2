@@ -136,8 +136,8 @@ def make_constants_codegen(state: State) -> str:
 
     constants = {
         "discord": "https://discord.gg/d56q5Dkdm3",
-        "globed-commit": config.get_mod_commit(),
-        "geode-commit": config.get_sdk_commit(),
+        "globed-commit": config.get_mod_commit() or "",
+        "geode-commit": config.get_sdk_commit() or "",
         "build-time": datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC'),
         "build-env": f"{config.compiler_id} {config.compiler_version} ({config.compiler_frontend})",
         "build-opts": " ".join(build_opts),
