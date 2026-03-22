@@ -24,6 +24,7 @@ enum class PreferConnection : int {
     Tcp = 1,
     Udp = 2,
     Quic = 3,
+    WebSocket = 4,
 };
 
 // Settings implementation

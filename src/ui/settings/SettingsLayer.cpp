@@ -251,6 +251,7 @@ void SettingsLayer::addSettings() {
             {"TCP", PreferConnection::Tcp},
             {"UDP", PreferConnection::Udp},
             {"QUIC", PreferConnection::Quic},
+            {"WebSocket", PreferConnection::WebSocket},
         });
         this->addSetting<BoolSettingCell>("core.dev.net-use-ipv4", "Force IPv4",
             "Forces IPv4 server connections and disallows IPv6."

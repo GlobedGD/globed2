@@ -1059,7 +1059,7 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
         case PreferConnection::Tcp: ct = qn::ConnectionType::Tcp; break;
         case PreferConnection::Quic: ct = qn::ConnectionType::Quic; break;
         case PreferConnection::Udp: ct = qn::ConnectionType::Udp; break;
-        default: break;
+        case PreferConnection::WebSocket: ct = qn::ConnectionType::WebSocket; break;
     }
 
     log::debug("Preferred protocol: {}", ct.has_value() ? connTypeToString(*ct) : "Auto");
