@@ -566,6 +566,14 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
         TRY_PATH(sp);
     }
 
+    // try the real gd resource folder
+#ifdef GEODE_IS_DESKTOP
+    auto realResources = string::pathToString(dirs::getResourcesDir());
+    if (!realResources.empty()) {
+        TRY_PATH(realResources);
+    }
+#endif
+
     log::warn("PreloadManager: missed all known paths, trying everything: {}", input);
 
     // try all search paths

@@ -5,6 +5,7 @@
 #include "../util/CStr.hpp"
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/utils/cocos.hpp>
+#include <Geode/ui/Notification.hpp>
 
 #include <deque>
 

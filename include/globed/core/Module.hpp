@@ -2,6 +2,7 @@
 
 #include <Geode/Result.hpp>
 #include <Geode/utils/terminate.hpp>
+#include <Geode/loader/Mod.hpp>
 #include "../core/data/PlayerDisplayData.hpp"
 #include "../core/data/PlayerState.hpp"
 #include "../config.hpp"

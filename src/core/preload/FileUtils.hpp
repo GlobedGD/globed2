@@ -63,6 +63,10 @@ inline std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, 
 #endif
 }
 
+/// See platform/macos/objc.mm
+#ifdef GEODE_IS_MACOS
+bool isFileExistImpl(geode::ZStringView path);
+#endif
 
 struct HookedFileUtils : public cocos2d::CCFileUtils {
     static HookedFileUtils& get() {
@@ -75,8 +79,10 @@ struct HookedFileUtils : public cocos2d::CCFileUtils {
 
         return (attrs != INVALID_FILE_ATTRIBUTES &&
                 !(attrs & FILE_ATTRIBUTE_DIRECTORY));
+#elif defined(GEODE_IS_MACOS)
+        return globed::isFileExistImpl(path);
 #else
-        return CCFileUtils::get()->isFileExist(path); // other platforms arent that fortunate
+        return CCFileUtils::isFileExist(path); // other platforms arent that fortunate
 #endif
     }
 

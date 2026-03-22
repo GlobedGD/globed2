@@ -10,7 +10,7 @@
 
 #ifdef GLOBED_PBO_SUPPORT
 # if defined(GEODE_IS_MACOS)
-#  define GL_SILENCE_DEPRECATION
+#  define GL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED
 #  include <OpenGL/gl3.h>
 #  include <OpenGL/gl3ext.h>
 # elif defined (GEODE_IS_MOBILE)
