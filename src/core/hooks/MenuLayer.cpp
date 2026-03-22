@@ -12,9 +12,15 @@ using namespace geode::prelude;
 
 namespace globed {
 
+static void showSelfDisabled();
+
+static bool shouldDisableSelf() {
+    return Loader::get()->isModLoaded("weebify.separate_dual_icons");
+}
+
 static void initiateAutoConnect() {
     // check if signed into an account
-    if (!argon::signedIn() || !globed::flag("core.flags.seen-consent-notice")) {
+    if (!argon::signedIn() || !globed::flag("core.flags.seen-consent-notice") || shouldDisableSelf()) {
         return;
     }
 
@@ -106,6 +112,11 @@ void HookedMenuLayer::recreateButton() {
 }
 
 void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
+    if (shouldDisableSelf()) {
+        showSelfDisabled();
+        return;
+    }
+
     if (globed::flag("core.flags.seen-consent-notice")) {
         GlobedMenuLayer::create()->switchTo();
         return;
@@ -120,6 +131,23 @@ void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
         }
     });
     p->show();
+}
+
+void showSelfDisabled() {
+    globed::confirmPopup(
+        "Incompatible Mod Detected",
+        "The mod <cy>Separate Dual Icons</c> is currently <cr>incompatible</c> with Globed and will cause <cr>crashes</c> if both are enabled. You must disable one of the mods to continue.\n\n"
+        "Do you want to disable <cy>Separate Dual Icons</c> and restart the game?",
+        "Cancel",
+        "Restart",
+        [](auto) {
+            auto mod = Loader::get()->getLoadedMod("weebify.separate_dual_icons");
+            if (!mod) return;
+
+            (void) mod->disable();
+            utils::game::restart(true);
+        }
+    );
 }
 
 }
