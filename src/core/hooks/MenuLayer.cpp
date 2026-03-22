@@ -15,6 +15,10 @@ namespace globed {
 static void showSelfDisabled();
 
 static bool shouldDisableSelf() {
+    if (Loader::get()->getLaunchFlag("globed/i-know-what-im-doing")) {
+        return false;
+    }
+
     return Loader::get()->isModLoaded("weebify.separate_dual_icons");
 }
 
@@ -136,7 +140,7 @@ void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
 void showSelfDisabled() {
     globed::confirmPopup(
         "Incompatible Mod Detected",
-        "The mod <cy>Separate Dual Icons</c> is currently <cr>incompatible</c> with Globed and will cause <cr>crashes</c> if both are enabled. You must disable one of the mods to continue.\n\n"
+        "The mod <cy>Separate Dual Icons</c> is currently <cr>incompatible</c> with Globed and will cause <cr>crashes</c> if both are enabled. This is not a Globed issue, and is a bug in the other mod. You must disable it to use Globed.\n\n"
         "Do you want to disable <cy>Separate Dual Icons</c> and restart the game?",
         "Cancel",
         "Restart",
