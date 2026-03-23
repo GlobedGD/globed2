@@ -11,10 +11,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
-static GlobedApiTable s_functionTable;
-
 Result<FunctionTable*> getFunctionTable() {
-    return Ok(&s_functionTable);
+    return Ok(&g_dummyTable);
 }
 
 struct Assigner {
@@ -29,7 +27,7 @@ struct Assigner {
         log::trace("Adding soft api function: '{}'", fullName);
 #endif
 
-        s_functionTable.insert(fullName, std::forward<T>(func));
+g_dummyTable.insert(fullName, std::forward<T>(func));
         return *this;
     }
 };
@@ -294,9 +292,7 @@ $execute {
     addPlayerFunctions();
     addMiscFunctions();
 
-    // TODO more stuff
-
-    s_functionTable.finalize();
+    g_dummyTable.finalize();
 }
 
 }

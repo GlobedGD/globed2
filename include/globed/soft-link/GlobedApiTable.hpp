@@ -139,11 +139,18 @@ struct MiscSubtable : public FunctionTableSubcat<GlobedApiTable> {
     API_TABLE_FN(gd::string, fullPathForFilename, std::string_view, bool);
 };
 
+struct Reserved1Subtable : public FunctionTableSubcat<GlobedApiTable> {};
+struct Reserved2Subtable : public FunctionTableSubcat<GlobedApiTable> {};
+struct Reserved3Subtable : public FunctionTableSubcat<GlobedApiTable> {};
+
 struct GlobedApiTable : public FunctionTable {
     NetSubtable net{this, "net"};
     GameSubtable game{this, "game"};
     PlayerSubtable player{this, "player"};
     MiscSubtable misc{this, "misc"};
+    Reserved1Subtable _reserved1{this, "rsv1"};
+    Reserved2Subtable _reserved2{this, "rsv2"};
+    Reserved3Subtable _reserved3{this, "rsv3"};
 };
 
 }

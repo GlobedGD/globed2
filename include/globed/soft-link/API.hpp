@@ -8,10 +8,11 @@
 
 namespace globed {
 
-static FunctionTable dummyTable;
+static GlobedApiTable g_dummyTable;
 
 inline geode::Result<FunctionTable*> getFunctionTable() GEODE_EVENT_EXPORT(&getFunctionTable, ());
 
+/// Returns the API function table, this function will never return null.
 inline auto api() {
     static FunctionTable* table = nullptr;
     if (!table) {
@@ -26,7 +27,7 @@ inline auto api() {
         }
     }
 
-    return static_cast<GlobedApiTable*>(table ? table : &dummyTable);
+    return static_cast<GlobedApiTable*>(table ? table : &g_dummyTable);
 }
 
 }

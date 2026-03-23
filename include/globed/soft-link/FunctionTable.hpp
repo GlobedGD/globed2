@@ -6,6 +6,14 @@
 
 namespace globed {
 
+/// The ABI version must be incremented when changes that aren't forwards or backwards compatible.
+/// The following changes can be done without incrementing:
+/// * Adding a new function in a subtable (functions are resolved dynamically, so it's ok)
+/// * Removing functions in a subtable (will just return Err, no ABI break)
+/// * Repurposing a reserved subtable, it's completely ok to rename the field, type and category name as long as position is kept.
+/// The following changes require an ABI increment:
+/// * Changing signature of an existing function
+/// * Adding/removing/reordering subtables
 static constexpr uint32_t GLOBED_ABI = 1;
 
 static uint64_t fnv1aHash(std::string_view str) {

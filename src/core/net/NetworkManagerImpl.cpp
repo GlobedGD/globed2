@@ -825,7 +825,6 @@ void NetworkManagerImpl::threadMaybeResendOwnData(LockedConnInfo& info) {
         return;
     }
 
-
     // send own data
 
     this->sendToCentral([&](CentralMessage::Builder& msg) {
@@ -844,6 +843,11 @@ void NetworkManagerImpl::threadMaybeResendOwnData(LockedConnInfo& info) {
                 fl.set(i++, id);
             }
         }
+    });
+
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto update = msg.initUpdateIcons();
+        data::encode(PlayerIconData::getOwn(), update.initIcons());
     });
 
     info->m_sentIcons = true;
