@@ -15,6 +15,8 @@ This document defines various parts related to event encoding.
 
 ## EVENT_PLAYER_LEAVE (0xf003)
 
+## EVENT_DISPLAY_DATA_REFRESHED (0xf004)
+
 ## EVENT_SCR_SPAWN_GROUP (0xf010)
 
 ## EVENT_SCR_SET_ITEM (0xf011)

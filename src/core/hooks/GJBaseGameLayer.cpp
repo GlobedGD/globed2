@@ -1123,6 +1123,20 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
         fields.m_interpolator.updatePlayer(player, fields.m_lastServerUpdate);
     }
 
+    // check for refreshed events
+    for (auto& event : message.events) {
+        if (event.is<DisplayDataRefreshed>()) {
+            int player = event.as<DisplayDataRefreshed>().playerId;
+
+            // refresh this player's data
+            PlayerCacheManager::get().evictToLayer2(player);
+            fields.m_lastDataRequest = 0.f;
+            if (auto rp = this->getPlayer(player)) {
+                rp->markDataOutdated();
+            }
+        }
+    }
+
     for (auto& dd : message.displayDatas) {
         if (dd.accountId <= 0) continue; // should never happen?
 
@@ -1130,7 +1144,7 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
     }
 
     if (!message.displayDatas.empty()) {
-        fields.m_lastDataRequest = 0.f; // reset the time, so that we can request more players
+        fields.m_lastDataRequest = 0.f;
     }
 }
 

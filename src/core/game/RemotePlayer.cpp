@@ -175,6 +175,10 @@ bool RemotePlayer::isDataOutdated() const {
     return m_dataOutdated;
 }
 
+void RemotePlayer::markDataOutdated() {
+    m_dataOutdated = true;
+}
+
 bool RemotePlayer::isTeamInitialized() const {
     return m_teamId.has_value();
 }
