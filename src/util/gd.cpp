@@ -259,14 +259,15 @@ private:
     Downloader() = default;
 
     void processNext() {
+        auto glm = singleton<GameLevelManager>();
+
         if (m_requests.empty()) {
             m_idle = true;
+            glm->m_levelManagerDelegate = nullptr;
             return;
         }
 
         m_idle = false;
-
-        auto glm = singleton<GameLevelManager>();
         glm->m_levelManagerDelegate = this;
         glm->getOnlineLevels(GJSearchObject::create(SearchType::Type26, fmt::to_string(m_requests.front().level)));
     }
