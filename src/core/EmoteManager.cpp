@@ -105,7 +105,7 @@ $on_game(Loaded) {
         // {500, 100},
         // {600, 100},
         // {700, 100},
-        {1, 2000},
+        {1, 700}, // change this whenever we actually go over 700
     };
 
     auto sfc = CCSpriteFrameCache::get();
