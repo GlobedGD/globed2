@@ -6,6 +6,8 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
+static constexpr float VOICE_OVERLAY_PAD_X = 5.f;
+
 namespace globed {
 
 bool VoiceOverlay::init() {
@@ -16,17 +18,39 @@ bool VoiceOverlay::init() {
         m_threshold = value;
     });
 
-    this->setLayout(
-        ColumnLayout::create()
-            ->setGap(3.f)
-            ->setAxisAlignment(AxisAlignment::Start)
-            ->setCrossAxisLineAlignment(AxisAlignment::End)
-    );
-
-    this->setContentHeight(CCDirector::get()->getWinSize().height);
     this->schedule(schedule_selector(VoiceOverlay::update), 1.f / 30.f);
 
     return true;
+}
+
+void VoiceOverlay::reposition() {
+    auto winSize = CCDirector::get()->getWinSize();
+    // im lazy so copied from ping overlay.cpp
+    auto epos = globed::setting<int>("core.level.voice-overlay-position");
+
+    bool onTop = epos < 2;
+    bool onRight = epos % 2 == 1;
+
+    float padY = globed::setting<float>("core.level.voice-overlay-pad-y");
+
+    float oby = onTop ? winSize.height - padY : padY;
+    float obx = onRight ? winSize.width - VOICE_OVERLAY_PAD_X : VOICE_OVERLAY_PAD_X;
+
+    float anchorX = onRight ? 1.f : 0.f;
+    float anchorY = onTop ? 1.f : 0.f;
+
+    this->setLayout(ColumnLayout::create()
+        ->setGap(3.f)
+        ->setAxisReverse(!onTop)
+        ->setAxisAlignment(onTop ? AxisAlignment::End : AxisAlignment::Start)
+        ->setCrossAxisLineAlignment(onRight ? AxisAlignment::End : AxisAlignment::Start)
+    );
+
+    this->setContentHeight(winSize.height);
+
+    this->setPosition(obx, oby);
+    this->setAnchorPoint({anchorX, anchorY});
+    this->updateLayout();
 }
 
 void VoiceOverlay::update(float dt) {

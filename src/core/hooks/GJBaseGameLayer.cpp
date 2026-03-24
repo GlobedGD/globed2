@@ -28,8 +28,6 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
-constexpr float VOICE_OVERLAY_PAD_X = 5.f;
-constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 constexpr auto EMOTE_COOLDOWN = Duration::fromMillis(2500);
 static constexpr bool APPLY_PERCENTAGE_FIX = true;
 
@@ -117,7 +115,7 @@ void GlobedGJBGL::setupNecessary() {
     auto& fields = *m_fields.self();
 
     fields.m_pingOverlay = Build<PingOverlay>::create()
-        .scale(0.4f)
+        .scale(0.38f)
         .zOrder(11)
         .id("game-overlay"_spr);
     fields.m_pingOverlay->addToLayer(this);
@@ -229,9 +227,10 @@ void GlobedGJBGL::setupAudio() {
                 .parent(parent)
                 .visible(globed::setting<bool>("core.level.voice-overlay"))
                 .zOrder(onTop ? 20 : 1)
-                .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
                 .anchorPoint(1.f, 0.f)
                 .collect();
+
+            self->m_fields->m_voiceOverlay->reposition();
         });
     }
 }

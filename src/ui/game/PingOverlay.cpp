@@ -48,7 +48,7 @@ void PingOverlay::addToLayer(CCNode* parent) {
     float anchorY = onTop ? 1.f : 0.f;
 
     this->setLayout(ColumnLayout::create()
-        ->setGap(3.f)
+        ->setGap(2.f)
         ->setAxisReverse(!onTop)
         ->setAxisAlignment(onTop ? AxisAlignment::End : AxisAlignment::Start)
         ->setCrossAxisLineAlignment(onRight ? AxisAlignment::End : AxisAlignment::Start)

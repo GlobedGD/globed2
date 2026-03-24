@@ -366,6 +366,14 @@ void SettingsLayer::addSettings() {
     this->addSetting<FloatSettingCell>("core.level.voice-overlay-threshold", "Volume Threshold",
         "Adjust how loud players have to be speaking to be shown on the voice overlay."
     );
+    this->addSetting<IntCornerSettingCell>("core.level.voice-overlay-position", "Position",
+        "Choose where the voice chat overlay appears on the screen."
+    );
+    auto padYSetting = this->addSetting<FloatSettingCell>("core.level.voice-overlay-pad-y", "Vertical Padding",
+        "Adjust the vertical padding of the voice chat overlay from the screen edges."
+    );
+    padYSetting->setPercentageBased(false);
+    padYSetting->setStep(1.f);
 
     // Overlay
     this->addHeader("core.overlay", "Ping overlay", m_levelUiTab);
@@ -375,7 +383,7 @@ void SettingsLayer::addSettings() {
     this->addSetting<FloatSettingCell>("core.overlay.opacity", "Overlay Opacity",
         "Set the opacity of the ping overlay."
     );
-    this->addSetting<IntCornerSettingCell>("core.overlay.position", "Overlay Position",
+    this->addSetting<IntCornerSettingCell>("core.overlay.position", "Position",
         "Choose where the ping overlay appears on the screen."
     );
     this->addSetting<BoolSettingCell>("core.overlay.always-show", "Always Show Overlay",

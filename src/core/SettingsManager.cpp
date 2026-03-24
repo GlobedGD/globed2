@@ -83,6 +83,10 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.level.self-name", false);
     this->registerSetting("core.level.voice-overlay", true);
     this->registerSetting("core.level.voice-overlay-threshold", 0.05f);
+    this->registerSetting("core.level.voice-overlay-position", 3);
+    this->registerLimits("core.level.voice-overlay-position", 0, 3); // 0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right
+    this->registerSetting("core.level.voice-overlay-pad-y", 26.f);
+    this->registerLimits("core.level.voice-overlay-pad-y", 0.f, 100.f);
 
     // Overlay
     this->registerSetting("core.overlay.enabled", true);
