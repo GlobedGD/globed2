@@ -284,11 +284,16 @@ void GlobedGJBGL::setupListeners() {
     });
 }
 
+// temporary solution until we at geode come up with a non temporary solution
+static bool ignoreKeybind() {
+    return CCIMEDispatcher::sharedDispatcher()->hasDelegate();
+}
+
 void GlobedGJBGL::setupKeybinds() {
     this->addEventListener(
         KeybindSettingPressedEventV3(Mod::get(), "keybind-voice-chat"),
         [this](Keybind const& keybind, bool down, bool repeat, double time) {
-            if (repeat) return;
+            if (repeat || ignoreKeybind()) return;
 
             down ? this->resumeVoiceRecording() : this->pauseVoiceRecording();
         }
@@ -297,7 +302,7 @@ void GlobedGJBGL::setupKeybinds() {
     this->addEventListener(
         KeybindSettingPressedEventV3(Mod::get(), "keybind-hide-players"),
         [this](Keybind const& keybind, bool down, bool repeat, double time) {
-            if (repeat || !down) return;
+            if (repeat || !down || ignoreKeybind()) return;
 
             this->toggleHidePlayers();
         }
@@ -306,7 +311,7 @@ void GlobedGJBGL::setupKeybinds() {
     this->addEventListener(
         KeybindSettingPressedEventV3(Mod::get(), "keybind-deafen"),
         [this](Keybind const& keybind, bool down, bool repeat, double time) {
-            if (repeat || !down) return;
+            if (repeat || !down || ignoreKeybind()) return;
 
             this->toggleDeafen();
         }
@@ -316,7 +321,7 @@ void GlobedGJBGL::setupKeybinds() {
         this->addEventListener(
             KeybindSettingPressedEventV3(Mod::get(), fmt::format("keybind-emote-{}", i)),
             [this, i](Keybind const& keybind, bool down, bool repeat, double time) {
-                if (repeat || !down) return;
+                if (repeat || !down || ignoreKeybind()) return;
 
                 this->playSelfFavoriteEmote(i);
             }
