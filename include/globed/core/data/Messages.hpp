@@ -273,7 +273,20 @@ struct UserDataChangedMessage {
 
 // Chat not permitted
 
-struct ChatNotPermittedMessage {};
+enum class ChatNotPermittedReason {
+    NotLinked = 0,
+    Muted = 1,
+    RateLimited = 2,
+    Unknown = 3,
+    Disallowed = 4,
+
+    Last_ = Disallowed,
+};
+
+struct ChatNotPermittedMessage {
+    bool isVoice;
+    ChatNotPermittedReason reason;
+};
 
 // Admin
 

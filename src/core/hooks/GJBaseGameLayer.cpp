@@ -275,8 +275,26 @@ void GlobedGJBGL::setupListeners() {
         this->onQuickChatReceived(message.accountId, message.quickChatId);
     });
 
-    fields.m_mutedListener = nm.listen<msg::ChatNotPermittedMessage>([this](const msg::ChatNotPermittedMessage&) {
-        m_fields->m_knownServerMuted = true;
+    fields.m_mutedListener = nm.listen<msg::ChatNotPermittedMessage>([this](const msg::ChatNotPermittedMessage& msg) {
+        log::warn("Unable to speak: voice = {}, reason = {}", msg.isVoice, (int)msg.reason);
+        if (!msg.isVoice) return;
+
+        auto& fields = *m_fields.self();
+
+        if (msg.reason == msg::ChatNotPermittedReason::NotLinked) {
+            fields.m_knownNotLinked = true;
+            if (!fields.m_showedNotLinkedAlert) {
+                fields.m_showedNotLinkedAlert = true;
+
+                PopupManager::get().alert(
+                    "Not Linked",
+                    "In order to use <cy>voice chat</c> on Globed, you must open Globed settings and link your <cb>Discord</c> account.\n\n"
+                    "This notice was shown because you tried to activate voice chat while not linked."
+                ).showQueue();
+            }
+        } else {
+            fields.m_knownServerMuted = true;
+        }
     });
 
     fields.m_joinFailedListener = nm.listen<msg::JoinSessionFailedMessage>([this](const msg::JoinSessionFailedMessage& msg) {
@@ -1000,6 +1018,12 @@ bool GlobedGJBGL::isSpeaking(int playerId) {
 
     auto stream = it->second->getVoiceStream();
     return stream && !stream->isStarving();
+}
+
+bool GlobedGJBGL::isUnableToSpeak() {
+    auto& fields = *m_fields.self();
+
+    return fields.m_knownNotLinked || fields.m_knownServerMuted;
 }
 
 void GlobedGJBGL::setNoticeAlertActive(bool active) {

@@ -12,6 +12,19 @@
 
 namespace globed::data {
 
+/// Enum util
+template <typename E, typename I>
+inline E convertEnum(I val, E maxval, E default_ = E{}) {
+    using Integer = std::underlying_type_t<E>;
+    auto intval = static_cast<Integer>(val);
+
+    if (intval < 0 || intval > static_cast<Integer>(maxval)) {
+        return default_;
+    }
+
+    return static_cast<E>(intval);
+}
+
 /// Color conversion
 
 inline uint32_t encodeColor4(cocos2d::ccColor4B color) {
@@ -602,6 +615,12 @@ $implDecode(msg::QuickChatBroadcastMessage, game::QuickChatBroadcastMessage::Rea
     return msg::QuickChatBroadcastMessage {
         .accountId = reader.getAccountId(),
         .quickChatId = reader.getId(),
+    };
+}
+
+$implDecode(msg::ChatNotPermittedMessage, game::ChatNotPermittedMessage::Reader& reader) {
+    return msg::ChatNotPermittedMessage {
+        .reason = convertEnum(reader.getReason(), msg::ChatNotPermittedReason::Last_),
     };
 }
 

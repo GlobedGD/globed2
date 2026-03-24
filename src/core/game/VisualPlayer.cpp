@@ -355,7 +355,7 @@ void VisualPlayer::updateFromData(
         flags.paused = state.isPaused;
         flags.practicing = m_isLocalPlayer ? false : state.isPracticing;
         flags.speaking = speaking;
-        flags.speakingMuted = m_isLocalPlayer ? speaking && gjbgl->m_fields->m_knownServerMuted : false;
+        flags.speakingMuted = m_isLocalPlayer ? speaking && gjbgl->isUnableToSpeak() : false;
         flags.editing = m_isLocalPlayer ? false : state.isInEditor;
         m_statusIcons->updateStatus(flags);
     }

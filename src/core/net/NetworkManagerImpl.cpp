@@ -2567,7 +2567,7 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
         } break;
 
         case CHAT_NOT_PERMITTED: {
-            this->invokeListeners(msg::ChatNotPermittedMessage{});
+            this->invokeListeners(data::decodeUnchecked<msg::ChatNotPermittedMessage>(msg.getChatNotPermitted()));
         } break;
 
         case KICKED: {
