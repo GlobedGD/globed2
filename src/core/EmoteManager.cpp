@@ -115,7 +115,7 @@ $on_game(Loaded) {
             StringBuffer<80> buf;
             buf.append("emote_{}.png"_spr, i);
 
-            if (auto frame = sfc->spriteFrameByName(buf.c_str())) {
+            if (auto frame = sfc->m_pSpriteFrames->objectForKey(buf.c_str())) {
                 if (frame->getTag() != 105871529) { // textureldr magic number
                     em.registerEmote(i, buf.str());
                 }
