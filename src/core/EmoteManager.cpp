@@ -65,8 +65,8 @@ std::vector<uint32_t>& EmoteManager::getSortedEmoteIds() {
     return m_sortedEmoteIds;
 }
 
-std::shared_ptr<Sound> EmoteManager::playEmoteSfx(uint32_t id, std::shared_ptr<RemotePlayer> player) {
-    if (!globed::setting<bool>("core.player.quick-chat-sfx")) return nullptr;
+std::shared_ptr<Sound> EmoteManager::playEmoteSfx(uint32_t id, std::shared_ptr<RemotePlayer> player, bool force) {
+    if (!globed::setting<bool>("core.player.quick-chat-sfx") && !force) return nullptr;
 
     auto it = m_sfxPaths.find(id);
     if (it == m_sfxPaths.end()) {
@@ -91,6 +91,10 @@ std::shared_ptr<Sound> EmoteManager::playEmoteSfx(uint32_t id, std::shared_ptr<R
     sound->setPaused(false);
 
     return sound;
+}
+
+bool EmoteManager::hasSfx(uint32_t id) {
+    return m_sfxPaths.contains(id);
 }
 
 $on_game(Loaded) {

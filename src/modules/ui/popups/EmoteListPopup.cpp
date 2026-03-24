@@ -73,6 +73,7 @@ bool EmoteListPopup::init() {
             ->setGrowCrossAxis(true)
             ->setGap(7.f)
         )
+        .id("emote-grid")
         .parent(m_mainLayer);
 
     this->loadEmoteListPage(0);
@@ -81,6 +82,7 @@ bool EmoteListPopup::init() {
         .pos(this->fromBottom(25.f))
         .contentSize({0, 0})
         .scale(0.66f)
+        .id("bottom-menu")
         .parent(m_mainLayer);
     m_submitBtnSpr = ButtonSprite::create("Send Emote", "bigFont.fnt", "GJ_button_01.png");
     m_submitBtnSpr->setColor({100, 100, 100});
@@ -89,7 +91,7 @@ bool EmoteListPopup::init() {
         .intoMenuItem([this] {
             this->onSubmitBtn();
         })
-        .id("emote-submit-btn"_spr)
+        .id("emote-submit-btn")
         .scaleMult(1.15f)
         .parent(bottomMenu);
     m_submitBtn->setEnabled(false);
@@ -137,9 +139,9 @@ bool EmoteListPopup::init() {
 
 
 
-
     m_bottomList = Build(cue::ListNode::create({LIST_SIZE.width, 35.f}, cue::Brown, cue::ListBorderStyle::Comments))
         .pos(this->fromBottom(68.f))
+        .id("cursed-list")
         .parent(m_mainLayer);
 
     auto favoriteLabelMenu = Build<CCMenu>::create()
@@ -194,6 +196,7 @@ bool EmoteListPopup::init() {
         .layout(SimpleRowLayout::create()
             ->setMainAxisAlignment(MainAxisAlignment::Even)
         )
+        .id("favorite-emote-menu")
         .parent(m_mainLayer);
 
     this->loadFavoriteEmotesList();
@@ -234,7 +237,7 @@ bool EmoteListPopup::init() {
         .intoMenuItem([this] {
             this->setFavorite(m_selectingFavoriteSlot, 0);
         })
-        .id("emote-clear-btn"_spr)
+        .id("emote-clear-btn")
         .scaleMult(1.15f)
         .parent(clearFavMenu);
     m_clearFavoriteBtn->setEnabled(false);
@@ -325,7 +328,7 @@ void EmoteListPopup::loadEmoteListPage(int page) {
             .intoMenuItem([this, emoteId] {
                 this->onEmoteBtn(emoteId);
             })
-            .id(fmt::format("emote-btn-{}"_spr, emoteId))
+            .id(fmt::format("emote-btn-{}", emoteId))
             .scaleMult(1.1f)
             .parent(m_emoteMenu);
 
@@ -333,15 +336,20 @@ void EmoteListPopup::loadEmoteListPage(int page) {
         emoteBtn->addChild(sprite, 5);
         cue::rescaleToMatch(sprite, 25.f);
 
-        for (size_t i = 0; i < m_favoriteEmoteIds.size(); i++) {
-            if (m_favoriteEmoteIds.at(i) == emoteId) {
-                CCSprite* star = Build<CCSprite>::createSpriteName("GJ_starsIcon_001.png")
-                    .scale(0.35f)
-                    .zOrder(5)
-                    .pos(emoteBtn->getContentWidth() - 6.f, 6.f);
-                emoteBtn->addChild(star);
-                break;
-            }
+        if (asp::iter::contains(m_favoriteEmoteIds, emoteId)) {
+            CCSprite* star = Build<CCSprite>::createSpriteName("GJ_starsIcon_001.png")
+                .scale(0.35f)
+                .zOrder(5)
+                .pos(emoteBtn->getContentWidth() - 6.f, 6.f)
+                .parent(emoteBtn);
+        }
+
+        if (em.hasSfx(emoteId)) {
+            Build<CCSprite>::create("speaker-icon.png"_spr)
+                .scale(0.3f)
+                .zOrder(6)
+                .pos(6.f, emoteBtn->getContentHeight() - 5.f)
+                .parent(emoteBtn);
         }
     }
 
@@ -441,7 +449,7 @@ void EmoteListPopup::loadFavoriteEmotesList() {
             .intoMenuItem([this, i] {
                 this->enterFavoriteSelectMode(i);
             })
-            .id(fmt::format("emote-favorite-btn-{}"_spr, i))
+            .id(fmt::format("emote-favorite-btn-{}", i))
             .scaleMult(1.1f)
             .parent(m_favoriteEmotesMenu);
 

@@ -22,7 +22,8 @@ public:
 
     /// Plays the emote SFX, returning a PlayerSound if player is non null
     /// otherwise returns a Sound and plays it globally
-    std::shared_ptr<Sound> playEmoteSfx(uint32_t id, std::shared_ptr<RemotePlayer> player);
+    std::shared_ptr<Sound> playEmoteSfx(uint32_t id, std::shared_ptr<RemotePlayer> player, bool force = false);
+    bool hasSfx(uint32_t id);
 
 protected:
     std::unordered_map<uint32_t, std::string> m_emoteNames;

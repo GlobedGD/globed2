@@ -40,7 +40,7 @@ void EmoteVolumeCell::playEmote() {
         return;
     }
 
-    auto sound = EmoteManager::get().playEmoteSfx(3, nullptr);
+    auto sound = EmoteManager::get().playEmoteSfx(3, nullptr, true);
 
     auto& am = AudioManager::get();
     am.setDeafen(false);
