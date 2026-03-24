@@ -283,23 +283,47 @@ void GlobedGJBGL::setupListeners() {
 
         if (msg.reason == msg::ChatNotPermittedReason::NotLinked) {
             fields.m_knownNotLinked = true;
-            if (!fields.m_showedNotLinkedAlert) {
-                fields.m_showedNotLinkedAlert = true;
-
-                PopupManager::get().alert(
-                    "Not Linked",
-                    "In order to use <cy>voice chat</c> on Globed, you must open Globed settings and link your <cb>Discord</c> account.\n\n"
-                    "This notice was shown because you tried to activate voice chat while not linked."
-                ).showQueue();
-            }
+            this->maybeShowVCAlert(msg.reason);
         } else {
             fields.m_knownServerMuted = true;
+            this->maybeShowVCAlert(msg.reason);
         }
     });
 
     fields.m_joinFailedListener = nm.listen<msg::JoinSessionFailedMessage>([this](const msg::JoinSessionFailedMessage& msg) {
         this->onJoinSessionFailed(msg);
     });
+}
+
+void GlobedGJBGL::maybeShowVCAlert(msg::ChatNotPermittedReason reason) {
+    auto& fields = *m_fields.self();
+
+    if (fields.m_showedMutedAlert) {
+        return;
+    }
+
+    CStr title;
+    std::string message;
+
+    switch (reason) {
+        case msg::ChatNotPermittedReason::NotLinked: {
+            title = "Not Linked";
+            message = "In order to use <cy>voice chat</c> on Globed, you must open Globed settings and link your <cb>Discord</c> account.\n\n"
+                      "This notice was shown because you tried to activate voice chat while not linked.";
+        } break;
+
+        case msg::ChatNotPermittedReason::Muted: {
+            title = "Muted";
+            message = "You have been <cr>muted</c> by the server moderators, and cannot use voice chat.\n\n"
+                      "This notice was shown because you tried to activate voice chat while muted.";
+        } break;
+
+        // rest are usually temporary errors or cannot happen
+        default: return;
+    }
+
+    PopupManager::get().alert(title, message).showQueue();
+    fields.m_showedMutedAlert = true;
 }
 
 // temporary solution until we at geode come up with a non temporary solution
@@ -1102,9 +1126,11 @@ void GlobedGJBGL::toggleDeafen() {
 
 void GlobedGJBGL::resumeVoiceRecording() {
 #ifdef GLOBED_VOICE_CAN_TALK
-    auto& am = AudioManager::get();
+    if (!g_settings.voiceChat) return;
 
-    if (!g_settings.voiceChat || am.getDeafen()) {
+    auto& am = AudioManager::get();
+    if (am.getDeafen()) {
+        globed::toastError("(Globed) Cannot talk while deafened!");
         return;
     }
 

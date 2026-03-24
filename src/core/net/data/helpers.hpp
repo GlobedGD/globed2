@@ -620,6 +620,7 @@ $implDecode(msg::QuickChatBroadcastMessage, game::QuickChatBroadcastMessage::Rea
 
 $implDecode(msg::ChatNotPermittedMessage, game::ChatNotPermittedMessage::Reader& reader) {
     return msg::ChatNotPermittedMessage {
+        .isVoice = reader.getIsVoice(),
         .reason = convertEnum(reader.getReason(), msg::ChatNotPermittedReason::Last_),
     };
 }

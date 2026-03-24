@@ -80,7 +80,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_sendExtData = false;
         bool m_knownServerMuted = false;
         bool m_knownNotLinked = false;
-        bool m_showedNotLinkedAlert = false;
+        bool m_showedMutedAlert = false;
         bool m_deafened = false;
         bool m_showingNoticeAlert = false;
         bool m_spectating = false;
@@ -172,6 +172,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     bool isSpeaking(int playerId);
     void setNoticeAlertActive(bool active);
     bool isUnableToSpeak();
+    void maybeShowVCAlert(msg::ChatNotPermittedReason reason);
 
     void toggleCullingEnabled(bool culling);
     void toggleExtendedData(bool extended);
