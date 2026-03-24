@@ -33,8 +33,10 @@ Added / reworked:
 * Added player counts inside level lists
 * Added an improved consent popup when first launching the mod
 * Added a setting that allows you to disable receiving <cy>notices from moderators</c>
+* Show rooms of friends at the top of room list
 * Automatically lower the used bandwidth when the game is minimized or user is AFK for a while
 * Voice chat overlay now doesn't show players unless actively speaking (or making other noise)
+* Voice chat overlay can now be repositioned
 * Featured levels now have a queue system and will be consistently featured
 * The level list now has a message that clarifies its purpose, due to people often finding it confusing
 * Players, names, emotes, etc. are now rendered in front of all level objects (experimental and may be reverted in the future)
@@ -44,6 +46,7 @@ Fixed / removed:
 * Certain <cy>rarely used</c> settings were removed, however they might get added in the future: DNS over HTTPS, Force TCP, Packet limit, Server relays
 * Discord RPC setting was removed, the <cb>Discord Rich Presence</c> mod is planning on adding Globed support entirely in that mod
 * Levels are redownloaded less, e.g. when joining someone Globed will try to see if the level is saved already
+* Default mini icon now will apply for other players if you have it enabled
 * Various small bugs have been fixed, of which I cannot remember any :D
 
 ## v1.8.5
