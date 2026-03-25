@@ -82,7 +82,7 @@ struct HookedFileUtils : public cocos2d::CCFileUtils {
 #elif defined(GEODE_IS_MACOS)
         return globed::isFileExistImpl(path);
 #else
-        return CCFileUtils::isFileExist(path); // other platforms arent that fortunate
+        return CCFileUtils::get()->isFileExist(path); // other platforms arent that fortunate
 #endif
     }
 
