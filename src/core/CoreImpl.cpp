@@ -147,6 +147,18 @@ void CoreImpl::onPreUpdate(GlobedGJBGL* gjbgl, float dt) {
     });
 }
 
+bool CoreImpl::wantsSyncReset() {
+    bool wants = false;
+
+    this->forEachEnabled([&](Module& mod) {
+        if (mod.m_autoEnableMode == AutoEnableMode::Level) {
+            wants = mod.wantsSyncReset() || wants;
+        }
+    });
+
+    return wants;
+}
+
 void CoreImpl::enableIf(geode::FunctionRef<bool(Module&)>&& func) {
     for (auto& mod : m_modules) {
         if (func(*mod)) {

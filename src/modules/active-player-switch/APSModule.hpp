@@ -31,6 +31,13 @@ private:
     void onPreUpdate(GlobedGJBGL* gjbgl, float dt) override;
     void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) override;
     void onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) override;
+
+    bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) override {
+        return true;
+    }
+    bool wantsSyncReset() override {
+        return true;
+    }
 };
 
 }

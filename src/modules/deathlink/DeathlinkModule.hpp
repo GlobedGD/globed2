@@ -32,6 +32,10 @@ private:
     bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) override {
         return true;
     }
+
+    bool wantsSyncReset() override {
+        return true;
+    }
 };
 
 }

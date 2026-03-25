@@ -57,6 +57,8 @@ public:
     void onUpdate(GlobedGJBGL* gjbgl, float dt);
     void onPreUpdate(GlobedGJBGL* gjbgl, float dt);
 
+    bool wantsSyncReset();
+
 private:
     std::vector<std::shared_ptr<Module>> m_modules;
 

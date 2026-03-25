@@ -61,6 +61,11 @@ private:
     bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) override {
         return true;
     }
+
+    bool wantsSyncReset() override {
+        return true;
+    }
+
     void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) override;
     void onPreUpdate(GlobedGJBGL* gjbgl, float dt) override;
 

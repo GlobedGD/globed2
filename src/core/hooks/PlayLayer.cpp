@@ -101,7 +101,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
 
         auto& rm = RoomManager::get();
 
-        bool overrideReset = !rm.isInGlobal();
+        bool overrideReset = !rm.isInGlobal() && CoreImpl::get().wantsSyncReset();
         bool oldReset = overrideReset ? gameVariable(GameVariable::FastRespawn) : false;
         bool realDeath = m_fields->m_setupWasCompleted && obj != m_anticheatSpike;
 
