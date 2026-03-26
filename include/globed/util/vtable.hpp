@@ -40,21 +40,24 @@ protected:
     VTable& operator=(VTable&&) = delete;
 };
 
-#define GLOBED_VTABLE_INNER_FN(...) GEODE_INVOKE(GEODE_CONCAT(GLOBED_VTABLE_INNER_FN_, GEODE_NUMBER_OF_ARGS(__VA_ARGS__)), __VA_ARGS__)
-#define GLOBED_VTABLE_INNER_FN_2(ret, name) \
-    inline auto name() { return this->safeInvoke(&_func_##name); }
-#define GLOBED_VTABLE_INNER_FN_3(ret, name, p1) \
-    inline auto name(p1 a1) { return this->safeInvoke(&_func_##name, std::move(a1)); }
-#define GLOBED_VTABLE_INNER_FN_4(ret, name, p1, p2) \
-    inline auto name(p1 a1, p2 a2) { return this->safeInvoke(&_func_##name, std::move(a1), std::move(a2)); }
-#define GLOBED_VTABLE_INNER_FN_5(ret, name, p1, p2, p3) \
-    inline auto name(p1 a1, p2 a2, p3 a3) { return this->safeInvoke(&_func_##name, std::move(a1), std::move(a2), std::move(a3)); }
-#define GLOBED_VTABLE_INNER_FN_6(ret, name, p1, p2, p3, p4) \
-    inline auto name(p1 a1, p2 a2, p3 a3, p4 a4) { return this->safeInvoke(&_func_##name, std::move(a1), std::move(a2), std::move(a3), std::move(a4)); }
+// #define GLOBED_VTABLE_INNER_FN(...) GEODE_INVOKE(GEODE_CONCAT(GLOBED_VTABLE_INNER_FN_, GEODE_NUMBER_OF_ARGS(__VA_ARGS__)), __VA_ARGS__)
+// #define GLOBED_VTABLE_INNER_FN_2(ret, name) \
+//     inline auto name() { return this->safeInvoke(&_func_##name); }
+// #define GLOBED_VTABLE_INNER_FN_3(ret, name, p1) \
+//     inline auto name(p1 a1) { return this->safeInvoke(&_func_##name, std::move(a1)); }
+// #define GLOBED_VTABLE_INNER_FN_4(ret, name, p1, p2) \
+//     inline auto name(p1 a1, p2 a2) { return this->safeInvoke(&_func_##name, std::move(a1), std::move(a2)); }
+// #define GLOBED_VTABLE_INNER_FN_5(ret, name, p1, p2, p3) \
+//     inline auto name(p1 a1, p2 a2, p3 a3) { return this->safeInvoke(&_func_##name, std::move(a1), std::move(a2), std::move(a3)); }
+// #define GLOBED_VTABLE_INNER_FN_6(ret, name, p1, p2, p3, p4) \
+//     inline auto name(p1 a1, p2 a2, p3 a3, p4 a4) { return this->safeInvoke(&_func_##name, std::move(a1), std::move(a2), std::move(a3), std::move(a4)); }
 
 #define GLOBED_VTABLE_FUNC(name, ret, ...) \
     ret (* _func_##name) (__VA_ARGS__); \
-    GLOBED_VTABLE_INNER_FN(ret, name, __VA_ARGS__)
+    template <typename Self, typename... Args> \
+    inline auto name(this Self& self, Args&&... args) { \
+        return self.safeInvoke(&self._func_##name, std::forward<Args>(args)...); \
+    }
 
 #define GLOBED_VTABLE_INIT(tptr, name, ...) \
     (tptr)->_func_##name = +[]__VA_ARGS__;
