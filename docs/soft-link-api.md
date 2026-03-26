@@ -30,6 +30,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/g
 #include <dankmeme.globed2/include/globed/soft-link/API.hpp>
 #include <globed/soft-link/API.hpp>
 
+// Always check if the API is actually available (meaning Globed is loaded and is a compatible version)
+// If this returns false, all API functions will return meaningless results (0, "", Err, etc.)
 if (globed::api::available()) {
     bool connected = globed::api::net::isConnected();
 }
