@@ -1,6 +1,6 @@
 # Server Hosting
 
-A Globed server has two parts: a central server and a game server. This page will cover setting up and configuring both of them. You must have one central server that will handle all connections, and then one or multiple game servers to handle actual gameplay. Players are able to freely move between game servers and by default will prefer the one with the least latency.
+A Globed server has two parts: a central server and a game server. This page will cover setting up and configuring both of them. You must have one **central server** that will handle all connections, and then one or multiple **game servers** to handle actual gameplay. Players are able to freely move between game servers and by default will prefer the one with the least latency.
 
 ## Frequently asked questions
 
@@ -18,7 +18,7 @@ You must either **port forward**, use a VPN service like Radmin VPN or use a pub
 
 ### What protocols does Globed use?
 
-By default, TCP and UDP are used for central server, while game server uses UDP primarily. Both servers support TCP, UDP and QUIC and all can be turned on/off through the configuration files.
+By default, TCP and UDP are used for central server, while game server uses UDP primarily. By modifying the configuration, it is possible to use any combination of the four protocols for both servers: TCP, UDP, QUIC, WebSockets. (WebSockets currently only work on central server)
 
 # General setup
 
@@ -42,7 +42,7 @@ We will fix this later, once we finish setting up the central server.
 
 Upon running the server for the first time, a `config` folder will be created in the current directory, where every server module will put its default config files. In-depth configuration is described [below](#central-server-configuration) and is worth reading, but for now we want to just get the server working so we will only focus on a few options.
 
-In `config/core.toml`, find the `tcp_address` option and ensure that it is bound in a way that will be reachable from the outside. The default of `[::]:4340` will listen for IPv4 and IPv6 connections on all network interfaces on port 4340. If you want to use only IPv4, change it to `0.0.0.0:4340`.
+In `config/core.toml`, find the `address` option in the `[tcp]` section and ensure that it is bound in a way that will be reachable from the outside. The default of `[::]:4340` will listen for IPv4 and IPv6 connections on all network interfaces on port 4340. If you want to use only IPv4, change it to `0.0.0.0:4340`.
 
 Once you've launched the server (and optionally configured the TCP address), you can now try connecting to it. First, enable the Allow Custom Servers option in Globed settings. This will add a pencil button on the connection menu, and allow you to add a new server
 ![allow custom servers](./allow-custom-servers.png)
@@ -101,39 +101,6 @@ memory_usage = 3
 # If bandwidth usage is a big concern, levels 4-6 should be used (though central server barely uses any bandwidth)
 compression_level = 3
 
-# Whether to enable logging to a file. If disabled, logs will only be printed to the console
-log_file_enabled = true
-# The directory where logs will be stored
-log_directory = "logs"
-# Minimum log level to print to the console, logs below this level will be ignored.
-# Valid values: trace, debug, info, warn, error
-console_log_level = "info"
-# Minimum log level to print to the log file, logs below this level will be ignored.
-# Valid values: trace, debug, info, warn, error
-file_log_level = "info"
-# Prefix for the filename of the log files (if rolling is disabled, it's just the filename)
-log_filename = "central-server.log"
-# Whether to roll the log file daily, instead of appending to the same file every launch.
-# Will append the current date to the filename
-log_rolling = false
-
-# Whether to allow incoming QUIC connections, requires setting the address and paths to TLS certificate + key files
-enable_quic = false
-quic_address = "[::]:4341"
-quic_tls_cert = ""
-quic_tls_key = ""
-
-# Whether to enable incoming TCP connections
-enable_tcp = true
-tcp_address = "[::]:4340"
-
-# Whether to enable incoming UDP connections
-enable_udp = true
-udp_address = "[::]:4340"
-# Whether to use UDP solely for discovery purposes, and disallow actual connections.
-# It's recommended to keep this at `false`, for quicker connections when not specifying a protocol.
-udp_ping_only = false
-
 # Path to the QDB file (this is all i can say because it's a complicated thingy)
 qdb_path = ""
 
@@ -151,6 +118,49 @@ gd_api_base_url = "https://www.boomlings.com/database"
 # Auth token for GD API requests. Currently does nothing unless
 # GDProxy is used (https://github.com/dankmeme01/gdproxy/)
 gd_api_auth_token = ""
+
+[logging]
+# Whether to enable logging to a file. If disabled, logs will only be printed to the console
+file_enabled = true
+# The directory where logs will be stored
+directory = "logs"
+# Minimum log level to print to the console, logs below this level will be ignored.
+# Valid values: trace, debug, info, warn, error
+console_level = "info"
+# Minimum log level to print to the log file, logs below this level will be ignored.
+# Valid values: trace, debug, info, warn, error
+file_level = "info"
+# Prefix for the filename of the log files (if rolling is disabled, it's just the filename)
+filename = "central-server.log"
+# Whether to roll the log file daily, instead of appending to the same file every launch.
+# Will append the current date to the filename
+rolling = false
+
+
+# Options for the TCP transport
+[tcp]
+enable = true
+address = "[::]:4340"
+
+# Options for the UDP transport
+[udp]
+enable = true
+address = "[::]:4340"
+# Whether to use UDP solely for discovery purposes, and disallow actual connections.
+# It's recommended to keep this at `false`, for quicker connections when not specifying a protocol.
+ping_only = false
+
+# Options for the QUIC transport - this requires generating a TLS certificate and passing the path to PEM encoded certificate and key files.
+[quic]
+enable = false
+address = "[::]:4341"
+tls_cert = ""
+tls_key = ""
+
+# Options for the WebSocket transport
+[ws]
+enable = false
+address = "[::]:4341"
 ```
 
 ### Authentication
@@ -167,9 +177,23 @@ token_expiry = 604800
 # Whether to enable Argon authentication. If disabled, players can impersonate other accounts.
 # GDPS owners probably want to keep this disabled or set up their own Argon server
 enable_argon = false
+argon_url = "https://argon.globed.dev"
 argon_token = "..."
 argon_ping_interval = 30
 argon_disconnect_timeout = 45
+```
+
+### Analytics
+
+This module enables logging of certain events (currently only logins) to a ClickHouse DB
+```toml
+# analytics.toml
+
+# Details of the ClickHouse instance
+url = ""
+username = ""
+password = ""
+database = ""
 ```
 
 ### Credits
@@ -187,6 +211,7 @@ credits_req_interval = 1
 
 [[credits_categories]]
 name = "Staff"
+# Sync this category with the "staff" role specified in users.toml
 sync_with_role = "staff"
 # Optional, can be specified to ignore certain users e.g. test / alt accounts
 ignored = [
@@ -240,7 +265,11 @@ feature_notif_channel = 0
 feature_notif_message = ""
 ```
 
+### Users
+
 ```toml
+# users.toml
+
 database_url = "sqlite://db.sqlite?mode=rwc"
 database_pool_size = 5
 
@@ -249,7 +278,7 @@ database_pool_size = 5
 super_admins = [12345678]
 
 # Channel where moderation logs will be sent (Discord module must be enabled)
-mod_log_channel = 1219448690641735700
+mod_log_channel = 0
 
 # Set whether players must be explicitly whitelisted before being able to join the server
 whitelist = false
@@ -258,7 +287,12 @@ vc_requires_discord_link = false
 # Set whether setting room names will be disallowed for users by default
 disallow_room_names = false
 
-script_sign_key = "52e047459f5d85bc1d0435f68347322592efd3809d449d35c302ee54a8823f76"
+# Set whether the server should log player counts to the database every minute, and how long to keep the logs
+record_player_counts = false
+player_count_retention_days = 0
+
+# 256-bit hex encoded key
+script_sign_key = "..."
 
 [punishment_reasons]
 # Set the default mute / ban / room ban reasons available to moderators
@@ -332,33 +366,36 @@ server_region = "Global"
 # and <port> is the assigned UDP/TCP port. TCP is only chosen if UDP is disabled.
 server_address = ""
 
-# Whether to enable incoming TCP connections
-enable_tcp = true
-tcp_address = "[::]:4349"
-
-# Whether to enable incoming UDP connections (recommended to keep enabled)
-enable_udp = true
-udp_ping_only = false
-udp_address = "[::]:4349"
-# How many UDP sockets to bind to the same port, useful for load balancing
-# Only works on non-Windows systems, and is only useful when managing a massive amount of users.
-udp_binds = 1
-
-# These are the same as in core.toml of the central server
-log_file_enabled = true
-log_directory = "logs"
-console_log_level = "info"
-file_log_level = "info"
-log_filename = "game-server.log"
-log_rolling = false
-qdb_path = ""
-
 # The tickrate of the server, which defines how often clients will send updates to the server when in a level.
 # Bumping this from the default of 30 will proportionally increase bandwidth and CPU usage,
 # but it may improve the smoothness of players. Values past 30 usually provide diminishing returns.
 tickrate = 30
 
 verify_script_signatures = false
+
+# Options for the TCP transport
+[tcp]
+enable = true
+address = "[::]:4349"
+
+# Options for the UDP transport (we recommend keeping it enabled)
+[udp]
+enable = true
+ping_only = false
+address = "[::]:4349"
+# How many UDP sockets to bind to the same port, useful for load balancing
+# Only works on non-Windows systems, and is only useful when managing a massive amount of users.
+binds = 1
+
+# These are the same as in core.toml of the central server
+[logging]
+file_enabled = true
+directory = "logs"
+console_level = "info"
+file_level = "info"
+filename = "game-server.log"
+rolling = false
+qdb_path = ""
 ```
 
 The game server can also be configured without using the config file, via environment variables. See [here](https://github.com/GlobedGD/game-server/blob/6ca7d731f9d8787420186d55e09c91744fb05a51/src/config.rs#L250) for a list of all the variables.
