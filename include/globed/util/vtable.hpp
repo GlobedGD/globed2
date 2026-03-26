@@ -10,7 +10,7 @@ struct VTable {
     template <typename Self, typename T>
     bool hasFunction(this Self& self, T** ptr) {
         size_t offset = (size_t)ptr - (size_t)&self;
-        return offset < self.m_size;
+        return offset < self.m_size && *ptr != nullptr;
     }
 
     template <typename Self, typename T, typename... Args>
