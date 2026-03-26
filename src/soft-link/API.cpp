@@ -99,10 +99,6 @@ static NetSubtable* makeNetTable() {
         NetworkManagerImpl::get().queueGameEvent(std::move(event));
     });
 
-    GLOBED_VTABLE_INIT(table, sendQuickChat, (uint32_t emoteId) {
-        NetworkManagerImpl::get().sendQuickChat(emoteId);
-    });
-
     return table;
 }
 
