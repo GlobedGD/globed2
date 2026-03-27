@@ -1431,11 +1431,9 @@ std::vector<uint8_t> NetworkManagerImpl::computeUident(int accountId) {
 #endif
     wd.v5 = strlen(wd.v4);
 
-#ifdef __APPLE__
     auto sdir = Mod::get()->getSaveDir().string();
     wd.v6 = sdir.c_str();
     wd.v7 = sdir.size();
-#endif
 
     size_t outLen = bb_work(wd);
 
