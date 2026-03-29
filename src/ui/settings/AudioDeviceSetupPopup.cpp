@@ -45,7 +45,7 @@ private:
         m_btnSelect = Build<CCSprite>::createSpriteName("GJ_selectSongBtn_001.png")
             .scale(0.7f)
             .intoMenuItem([this](auto) {
-                m_popup->applyAudioDevice(m_device.id);
+                m_popup->applyAudioDevice(m_device.guid);
             })
             .visible(m_device.id != m_activeId)
             .id("select-device-btn"_spr)
@@ -105,7 +105,7 @@ bool AudioDeviceSetupPopup::init() {
         .intoMenuItem([this] {
             auto& am = AudioManager::get();
 
-            am.setActiveRecordingDevice(globed::setting<int>("core.audio.input-device"));
+            am.setActiveRecordingDevice();
             am.setRecordBufferCapacity(1);
 
             m_stream = VoiceStream::create({}).unwrap();
@@ -200,7 +200,6 @@ void AudioDeviceSetupPopup::refreshList() {
 }
 
 void AudioDeviceSetupPopup::weakRefreshList() {
-    int active = globed::setting<int>("core.audio.input-device");
     auto& am = AudioManager::get();
     auto recordDevices = am.getRecordingDevices();
 
@@ -250,15 +249,15 @@ void AudioDeviceSetupPopup::toggleButtons(bool recording) {
     m_visualizerContainer->updateLayout();
 }
 
-void AudioDeviceSetupPopup::applyAudioDevice(int id) {
+void AudioDeviceSetupPopup::applyAudioDevice(const FMOD_GUID& guid) {
     auto& vm = AudioManager::get();
     if (vm.isRecording()) {
         Notification::create("Cannot switch device while recording", NotificationIcon::Error, 3.0f)->show();
         return;
     }
 
-    globed::setting<int>("core.audio.input-device") = id;
-    vm.setActiveRecordingDevice(id);
+    globed::setting<std::string>("core.audio.input-device-guid") = guidToString(guid);
+    vm.setActiveRecordingDevice(guid);
 
     this->weakRefreshList();
 }

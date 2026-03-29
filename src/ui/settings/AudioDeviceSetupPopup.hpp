@@ -6,6 +6,7 @@
 #include <ui/misc/AudioVisualizer.hpp>
 #include <ui/BasePopup.hpp>
 
+#include <fmod.h>
 #include <cue/ListNode.hpp>
 #include <asp/sync.hpp>
 
@@ -17,7 +18,7 @@ public:
     static constexpr CCSize LIST_SIZE { 340.f, 180.f };
     static AudioDeviceSetupPopup* create();
 
-    void applyAudioDevice(int id);
+    void applyAudioDevice(const FMOD_GUID& guid);
 
 private:
     Ref<CCMenuItemSpriteExtra> m_recordButton, m_stopButton;

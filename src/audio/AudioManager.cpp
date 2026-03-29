@@ -73,32 +73,13 @@ void AudioManager::preInitialize() {
     } catch (const std::exception& _e) {}
 #endif
 
-    int deviceId = globed::setting<int>("core.audio.input-device");
-
     // also check perms on android
     if (!permission::getPermissionStatus(Permission::RecordAudio)) {
-        deviceId = -1;
-    }
-
-    if (deviceId == -1) {
         m_recordDevice = std::nullopt;
         return;
     }
 
-    auto device = this->getRecordingDevice(deviceId);
-    if (device) {
-        m_recordDevice = *device;
-        return;
-    }
-
-    // if invalid, try to get the first device in the list
-    device = this->getRecordingDevice(0);
-    if (device.has_value()) {
-        m_recordDevice = std::move(device.value());
-    } else {
-        // give up.
-        m_recordDevice = std::nullopt;
-    }
+    this->setActiveRecordingDevice();
 }
 
 std::vector<AudioRecordingDevice> AudioManager::getRecordingDevices() {
@@ -111,10 +92,11 @@ std::vector<AudioRecordingDevice> AudioManager::getRecordingDevices() {
         return out;
     }
 
+
     for (int i = 0; i < numDrivers; i++) {
         auto dev = this->getRecordingDevice(i);
         if (dev.has_value()) {
-            out.push_back(dev.value());
+            out.emplace_back(std::move(dev).value());
         }
     }
 
@@ -148,6 +130,17 @@ std::optional<AudioRecordingDevice> AudioManager::getRecordingDevice(int deviceI
     }
 
     return device;
+}
+
+std::optional<AudioRecordingDevice> AudioManager::getRecordingDevice(const FMOD_GUID& guid) {
+    return this->findRecordingDevice([&](const AudioRecordingDevice& dev) {
+        return std::memcmp(&dev.guid, &guid, sizeof(FMOD_GUID)) == 0;
+    });
+}
+
+std::optional<AudioRecordingDevice> AudioManager::findRecordingDevice(FunctionRef<bool(const AudioRecordingDevice&)> predicate) {
+    auto devices = this->getRecordingDevices();
+    return asp::iter::from(devices).find(predicate);
 }
 
 const std::optional<AudioRecordingDevice>& AudioManager::getRecordingDevice() {
@@ -248,8 +241,42 @@ Result<FMOD::Channel*> AudioManager::playSound(FMOD::Sound* sound) {
     return Ok(ch);
 }
 
+void AudioManager::setActiveRecordingDevice() {
+    std::string guid = globed::setting<std::string>("core.audio.input-device-guid");
+    int id = globed::setting<int>("core.audio.input-device");
+
+    std::optional<AudioRecordingDevice> device;
+    // prefer guid
+    if (!guid.empty()) {
+        device = this->getRecordingDevice(stringToGuid(guid));
+    }
+    // fallback to numeric id if not set / not found
+    if (!device && id != -1) {
+        device = this->getRecordingDevice(id);
+    }
+    // try the index 0 if nothing is found
+    if (!device) {
+        device = this->getRecordingDevice(0);
+    }
+    if (device) {
+        this->setActiveRecordingDevice(*device);
+    }
+}
+
 void AudioManager::setActiveRecordingDevice(int deviceId) {
     auto dev = this->getRecordingDevice(deviceId);
+
+    if (dev.has_value()) {
+        this->setActiveRecordingDevice(dev.value());
+    }
+}
+
+void AudioManager::setActiveRecordingDevice(std::string_view guid) {
+    return this->setActiveRecordingDevice(stringToGuid(guid));
+}
+
+void AudioManager::setActiveRecordingDevice(const FMOD_GUID& guid) {
+    auto dev = this->getRecordingDevice(guid);
 
     if (dev.has_value()) {
         this->setActiveRecordingDevice(dev.value());
@@ -262,6 +289,7 @@ void AudioManager::setActiveRecordingDevice(const AudioRecordingDevice& device) 
         return;
     }
 
+    log::debug("Setting active recording device to {} ({})", device.id, device.name);
     m_recordDevice = device;
 }
 
@@ -467,6 +495,8 @@ Result<> AudioManager::threadStartRecording() {
     exinfo.length = sizeof(float) * exinfo.defaultfrequency * exinfo.numchannels;
     m_recordChunkSize = exinfo.length;
 
+    log::debug("threadStartRecord: starting to record with device {} ({})", m_recordDevice->name, m_recordDevice->id);
+
     FMOD_ERRC(
         this->getSystem()->createSound(
             nullptr,
@@ -621,6 +651,41 @@ void AudioManager::threadInvokeRawCallback(const float* pcm, size_t samples) {
     if (samples == 0) return;
 
     if (m_rawCallback) m_rawCallback(pcm, samples);
+}
+
+std::string guidToString(const FMOD_GUID& guid) {
+    return fmt::format(
+        "{:08x}-{:04x}-{:04x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+        guid.Data1, guid.Data2, guid.Data3,
+        guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+        guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]
+    );
+}
+
+FMOD_GUID stringToGuid(std::string_view str) {
+    std::string s = asp::iter::from(str).filter([](char c) {
+        return c != '-';
+    }).collect<std::string>();
+
+    FMOD_GUID guid{};
+
+    if (s.size() != 32) {
+        log::warn("Invalid GUID string: '{}'", str);
+        return guid;
+    }
+
+    auto decoded = hexDecode(s);
+    if (!decoded) {
+        log::warn("Failed to decode GUID string '{}': {}", s, decoded.unwrapErr());
+        return guid;
+    }
+
+    std::memcpy(&guid, decoded.unwrap().data(), sizeof(FMOD_GUID));
+    guid.Data1 = std::byteswap(guid.Data1);
+    guid.Data2 = std::byteswap(guid.Data2);
+    guid.Data3 = std::byteswap(guid.Data3);
+
+    return guid;
 }
 
 }

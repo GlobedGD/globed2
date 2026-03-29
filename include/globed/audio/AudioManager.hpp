@@ -58,6 +58,8 @@ public:
 
     // get the record device by device ID
     std::optional<AudioRecordingDevice> getRecordingDevice(int deviceId);
+    std::optional<AudioRecordingDevice> getRecordingDevice(const FMOD_GUID& guid);
+    std::optional<AudioRecordingDevice> findRecordingDevice(geode::FunctionRef<bool(const AudioRecordingDevice&)> predicate);
 
     // get the current active record device
     const std::optional<AudioRecordingDevice>& getRecordingDevice();
@@ -115,7 +117,10 @@ public:
     // create a sound from a filepath
     Result<FMOD::Sound*> createSound(const std::filesystem::path& path);
 
+    void setActiveRecordingDevice();
     void setActiveRecordingDevice(int deviceId);
+    void setActiveRecordingDevice(std::string_view guid);
+    void setActiveRecordingDevice(const FMOD_GUID& guid);
     void setActiveRecordingDevice(const AudioRecordingDevice& device);
 
     void toggleLoopbacksAllowed(bool allowed);
@@ -168,5 +173,8 @@ private:
     bool m_deafen = false;
     bool m_lastProximity = false;
 };
+
+std::string guidToString(const FMOD_GUID& guid);
+FMOD_GUID stringToGuid(std::string_view str);
 
 }

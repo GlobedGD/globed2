@@ -43,13 +43,12 @@ Result<std::vector<uint8_t>> hexDecode(std::string_view data) {
         }
     };
 
-    for (size_t i = 0; i < data.size(); i++) {
-        auto a = dechb(data[i]);
-        auto b = dechb(data[i + 1]);
+    for (size_t i = 0; i < data.size() / 2; i++) {
+        auto a = dechb(data[i * 2]);
+        auto b = dechb(data[i * 2 + 1]);
 
-        if (!a || !b) {
-            return Err("hex string has invalid character");
-        }
+        if (!a) return Err("hex string has invalid character: '{}'", (int)data[i * 2]);
+        if (!b) return Err("hex string has invalid character: '{}'", (int)data[i * 2 + 1]);
 
         out.push_back((*a << 4) | *b);
     }

@@ -98,7 +98,8 @@ SettingsManager::SettingsManager() {
 
     // Audio
     this->registerSetting("core.audio.voice-chat-enabled", true);
-    this->registerSetting("core.audio.input-device", -1);
+    this->registerSetting("core.audio.input-device", -1); // deprecated
+    this->registerSetting("core.audio.input-device-guid", "");
     this->registerSetting("core.audio.voice-loopback", false);
     this->registerSetting("core.audio.overlaying-overlay", false);
 
