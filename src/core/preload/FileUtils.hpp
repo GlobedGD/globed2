@@ -63,8 +63,8 @@ inline std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, 
 #endif
 }
 
-/// See platform/macos/objc.mm
-#ifdef GEODE_IS_MACOS
+/// See platform/macos/objc.mm (TODO: remove after geode v5.4.2 or v5.5.0)
+#if defined(__APPLE__)
 bool isFileExistImpl(geode::ZStringView path);
 #endif
 
@@ -79,7 +79,7 @@ struct HookedFileUtils : public cocos2d::CCFileUtils {
 
         return (attrs != INVALID_FILE_ATTRIBUTES &&
                 !(attrs & FILE_ATTRIBUTE_DIRECTORY));
-#elif defined(GEODE_IS_MACOS)
+#elif defined(__APPLE__)
         return globed::isFileExistImpl(path);
 #else
         return this->isFileExist(path); // other platforms arent that fortunate
