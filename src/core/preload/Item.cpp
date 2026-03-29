@@ -324,7 +324,6 @@ void PreloadItemState::initSpriteFrames() {
         fullPlistPath.append(pathsv.substr(0, pathsv.find(".png")));
         fullPlistPath.append(".plist");
 
-#ifndef __APPLE__
         // read the file
         unsigned long plistSize;
         auto plistData = getFileDataThreadSafe(fullPlistPath.c_str(), "rb", &plistSize);
@@ -353,11 +352,6 @@ void PreloadItemState::initSpriteFrames() {
 
         auto _lock = cocosLock.lock();
         addSpriteFrames(*spf, m_texture);
-#else
-        // Apple uses binary plists, so we cannot use an XML parser, unfortunately we have to fallback to cocos
-        auto _lock = cocosLock.lock();
-        CCSpriteFrameCache::get()->addSpriteFramesWithFile(fullPlistPath.c_str(), m_texture);
-#endif
 
         pm.m_loadedFrames.lock()->insert(std::string{plistKey});
 
