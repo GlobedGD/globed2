@@ -95,7 +95,9 @@ void PreloadManager::loadNextBatch(PreloadOptions options) {
         // smaller batches = more responsive loading UI
         // larger batches = gets work done much faster (less waiting)
         float deviceFactor = 1.f
-            GEODE_DESKTOP(* 2.5f);
+            GEODE_WINDOWS(* 2.5f)
+            GEODE_MACOS(* 2.f)
+            GEODE_ANDROID(* 1.25f);
 
         size_t threads = std::thread::hardware_concurrency();
         float threadFactor = std::powf(std::max<size_t>(threads, 2), 0.8f);
@@ -137,6 +139,22 @@ void PreloadManager::loadNextBatch(PreloadOptions options) {
         } else {
             count++;
         }
+    }
+
+    int remainingCost = asp::iter::from(m_loadQueue)
+        .map([](auto item) {
+            return item.get().iconType == IconType::DeathEffect ? 20 : 1;
+        })
+        .sum();
+
+    // if remaining cost is too small, just load everything to avoid a tiny batch
+    if (remainingCost > 0 && remainingCost < 100) {
+        items.insert(
+            items.end(),
+            std::make_move_iterator(m_loadQueue.begin()),
+            std::make_move_iterator(m_loadQueue.end())
+        );
+        m_loadQueue.clear();
     }
 
     this->doLoadBatch(std::move(items), std::move(options));

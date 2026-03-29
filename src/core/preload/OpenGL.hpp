@@ -4,18 +4,16 @@
 #include <asp/iter.hpp>
 #include <utility>
 
-#ifndef GEODE_IS_IOS
-# define GLOBED_PBO_SUPPORT
-#endif
-
-#ifdef GLOBED_PBO_SUPPORT
 # if defined(GEODE_IS_MACOS)
 #  define GL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED
 #  include <OpenGL/gl3.h>
 #  include <OpenGL/gl3ext.h>
-# elif defined (GEODE_IS_MOBILE)
+# elif defined (GEODE_IS_ANDROID)
 #  include <Geode/cocos/platform/CCGL.h>
 #  include <EGL/egl.h>
+# elif defined (GEODE_IS_IOS)
+#  include <OpenGLES/ES3/gl.h>
+#  include <OpenGLES/ES3/glext.h>
 # else
 #  include <Geode/cocos/platform/CCGL.h>
 # endif
@@ -36,112 +34,24 @@
 using globed_PFNGLTEXSTORAGE2D = void(*)(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height);
 using globed_PFNGLMAPBUFFERRANGE = void*(*)(GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access);
 
-static globed_PFNGLTEXSTORAGE2D   pglTexStorage2D   = nullptr;
-static globed_PFNGLMAPBUFFERRANGE pglMapBufferRange = nullptr;
+static struct OpenGLInfo {
+    globed_PFNGLTEXSTORAGE2D   pglTexStorage2D   = nullptr;
+    globed_PFNGLMAPBUFFERRANGE pglMapBufferRange = nullptr;
+    std::string_view versionStr;
+    std::pair<int, int> version{0, 0};
+    bool initialized = false;
+    bool supportsPBO = false;
+    bool supportsImmutableTex = false;
 
-static std::pair<int, int> getOpenGLVersion() {
-#ifdef GL_MAJOR_VERSION
-    int major = 0, minor = 0;
-    glGetIntegerv(GL_MAJOR_VERSION, &major);
-    glGetIntegerv(GL_MINOR_VERSION, &minor);
-    return {major, minor};
-#else
-    auto v = glGetString(GL_VERSION);
-    if (!v) return {2, 0};
+    void initialize();
 
-    std::string_view ver{(const char*) v};
-    if (ver.contains("OpenGL ES 3")) return {3, 0};
-
-    return {2, 0};
-#endif
-}
-
-static bool supportsGLExtension(std::string_view ext) {
-#ifdef GL_NUM_EXTENSIONS
-    // this does not exist in macos wine
-    auto pglGetStringi = glGetStringi;
-
-    if (pglGetStringi) {
-        GLint exts = 0;
-        glGetIntegerv(GL_NUM_EXTENSIONS, &exts);
-
-        for (GLint i = 0; i < exts; i++) {
-            auto e = reinterpret_cast<const char*>(pglGetStringi(GL_EXTENSIONS, i));
-            if (e && std::string_view{e} == ext) {
-                return true;
-            }
-        }
-    }
-#endif
-
-    auto extsStr = glGetString(GL_EXTENSIONS);
-    if (!extsStr) return false;
-
-    return asp::iter::split(std::string_view{(const char*)extsStr}, ' ')
-        .any([&](std::string_view e) { return e == ext; });
-}
-
-static bool& supportsPBO() {
-    static bool does = [] {
-        auto [major, minor] = getOpenGLVersion();
-#ifdef GEODE_IS_DESKTOP
-        // PBOs are supported on OpenGL 2.1+, but we want glMapBufferRange which is 3.0+
-        if (major >= 3) {
-            return true;
-        }
-#else
-        // On mobile, it's GLES 3.0+
-        if (major >= 3) {
-            return true;
-        }
-#endif
-        return supportsGLExtension("GL_EXT_pixel_buffer_object");
-    }();
-    return does;
-}
-
-static bool& supportsImmutableTex() {
-    static bool does = [] {
-        auto [major, minor] = getOpenGLVersion();
-#ifdef GEODE_IS_DESKTOP
-        // Core feature of OpenGL 4.2+
-        if ((major > 4) || (major == 4 && minor >= 2)) {
-            return true;
-        }
-#else
-        // On mobile, it's GLES 3.0+
-        if (major >= 3) {
-            return true;
-        }
-#endif
-
-        return supportsGLExtension("GL_ARB_texture_storage") || supportsGLExtension("GL_EXT_texture_storage");
-    }();
-    return does;
-}
-
+private:
+    void initOpenGLVersion();
+    void initFeatures();
+    static bool supportsGLExtension(std::string_view ext);
+} g_opengl;
 
 static void initGL() {
-    supportsPBO();
-    supportsImmutableTex();
-
-#ifdef GEODE_IS_MOBILE
-    pglTexStorage2D = (globed_PFNGLTEXSTORAGE2D)eglGetProcAddress("glTexStorage2D");
-    pglMapBufferRange = (globed_PFNGLMAPBUFFERRANGE)eglGetProcAddress("glMapBufferRange");
-#else
-    pglTexStorage2D = glTexStorage2D;
-    pglMapBufferRange = glMapBufferRange;
-#endif
-
-    // double check that the functions are actually available
-    if (!pglTexStorage2D) supportsImmutableTex() = false;
-    if (!pglMapBufferRange) supportsPBO() = false;
+    g_opengl.initialize();
 }
 
-
-#else
-
-static bool supportsPBO() { return false; }
-static bool supportsImmutableTex() { return false; }
-
-#endif // GLOBED_PBO_SUPPORT

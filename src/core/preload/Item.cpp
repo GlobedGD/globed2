@@ -36,27 +36,13 @@ static asp::SpinLock<> cocosLock;
 static thread_local ScratchBuffer g_scratch;
 
 static bool shouldUsePBO() {
-    static bool should = supportsPBO() && globed::setting<bool>("core.preload.use-pbos");
+    static bool should = g_opengl.supportsPBO && globed::setting<bool>("core.preload.use-pbos");
     return should;
 }
 
 bool canDirectDecode() {
     static bool can = shouldUsePBO() && imgp::isAvailable() && globed::setting<bool>("core.preload.use-direct-decode");
     return can;
-}
-
-static void initialize() {
-#ifdef GLOBED_PBO_SUPPORT
-    static bool inited = false;
-    if (inited) return;
-    inited = true;
-
-    initGL();
-
-    log::info("Using PBOs: {}, immutable textures: {}, direct decode: {}", shouldUsePBO(), supportsImmutableTex(), canDirectDecode());
-    auto v = (const char*)glGetString(GL_VERSION);
-    log::info("OpenGL version: {}", v ? v : "<null>");
-#endif
 }
 
 PreloadItemState::PreloadItemState(PreloadItemState&& other) noexcept
@@ -73,7 +59,7 @@ PreloadItemState::PreloadItemState(PreloadItemState&& other) noexcept
 bool PreloadItemState::process() {
     switch (this->state()) {
         case ItemStateEnum::Initial: {
-            initialize();
+            g_opengl.initialize();
 
             // Initial state - load image into memory, then kick off the decoding process in a thread
             unsigned long filesize = 0;
@@ -149,7 +135,6 @@ void PreloadItemState::enqueueImageDecode() {
     auto& pool = *m_batchState->pool;
 
     pool.pushTask([this] {
-#ifdef GLOBED_PBO_SUPPORT
         if (canDirectDecode()) {
             // try to parse only the image header, this may not work if imageplus is outdated
             auto res = imgp::decode::pngHeader(m_rawData.get(), m_rawSize);
@@ -166,7 +151,6 @@ void PreloadItemState::enqueueImageDecode() {
                 log::warn("Failed to decode PNG header: {}, falling back to full decode", res.unwrapErr());
             }
         }
-#endif
 
         m_image = Ref<CCImage>::adopt(new CCImage());
         if (!m_image->initWithImageData(m_rawData.get(), m_rawSize, cocos2d::CCImage::kFmtPng)) {
@@ -208,7 +192,6 @@ static void clearGLError() {
 static void premultiplyInto(const void* source, void* dest, size_t bytes);
 
 void PreloadItemState::enqueuePBOCreation() {
-#ifdef GLOBED_PBO_SUPPORT
     GLOBED_DEBUG_ASSERT(!m_tex && !m_pbo);
 
     int64_t width = m_width;
@@ -228,8 +211,8 @@ void PreloadItemState::enqueuePBOCreation() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    if (supportsImmutableTex() && pglTexStorage2D) {
-        pglTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
+    if (g_opengl.supportsImmutableTex) {
+        g_opengl.pglTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
         checkGL("glTexStorage2D");
     } else {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -239,7 +222,7 @@ void PreloadItemState::enqueuePBOCreation() {
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
     glBufferData(GL_PIXEL_UNPACK_BUFFER, byteSize, nullptr, GL_STREAM_DRAW);
 
-    void* ptr = pglMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, byteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    void* ptr = g_opengl.pglMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, byteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     checkGL("glMapBufferRange");
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
@@ -251,7 +234,6 @@ void PreloadItemState::enqueuePBOCreation() {
             std::memcpy(ptr, m_image->m_pData, byteSize);
             m_image = nullptr; // no longer needed
         } else {
-#ifdef GLOBED_PBO_SUPPORT
             // decode the image into a scratch buffer
             auto sbuf = g_scratch.reserve(byteSize);
             auto res = imgp::decode::pngInto(m_rawData.get(), m_rawSize, sbuf, byteSize);
@@ -272,23 +254,16 @@ void PreloadItemState::enqueuePBOCreation() {
 
             // now premultiply alpha and write into the pbo
             premultiplyInto(sbuf, ptr, byteSize);
-#else
-            GLOBED_ASSERT(false);
-#endif
         }
 
         // notify main thread
         m_state.store(ItemStateEnum::PboReady, relaxed);
         m_batchState->callback(*this);
     });
-#else
-    GLOBED_ASSERT(false);
-#endif // GLOBED_PBO_SUPPORT
 }
 
 void PreloadItemState::finalizePBO() {
     // auto now = asp::Instant::now();
-#ifdef GLOBED_PBO_SUPPORT
     clearGLError();
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
     GLboolean ok = glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
@@ -321,9 +296,6 @@ void PreloadItemState::finalizePBO() {
     texture->m_fMaxT = 1.f;
 
     texture->setShaderProgram(CCShaderCache::sharedShaderCache()->programForKey(kCCShader_PositionTexture));
-#else // GLOBED_PBO_SUPPORT
-    GLOBED_ASSERT(false);
-#endif
 }
 
 void PreloadItemState::initSpriteFrames() {
