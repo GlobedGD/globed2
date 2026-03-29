@@ -1573,10 +1573,12 @@ void NetworkManagerImpl::sendUpdateUserSettings() {
         gatherUserSettings(update.initSettings());
     });
 
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        auto update = msg.initUpdateUserSettings();
-        gatherUserSettings(update.initSettings());
-    });
+    if (this->isGameConnected()) {
+        this->sendToGame([&](GameMessage::Builder& msg) {
+            auto update = msg.initUpdateUserSettings();
+            gatherUserSettings(update.initSettings());
+        });
+    }
 }
 
 void NetworkManagerImpl::sendRoomStateCheck() {

@@ -9,11 +9,11 @@ namespace globed {
 
 static void onDescriptionClicked(std::string_view key) {
     if (key == "core.user.hide-in-levels") {
-        globed::alertFormat("Hide in Levels", "When enabled, other players won't be able to see you in levels.");
+        globed::alertFormat("Show in Levels", "When disabled (gray with :x: icon), other players won't be able to see you in levels.");
     } else if (key == "core.user.hide-in-menus") {
-        globed::alertFormat("Hide in Menus", "When enabled, other players won't be able to see you in menus and level lists.");
+        globed::alertFormat("Show in Menus", "When disabled (gray with :x: icon), other players won't be able to see you in menus and level lists.");
     } else if (key == "core.user.hide-roles") {
-        globed::alertFormat("Hide Roles", "When enabled, other players won't be able to see your special roles (e.g. Moderator) in levels and menus.");
+        globed::alertFormat("Show Roles", "When disabled (gray with :x: icon), other players won't be able to see your special roles (e.g. Moderator) in levels and menus.");
     } else {
         globed::alertFormat("Info", "No description available.");
     }
