@@ -80,8 +80,6 @@ void PreloadManager::initLoadQueue() {
         addIcons(IconType::Jetpack, 1, 8);
     }
 
-
-    log::debug("Hi test 3 {}", m_loadQueue.size());;
     m_totalCount = m_loadQueue.size();
 }
 

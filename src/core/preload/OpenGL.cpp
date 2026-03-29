@@ -83,7 +83,7 @@ bool OpenGLInfo::supportsGLExtension(std::string_view ext) {
     }
 #endif
 
-    auto extsStr = glGetString(GL_EXTENSIONS);
+    static auto extsStr = glGetString(GL_EXTENSIONS);
     if (!extsStr) return false;
 
     return asp::iter::split(std::string_view{(const char*)extsStr}, ' ')
@@ -91,18 +91,21 @@ bool OpenGLInfo::supportsGLExtension(std::string_view ext) {
 }
 
 void OpenGLInfo::initFeatures() {
-#if !defined(GEODE_IS_ANDROID)
+#if defined(GEODE_IS_ANDROID)
+    pglTexStorage2D = (globed_PFNGLTEXSTORAGE2D)eglGetProcAddress("glTexStorage2D");
+    pglMapBufferRange = (globed_PFNGLMAPBUFFERRANGE)eglGetProcAddress("glMapBufferRange");
+#else
     pglTexStorage2D = glTexStorage2D;
     pglMapBufferRange = glMapBufferRange;
+#endif
 
+#if defined(GEODE_IS_DESKTOP)
     // PBOs are supported on OpenGL 2.1+, but we want glMapBufferRange which is 3.0+
     this->supportsPBO = version.first >= 3;
 
     // Immutable textures are a core feature of OpenGL 4.2+
     this->supportsImmutableTex = version.first >= 4 && version.second >= 2;
 #else
-    pglTexStorage2D = (globed_PFNGLTEXSTORAGE2D)eglGetProcAddress("glTexStorage2D");
-    pglMapBufferRange = (globed_PFNGLMAPBUFFERRANGE)eglGetProcAddress("glMapBufferRange");
     // On mobile, PBOs and immutable textures are both GLES 3.0+
     this->supportsPBO = version.first >= 3;
     this->supportsImmutableTex = version.first >= 3;
@@ -111,6 +114,11 @@ void OpenGLInfo::initFeatures() {
     // check for extensions
     if (!this->supportsImmutableTex) {
         this->supportsImmutableTex = supportsGLExtension("GL_ARB_texture_storage") || supportsGLExtension("GL_EXT_texture_storage");
+    }
+    if (!this->supportsPBO) {
+        this->supportsPBO =
+            (supportsGLExtension("GL_ARB_pixel_buffer_object") || supportsGLExtension("GL_EXT_pixel_buffer_object"))
+            && (supportsGLExtension("GL_EXT_map_buffer_range") || supportsGLExtension("GL_ARB_map_buffer_range"));
     }
 
     // don't use the functions if support is not advertised
