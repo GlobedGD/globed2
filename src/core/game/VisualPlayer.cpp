@@ -22,16 +22,10 @@ namespace globed {
 
 static auto& g_settings = CachedSettings::get();
 
-#ifdef GLOBED_DEBUG
 static inline bool lerpDebug() {
     static bool val = Loader::get()->getLaunchFlag("globed/core.dev.lerp-debug");
     return val;
 }
-#else
-static inline bool lerpDebug() {
-    return false;
-}
-#endif
 
 VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
 {

@@ -3,6 +3,7 @@
 #include <globed/core/game/RemotePlayer.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <globed/util/mh.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <modules/ui/popups/UserListPopup.hpp>
@@ -51,6 +52,14 @@ void TwoPlayerModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool e
         gjbgl->toggleCullingEnabled(false);
         gjbgl->toggleExtendedData(true);
         lerper.setLowLatencyMode(true);
+
+        if (mh::isHackEnabled(mh::MH_FRAME_EXTRAPOLATION)) {
+            mh::setHackEnabled(mh::MH_FRAME_EXTRAPOLATION, false);
+            PopupManager::get().alert(
+                "Globed Warning",
+                "<cy>Frame Extrapolation</c> in <cy>Mega Hack</c> is not compatible with this mode, so it has been disabled."
+            ).showQueue();
+        }
     }
 }
 
@@ -127,8 +136,10 @@ void TwoPlayerModule::onPreUpdate(GlobedGJBGL* gjbgl, float dt) {
     this->updateFromLinkedPlayer(noclipFor, pobj);
     if (!gjbgl->m_gameState.m_isDualMode && this->isPlayer2()) {
         gjbgl->setCameraFollowPlayer(pobj);
+        gjbgl->setSpectating(true);
     } else {
         gjbgl->setCameraFollowPlayer(nullptr);
+        gjbgl->setSpectating(false);
     }
 
     // hide player1 if we are player 2

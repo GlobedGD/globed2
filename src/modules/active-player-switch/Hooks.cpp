@@ -4,6 +4,7 @@
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/data/Event.hpp>
 #include <globed/util/gd.hpp>
+#include <globed/util/mh.hpp>
 #include <Geode/utils/random.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -263,6 +264,14 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
         .parent(m_uiLayer)
         .anchorPoint(0.f, 0.f);
 
+    if (mh::isHackEnabled(mh::MH_FRAME_EXTRAPOLATION)) {
+        mh::setHackEnabled(mh::MH_FRAME_EXTRAPOLATION, false);
+        PopupManager::get().alert(
+            "Globed Warning",
+            "<cy>Frame Extrapolation</c> in <cy>Mega Hack</c> is not compatible with this mode, so it has been disabled."
+        ).showQueue();
+    }
+
     return true;
 }
 
@@ -428,6 +437,7 @@ void APSPlayLayer::handleUpdate(float dt) {
         self->setCameraFollowPlayer(nullptr);
     }
 
+    // takeOverCamera = false;
     setPlayerHidden(m_player1, takeOverCamera);
     setPlayerHidden(m_player2, takeOverCamera);
     setPlayerHidden(self->m_fields->m_ghost.get(), takeOverCamera);
