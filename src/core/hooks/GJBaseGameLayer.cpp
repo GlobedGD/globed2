@@ -1144,7 +1144,8 @@ void GlobedGJBGL::pauseVoiceRecording() {
 }
 
 void GlobedGJBGL::setCameraFollowPlayer(PlayerObject* player) {
-    m_fields->m_cameraFollows = player;
+    // TODO: this weird syntax because operator=(T*) is broken right now in geode
+    m_fields->m_cameraFollows = WeakRef{player};
 }
 
 void GlobedGJBGL::updateCamera(float dt) {
