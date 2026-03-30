@@ -10,6 +10,7 @@
 #include <core/CoreImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/misc/AudioVisualizer.hpp>
+#include <ui/menu/UserSettingsPopup.hpp>
 #include <ui/Core.hpp>
 
 using namespace geode::prelude;
@@ -432,6 +433,16 @@ bool UserListPopup::init() {
         .pos(this->fromTopRight(50.f, 22.f))
         .parent(m_mainLayer)
         .updateLayout();
+
+    // create button to open user settings
+    Build<CCSprite>::create("privacySettings.png"_spr)
+        .scale(0.8f)
+        .intoMenuItem([] {
+            UserSettingsPopup::create()->show();
+        })
+        .scaleMult(1.15f)
+        .parent(m_buttonMenu)
+        .pos(this->fromTopRight(108.f, 23.f));
 
     // Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedUserListPopup::onToggleVoiceSort), 0.7f))
     //     .id("toggle-voice-sort"_spr)
