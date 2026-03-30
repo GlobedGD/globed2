@@ -46,6 +46,7 @@ struct APSController {
     void handleSwitchEvent(const SwitcherooSwitchEvent& event);
     void rehidePlayers();
     void repushButtons();
+    void rescheduleNextSwitch(float delayS);
 
     std::optional<SwitcherooSwitchEvent> poll();
 

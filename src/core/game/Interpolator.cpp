@@ -84,13 +84,13 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
         }
 
         if (!culled) {
-            LERP_LOG("New frame for {}, X progression: {} ({}) ... {} ({}) -> {} ({})",
+            LERP_LOG("New frame for {}, progression: {} ({}) ... {} ({}) -> {} ({})",
                 player.accountId,
-                state.oldestFrame().player1->position.x,
+                state.oldestFrame().player1->position,
                 state.oldestFrame().timestamp,
-                prevFrame.player1->position.x,
+                prevFrame.player1->position,
                 prevFrame.timestamp,
-                player.player1->position.x,
+                player.player1->position,
                 player.timestamp
             );
         }

@@ -89,6 +89,11 @@
             "type": "keybind",
             "name": "Emote 8",
             "default": []
+        },
+        "keybind-force-switch": {
+            "type": "keybind",
+            "name": "Force Switch",
+            "default": []
         }
     },
     "resources": {

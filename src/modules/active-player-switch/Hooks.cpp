@@ -97,6 +97,12 @@ void APSController::handleSwitchEvent(const SwitcherooSwitchEvent& event) {
 
         if (m_meActive) {
             m_pl->showSwitchEffect();
+
+            // did it switch to us while dead? if so, respawn because otherwise we'll be dead forever
+            if (m_pl->m_player1->m_isDead) {
+                log::debug("(APS) Switched to us while dead, respawning...");
+                m_gjbgl->causeLocalRespawn();
+            }
         }
 
         this->rehidePlayers();
@@ -114,6 +120,10 @@ void APSController::rehidePlayers() {
 void APSController::repushButtons() {
     buttonPress(m_gjbgl, g_realP1Held, false);
     buttonPress(m_gjbgl, g_realP2Held, true);
+}
+
+void APSController::rescheduleNextSwitch(float delayS) {
+    m_nextSwitch = asp::Instant::now() + *asp::Duration::fromSecs(delayS);
 }
 
 std::optional<SwitcherooSwitchEvent> APSController::poll() {
@@ -224,6 +234,14 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
             }
         }
     }, -10);
+
+    this->addEventListener(
+        KeybindSettingPressedEventV3(Mod::get(), "keybind-force-switch"),
+        [this](Keybind const& keybind, bool down, bool repeat, double time) {
+            if (repeat || !down) return;
+            m_fields->m_controller.rescheduleNextSwitch(0.f);
+        }
+    );
 
     float glowScale = 1.5f;
 
