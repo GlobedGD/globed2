@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-cmake_policy(SET CMP0069 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -31,5 +31,5 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 ## Download net libs (ngtcp2, c-ares, openssl, zstd)
 include(cmake/DownloadNetLibs.cmake)
 
-CPMAddPackage("gh:dankmeme01/geobuild#cf2207a")
+CPMAddPackage("gh:dankmeme01/geobuild#4b84908")
 include("${CMAKE_CURRENT_BINARY_DIR}/geobuild-gen.cmake")

@@ -322,6 +322,7 @@ def main(build: Build):
     # Compile definitions / variables
     if gc.release:
         build.enable_lto()
+        build.add_raw_statement(f'set(CMAKE_SHARED_LINKER_FLAGS "${{CMAKE_SHARED_LINKER_FLAGS}} -Wl,--version-script={config.project_dir / "exports.map"}")')
 
     # if gc.asan and build.platform.is_android():
     #     print("Enabling UBSan flags")

@@ -45,7 +45,7 @@ void setHackEnabled(const std::string& hack, bool enabled) {
 
 }
 
-#elif defined (GEODE_IS_ANDROID)
+#elif 0 /* defined (GEODE_IS_ANDROID) */
 
 static auto getMegahack() {
     auto handle = dlopen("absolllute.megahack.so", RTLD_LAZY | RTLD_NOLOAD);
@@ -62,7 +62,7 @@ bool isHackEnabled(const std::string& hack) {
     auto mod = getMegahack();
     if (!mod) return false;
 
-    // TODO
+    // mh has no api on android?
 
     return false;
 }
@@ -70,8 +70,6 @@ bool isHackEnabled(const std::string& hack) {
 void setHackEnabled(const std::string& hack, bool enabled) {
     auto mod = getMegahack();
     if (!mod) return;
-
-    // TODO
 }
 
 }
