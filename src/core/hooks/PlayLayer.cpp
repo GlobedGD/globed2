@@ -104,6 +104,8 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         bool overrideReset = !rm.isInGlobal() && CoreImpl::get().wantsSyncReset();
         bool oldReset = overrideReset ? gameVariable(GameVariable::FastRespawn) : false;
         bool realDeath = m_fields->m_setupWasCompleted && obj != m_anticheatSpike;
+        bool originalTestMode = m_isTestMode;
+        m_isTestMode = this->asBase()->isSafeMode();
 
         // g_diedAt = asp::time::Instant::now();
 
@@ -140,6 +142,8 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
             setGameVariable(GameVariable::FastRespawn, oldReset);
         }
 
+        m_isTestMode = originalTestMode;
+
         if (realDeath) {
             GlobedGJBGL::get(this)->handleLocalPlayerDeath(player);
         }
@@ -175,6 +179,18 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
             PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
             m_fields->m_showedNewBest = true;
         }
+    }
+
+    $override
+    void levelComplete() {
+        bool original = m_isTestMode;
+        if (GlobedGJBGL::get(this)->isSafeMode()) {
+            m_isTestMode = true;
+        }
+
+        PlayLayer::levelComplete();
+
+        m_isTestMode = original;
     }
 };
 
