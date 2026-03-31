@@ -25,7 +25,6 @@
 #include <qunet/Log.hpp>
 #include <Geode/Result.hpp>
 #include <Geode/utils/async.hpp>
-#include <typeindex>
 
 namespace globed {
 
