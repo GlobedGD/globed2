@@ -228,6 +228,13 @@ void PreloadItemState::enqueuePBOCreation() {
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    if (!ptr) {
+        utils::terminate(
+            "PreloadManager: failed to map a PBO, likely ran out of memory! "
+            "Please report this to the Globed developers and include the latest game log (not crashlog!)"
+        );
+    }
+
     m_batchState->pool->pushTask([ptr, this] mutable {
         int64_t byteSize = (int64_t)m_width * (int64_t)m_height * 4;
         if (m_image) {
