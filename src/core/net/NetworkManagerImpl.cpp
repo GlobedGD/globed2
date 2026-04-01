@@ -967,9 +967,7 @@ void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token
         login.setPlatform(currentPlatform());
         login.setGeodeVersion(Loader::get()->getVersion().toNonVString());
         login.setGlobedVersion(Mod::get()->getVersion().toNonVString());
-
-        // TODO: geode v5.5.0
-        // login.setPlatformDesc(utils::platform::getString());
+        login.setPlatformDesc(utils::platform::getString());
     });
 }
 
