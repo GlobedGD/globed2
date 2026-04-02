@@ -27,7 +27,7 @@ bool DiscordLinkPopup::init() {
     m_discordBtn = Build<CCSprite>::create("discord01.png"_spr)
         .with([&](auto spr) { cue::rescaleToMatch(spr, 32.f); })
         .intoMenuItem(+[] {
-            utils::web::openLinkInBrowser(globed::constant<"discord">());
+            utils::web::openLinkInBrowser(globed::constant<"discord-bots">());
         })
         .pos(this->fromBottomLeft(22.f, 22.f))
         .id("discord-btn")

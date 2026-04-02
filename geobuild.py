@@ -136,6 +136,7 @@ def make_constants_codegen(state: State) -> str:
 
     constants = {
         "discord": "https://discord.gg/d56q5Dkdm3",
+        "discord-bots": "https://discord.gg/3dddQZsysw",
         "globed-commit": config.get_mod_commit() or "",
         "geode-commit": config.get_sdk_commit() or "",
         "build-time": datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC'),

@@ -307,7 +307,7 @@ void GlobedGJBGL::maybeShowVCAlert(msg::ChatNotPermittedReason reason) {
     switch (reason) {
         case msg::ChatNotPermittedReason::NotLinked: {
             title = "Not Linked";
-            message = "In order to use <cy>voice chat</c> on Globed, you must open Globed settings and link your <cb>Discord</c> account.\n\n"
+            message = "In order to use <cy>voice chat</c> on Globed, you must open <cg>Globed settings</c> and link your <cb>Discord</c> account.\n\n"
                       "This notice was shown because you tried to activate voice chat while not linked.";
         } break;
 
