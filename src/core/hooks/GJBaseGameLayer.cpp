@@ -15,7 +15,7 @@
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/game/SettingCache.hpp>
 
-#include <Geode/modify/CCNode.hpp>
+#include <Geode/modify/PlayerObject.hpp>
 #include <Geode/loader/GameEvent.hpp>
 #include <Geode/loader/SettingV3.hpp>
 #include <Geode/utils/VMTHookManager.hpp>
@@ -1305,29 +1305,58 @@ bool GlobedGJBGL::playSelfFavoriteEmote(uint32_t which) {
     return false;
 }
 
-static void hideNode(CCNode* node, bool hide) {
-    if (!node) return;
-    node->setUserFlag("hidden"_spr, hide);
-}
+struct GLOBED_MODIFY_ATTR PlayerObjectHideHook : public Modify<PlayerObjectHideHook, PlayerObject> {
+    struct Fields {
+        bool m_realVisibility = true;
+        bool m_customVisibility = true;
+    };
+
+    static PlayerObjectHideHook* get(PlayerObject* ptr) {
+        return static_cast<PlayerObjectHideHook*>(ptr);
+    }
+
+    void setCustomHide(bool hide) {
+        auto& fields = *m_fields.self();
+        if (fields.m_customVisibility == !hide) {
+            return;
+        }
+
+        fields.m_customVisibility = !hide;
+        PlayerObject::setVisible(fields.m_realVisibility); // refresh
+    }
+
+    void setVisible(bool visible) {
+        auto& fields = *m_fields.self();
+        fields.m_realVisibility = visible;
+        bool vis = visible && fields.m_customVisibility;
+
+        PlayerObject::setVisible(vis);
+
+        // TODO: trails n particles ?
+
+        // if (hidden) {
+        //     if (obj->m_ghostType != GhostType::Disabled) {
+        //         obj->toggleGhostEffect(GhostType::Disabled);
+        //     }
+        // }
+
+        // obj->m_playEffects = !hidden;
+        // hideNode(obj->m_regularTrail, hidden);
+        // hideNode(obj->m_waveTrail, hidden);
+        // hideNode(obj->m_trailingParticles, hidden);
+        // hideNode(obj->m_shipStreak, hidden);
+        // hideNode(obj->m_playerGroundParticles, hidden);
+        // hideNode(obj->m_vehicleGroundParticles, hidden);
+
+        // if (auto gjbgl = GlobedGJBGL::getActive(m_gameLayer)) {
+
+        // }
+    }
+};
 
 void setPlayerHidden(PlayerObject* obj, bool hidden) {
     if (!obj) return;
-    hideNode(obj, hidden);
-    obj->setVisible(obj->m_bVisible);
-
-    if (hidden) {
-        if (obj->m_ghostType != GhostType::Disabled) {
-            obj->toggleGhostEffect(GhostType::Disabled);
-        }
-    }
-
-    obj->m_playEffects = !hidden;
-    hideNode(obj->m_regularTrail, hidden);
-    hideNode(obj->m_waveTrail, hidden);
-    hideNode(obj->m_trailingParticles, hidden);
-    hideNode(obj->m_shipStreak, hidden);
-    hideNode(obj->m_playerGroundParticles, hidden);
-    hideNode(obj->m_vehicleGroundParticles, hidden);
+    PlayerObjectHideHook::get(obj)->setCustomHide(hidden);
 }
 
 void setPlayerHidden(RemotePlayer* obj, bool hidden) {
@@ -1335,17 +1364,6 @@ void setPlayerHidden(RemotePlayer* obj, bool hidden) {
     setPlayerHidden(obj->player1(), hidden);
     setPlayerHidden(obj->player2(), hidden);
 }
-
-// TODO: temporary, please use vmt hook manager
-class $modify(CCNode) {
-    void visit() {
-        if (this->getUserFlag("hidden"_spr)) {
-            return;
-        }
-
-        CCNode::visit();
-    }
-};
 
 class GJBGLUpdater : public CCObject {
 public:
