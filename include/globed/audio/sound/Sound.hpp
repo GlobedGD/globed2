@@ -33,6 +33,7 @@ protected:
 
     FMOD::Sound* m_sound = nullptr;
     FMOD::Channel* m_channel = nullptr;
+    float m_rawVolume = 0.f;
     std::optional<PlayOptions> m_delayedPlay;
 
     static Result<FMOD::Sound*> createRaw(const char* path);

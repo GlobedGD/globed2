@@ -70,6 +70,7 @@ void Sound::rawSetVolume(float volume) {
     if (m_channel) {
         m_channel->setVolume(volume);
     }
+    m_rawVolume = volume;
 }
 
 bool Sound::isPlaying() const {
@@ -136,11 +137,19 @@ bool Sound::isReady() {
 Result<> Sound::doPlay(PlayOptions options) {
     GLOBED_ASSERT(!m_channel && "Sound is already playing");
 
+    // spawn as paused so we can set volume before playing
     FMOD_UNWRAP(
-        system()->playSound(m_sound, nullptr, options.paused, &m_channel)
+        system()->playSound(m_sound, nullptr, true, &m_channel)
     );
 
     m_channel->setVolumeRamp(true);
+    m_channel->setVolume(m_rawVolume);
+
+    // unpause if pause was false
+    if (!options.paused) {
+        m_channel->setPaused(false);
+    }
+
     return Ok();
 }
 
