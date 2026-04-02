@@ -373,6 +373,9 @@ void SettingsLayer::addSettings() {
     auto padYSetting = this->addSetting<FloatSettingCell>("core.level.voice-overlay-pad-y", "Vertical Padding",
         "Adjust the vertical padding of the voice chat overlay from the screen edges."
     );
+    this->addSetting<BoolSettingCell>("core.audio.overlaying-overlay", "Overlay On Top",
+        "Render the voice overlay above other UI elements, allowing it to be used in the <cg>pause menu</c>."
+    );
     padYSetting->setPercentageBased(false);
     padYSetting->setStep(1.f);
 
@@ -430,9 +433,6 @@ void SettingsLayer::addSettings() {
     );
     this->addSetting<BoolSettingCell>("core.audio.voice-loopback", "Voice Loopback",
         "Hear your own voice while speaking."
-    );
-    this->addSetting<BoolSettingCell>("core.audio.overlaying-overlay", "Overlay On Top",
-        "Render the voice overlay above other UI elements, allowing it to be used in the <cg>pause menu</c>."
     );
     this->addSetting<IntSliderSettingCell>("core.audio.buffer-size", "Audio Buffer Size",
         "Adjusts the audio buffer size (in 60ms frames). Lower sizes reduce audio latency but may decrease stability."
