@@ -42,16 +42,16 @@ void PreloadManager::initLoadQueue() {
         return;
     }
 
-    if (!enoughForIcons) {
-        log::warn("PreloadManager: skipping all preloading due to low system memory ({} MB free)", memoryMb);
-        return;
-    }
-
     if (globed::setting<bool>("core.preload.defer")) {
         // preloading is deferred, only load if we are loading a level
         if (m_context != PreloadContext::Level) {
             return;
         }
+    }
+
+    if (!enoughForIcons) {
+        log::warn("PreloadManager: skipping all preloading due to low system memory ({} MB free)", memoryMb);
+        return;
     }
 
     // Death effects
