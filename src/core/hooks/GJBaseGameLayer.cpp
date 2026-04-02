@@ -106,7 +106,7 @@ void GlobedGJBGL::setupPostInit() {
 
     // add ghost player
     fields.m_ghost = std::make_shared<RemotePlayer>(0, this, fields.m_playerNode);
-    fields.m_ghost->initData(PlayerDisplayData::getOwn(), false);
+    this->updateLocalIcons(std::nullopt);
 
     CoreImpl::get().onJoinLevelPostInit(this);
 }
@@ -323,6 +323,19 @@ void GlobedGJBGL::maybeShowVCAlert(msg::ChatNotPermittedReason reason) {
 
     PopupManager::get().alert(title, message).showQueue();
     fields.m_showedMutedAlert = true;
+}
+
+void GlobedGJBGL::updateLocalIcons(std::optional<PlayerIconData> icons) {
+    auto& fields = *m_fields.self();
+
+    auto ddata = PlayerDisplayData::getOwn();
+    if (icons) {
+        ddata.icons = *icons;
+    }
+
+    if (fields.m_ghost) {
+        fields.m_ghost->initData(ddata, false);
+    }
 }
 
 // temporary solution until we at geode come up with a non temporary solution

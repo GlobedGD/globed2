@@ -173,6 +173,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void setNoticeAlertActive(bool active);
     bool isUnableToSpeak();
     void maybeShowVCAlert(msg::ChatNotPermittedReason reason);
+    void updateLocalIcons(std::optional<PlayerIconData> data);
 
     void toggleCullingEnabled(bool culling);
     void toggleExtendedData(bool extended);

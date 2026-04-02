@@ -162,6 +162,10 @@ static GameSubtable* makeGameTable() {
         return gjbgl->getPlayer(playerId).get();
     });
 
+    GLOBED_VTABLE_INIT(table, updateLocalIcons, (std::optional<PlayerIconData> icons) {
+        if (auto gjbgl = GlobedGJBGL::getActive()) gjbgl->updateLocalIcons(icons);
+    });
+
     return table;
 }
 

@@ -72,6 +72,9 @@ struct GameSubtable : VTable {
     GLOBED_VTABLE_FUNC(playSelfFavoriteEmote, bool, uint32_t /* which */);
 
     GLOBED_VTABLE_FUNC(getPlayer, RemotePlayer*, int /* player id */);
+
+    // since v5.0.1
+    GLOBED_VTABLE_FUNC(updateLocalIcons, void, std::optional<PlayerIconData>);
 };
 
 struct PlayerSubtable : VTable {

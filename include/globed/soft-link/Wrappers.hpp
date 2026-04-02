@@ -122,6 +122,8 @@ inline bool isAuthorizedModerator() {
 
 /// Forces the icons of the local player to be re-sent to the central and game servers immediately.
 /// This will also cause your icons to be updated live for all players, if in a session.
+/// To update icons of the local player in other places (e.g. progress bar icons),
+/// use `globed::api::game::updateLocalIcons()`
 inline void invalidateIcons() {
     if (auto t = table()) t->net->invalidateIcons();
 }
@@ -216,6 +218,18 @@ inline bool playSelfFavoriteEmote(uint32_t which) {
 inline RemotePlayer* getPlayer(int playerId) {
     if (auto t = table()) return t->game->getPlayer(playerId);
     return nullptr;
+}
+
+/// Updates the player icons in the progress indicators (at screen edges and progress bar)
+/// Uses the data from GameManager, to pass custom data use the other overload.
+/// If custom data is passed, it will be reset back to GameManager data when re-entering the level.
+inline void updateLocalIcons() {
+    if (auto t = table()) t->game->updateLocalIcons(std::nullopt);
+}
+
+/// Updates the player icons in the progress indicators (at screen edges and progress bar)
+inline void updateLocalIcons(PlayerIconData icons) {
+    if (auto t = table()) t->game->updateLocalIcons(icons);
 }
 
 } // namespace api::game
