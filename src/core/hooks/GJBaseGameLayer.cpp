@@ -1343,6 +1343,7 @@ struct GLOBED_MODIFY_ATTR PlayerObjectHideHook : public Modify<PlayerObjectHideH
         auto& fields = *m_fields.self();
         fields.m_realVisibility = visible;
         bool vis = visible && fields.m_customVisibility;
+        log::info("this = {}, real = {}, custom = {}, vis = {}", this, fields.m_realVisibility, fields.m_customVisibility, vis);
 
         PlayerObject::setVisible(vis);
 
