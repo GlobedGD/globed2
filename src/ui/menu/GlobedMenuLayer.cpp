@@ -44,12 +44,12 @@ namespace globed {
 
 namespace { namespace $unity {
 
-static constexpr CCSize PLAYER_LIST_MENU_SIZE{420.f, 290.f};
-static constexpr CCSize PLAYER_LIST_SIZE{PLAYER_LIST_MENU_SIZE.width * 0.8f, 198.f};
+static CCSize g_listMenuSize{};
+static CCSize g_listSize{};
+static CCSize g_cellSize{};
+static float g_sideButtonSize = 0.f;
+static float g_sideButtonOffset = 0.f;
 static constexpr float CELL_HEIGHT = 27.f;
-static constexpr CCSize CELL_SIZE{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
-
-static constexpr CCSize FAR_BTN_SIZE { 45.f, 45.f };
 
 class PlayerCell : public PlayerListCell {
 public:
@@ -64,7 +64,7 @@ public:
         auto ret = new PlayerCell();
         ret->m_sessionId = sessionId;
 
-        if (ret->init(accountId, userId, username, icons, sud, CELL_SIZE)) {
+        if (ret->init(accountId, userId, username, icons, sud, g_cellSize)) {
             ret->autorelease();
             return ret;
         }
@@ -77,7 +77,7 @@ public:
         auto ret = new PlayerCell();
         ret->m_sessionId = sessionId;
 
-        if (ret->initMyself(CELL_SIZE)) {
+        if (ret->initMyself(g_cellSize)) {
             ret->autorelease();
             return ret;
         }
@@ -224,6 +224,21 @@ bool GlobedMenuLayer::init() {
 
     if (!BaseLayer::init(false)) return false;
 
+    // choose size for the list n stuff depending on aspect ratio
+    auto winSize = CCDirector::get()->getWinSize();
+    g_listMenuSize = CCSize{
+        std::clamp(winSize.width * 0.75f, 360.f, 420.f),
+        290.f
+    };
+
+    g_listSize = CCSize{g_listMenuSize.width * 0.8f, 198.f};
+    g_cellSize = CCSize{g_listSize.width, CELL_HEIGHT};
+
+    float sideSpace = (winSize.width - g_listMenuSize.width) / 2.f;
+    g_sideButtonSize = std::min(45.f, sideSpace * 0.7f);
+    float sideFreeSpace = sideSpace - g_sideButtonSize;
+    g_sideButtonOffset = std::min(16.f, sideFreeSpace / 2.f);
+
     Build<cue::RepeatingBackground>::create("game_bg_01_001.png")
         .id("background")
         .color({37, 50, 167})
@@ -231,7 +246,6 @@ bool GlobedMenuLayer::init() {
         .as<CCSprite>()
         .store(m_background);
 
-    auto winSize = CCDirector::get()->getWinSize();
     auto& nm = NetworkManagerImpl::get();
 
     // add a small version + server label in top right
@@ -357,7 +371,7 @@ bool GlobedMenuLayer::init() {
         .collect();
 
     Build<CCSprite>::create("settings01.png"_spr)
-        .with([&](auto spr) { cue::rescaleToMatch(spr, FAR_BTN_SIZE); })
+        .with([&](auto spr) { cue::rescaleToMatch(spr, g_sideButtonSize); })
         .intoMenuItem([this] {
             this->onSettings();
         })
@@ -375,15 +389,15 @@ bool GlobedMenuLayer::init() {
     m_playerListMenu = Build<CCMenu>::create()
         .id("player-list-menu")
         .ignoreAnchorPointForPos(false)
-        .contentSize(PLAYER_LIST_MENU_SIZE)
+        .contentSize(g_listMenuSize)
         .pos(winSize / 2.f)
         .anchorPoint(0.5f, 0.5f)
         .parent(this)
         .visible(false);
 
     Build(CCScale9Sprite::create("GJ_square02.png", {0, 0, 80, 80}))
-        .contentSize(PLAYER_LIST_MENU_SIZE)
-        .pos(PLAYER_LIST_MENU_SIZE / 2.f)
+        .contentSize(g_listMenuSize)
+        .pos(g_listMenuSize / 2.f)
         .parent(m_playerListMenu);
 
     m_roomNameButton = Build<Label>::create("", "goldFont.fnt")
@@ -394,13 +408,13 @@ bool GlobedMenuLayer::init() {
             this->copyRoomIdToClipboard();
         })
         .scaleMult(1.1f)
-        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, PLAYER_LIST_MENU_SIZE.height - 16.f)
+        .pos(g_listMenuSize.width / 2.f, g_listMenuSize.height - 16.f)
         .id("room-name-btn")
         .parent(m_playerListMenu);
 
-    m_playerList = Build<cue::ListNode>::create(PLAYER_LIST_SIZE, ccColor4B{0x33, 0x44, 0x99, 255}, cue::ListBorderStyle::CommentsBlue)
+    m_playerList = Build<cue::ListNode>::create(g_listSize, ccColor4B{0x33, 0x44, 0x99, 255}, cue::ListBorderStyle::CommentsBlue)
         .anchorPoint(0.5f, 1.f)
-        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, PLAYER_LIST_MENU_SIZE.height - 36.f)
+        .pos(g_listMenuSize.width / 2.f, g_listMenuSize.height - 36.f)
         .parent(m_playerListMenu);
 
     m_playerList->setJustify(cue::Justify::Center);
@@ -409,11 +423,10 @@ bool GlobedMenuLayer::init() {
         ccColor4B{0x33, 0x44, 0x99, 255}
     );
 
-    m_roomButtonsMenu = Build<CCMenu>::create()
+    m_roomButtonsMenu = Build<RowContainer>::create()
         .id("room-buttons")
-        .layout(RowLayout::create()->setAutoScale(false))
-        .contentSize(PLAYER_LIST_SIZE.width, 64.f)
-        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, 30.f)
+        .contentSize(g_listSize.width, 64.f)
+        .pos(g_listMenuSize.width / 2.f, 30.f)
         .parent(m_playerListMenu);
 
     auto colLayout = ColumnLayout::create()
@@ -426,16 +439,16 @@ bool GlobedMenuLayer::init() {
     m_leftSideMenu = Build<CCMenu>::create()
         .id("left-side-menu")
         .layout(colLayout)
-        .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
-        .pos(7.f, PLAYER_LIST_MENU_SIZE.height - 8.f)
+        .contentSize(g_listMenuSize.width * 0.08f, g_listMenuSize.height - 12.f)
+        .pos(7.f, g_listMenuSize.height - 8.f)
         .anchorPoint(0.f, 1.f)
         .parent(m_playerListMenu);
 
     m_rightSideMenu = Build<CCMenu>::create()
         .id("right-side-menu")
         .layout(colLayout)
-        .contentSize(PLAYER_LIST_MENU_SIZE.width * 0.08f, PLAYER_LIST_MENU_SIZE.height - 12.f)
-        .pos(PLAYER_LIST_MENU_SIZE - CCSize{7.f, 8.f})
+        .contentSize(g_listMenuSize.width * 0.08f, g_listMenuSize.height - 12.f)
+        .pos(g_listMenuSize - CCSize{7.f, 8.f})
         .anchorPoint(1.f, 1.f)
         .parent(m_playerListMenu);
 
@@ -450,7 +463,7 @@ bool GlobedMenuLayer::init() {
         .id("far-left-menu")
         .layout(farLayout)
         .contentSize(48.f, 250.f)
-        .pos(16.f, 18.f)
+        .pos(g_sideButtonOffset, 18.f)
         .anchorPoint(0.f, 0.f)
         .parent(this);
 
@@ -458,7 +471,7 @@ bool GlobedMenuLayer::init() {
         .id("far-right-menu")
         .layout(farLayout)
         .contentSize(48.f, 250.f)
-        .pos(winSize.width - 16.f, 18.f)
+        .pos(winSize.width - g_sideButtonOffset, 18.f)
         .anchorPoint(1.f, 0.f)
         .parent(this);
 
@@ -550,8 +563,6 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
 
     m_playerList->setAutoUpdate(false);
     m_playerList->clear();
-
-    CCSize cellSize{$unity::PLAYER_LIST_SIZE.width, $unity::CELL_HEIGHT};
 
     auto& flm = FriendListManager::get();
     auto& rm = RoomManager::get();
@@ -653,7 +664,7 @@ void GlobedMenuLayer::addPinnedLevelCell() {
     }
 
     if (!cell) {
-        cell = PinnedLevelCell::create($unity::CELL_SIZE.width);
+        cell = PinnedLevelCell::create($unity::g_cellSize.width);
         cell->setUpdateCallback([this] {
             m_playerList->updateLayout();
         });
@@ -1020,7 +1031,7 @@ void GlobedMenuLayer::initFarSideButtons() {
     }
 
     Build<CCSprite>::create("settings01.png"_spr)
-        .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
+        .with([&](auto btn) { cue::rescaleToMatch(btn, g_sideButtonSize); })
         .intoMenuItem([this] {
             this->onSettings();
         })
@@ -1029,7 +1040,7 @@ void GlobedMenuLayer::initFarSideButtons() {
         .parent(m_farLeftMenu);
 
     Build<CCSprite>::create("levels01.png"_spr)
-        .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
+        .with([&](auto btn) { cue::rescaleToMatch(btn, g_sideButtonSize); })
         .intoMenuItem([] {
             LevelListLayer::create()->switchTo();
         })
@@ -1044,7 +1055,7 @@ void GlobedMenuLayer::initFarSideButtons() {
         bool isNew = !nm.hasViewedFeaturedLevel();
 
         auto fbutton = Build<CCSprite>::create("feature01.png"_spr)
-            .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
+            .with([&](auto btn) { cue::rescaleToMatch(btn, g_sideButtonSize); })
             .intoMenuItem(+[](CCMenuItemSpriteExtra* self) {
                 FeaturedPopup::create()->show();
 
@@ -1091,7 +1102,7 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons(boo
 
     // credits
     out.push_back(Build<CCSprite>::create("support01.png"_spr)
-        .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
+        .with([&](auto btn) { cue::rescaleToMatch(btn, g_sideButtonSize); })
         .intoMenuItem([] {
             CreditsPopup::create()->show();
         })
@@ -1102,7 +1113,7 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons(boo
 
     // supporter popup
     out.push_back(Build<CCSprite>::create("support02.png"_spr)
-        .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
+        .with([&](auto btn) { cue::rescaleToMatch(btn, g_sideButtonSize); })
         .intoMenuItem([] {
             SupportPopup::create()->show();
         })
@@ -1113,7 +1124,7 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons(boo
 
     // discord
     out.push_back(Build<CCSprite>::create("discord01.png"_spr)
-        .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
+        .with([&](auto btn) { cue::rescaleToMatch(btn, g_sideButtonSize); })
         .intoMenuItem([] {
             globed::confirmPopup(
                 "Open Discord",
@@ -1132,7 +1143,7 @@ std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons(boo
     // rules
     if (ServerManager::get().isOfficialServerActive() && loggedIn) {
         out.push_back(Build<CCSprite>::create("list01.png"_spr)
-            .with([&](auto btn) { cue::rescaleToMatch(btn, FAR_BTN_SIZE); })
+            .with([&](auto btn) { cue::rescaleToMatch(btn, g_sideButtonSize); })
             .intoMenuItem([] {
                 MDPopup::create("Globed Rules", RULES_TEXT, "Ok")->show();
             })

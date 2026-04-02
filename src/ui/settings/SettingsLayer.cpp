@@ -58,7 +58,7 @@ bool SettingsLayer::init() {
     auto rightMenu = Build<CCMenu>::create()
         .layout(ColumnLayout::create()->setAxisAlignment(AxisAlignment::Start))
         .anchorPoint(1.f, 0.f)
-        .pos(winSize.width - 8.f, 8.f)
+        .pos(winSize.width - 6.f, 6.f)
         .contentSize(48.f, winSize.height)
         .id("right-side-menu")
         .parent(this)
@@ -66,6 +66,7 @@ bool SettingsLayer::init() {
 
     // Reset settings button
     auto resetBtn = Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
+        .scale(0.9f)
         .intoMenuItem([this](auto) {
             globed::confirmPopup(
                 "Reset all settings",
