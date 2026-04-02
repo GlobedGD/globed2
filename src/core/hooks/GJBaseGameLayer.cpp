@@ -719,7 +719,7 @@ PlayerState GlobedGJBGL::getPlayerState() {
         out.position = obj->getPosition();
         out.rotation = globed::normalizeAngle(obj->getRotation());
 
-        out.isVisible = obj->isVisible() && !obj->getUserFlag("hidden"_spr);
+        out.isVisible = obj->isVisible();
         out.isLookingLeft = obj->m_isGoingLeft;
         out.isUpsideDown = obj->m_isUpsideDown;
         out.isDashing = obj->m_isDashing;

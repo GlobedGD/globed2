@@ -208,9 +208,8 @@ void VisualPlayer::updateFromData(
     // determine if the player should be visible
     bool shouldMiscVisible = !forceHideEverything;
     bool shouldIconVisible = !forceHideIcon && !forceHideEverything;
-    bool hasHiddenFlag = this->getUserFlag("hidden"_spr);
 
-    if ((state.isPracticing && g_settings.hidePracticing) || hasHiddenFlag) {
+    if (state.isPracticing && g_settings.hidePracticing) {
         shouldIconVisible = shouldMiscVisible = false;
     } else if (!forceHideEverything) {
         shouldMiscVisible = ((data.isVisible && !m_playingDeathEffect) || g_settings.forceVisibility) && isNearby;
@@ -1004,7 +1003,7 @@ void VisualPlayer::setVisible(bool vis) {
 }
 
 bool VisualPlayer::isVisible() {
-    return m_bVisible && !this->getUserFlag("hidden"_spr);
+    return m_bVisible;
 }
 
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
