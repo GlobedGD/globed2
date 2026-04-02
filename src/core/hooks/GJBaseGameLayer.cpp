@@ -412,6 +412,13 @@ void GlobedGJBGL::onQuit() {
 void GlobedGJBGL::selPreUpdate(float tsdt) {
     auto& fields = *m_fields.self();
 
+    // if we are disconnected from the game server, and no (re)connection is being attempted,
+    // set active to false
+    auto& nm = NetworkManagerImpl::get();
+    if (fields.m_active && nm.getConnState(true) == qn::ConnectionState::Disconnected) {
+        fields.m_active = false;
+    }
+
     if (!fields.m_active) {
         if (!fields.m_cleanedUp) {
             this->cleanupGlobedAdditions();
@@ -420,13 +427,6 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
         return;
     }
 
-    // if we are disconnected from the game server, and no (re)connection is being attempted,
-    // set active to false
-    auto& nm = NetworkManagerImpl::get();
-    if (nm.getConnState(true) == qn::ConnectionState::Disconnected) {
-        fields.m_active = false;
-        return;
-    }
 
     auto& pcm = PlayerCacheManager::get();
     auto& rm = RoomManager::get();
