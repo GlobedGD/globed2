@@ -24,13 +24,22 @@ public:
     bool isPlaying() const override;
 
     virtual void setPaused(bool paused);
+    virtual void onUpdate() override;
 
 protected:
+    struct PlayOptions {
+        bool paused;
+    };
+
     FMOD::Sound* m_sound = nullptr;
     FMOD::Channel* m_channel = nullptr;
+    std::optional<PlayOptions> m_delayedPlay;
 
     static Result<FMOD::Sound*> createRaw(const char* path);
     Result<> play(bool paused);
+    Result<> play(PlayOptions options);
+    Result<> doPlay(PlayOptions options);
+    bool isReady();
 };
 
 }

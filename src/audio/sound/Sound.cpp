@@ -73,7 +73,9 @@ void Sound::rawSetVolume(float volume) {
 }
 
 bool Sound::isPlaying() const {
-    if (!m_channel || !m_sound) return false;
+    if (!m_sound) return false;
+    // if the sound hasn't loaded yet, return true so it's not cancelled
+    if (!m_channel) return m_delayedPlay.has_value();
 
     bool playing = false;
     if (FMOD_OK != m_channel->isPlaying(&playing)) {
@@ -100,27 +102,61 @@ Result<FMOD::Sound*> Sound::createRaw(const char* path) {
     FMOD::Sound* sound = nullptr;
     auto e = system()->createSound(
         utils::string::pathToString(path).c_str(),
-        FMOD_DEFAULT,
+        FMOD_DEFAULT | FMOD_NONBLOCKING,
         nullptr,
         &sound
     );
     FMOD_UNWRAP(e);
+
     return Ok(sound);
 }
 
 Result<> Sound::play(bool paused) {
+    return this->play(PlayOptions{paused});
+}
+
+Result<> Sound::play(PlayOptions options) {
+    if (!this->isReady()) {
+        m_delayedPlay = options;
+        return Ok();
+    }
+
+    return this->doPlay(options);
+}
+
+bool Sound::isReady() {
+    FMOD_OPENSTATE ostate;
+    unsigned int percent;
+    bool starving, busy;
+    m_sound->getOpenState(&ostate, &percent, &starving, &busy);
+
+    return ostate == FMOD_OPENSTATE_READY;
+}
+
+Result<> Sound::doPlay(PlayOptions options) {
     GLOBED_ASSERT(!m_channel && "Sound is already playing");
 
     FMOD_UNWRAP(
-        system()->playSound(m_sound, nullptr, paused, &m_channel)
+        system()->playSound(m_sound, nullptr, options.paused, &m_channel)
     );
 
     m_channel->setVolumeRamp(true);
     return Ok();
 }
 
+void Sound::onUpdate() {
+    if (m_delayedPlay && this->isReady()) {
+        if (auto e = this->doPlay(*m_delayedPlay).err()) {
+            log::warn("Failed to play sound (delayed play): {}", e);
+        }
+        m_delayedPlay.reset();
+    }
+}
 
 void Sound::setPaused(bool paused) {
+    if (m_delayedPlay) {
+        m_delayedPlay->paused = paused;
+    }
     if (m_channel) {
         m_channel->setPaused(paused);
     }

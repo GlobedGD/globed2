@@ -77,6 +77,8 @@ void VoiceStream::stop() {
 }
 
 void VoiceStream::onUpdate() {
+    PlayerSound::onUpdate();
+
     auto now = Instant::now();
     auto elapsed = now.durationSince(m_lastUpdate);
     m_lastUpdate = now;
