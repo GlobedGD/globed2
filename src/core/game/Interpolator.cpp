@@ -357,7 +357,7 @@ static inline void lerpPlayer(
 
     // detect death
     if (state.lastDeathCount != older.deathCount) {
-        log::debug("Detected death for {} ({} -> {}), real: {})", older.accountId, older.deathCount, state.lastDeathCount, older.isLastDeathReal);
+        log::trace("Detected death for {} ({} -> {}), real: {})", older.accountId, older.deathCount, state.lastDeathCount, older.isLastDeathReal);
         state.lastDeathCount = older.deathCount;
         state.lastDeath = PlayerDeath { older.isLastDeathReal };
     }

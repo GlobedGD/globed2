@@ -672,6 +672,7 @@ void GlobedGJBGL::sendPlayerData(const PlayerState& state) {
 
     // extend the radius to the proximity limit
     camRadius = std::max(camRadius, PROXIMITY_AUDIO_LIMIT);
+    log::trace("camera: center {}, radius {}", camCenter, camRadius);
 
     nm.sendPlayerState(state, toRequest, camCenter, camRadius);
 }
