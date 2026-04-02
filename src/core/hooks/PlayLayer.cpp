@@ -105,7 +105,9 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
         bool oldReset = overrideReset ? gameVariable(GameVariable::FastRespawn) : false;
         bool realDeath = m_fields->m_setupWasCompleted && obj != m_anticheatSpike;
         bool originalTestMode = m_isTestMode;
-        m_isTestMode = this->asBase()->isSafeMode();
+        if (this->asBase()->isSafeMode()) {
+            m_isTestMode = true;
+        }
 
         // g_diedAt = asp::time::Instant::now();
 
