@@ -13,6 +13,7 @@ namespace globed {
 
 bool APSSettingsPopup::init(APSPlayLayer* layer) {
     if (!Popup::init(340.f, 230.f)) return false;
+    GLOBED_ASSERT(layer);
 
     this->setTitle("Switcheroo Settings");
 
@@ -22,6 +23,8 @@ bool APSSettingsPopup::init(APSPlayLayer* layer) {
     m_btn = Build(ButtonSprite::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.8f))
         .scale(0.85f)
         .intoMenuItem([this] {
+            GLOBED_ASSERT(m_layer); // how tf was this null for 1 person
+
             this->startGame();
             m_btn->removeFromParent();
         })
