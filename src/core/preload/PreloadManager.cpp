@@ -8,6 +8,15 @@
 #include "FileUtils.hpp"
 #include "Item.hpp"
 
+#ifdef _WIN32
+# include <Windows.h>
+#elif defined __APPLE__
+# include <mach/mach.h>
+# include <unistd.h>
+#else
+# include <sys/sysinfo.h>
+#endif
+
 using namespace asp::time;
 using namespace geode::prelude;
 namespace fs = std::filesystem;
@@ -19,12 +28,22 @@ PreloadManager::PreloadManager() {}
 PreloadManager::~PreloadManager() {}
 
 void PreloadManager::initLoadQueue() {
+    auto memoryMb = this->getAvailableMemory() / 1024 / 1024;
+    bool enoughForIcons = memoryMb && memoryMb > 500;
+    bool enoughForEffects = memoryMb && memoryMb > 900;
+    log::info("PreloadManager: available system memory: {} MB", memoryMb);
+
     auto gm = globed::singleton<GameManager>();
     m_totalCount = 0;
     m_loadQueue.clear();
 
     if (!globed::setting<bool>("core.preload.enabled") || Mod::get()->getSettingValue<bool>("force-no-preload")) {
         // preloading is disabled, skip everything
+        return;
+    }
+
+    if (!enoughForIcons) {
+        log::warn("PreloadManager: skipping all preloading due to low system memory ({} MB free)", memoryMb);
         return;
     }
 
@@ -36,8 +55,13 @@ void PreloadManager::initLoadQueue() {
     }
 
     // Death effects
-    // skip if death effects are disabled in settings or default death effects are enabled
+    // skip if death effects are disabled in settings / default death effects are enabled / low on ram
     bool loadDe = globed::setting<bool>("core.player.death-effects") && !globed::setting<bool>("core.player.default-death-effects");
+    if (loadDe && !enoughForEffects) {
+        log::warn("PreloadManager: skipping death effects due to low system memory ({} MB free)", memoryMb);
+        loadDe = false;
+    }
+
     if (!m_deathEffectsLoaded && loadDe) {
         m_deathEffectsLoaded = true;
 
@@ -156,6 +180,12 @@ void PreloadManager::loadNextBatch(PreloadOptions options) {
     }
 
     this->doLoadBatch(std::move(items), std::move(options));
+
+
+    auto memoryMb = this->getAvailableMemory() / 1024 / 1024;
+    bool enoughForIcons = memoryMb > 500;
+    bool enoughForEffects = memoryMb > 1000;
+    log::info("PreloadManager: available system memory: {} MB", memoryMb);
 }
 
 void PreloadManager::loadEverything(PreloadOptions options) {
@@ -604,6 +634,38 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
         return this->fullPathForFilename(input, true);
     }
     return {};
+}
+
+uint64_t PreloadManager::getAvailableMemory() {
+#ifdef _WIN32
+    MEMORYSTATUSEX memInfo;
+    memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+    GlobalMemoryStatusEx(&memInfo);
+    return static_cast<uint64_t>(memInfo.ullAvailPhys);
+
+#elif defined __APPLE__
+    mach_port_t host_port = mach_host_self();
+    vm_statistics64_data_t vm_stats;
+    mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
+    uint64_t pageSize = sysconf(_SC_PAGESIZE);
+
+    if (host_statistics64(host_port, HOST_VM_INFO64, (host_info64_t)&vm_stats, &count) == KERN_SUCCESS) {
+        return static_cast<uint64_t>(vm_stats.free_count + vm_stats.external_page_count) * pageSize;
+    }
+#else
+    std::ifstream meminfo("/proc/meminfo");
+    std::string linestr;
+    while (std::getline(meminfo, linestr)) {
+        std::string_view line{linestr};
+        if (line.starts_with("MemAvailable:")) {
+            line.remove_prefix(14);
+            line = line.substr(line.find_first_not_of(" \t"));
+            line = line.substr(0, line.find_first_of(" \t"));
+            return utils::numFromString<uint64_t>(line).unwrapOr(0) * 1024;
+        }
+    }
+#endif
+    return 0;
 }
 
 TextureQuality getTextureQuality() {

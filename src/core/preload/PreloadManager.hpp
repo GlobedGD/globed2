@@ -75,6 +75,9 @@ public:
 
     gd::string fullPathForFilename(std::string_view input, bool ignoreSuffix = false);
 
+    /// Returns available system memory in bytes
+    uint64_t getAvailableMemory();
+
 private:
     friend class SingletonBase;
     friend struct PreloadItemState;
