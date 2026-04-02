@@ -18,7 +18,7 @@ import tomllib
 import sys
 
 # minimum required geode, can be a commit or a tag
-REQUIRED_GEODE_VERSION = "v5.4.0"
+REQUIRED_GEODE_VERSION = "v5.5.0"
 XTLS_VERSION = "12695fe"
 QUNET_VERSION = "5fe5ab9"
 SERVER_SHARED_VERSION = "2ed1844"
@@ -364,7 +364,8 @@ def main(build: Build):
     assert build.mod_json is not None # for type checkers
 
     # allow any geode version, since we earlier verified that it's at least the required version
-    build.relax_geode_requirement()
+    if not gc.release:
+        build.relax_geode_requirement()
 
     build.add_geode_dep("geode.node-ids", ">=v1.10.0")
     build.add_geode_dep("prevter.imageplus", {

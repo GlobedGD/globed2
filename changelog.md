@@ -1,3 +1,14 @@
+## v2.0.1
+
+* Improve performance by a lot, especially on levels with lots of people
+* Fix progress being tracked on startpos levels when connected to Globed (sorry!)
+* Fix crash on MacOS when connecting to the server
+* Fix lagspikes when emote SFX are played, by loading sounds asynchronously
+* Fix main menu looking messy on more squary aspect ratios like 4:3
+* Fix wss:// connections being non functional and ws:// connnections using wrong port
+* Skip preloading icons and/or death effects if the device is low on free memory
+* Add `globed::api::game::updateLocalIcons()`
+
 ## v2.0.0
 
 After a long pause, this update brings <cg>an entire rewrite</c> to Globed and the server, and we are very happy to finally release it.
