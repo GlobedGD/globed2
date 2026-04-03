@@ -15,7 +15,7 @@
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/game/SettingCache.hpp>
 
-#include <Geode/modify/PlayerObject.hpp>
+#include <Geode/modify/GameObject.hpp>
 #include <Geode/loader/GameEvent.hpp>
 #include <Geode/loader/SettingV3.hpp>
 #include <Geode/utils/VMTHookManager.hpp>
