@@ -1,3 +1,8 @@
+## v2.0.2
+
+* Fix emote SFX being loud for a millisecond when played
+* Fix players (including own player) completely disappearing on Android
+
 ## v2.0.1
 
 * Improve performance by a lot, especially on levels with lots of people
