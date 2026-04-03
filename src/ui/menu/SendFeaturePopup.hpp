@@ -16,7 +16,7 @@ private:
     CCMenu* m_menu;
     CCMenuItemSpriteExtra* m_diffButton = nullptr;
 
-    FeatureTier m_chosenTier;
+    FeatureTier m_chosenTier = FeatureTier::Normal;
 
     bool init(GJGameLevel* level);
     void createDiffButton();
