@@ -107,7 +107,7 @@ bool EmoteListPopup::init() {
                 "Emotes Guide",
 
                 "Show an <co>emote</c> above your icon for other players to see in-game. Some emotes have <cp>sound effects</c> when used.\n\n"
-                "PC users can set up to four <cy>favorite emotes</c> and quickly use them with <cg>hotkeys</c>.\n\n"
+                "PC users can set up to eight <cy>favorite emotes</c> and quickly use them with <cg>hotkeys</c>.\n\n"
                 "There is a <cj>small cooldown</c> between sending emotes to prevent <cr>spam</c>."
             );
         })
