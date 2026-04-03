@@ -2,6 +2,7 @@
 
 * Fix emote SFX being loud for a millisecond when played
 * Fix players (including own player) completely disappearing on Android
+* Fix iOS robot animation crash
 
 ## v2.0.1
 
