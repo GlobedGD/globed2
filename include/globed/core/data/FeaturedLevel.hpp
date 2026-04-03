@@ -4,7 +4,7 @@
 namespace globed {
 
 enum class FeatureTier : uint8_t {
-    Normal = 0,
+    Featured = 0,
     Epic = 1,
     Outstanding = 2,
 };

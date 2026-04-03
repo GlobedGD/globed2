@@ -88,11 +88,11 @@ void SendFeaturePopup::createDiffButton() {
         .scale(1.25f)
         .intoMenuItem([this] {
             switch (m_chosenTier) {
-                case FeatureTier::Normal: m_chosenTier = FeatureTier::Epic; break;
+                case FeatureTier::Featured: m_chosenTier = FeatureTier::Epic; break;
                 case FeatureTier::Epic: m_chosenTier = FeatureTier::Outstanding; break;
                 case FeatureTier::Outstanding:
                 default:
-                    m_chosenTier = FeatureTier::Normal; break;
+                    m_chosenTier = FeatureTier::Featured; break;
             }
 
             this->createDiffButton();

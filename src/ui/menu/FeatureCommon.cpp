@@ -72,7 +72,7 @@ CCSprite* createRatingSprite(FeatureTier tier) {
         case FeatureTier::Outstanding:
             spr = CCSprite::create("icon-outstanding.png"_spr);
             break;
-        case FeatureTier::Normal:
+        case FeatureTier::Featured:
         default:
             spr = CCSprite::create("icon-featured.png"_spr);
             break;

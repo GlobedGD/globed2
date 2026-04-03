@@ -31,6 +31,8 @@ bool FeaturedListLayer::init() {
         .pos(LIST_SIZE.width / 2.f, LIST_SIZE.height / 2.f + 133.f)
         .parent(m_list);
 
+    // log::debug("size {}", m_list->getScrollLayer()->getContentSize());
+
     // refresh button
     Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
         .intoMenuItem([this](auto) {
@@ -204,6 +206,7 @@ void FeaturedListLayer::refreshLevels(bool force) {
 }
 
 void FeaturedListLayer::update(float dt) {
+
     for (auto cell : m_list->iter<HookedLevelCell>()) {
         auto it = m_playerCounts.find(cell->m_level->m_levelID);
 
@@ -221,11 +224,14 @@ void FeaturedListLayer::startLoading() {
     m_nextButton->setVisible(false);
     m_refreshBtn->setVisible(false);
 
+
+    // log::debug("size 1 {}", m_list->getScrollLayer()->getContentSize());
     cue::resetNode(m_circle);
     m_circle = cue::LoadingCircle::create(true);
     m_circle->addToLayer(m_list);
 
     m_list->clear();
+    // log::debug("size 2 {}", m_list->getScrollLayer()->getContentSize());
 }
 
 void FeaturedListLayer::stopLoading() {

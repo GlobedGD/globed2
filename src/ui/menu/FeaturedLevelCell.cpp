@@ -19,7 +19,7 @@ public:
         // balls
     }
 
-    FeatureTier rateTier = FeatureTier::Normal;
+    FeatureTier rateTier = FeatureTier::Featured;
 
     NewLevelCell(char const* p0, float p1, float p2) : LevelCell(p0, p1, p2) {}
 };
