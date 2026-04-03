@@ -1319,13 +1319,13 @@ bool GlobedGJBGL::playSelfFavoriteEmote(uint32_t which) {
     return false;
 }
 
-struct GLOBED_MODIFY_ATTR PlayerObjectHideHook : public Modify<PlayerObjectHideHook, PlayerObject> {
+struct GLOBED_MODIFY_ATTR PlayerObjectHideHook : public Modify<PlayerObjectHideHook, GameObject> {
     struct Fields {
         bool m_realVisibility = true;
         bool m_customVisibility = true;
     };
 
-    static PlayerObjectHideHook* get(PlayerObject* ptr) {
+    static PlayerObjectHideHook* get(GameObject* ptr) {
         return static_cast<PlayerObjectHideHook*>(ptr);
     }
 
@@ -1336,16 +1336,15 @@ struct GLOBED_MODIFY_ATTR PlayerObjectHideHook : public Modify<PlayerObjectHideH
         }
 
         fields.m_customVisibility = !hide;
-        PlayerObject::setVisible(fields.m_realVisibility); // refresh
+        GameObject::setVisible(fields.m_realVisibility); // refresh
     }
 
     void setVisible(bool visible) {
         auto& fields = *m_fields.self();
         fields.m_realVisibility = visible;
         bool vis = visible && fields.m_customVisibility;
-        log::info("this = {}, real = {}, custom = {}, vis = {}", this, fields.m_realVisibility, fields.m_customVisibility, vis);
 
-        PlayerObject::setVisible(vis);
+        GameObject::setVisible(vis);
 
         // TODO: trails n particles ?
 
