@@ -1152,7 +1152,10 @@ void GlobedGJBGL::resumeVoiceRecording() {
 
     auto& am = AudioManager::get();
     if (am.getDeafen()) {
-        globed::toastError("(Globed) Cannot talk while deafened!");
+        auto kbs = Mod::get()->getSettingValue<std::vector<Keybind>>("keybind-deafen");
+        std::string kbstr = kbs.empty() ? "<unbound>" : kbs[0].toString();
+
+        globed::toastError("(Globed) Cannot talk while deafened, press {} to undeafen", kbstr);
         return;
     }
 
