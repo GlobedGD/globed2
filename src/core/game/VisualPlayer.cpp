@@ -9,6 +9,7 @@
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/NameLabel.hpp>
 #include <ui/game/EmoteBubble.hpp>
+#include <Geode/modify/CCScheduler.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -21,6 +22,7 @@ using namespace geode::prelude;
 namespace globed {
 
 static auto& g_settings = CachedSettings::get();
+static bool g_changeParticleUpdate = false;
 
 static inline bool lerpDebug() {
     static bool val = Loader::get()->getLaunchFlag("globed/core.dev.lerp-debug");
@@ -66,9 +68,12 @@ VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
 bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
     this->setTag(VISUAL_PLAYER_TAG);
 
+    g_changeParticleUpdate = true;
     if (!PlayerObject::init(1, 1, gameLayer, gameLayer->m_objectLayer, !gameLayer->m_isEditor)) {
+        g_changeParticleUpdate = false;
         return false;
     }
+    g_changeParticleUpdate = false;
 
     // override some things, because gd sets those from gamemanager
     m_shipStreakType = ShipStreak::None;
@@ -1025,6 +1030,14 @@ VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp,
     delete ret;
     return nullptr;
 }
+
+struct GLOBED_MODIFY_ATTR VPSchedulerHook : Modify<VPSchedulerHook, CCScheduler> {
+    void scheduleUpdateForTarget(CCObject* target, int priority, bool paused) {
+        if (g_changeParticleUpdate) priority = 0;
+
+        CCScheduler::scheduleUpdateForTarget(target, priority, paused);
+    }
+};
 
 }
 
