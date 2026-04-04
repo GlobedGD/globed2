@@ -924,7 +924,7 @@ void GlobedGJBGL::cancelLocalRespawn() {
 
 void GlobedGJBGL::causeLocalRespawn(bool full) {
     auto pl = this->asPlayLayer();
-    if (!pl) return;
+    if (!pl || !pl->getParent()) return;
 
     auto scene = CCScene::get();
     auto pauselayer = scene->getChildByType<PauseLayer>(0);
