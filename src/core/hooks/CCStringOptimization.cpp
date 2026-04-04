@@ -28,9 +28,11 @@ struct GLOBED_MODIFY_ATTR CCStringHook : Modify<CCStringHook, CCString> {
         return utils::numFromString<int>(m_sString).unwrapOr(0);
     }
 
+#ifndef GEODE_IS_IOS
     unsigned int uintValue() {
         return utils::numFromString<unsigned int>(m_sString).unwrapOr(0);
     }
+#endif
 };
 
 GLOBED_DLL bool CCString_initHook(CCString* self, const char* format, va_list args) {
