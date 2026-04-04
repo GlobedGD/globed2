@@ -15,7 +15,7 @@ static CCString* createCCString(std::string_view data) {
 
 struct GLOBED_MODIFY_ATTR SAMHook : Modify<SAMHook, SpriteAnimationManager> {
     static void onModify(auto& self) {
-        self.setHookPriority("SpriteAnimationManager::storeAnimation", Priority::Replace);
+        (void) self.setHookPriority("SpriteAnimationManager::storeAnimation", Priority::Replace);
     }
 
     void storeAnimation(CCAnimate* action, CCAnimate* frames, gd::string name, int priority, spriteMode type, CCSpriteFrame* first) {

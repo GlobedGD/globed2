@@ -1,0 +1,77 @@
+// Copied from blaze
+
+#include <Geode/Geode.hpp>
+#include <globed/prelude.hpp>
+
+using namespace geode::prelude;
+
+namespace globed {
+
+GLOBED_DLL bool CCString_initHook(CCString* self, const char* format, va_list args) {
+    // Note: this size excludes the null terminator
+    int size = std::vsnprintf(nullptr, 0, format, args);
+
+#ifndef GEODE_IS_ANDROID
+    self->m_sString = gd::string(size, '\0');
+#else
+    self->m_sString = gd::string(std::string(size, '\0'));
+#endif
+
+    std::vsnprintf(self->m_sString.data(), self->m_sString.size() + 1, format, args);
+
+    return true;
+}
+
+GLOBED_DLL CCString* CCString_createHook(const char* format, ...) {
+    auto ret = new CCString();
+    ret->autorelease();
+
+    va_list args;
+    va_start(args, format);
+    CCString_initHook(ret, format, args);
+    va_end(args);
+
+    return ret;
+}
+
+}
+
+$execute {
+    void* initAddr = nullptr;
+    void* createAddr = nullptr;
+
+#ifdef GEODE_IS_WINDOWS
+    initAddr = reinterpret_cast<void*>(GetProcAddress(
+        GetModuleHandleW(L"libcocos2d.dll"),
+        "?initWithFormatAndValist@CCString@cocos2d@@AEAA_NPEBDPEAD@Z")
+    );
+#elif defined(GEODE_IS_ANDROID)
+    void* handle = dlopen("libcocos2dcpp.so", RTLD_LAZY | RTLD_NOLOAD);
+    initAddr = dlsym(handle, "_ZN7cocos2d8CCString23initWithFormatAndValistEPKcSt9__va_list");
+#elif defined(GEODE_IS_MACOS)
+    // static_assert(GEODE_COMP_GD_VERSION == 22081, "Update function");
+    // // createWithFormat
+    // createAddr = (void*)(geode::base::get() +
+    //     GEODE_ARM_MAC(0x6b2048)
+    //     GEODE_INTEL_MAC(0x7ab580)
+    // );
+
+    // tulip does not support var arg functions and macos has the init inlined :)
+    return;
+#else
+    static_assert(GEODE_COMP_GD_VERSION == 22081, "Update function");
+    // initWithFormatAndValist ios
+    initAddr = (void*)(geode::base::get() + 0x268bbc);
+#endif
+
+    if (initAddr) {
+        auto hook = Mod::get()->hook(
+            initAddr,
+            &globed::CCString_initHook,
+            "cocos2d::CCString::initWithFormatAndValist"
+        ).unwrap();
+        hook->setPriority(Priority::Replace);
+    } else {
+        log::error("Failed to find CCString function to hook");
+    }
+}
