@@ -1356,11 +1356,13 @@ struct GLOBED_MODIFY_ATTR PlayerObjectHideHook : public Modify<PlayerObjectHideH
     }
 
     void setVisible(bool visible) {
-        auto& fields = *m_fields.self();
-        fields.m_realVisibility = visible;
-        bool vis = visible && fields.m_customVisibility;
+        if (m_objectID == 0 && typeinfo_cast<PlayerObject*>(this)) {
+            auto& fields = *m_fields.self();
+            fields.m_realVisibility = visible;
+            visible = visible && fields.m_customVisibility;
+        }
 
-        GameObject::setVisible(vis);
+        GameObject::setVisible(visible);
 
         // TODO: trails n particles ?
 
