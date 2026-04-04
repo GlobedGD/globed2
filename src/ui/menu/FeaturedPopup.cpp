@@ -34,7 +34,7 @@ bool FeaturedPopup::init() {
                 "Featured Guide",
 
                 "Globed will occasionally <co>highlight Platformer levels</c> made by the community.\n\n"
-                "There are three feature types:\n<cl>Normal</c>, <cj>Epic</c>, and <cg>Outstanding</c>."
+                "There are three feature types:\n<cl>Featured</c>, <cj>Epic</c>, and <cg>Outstanding</c>."
             );
         })
         .parent(blCornerMenu);
