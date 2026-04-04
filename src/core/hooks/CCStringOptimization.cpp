@@ -1,11 +1,37 @@
 // Copied from blaze
 
 #include <Geode/Geode.hpp>
+#include <Geode/modify/CCString.hpp>
 #include <globed/prelude.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
+
+struct GLOBED_MODIFY_ATTR CCStringHook : Modify<CCStringHook, CCString> {
+    static void onModify(auto& self) {
+        (void) self.setHookPriority("cocos2d::CCString::floatValue", Priority::Replace);
+        (void) self.setHookPriority("cocos2d::CCString::doubleValue", Priority::Replace);
+        (void) self.setHookPriority("cocos2d::CCString::intValue", Priority::Replace);
+        (void) self.setHookPriority("cocos2d::CCString::uintValue", Priority::Replace);
+    }
+
+    float floatValue() {
+        return utils::numFromString<float>(m_sString).unwrapOr(0.0f);
+    }
+
+    double doubleValue() {
+        return utils::numFromString<double>(m_sString).unwrapOr(0.0);
+    }
+
+    int intValue() {
+        return utils::numFromString<int>(m_sString).unwrapOr(0);
+    }
+
+    unsigned int uintValue() {
+        return utils::numFromString<unsigned int>(m_sString).unwrapOr(0);
+    }
+};
 
 GLOBED_DLL bool CCString_initHook(CCString* self, const char* format, va_list args) {
     // check if we can cheat, %i is a very common case and we can do it faster
