@@ -3,6 +3,7 @@
 #include <globed/core/RoomManager.hpp>
 #include <globed/audio/AudioManager.hpp>
 #include <globed/util/gd.hpp>
+#include <core/preload/PreloadManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/game/SettingCache.hpp>
@@ -43,8 +44,7 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
 
     m_data = DEFAULT_PLAYER_DATA;
 
-    m_player1->updateDisplayData();
-    m_player2->updateDisplayData();
+    this->beginDataUpdate();
 
     bool plat = gameLayer->m_level->isPlatformer();
 
@@ -70,6 +70,47 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
             }
         }
     }
+}
+
+void RemotePlayer::beginDataUpdate() {
+    m_player1->updateDisplayData();
+    m_player2->updateDisplayData();
+
+    // immediately update icons if everything has been preloaded or if they are defaults
+    bool preloaded = PreloadManager::get().iconsLoaded();
+    if (preloaded || !m_dataInitialized) {
+        this->doUpdateIcons();
+        return;
+    }
+
+    PreloadOptions options{};
+    options.blocking = false;
+    options.completionCallback = [wself = this->weak_from_this()] {
+        auto self = wself.lock();
+        if (!self) return;
+
+        log::trace("finished load async for {}", self->displayData().accountId);
+        self->doUpdateIcons();
+    };
+
+    log::trace("load async for {}", this->displayData().accountId);
+    auto& pm = PreloadManager::get();
+    pm.loadIcons(this->displayData().icons, std::move(options));
+}
+
+void RemotePlayer::doUpdateIcons() {
+    m_player1->updateIcons();
+    m_player2->updateIcons();
+
+    cue::Icons ci{
+        .id = m_data.icons.cube,
+        .color1 = m_data.icons.color1.asIdx(),
+        .color2 = m_data.icons.color2.asIdx(),
+        .glowColor = m_data.icons.glowColor.asIdx(),
+    };
+
+    if (m_progArrow) m_progArrow->updateIcons(ci);
+    if (m_progIcon) m_progIcon->updateIcons(ci);
 }
 
 RemotePlayer::~RemotePlayer() {
@@ -195,18 +236,7 @@ void RemotePlayer::initData(const PlayerDisplayData& data, bool outdated, uint16
     m_dataOutdated = outdated;
     m_data = data;
 
-    m_player1->updateDisplayData();
-    m_player2->updateDisplayData();
-
-    cue::Icons ci{
-        .id = data.icons.cube,
-        .color1 = data.icons.color1.asIdx(),
-        .color2 = data.icons.color2.asIdx(),
-        .glowColor = data.icons.glowColor.asIdx(),
-    };
-
-    if (m_progArrow) m_progArrow->updateIcons(ci);
-    if (m_progIcon) m_progIcon->updateIcons(ci);
+    this->beginDataUpdate();
 }
 
 void RemotePlayer::updateTeam(uint16_t teamId) {

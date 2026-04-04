@@ -65,6 +65,9 @@ private:
     std::optional<uint16_t> m_teamId;
     std::shared_ptr<VoiceStream> m_voiceStream;
     std::shared_ptr<std::mutex> m_voiceStreamMutex;
+
+    void beginDataUpdate();
+    void doUpdateIcons();
 };
 
 }

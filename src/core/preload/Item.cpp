@@ -145,7 +145,7 @@ void PreloadItemState::enqueueImageDecode() {
                 m_height = hdr.height;
 
                 m_state.store(ItemStateEnum::HeaderParsed, relaxed);
-                m_batchState->callback(*this);
+                m_batchState->callback(*m_batchState, *this);
                 return;
             } else {
                 log::warn("Failed to decode PNG header: {}, falling back to full decode", res.unwrapErr());
@@ -165,7 +165,7 @@ void PreloadItemState::enqueueImageDecode() {
         m_width = m_image->m_nWidth;
         m_height = m_image->m_nHeight;
         m_state.store(ItemStateEnum::ImageReady, relaxed);
-        m_batchState->callback(*this);
+        m_batchState->callback(*m_batchState, *this);
     });
 }
 
@@ -251,7 +251,7 @@ void PreloadItemState::enqueuePBOCreation() {
                 m_state.store(ItemStateEnum::Failed, relaxed);
 
                 // enqueue cleanup
-                m_batchState->callback(*this);
+                m_batchState->callback(*m_batchState, *this);
                 return;
             }
 
@@ -265,7 +265,7 @@ void PreloadItemState::enqueuePBOCreation() {
 
         // notify main thread
         m_state.store(ItemStateEnum::PboReady, relaxed);
-        m_batchState->callback(*this);
+        m_batchState->callback(*m_batchState, *this);
     });
 }
 
@@ -308,62 +308,161 @@ void PreloadItemState::finalizePBO() {
 void PreloadItemState::initSpriteFrames() {
     auto& pool = *m_batchState->pool;
     pool.pushTask([this] {
-        auto texCache = CCTextureCache::get();
-        auto sfCache = CCSpriteFrameCache::get();
-        auto& pm = PreloadManager::get();
+        bool success = this->_initSpriteFramesInner();
 
-        if (!m_texture) {
-            log::warn("PreloadManager: texture for '{}' was not initialized", m_path);
-            return;
+        if (success) {
+            m_batchState->completedItems.fetch_add(1, relaxed);
+            m_state.store(ItemStateEnum::Ready, relaxed);
+        } else {
+            m_state.store(ItemStateEnum::Failed, relaxed);
         }
 
-        StringBuffer<> buf;
-        buf.append("{}.plist", m_item.image);
-        auto plistKey = buf.view();
+        m_batchState->callback(*m_batchState, *this);
+    });
+}
 
-        if (pm.m_loadedFrames.lock()->contains(plistKey)) {
-            log::info("PreloadManager: already loaded frames for '{}', skipping", m_item.image);
-            return;
-        }
+bool PreloadItemState::_initSpriteFramesInner() {
+    auto texCache = CCTextureCache::get();
+    auto sfCache = CCSpriteFrameCache::get();
+    auto& pm = PreloadManager::get();
 
-        auto pathsv = std::string_view{m_path};
-        StringBuffer<> fullPlistPath;
-        fullPlistPath.append(pathsv.substr(0, pathsv.find(".png")));
-        fullPlistPath.append(".plist");
+    if (!m_texture) {
+        log::warn("PreloadManager: texture for '{}' was not initialized", m_path);
+        return false;
+    }
 
-        // read the file
-        unsigned long plistSize;
-        auto plistData = getFileDataThreadSafe(fullPlistPath.c_str(), "rb", &plistSize);
-        if (!plistData || plistSize == 0) {
-            log::info("PreloadManager: can't load {}, trying slower fallback option", fullPlistPath.view());
-            std::string_view attemptedPlist = relativizeIconPath(fullPlistPath.view());
-            auto fallbackPath = pm.fullPathForFilename(attemptedPlist);
-            plistData = getFileDataThreadSafe(fallbackPath.c_str(), "rb", &plistSize);
-        }
+    StringBuffer<> buf;
+    buf.append("{}.plist", m_item.image);
+    auto plistKey = buf.view();
 
-        if (!plistData || plistSize == 0) {
-            log::warn("PreloadManager: failed to find the plist for '{}'", m_path);
+    if (pm.m_loadedFrames.lock()->contains(plistKey)) {
+        log::info("PreloadManager: already loaded frames for '{}', skipping", m_item.image);
+        return true;
+    }
 
-            // remove the texture from the cache
-            auto _lock = cocosLock.lock();
-            texCache->m_pTextures->removeObjectForKey(m_path);
-            return;
-        }
+    auto pathsv = std::string_view{m_path};
+    StringBuffer<> fullPlistPath;
+    fullPlistPath.append(pathsv.substr(0, pathsv.find(".png")));
+    fullPlistPath.append(".plist");
 
-        auto res = parseSpriteFrames(plistData.get(), plistSize);
-        if (!res) {
-            log::warn("PreloadManager: failed to parse sprite frames for '{}': {}", m_path, res.unwrapErr());
-            return;
-        }
-        auto spf = std::move(res).unwrap();
+    // read the file
+    unsigned long plistSize;
+    auto plistData = getFileDataThreadSafe(fullPlistPath.c_str(), "rb", &plistSize);
+    if (!plistData || plistSize == 0) {
+        log::info("PreloadManager: can't load {}, trying slower fallback option", fullPlistPath.view());
+        std::string_view attemptedPlist = relativizeIconPath(fullPlistPath.view());
+        auto fallbackPath = pm.fullPathForFilename(attemptedPlist);
+        plistData = getFileDataThreadSafe(fallbackPath.c_str(), "rb", &plistSize);
+    }
 
+    if (!plistData || plistSize == 0) {
+        log::warn("PreloadManager: failed to find the plist for '{}'", m_path);
+
+        // remove the texture from the cache
         auto _lock = cocosLock.lock();
-        addSpriteFrames(*spf, m_texture);
+        texCache->m_pTextures->removeObjectForKey(m_path);
+        return false;
+    }
 
-        pm.m_loadedFrames.lock()->insert(std::string{plistKey});
+    auto res = parseSpriteFrames(plistData.get(), plistSize);
+    if (!res) {
+        log::warn("PreloadManager: failed to parse sprite frames for '{}': {}", m_path, res.unwrapErr());
+        return false;
+    }
+    auto spf = std::move(res).unwrap();
 
-        m_state.store(ItemStateEnum::Ready, relaxed);
-        m_batchState->completedItems.fetch_add(1, relaxed);
+    auto _lock = cocosLock.lock();
+    addSpriteFrames(*spf, m_texture);
+
+    pm.m_loadedFrames.lock()->insert(std::string{plistKey});
+    return true;
+}
+
+bool BatchPreloadState::doProcess() {
+    if (auto req = texRequests.tryPop()) {
+        auto& item = **req;
+
+        // if the item is not ready/failed, immediately advance the state machine forward
+        auto state = item.state();
+        if (state != ItemStateEnum::TextureReady && state != ItemStateEnum::Failed && state != ItemStateEnum::Ready) {
+            if (!item.process()) {
+                // not yet ready, result will be posted to main thread later
+                return true;
+            }
+
+            // item state has changed now!
+            state = item.state();
+        }
+
+        switch (state) {
+            // ready state - nothing to do
+            case ItemStateEnum::Ready: break;
+
+            // failure state - perform cleanup and skip
+            case ItemStateEnum::Failed: {
+                item.cleanup();
+            } break;
+
+            // textureready state - the texture is complete, enqueue sprite frames task which is the final one
+            case ItemStateEnum::TextureReady: {
+                this->insertTexture(item);
+                item.process();
+            } break;
+
+            // this should not be reached in practice, process() must only return true if the state is ready or failed
+            default: GLOBED_ASSERT(false);
+        }
+
+        return true;
+    }
+    return false;
+}
+
+void BatchPreloadState::insertTexture(PreloadItemState& state) {
+    auto texCache = CCTextureCache::get();
+    texCache->m_pTextures->setObject(state.m_texture, state.m_path);
+
+    // cache the icon texture
+    PreloadManager::get().setCachedIcon((int) state.m_item.iconType, state.m_item.iconId, state.m_texture);
+    this->initedTextures.fetch_add(1, std::memory_order::relaxed);
+}
+
+bool BatchPreloadState::hasFinished() {
+    if (texRequests.empty()) {
+        // verify that everything is truly done
+        for (auto& item : this->items) {
+            auto st = item.state();
+            if (st != ItemStateEnum::Ready && st != ItemStateEnum::Failed) {
+                log::debug("PreloadManager: looping again, item {} is incomplete (state {})", item.m_path, (int)st);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+void BatchPreloadState::cleanup() {
+    this->items.clear();
+    this->callback = {};
+    this->completionCallback = {};
+}
+
+void BatchPreloadState::maybeEnqueueMTUpdate() {
+    // queue update if not queued already
+    if (this->queuedUpdate.exchange(true, std::memory_order::acq_rel)) return;
+
+    geode::queueInMainThread([self = this->sharedFromThis()] {
+        self->queuedUpdate.store(false, std::memory_order::release);
+        while (self->doProcess());
+
+        // check if we have finished
+        if (self->hasFinished()) {
+            self->completionCallback();
+            self->cleanup();
+        }
     });
 }
 

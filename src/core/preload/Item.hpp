@@ -81,16 +81,28 @@ struct PreloadItemState {
     void finalizePBO();
 
     void initSpriteFrames();
+    bool _initSpriteFramesInner();
 };
 
-using MtTextureCallback = geode::CopyableFunction<void(PreloadItemState&)>;
+using MtTextureCallback = geode::CopyableFunction<void(BatchPreloadState&, PreloadItemState&)>;
 
-struct BatchPreloadState {
+struct BatchPreloadState : asp::EnableSharedFromThis<BatchPreloadState> {
     std::vector<PreloadItemState> items;
     std::atomic<size_t> itemCount{0};
+    std::atomic<size_t> initedTextures{0};
     std::atomic<size_t> completedItems{0};
     MtTextureCallback callback;
+    geode::Function<void()> completionCallback;
+    asp::Channel<PreloadItemState*> texRequests;
     asp::ThreadPool* pool;
+    std::atomic<bool> queuedUpdate{false};
+
+    // Call this from main thread only!
+    bool doProcess();
+    void insertTexture(PreloadItemState& state);
+    bool hasFinished();
+    void cleanup();
+    void maybeEnqueueMTUpdate();
 };
 
 }

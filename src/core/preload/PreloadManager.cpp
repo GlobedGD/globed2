@@ -23,7 +23,24 @@ namespace fs = std::filesystem;
 
 namespace globed {
 
-PreloadManager::PreloadManager() {}
+static std::optional<PreloadItem> makeIconItem(IconType type, int id) {
+    auto gm = globed::singleton<GameManager>();
+    auto sheetName = gm->sheetNameForIcon(id, (int)type);
+    if (sheetName.empty()) {
+        return std::nullopt;
+    }
+
+    return PreloadItem{
+        asp::BoxedString{std::string_view{sheetName}},
+        type, id
+    };
+}
+
+PreloadManager::PreloadManager() {
+    // spawn ncpus+4 threads, since some amount of time is spent on blocking (mutexes, file io)
+    size_t workers = std::thread::hardware_concurrency() + 4;
+    m_threadPool = std::make_unique<asp::ThreadPool>(workers);
+}
 
 PreloadManager::~PreloadManager() {}
 
@@ -75,15 +92,9 @@ void PreloadManager::initLoadQueue() {
 
         auto addIcons = [&](IconType ty, int startIdx, int endIdx) {
             for (int id = startIdx; id <= endIdx; id++) {
-                auto sheetName = gm->sheetNameForIcon(id, (int)ty);
-                if (sheetName.empty()) {
-                    continue;
+                if (auto item = makeIconItem(ty, id)) {
+                    m_loadQueue.emplace_back(std::move(*item));
                 }
-
-                m_loadQueue.emplace_back(
-                    asp::BoxedString{std::string_view{sheetName}},
-                    ty, id
-                );
             }
         };
 
@@ -198,6 +209,28 @@ void PreloadManager::loadEverything(PreloadOptions options) {
     this->doLoadBatch(std::move(items), std::move(options));
 }
 
+void PreloadManager::loadIcons(PlayerIconData icons, PreloadOptions options) {
+    std::vector<PreloadItem> items;
+
+    auto doPush = [&](IconType ty, int id) {
+        if (auto item = makeIconItem(ty, id)) {
+            items.emplace_back(std::move(*item));
+        }
+    };
+
+    doPush(IconType::Cube, icons.cube);
+    doPush(IconType::Ship, icons.ship);
+    doPush(IconType::Ball, icons.ball);
+    doPush(IconType::Ufo, icons.ufo);
+    doPush(IconType::Wave, icons.wave);
+    doPush(IconType::Robot, icons.robot);
+    doPush(IconType::Spider, icons.spider);
+    doPush(IconType::Swing, icons.swing);
+    doPush(IconType::Jetpack, icons.jetpack);
+
+    this->doLoadBatch(std::move(items), std::move(options));
+}
+
 void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions options) {
     if (!m_sstate.initialized) {
         this->initSessionState();
@@ -210,71 +243,63 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
     auto texCache = CCTextureCache::get();
     auto sfCache = CCSpriteFrameCache::get();
     auto fu = CCFileUtils::get();
-    auto& pool = *m_sstate.threadPool;
+    auto& pool = *m_threadPool;
 
-    asp::Channel<PreloadItemState*> texRequests;
     auto state = asp::make_shared<BatchPreloadState>();
     state->pool = &pool;
+    state->completionCallback = std::move(options.completionCallback);
     state->items.reserve(items.size());
-
-    // this guards every insertion into `state->items`. we don't wrap the entire vector into a mutex,
-    // since actual accesses are safe because only one thread owns a specific item at any given time and there can be no reallocs.
-    static asp::SpinLock<> itemsLock;
 
     if (options.blocking) {
         // if blocking, push into the channel to be handled later
-        state->callback = [&texRequests](auto& tex) {
-            texRequests.push(&tex);
+        state->callback = [](auto& state, auto& tex) {
+            state.texRequests.push(&tex);
         };
     } else {
-        utils::terminate("non-blocking preload is not yet implemented");
-        // // otherwise offload stuff to qimt
-        // onImageLoaded = [](size_t idx, CCImage* image) {
-        //     FunctionQueue::get().queue([=] {
-
-        //     });
-        // };
+        // otherwise offload stuff to qimt
+        state->callback = [](auto& state, auto& tex) {
+            state.texRequests.push(&tex);
+            state.maybeEnqueueMTUpdate();
+        };
     }
 
-    // Stage 1 - enqueue all items for loading, in parallel
+    // Stage 1 - enqueue all items for loading
     for (auto& item : items) {
-        pool.pushTask([&item, state, texCache, this] {
-            StringBuffer<512> buf;
+        StringBuffer<512> buf;
 
-            if (item.image.ends_with(".png")) {
-                buf.append("{}", item.image);
-            } else {
-                buf.append("{}.png", item.image);
-            }
+        if (item.image.ends_with(".png")) {
+            buf.append("{}", item.image);
+        } else {
+            buf.append("{}.png", item.image);
+        }
 
-            auto fullPath = this->fullPathForFilename(buf.view());
-            if (fullPath.empty()) {
-                log::warn("PreloadManager: could not find full path for '{}'", item.image);
-                return;
-            }
+        auto fullPath = this->fullPathForFilename(buf.view());
+        if (fullPath.empty()) {
+            log::warn("PreloadManager: could not find full path for '{}'", item.image);
+            continue;
+        }
 
-            if (texCache->m_pTextures->objectForKey(fullPath)) {
-                // texture already loaded, skip
-                return;
-            }
+        if (texCache->m_pTextures->objectForKey(fullPath)) {
+            // texture already loaded, skip
+            continue;
+        }
 
-            auto _lock = itemsLock.lock();
-            auto& itemState = state->items.emplace_back(std::move(item), std::move(fullPath), state);
-            _lock.unlock();
+        auto& itemState = state->items.emplace_back(std::move(item), std::move(fullPath), state);
 
-            state->callback(itemState);
-            state->itemCount.fetch_add(1, std::memory_order::relaxed);
-        });
+        state->callback(*state, itemState);
+        state->itemCount.fetch_add(1, std::memory_order::relaxed);
     }
 
-    size_t initedTextures = 0;
-    auto insertTexture = [&](auto& state) {
-        texCache->m_pTextures->setObject(state.m_texture, state.m_path);
+    log::debug("PreloadManager: {} items were enqueued", state->itemCount.load(std::memory_order::relaxed));
 
-        // cache the icon texture
-        this->setCachedIcon((int) state.m_item.iconType, state.m_item.iconId, state.m_texture);
-        initedTextures++;
-    };
+    // if non-blocking, that's all we need to do
+    if (!options.blocking) {
+        // if we have not queued any textures, call the callback anyway to finish
+        if (state->itemCount.load(std::memory_order::relaxed) == 0) {
+            state->maybeEnqueueMTUpdate();
+        }
+        return;
+    }
 
     auto drawFrame = [&] {
         auto dir = CCDirector::get();
@@ -295,7 +320,7 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
                 .batchLoaded = completed,
                 .batchSize = itemCount,
             };
-            log::debug("PreloadManager: dispatching batch progress: {} textures, {} complete, {} in total", initedTextures, completed, itemCount);
+            log::debug("PreloadManager: dispatching batch progress: {} textures, {} complete, {} in total", state->initedTextures.load(std::memory_order::relaxed), completed, itemCount);
 
             if (options.callback(prog)) {
                 drawFrame();
@@ -316,43 +341,8 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
         if (completed >= nextProgressWhenTex) {
             tryDispatchProgress(completed);
         }
-        if (!timePostTextures && initedTextures >= state->itemCount.load(std::memory_order::relaxed)) {
-            timePostTextures = Instant::now();
-        }
 
-        if (auto req = texRequests.tryPop()) {
-            auto& item = **req;
-
-            // if the item is not ready/failed, immediately advance the state machine forward
-            auto state = item.state();
-            if (state != ItemStateEnum::TextureReady && state != ItemStateEnum::Failed && state != ItemStateEnum::Ready) {
-                if (!item.process()) {
-                    // not yet ready, result will be posted to main thread later
-                    continue;
-                }
-
-                // item state has changed now!
-                state = item.state();
-            }
-
-            switch (state) {
-                // failure state - perform cleanup and skip
-                case ItemStateEnum::Failed: {
-                    item.cleanup();
-                } break;
-
-                // textureready state - the texture is complete, enqueue sprite frames task which is the final one
-                case ItemStateEnum::TextureReady: {
-                    insertTexture(item);
-                    item.process();
-                } break;
-
-                // this should not be reached in practice, process() must only return true if the state is ready or failed
-                default: GLOBED_ASSERT(false);
-            }
-
-            continue;
-        }
+        state->doProcess();
 
         if (pool.isDoingWork()) {
             // draw frames manually every once in a while, so the game doesn't appear frozen
@@ -361,17 +351,7 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
             }
             std::this_thread::yield();
             continue;
-        } else if (texRequests.empty()) {
-            // verify that everything is truly done
-            for (auto& item : state->items) {
-                auto st = item.state();
-                if (st != ItemStateEnum::Ready && st != ItemStateEnum::Failed) {
-                    log::debug("PreloadManager: looping again, item {} is incomplete (state {})", item.m_path, (int)st);
-                    std::this_thread::yield();
-                    continue;
-                }
-            }
-
+        } else if (state->hasFinished()) {
             break;
         }
     }
@@ -394,9 +374,7 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
     );
 
     // free everything, since we have a ref cycle in items
-    if (options.blocking) {
-        state->items.clear();
-    }
+    state->cleanup();
 }
 
 void PreloadManager::initSessionState() {
@@ -437,9 +415,6 @@ void PreloadManager::initSessionState() {
         idx++;
     }
 
-    // spawn ncpus+4 threads, since some amount of time is spent on blocking (mutexes, file io)
-    size_t workers = std::thread::hardware_concurrency() + 4;
-    m_sstate.threadPool = std::make_unique<asp::ThreadPool>(workers);
     m_sstate.initialized = true;
     m_sstate.postInitTime = Instant::now();
 
@@ -468,12 +443,16 @@ void PreloadManager::enterContext(PreloadContext context) {
         m_loadedIcons.clear();
     }
 
+    if (context == PreloadContext::Loading || context == PreloadContext::Reloading) {
+        // reset session state when reloading
+        this->resetState();
+    }
+
     this->initLoadQueue();
 }
 
 void PreloadManager::exitContext() {
     m_context = PreloadContext::None;
-    this->resetState();
 }
 
 size_t PreloadManager::getLoadedCount() {
@@ -486,6 +465,10 @@ size_t PreloadManager::getTotalCount() {
 
 bool PreloadManager::deathEffectsLoaded() {
     return m_deathEffectsLoaded;
+}
+
+bool PreloadManager::iconsLoaded() {
+    return m_iconsLoaded;
 }
 
 CCTexture2D* PreloadManager::getCachedIcon(int iconType, int id) {

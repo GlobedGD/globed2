@@ -758,7 +758,9 @@ void VisualPlayer::updateDisplayData() {
     if (g_settings.defaultDeathEffects) {
         ddata.icons.deathEffect = DEFAULT_DEATH;
     }
+}
 
+void VisualPlayer::updateIcons() {
     this->updatePlayerObjectIcons(false);
     this->updateIconType(m_prevMode);
 }
