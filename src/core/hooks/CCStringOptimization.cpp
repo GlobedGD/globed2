@@ -8,6 +8,19 @@ using namespace geode::prelude;
 namespace globed {
 
 GLOBED_DLL bool CCString_initHook(CCString* self, const char* format, va_list args) {
+    // check if we can cheat, %i is a very common case and we can do it faster
+    std::string_view fmtstr{format};
+    if (fmtstr == "%i" || fmtstr == "%d") {
+        va_list tmplist;
+        va_copy(tmplist, args);
+        int value = va_arg(tmplist, int);
+        va_end(tmplist);
+
+        fmt::format_int f{value};
+        self->m_sString = gd::string(f.data(), f.size());
+        return true;
+    }
+
     // Note: this size excludes the null terminator
     int size = std::vsnprintf(nullptr, 0, format, args);
 
