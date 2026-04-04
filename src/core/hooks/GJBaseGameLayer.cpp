@@ -266,8 +266,9 @@ void GlobedGJBGL::setupListeners() {
         this->onLevelDataReceived(message);
     });
 
-    fields.m_voiceListener = nm.listen<msg::VoiceBroadcastMessage>([this](const msg::VoiceBroadcastMessage& message) {
+    fields.m_voiceListener = nm.listen<msg::VoiceBroadcastMessage>([this](msg::VoiceBroadcastMessage& message) {
         this->onVoiceDataReceived(message);
+        return ListenerResult::Stop;
     });
 
     fields.m_quickChatListener = nm.listen<msg::QuickChatBroadcastMessage>([this](const msg::QuickChatBroadcastMessage& message) {
@@ -1229,7 +1230,7 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
     }
 }
 
-void GlobedGJBGL::onVoiceDataReceived(const msg::VoiceBroadcastMessage& message) {
+void GlobedGJBGL::onVoiceDataReceived(msg::VoiceBroadcastMessage& message) {
     auto& fields = *m_fields.self();
     if (!fields.m_active) return;
 
@@ -1243,7 +1244,7 @@ void GlobedGJBGL::onVoiceDataReceived(const msg::VoiceBroadcastMessage& message)
     }
 
     if (auto player = this->getPlayer(message.accountId)) {
-        player->playVoiceData(message.frame);
+        player->playVoiceData(std::move(message.frame));
     }
 }
 

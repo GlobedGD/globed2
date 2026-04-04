@@ -189,7 +189,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
 
 private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);
-    void onVoiceDataReceived(const msg::VoiceBroadcastMessage& message);
+    void onVoiceDataReceived(msg::VoiceBroadcastMessage& message);
     void onQuickChatReceived(int accountId, uint32_t quickChatId);
     void onJoinSessionFailed(const msg::JoinSessionFailedMessage& message);
 

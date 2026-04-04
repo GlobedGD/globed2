@@ -7,8 +7,8 @@
 namespace globed {
 
 template <typename T>
-struct MessageEvent : geode::ThreadSafeGlobalEvent<MessageEvent<T>, bool(const T&), bool> {
-    using geode::ThreadSafeGlobalEvent<MessageEvent<T>, bool(const T&), bool>::ThreadSafeGlobalEvent;
+struct MessageEvent : geode::ThreadSafeGlobalEvent<MessageEvent<T>, bool(T&), bool> {
+    using geode::ThreadSafeGlobalEvent<MessageEvent<T>, bool(T&), bool>::ThreadSafeGlobalEvent;
 };
 
 template <typename T>

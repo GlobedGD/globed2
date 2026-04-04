@@ -19,6 +19,8 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
     m_state.accountId = playerId;
     m_localPlayer = playerId == 0;
 
+    auto start = asp::Instant::now();
+
     Build<VisualPlayer>::create(gameLayer, this, m_parentNode, false, playerId == 0)
         .id(fmt::format("{}-player1", playerId).c_str())
         .parent(m_parentNode)
@@ -30,6 +32,11 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
         .parent(m_parentNode)
         .visible(false)
         .store(m_player2);
+
+    auto taken = start.elapsed();
+    log::trace("Created player in {}", taken);
+#ifdef GLOBED_DEBUG
+#endif
 
     m_player1->m_remotePlayer = this;
     m_player2->m_remotePlayer = this;
@@ -260,7 +267,7 @@ VoiceStream* RemotePlayer::getVoiceStream() {
     return m_voiceStream.get();
 }
 
-void RemotePlayer::playVoiceData(const EncodedAudioFrame& frame) {
+void RemotePlayer::playVoiceData(EncodedAudioFrame frame) {
     if (!m_voiceStream) {
         auto res = VoiceStream::create(weak_from_this());
         if (!res) {
@@ -275,12 +282,24 @@ void RemotePlayer::playVoiceData(const EncodedAudioFrame& frame) {
         if (m_player1->m_isEditor) {
             m_voiceStream->setGlobal(true);
         }
+
+        m_voiceStreamMutex = std::make_shared<std::mutex>();
     }
 
-    auto res = m_voiceStream->writeData(frame);
-    if (!res) {
-        log::warn("Failed to play voice data for player {}: {}", m_state.accountId, res.unwrapErr());
-    }
+    // audio decoding can be expensive, so offload it to a blocking task
+    arc::spawnBlocking<void>([
+        stream = m_voiceStream,
+        mtx = m_voiceStreamMutex,
+        frame = std::move(frame),
+        id = m_state.accountId
+    ] mutable {
+        std::lock_guard lock(*mtx);
+        auto res = stream->writeData(frame);
+        if (!res) {
+            log::warn("Failed to play voice data for player {}: {}", id, res.unwrapErr());
+        }
+    });
+
 }
 
 }

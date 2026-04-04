@@ -42,7 +42,7 @@ public:
     bool isPlayer2Culled();
 
     void stopVoiceStream();
-    void playVoiceData(const EncodedAudioFrame& frame);
+    void playVoiceData(EncodedAudioFrame frame);
     VoiceStream* getVoiceStream();
 
 private:
@@ -64,6 +64,7 @@ private:
     Ref<ProgressIcon> m_progIcon = nullptr;
     std::optional<uint16_t> m_teamId;
     std::shared_ptr<VoiceStream> m_voiceStream;
+    std::shared_ptr<std::mutex> m_voiceStreamMutex;
 };
 
 }
