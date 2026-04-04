@@ -267,6 +267,9 @@ void GlobedGJBGL::setupListeners() {
     });
 
     fields.m_voiceListener = nm.listen<msg::VoiceBroadcastMessage>([this](msg::VoiceBroadcastMessage& message) {
+        // skip processing completely if voice chat is off
+        if (!g_settings.voiceChat) return ListenerResult::Propagate;
+
         this->onVoiceDataReceived(message);
         return ListenerResult::Stop;
     });
