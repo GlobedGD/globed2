@@ -475,7 +475,7 @@ void BatchPreloadState::maybeEnqueueMTUpdate() {
 
         // check if we have finished
         if (self->hasFinished()) {
-            self->completionCallback();
+            if (self->completionCallback) self->completionCallback();
             self->cleanup();
         }
     });
