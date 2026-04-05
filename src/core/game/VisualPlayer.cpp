@@ -754,10 +754,6 @@ void VisualPlayer::updateDisplayData() {
     if (ddata.specialUserData) {
         m_nameLabel->updateWithRoles(*ddata.specialUserData);
     }
-
-    if (g_settings.defaultDeathEffects) {
-        ddata.icons.deathEffect = DEFAULT_DEATH;
-    }
 }
 
 void VisualPlayer::updateIcons() {

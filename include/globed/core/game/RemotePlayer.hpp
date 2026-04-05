@@ -50,6 +50,7 @@ private:
 
     PlayerState m_state;
     PlayerDisplayData m_data;
+    std::optional<PlayerIconData> m_pendingIcons;
     bool m_dataInitialized = false;
     bool m_dataOutdated = false;
     bool m_forceHide = false;

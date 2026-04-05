@@ -16,9 +16,12 @@ using namespace geode::prelude;
 
 namespace globed {
 
+static auto& g_settings = CachedSettings::get();
+
 RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode) : m_state(), m_parentNode(parentNode) {
     m_state.accountId = playerId;
     m_localPlayer = playerId == 0;
+    m_data = DEFAULT_PLAYER_DATA;
 
     auto start = asp::Instant::now();
 
@@ -41,8 +44,6 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
 
     m_player1->m_remotePlayer = this;
     m_player2->m_remotePlayer = this;
-
-    m_data = DEFAULT_PLAYER_DATA;
 
     this->beginDataUpdate();
 
@@ -83,6 +84,10 @@ void RemotePlayer::beginDataUpdate() {
         return;
     }
 
+    // otherwise, temporarily replace icons with defaults and start loading in background
+    m_pendingIcons = m_data.icons;
+    m_data.icons = DEFAULT_PLAYER_DATA.icons;
+
     PreloadOptions options{};
     options.blocking = false;
     options.completionCallback = [wself = this->weak_from_this()] {
@@ -90,12 +95,14 @@ void RemotePlayer::beginDataUpdate() {
         if (!self) return;
 
         log::trace("finished load async for {}", self->displayData().accountId);
+        self->m_data.icons = *self->m_pendingIcons;
+        self->m_pendingIcons.reset();
         self->doUpdateIcons();
     };
 
     log::trace("load async for {}", this->displayData().accountId);
     auto& pm = PreloadManager::get();
-    pm.loadIcons(this->displayData().icons, std::move(options));
+    pm.loadIcons(*m_pendingIcons, std::move(options));
 }
 
 void RemotePlayer::doUpdateIcons() {
@@ -235,6 +242,10 @@ void RemotePlayer::initData(const PlayerDisplayData& data, bool outdated, uint16
     m_dataInitialized = true;
     m_dataOutdated = outdated;
     m_data = data;
+
+    if (g_settings.defaultDeathEffects) {
+        m_data.icons.deathEffect = DEFAULT_DEATH;
+    }
 
     this->beginDataUpdate();
 }

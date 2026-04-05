@@ -8,6 +8,9 @@
 #include "FileUtils.hpp"
 #include "Item.hpp"
 
+#include <Geode/modify/CCTextureCache.hpp>
+#include <Geode/modify/CCSpriteFrameCache.hpp>
+
 #ifdef _WIN32
 # include <Windows.h>
 #elif defined __APPLE__
@@ -113,6 +116,11 @@ void PreloadManager::initLoadQueue() {
         addIcons(IconType::Spider, 1, 69);
         addIcons(IconType::Swing, 1, 43);
         addIcons(IconType::Jetpack, 1, 8);
+
+        for (size_t i = 1; i <= 7; i++ ){
+            m_loadQueue.emplace_back(asp::BoxedString::format("streak_{:02}_001.png", i));
+            m_loadQueue.back().iconType = IconType::Special;
+        }
     }
 
     m_totalCount = m_loadQueue.size();
@@ -278,6 +286,7 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
 
         if (texCache->m_pTextures->objectForKey(fullPath)) {
             // texture already loaded, skip
+            // log::trace("PreloadManager: texture already loaded for '{}', skipping", fullPath);
             continue;
         }
 
@@ -480,6 +489,7 @@ CCTexture2D* PreloadManager::getCachedIcon(int iconType, int id) {
 
 void PreloadManager::setCachedIcon(int iconType, int id, cocos2d::CCTexture2D* texture) {
     auto key = std::make_pair(iconType, id);
+    // log::debug("Added {} {} to cache", iconType, id);
     m_loadedIcons[key] = texture;
 }
 
@@ -659,5 +669,38 @@ TextureQuality getTextureQuality() {
     }
 }
 
-
 }
+
+// class $modify(CCTextureCache) {
+//     CCTexture2D* addImage(const char* path, bool p) {
+//         auto time = Instant::now();
+//         auto res = CCTextureCache::addImage(path, p);
+//         auto taken = time.elapsed();
+//         if (taken.micros() > 100) {
+//             log::debug("addImage('{}') took {}", path, taken);
+//             auto pl = PlayLayer::get();
+//             std::string_view p{path};
+//             if (p.contains("icons/") && pl && pl->m_player2 && !p.ends_with("01-uhd.png") && !p.ends_with("00-uhd.png") && !p.ends_with("00.png") && !p.ends_with("01.png")) {
+//                 __debugbreak();
+//             }
+//         }
+
+//         return res;
+//     }
+// };
+
+// class $modify(CCSpriteFrameCache) {
+//     void addSpriteFramesWithFile(const char* path) {
+//         auto time = Instant::now();
+//         CCSpriteFrameCache::addSpriteFramesWithFile(path);
+//         auto taken = time.elapsed();
+//         if (taken.micros() > 100) {
+//             log::debug("sprite frames('{}') took {}", path, taken);
+//             auto pl = PlayLayer::get();
+//             std::string_view p{path};
+//             if (p.contains("icons/") && pl && pl->m_player2 && !p.ends_with("01-uhd.plist") && !p.ends_with("00-uhd.plist") && !p.ends_with("00.plist") && !p.ends_with("01.plist")) {
+//                 __debugbreak();
+//             }
+//         }
+//     }
+// };
