@@ -60,19 +60,6 @@ bool PreloadItemState::process() {
     switch (this->state()) {
         case ItemStateEnum::Initial: {
             g_opengl.initialize();
-
-            // Initial state - load image into memory, then kick off the decoding process in a thread
-            unsigned long filesize = 0;
-            auto buffer = getFileDataThreadSafe(m_path.c_str(), "rb", &filesize);
-
-            if (!buffer || filesize == 0) {
-                m_state.store(ItemStateEnum::Failed, relaxed);
-                log::warn("PreloadManager: could not read file '{}'", m_path);
-                return false;
-            }
-
-            m_rawData = std::move(buffer);
-            m_rawSize = filesize;
             this->enqueueImageDecode();
         } break;
 
@@ -119,6 +106,13 @@ bool PreloadItemState::process() {
     return false;
 }
 
+void PreloadItemState::invokeCallback(std::optional<ItemStateEnum> state ) {
+    if (state) {
+        m_state.store(*state, relaxed);
+    }
+    m_batchState->callback(*m_batchState, *this);
+}
+
 void PreloadItemState::cleanup() {
     // here we do cleanup that must happen on main thread
     if (m_tex) {
@@ -135,6 +129,19 @@ void PreloadItemState::enqueueImageDecode() {
     auto& pool = *m_batchState->pool;
 
     pool.pushTask([this] {
+        // Initial state - load image into memory, then kick off the decoding process
+        unsigned long filesize = 0;
+        auto buffer = getFileDataThreadSafe(m_path.c_str(), "rb", &filesize);
+
+        if (!buffer || filesize == 0) {
+            log::warn("PreloadManager: could not read file '{}'", m_path);
+            this->invokeCallback(ItemStateEnum::Failed);
+            return;
+        }
+
+        m_rawData = std::move(buffer);
+        m_rawSize = filesize;
+
         if (canDirectDecode()) {
             // try to parse only the image header, this may not work if imageplus is outdated
             auto res = imgp::decode::pngHeader(m_rawData.get(), m_rawSize);
@@ -144,8 +151,7 @@ void PreloadItemState::enqueueImageDecode() {
                 m_width = hdr.width;
                 m_height = hdr.height;
 
-                m_state.store(ItemStateEnum::HeaderParsed, relaxed);
-                m_batchState->callback(*m_batchState, *this);
+                this->invokeCallback(ItemStateEnum::HeaderParsed);
                 return;
             } else {
                 log::warn("Failed to decode PNG header: {}, falling back to full decode", res.unwrapErr());
@@ -156,16 +162,15 @@ void PreloadItemState::enqueueImageDecode() {
         if (!m_image->initWithImageData(m_rawData.get(), m_rawSize, cocos2d::CCImage::kFmtPng)) {
             m_image = nullptr;
             m_rawData.reset();
-            m_state.store(ItemStateEnum::Failed, relaxed);
             log::warn("PreloadManager: failed to init image '{}'", m_path);
+            this->invokeCallback(ItemStateEnum::Failed);
             return;
         }
 
         m_rawData.reset();
         m_width = m_image->m_nWidth;
         m_height = m_image->m_nHeight;
-        m_state.store(ItemStateEnum::ImageReady, relaxed);
-        m_batchState->callback(*m_batchState, *this);
+        this->invokeCallback(ItemStateEnum::ImageReady);
     });
 }
 
@@ -248,10 +253,7 @@ void PreloadItemState::enqueuePBOCreation() {
 
             if (!res) {
                 log::warn("PreloadManager: failed to decode image '{}' into PBO: {}", m_path, res.unwrapErr());
-                m_state.store(ItemStateEnum::Failed, relaxed);
-
-                // enqueue cleanup
-                m_batchState->callback(*m_batchState, *this);
+                this->invokeCallback(ItemStateEnum::Failed);
                 return;
             }
 
@@ -264,8 +266,7 @@ void PreloadItemState::enqueuePBOCreation() {
         }
 
         // notify main thread
-        m_state.store(ItemStateEnum::PboReady, relaxed);
-        m_batchState->callback(*m_batchState, *this);
+        this->invokeCallback(ItemStateEnum::PboReady);
     });
 }
 
@@ -312,11 +313,9 @@ void PreloadItemState::initSpriteFrames() {
 
         if (result == SpriteFrameInitResult::Success) {
             m_batchState->completedItems.fetch_add(1, relaxed);
-            m_state.store(ItemStateEnum::Ready, relaxed);
-            m_batchState->callback(*m_batchState, *this);
+            this->invokeCallback(ItemStateEnum::Ready);
         } else if (result == SpriteFrameInitResult::Failed) {
-            m_state.store(ItemStateEnum::Failed, relaxed);
-            m_batchState->callback(*m_batchState, *this);
+            this->invokeCallback(ItemStateEnum::Failed);
         }
         // don't invoke callback if pending
     });
@@ -386,8 +385,7 @@ SpriteFrameInitResult PreloadItemState::_initSpriteFramesInner() {
         addSpriteFrames(*spf, m_texture);
 
         // done!
-        m_state.store(ItemStateEnum::Ready, relaxed);
-        m_batchState->callback(*m_batchState, *this);
+        this->invokeCallback(ItemStateEnum::Ready);
     });
 
     return SpriteFrameInitResult::Pending;

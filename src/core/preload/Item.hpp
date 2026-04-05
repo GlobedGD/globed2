@@ -79,6 +79,7 @@ struct PreloadItemState {
     }
 
     bool process();
+    void invokeCallback(std::optional<ItemStateEnum> state = std::nullopt);
     void cleanup();
     void enqueueImageDecode();
 
