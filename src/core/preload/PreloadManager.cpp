@@ -247,6 +247,7 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
 
     auto state = asp::make_shared<BatchPreloadState>();
     state->pool = &pool;
+    state->m_blockingMode = options.blocking;
     state->completionCallback = std::move(options.completionCallback);
     state->items.reserve(items.size());
 

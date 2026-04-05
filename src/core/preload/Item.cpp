@@ -308,27 +308,28 @@ void PreloadItemState::finalizePBO() {
 void PreloadItemState::initSpriteFrames() {
     auto& pool = *m_batchState->pool;
     pool.pushTask([this] {
-        bool success = this->_initSpriteFramesInner();
+        auto result = this->_initSpriteFramesInner();
 
-        if (success) {
+        if (result == SpriteFrameInitResult::Success) {
             m_batchState->completedItems.fetch_add(1, relaxed);
             m_state.store(ItemStateEnum::Ready, relaxed);
-        } else {
+            m_batchState->callback(*m_batchState, *this);
+        } else if (result == SpriteFrameInitResult::Failed) {
             m_state.store(ItemStateEnum::Failed, relaxed);
+            m_batchState->callback(*m_batchState, *this);
         }
-
-        m_batchState->callback(*m_batchState, *this);
+        // don't invoke callback if pending
     });
 }
 
-bool PreloadItemState::_initSpriteFramesInner() {
+SpriteFrameInitResult PreloadItemState::_initSpriteFramesInner() {
     auto texCache = CCTextureCache::get();
     auto sfCache = CCSpriteFrameCache::get();
     auto& pm = PreloadManager::get();
 
     if (!m_texture) {
         log::warn("PreloadManager: texture for '{}' was not initialized", m_path);
-        return false;
+        return SpriteFrameInitResult::Failed;
     }
 
     StringBuffer<> buf;
@@ -337,7 +338,7 @@ bool PreloadItemState::_initSpriteFramesInner() {
 
     if (pm.m_loadedFrames.lock()->contains(plistKey)) {
         log::info("PreloadManager: already loaded frames for '{}', skipping", m_item.image);
-        return true;
+        return SpriteFrameInitResult::Success;
     }
 
     auto pathsv = std::string_view{m_path};
@@ -359,23 +360,37 @@ bool PreloadItemState::_initSpriteFramesInner() {
         log::warn("PreloadManager: failed to find the plist for '{}'", m_path);
 
         // remove the texture from the cache
-        auto _lock = cocosLock.lock();
-        texCache->m_pTextures->removeObjectForKey(m_path);
-        return false;
+        geode::queueInMainThread([path = m_path] {
+            CCTextureCache::get()->m_pTextures->removeObjectForKey(path);
+        });
+        return SpriteFrameInitResult::Failed;
     }
 
     auto res = parseSpriteFrames(plistData.get(), plistSize);
     if (!res) {
         log::warn("PreloadManager: failed to parse sprite frames for '{}': {}", m_path, res.unwrapErr());
-        return false;
+        return SpriteFrameInitResult::Failed;
     }
-    auto spf = std::move(res).unwrap();
-
-    auto _lock = cocosLock.lock();
-    addSpriteFrames(*spf, m_texture);
 
     pm.m_loadedFrames.lock()->insert(std::string{plistKey});
-    return true;
+
+    if (m_batchState->m_blockingMode) {
+        // blocking mode, just add sprite frames here under the mutex
+        auto lock = cocosLock.lock();
+        addSpriteFrames(*std::move(res).unwrap(), m_texture);
+        return SpriteFrameInitResult::Success;
+    }
+
+    // non-blocking mode, using a mutex will be unsafe due to main thread still being alive, so qimt
+    geode::queueInMainThread([this, spf = std::move(res).unwrap()] {
+        addSpriteFrames(*spf, m_texture);
+
+        // done!
+        m_state.store(ItemStateEnum::Ready, relaxed);
+        m_batchState->callback(*m_batchState, *this);
+    });
+
+    return SpriteFrameInitResult::Pending;
 }
 
 bool BatchPreloadState::doProcess() {

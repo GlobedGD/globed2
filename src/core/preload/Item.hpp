@@ -48,6 +48,12 @@ enum class ItemStateEnum : uint8_t {
     Failed,
 };
 
+enum class SpriteFrameInitResult {
+    Success,
+    Pending,
+    Failed,
+};
+
 struct PreloadItemState {
     PreloadItem m_item;
     gd::string m_path;
@@ -81,7 +87,7 @@ struct PreloadItemState {
     void finalizePBO();
 
     void initSpriteFrames();
-    bool _initSpriteFramesInner();
+    SpriteFrameInitResult _initSpriteFramesInner();
 };
 
 using MtTextureCallback = geode::CopyableFunction<void(BatchPreloadState&, PreloadItemState&)>;
@@ -96,6 +102,7 @@ struct BatchPreloadState : asp::EnableSharedFromThis<BatchPreloadState> {
     asp::Channel<PreloadItemState*> texRequests;
     asp::ThreadPool* pool;
     std::atomic<bool> queuedUpdate{false};
+    bool m_blockingMode = false;
 
     // Call this from main thread only!
     bool doProcess();
