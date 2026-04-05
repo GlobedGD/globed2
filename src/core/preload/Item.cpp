@@ -382,7 +382,7 @@ SpriteFrameInitResult PreloadItemState::_initSpriteFramesInner() {
     }
 
     // non-blocking mode, using a mutex will be unsafe due to main thread still being alive, so qimt
-    geode::queueInMainThread([this, spf = std::move(res).unwrap()] {
+    geode::queueInMainThread([this, spf = std::move(res).unwrap(), pdata = std::move(plistData)] {
         addSpriteFrames(*spf, m_texture);
 
         // done!
