@@ -190,13 +190,9 @@ void PreloadManager::loadNextBatch(PreloadOptions options) {
         m_loadQueue.clear();
     }
 
+    log::trace("PreloadManager: loadNextBatch: loading {} items", items.size());
+
     this->doLoadBatch(std::move(items), std::move(options));
-
-
-    auto memoryMb = this->getAvailableMemory() / 1024 / 1024;
-    bool enoughForIcons = memoryMb > 500;
-    bool enoughForEffects = memoryMb > 1000;
-    log::info("PreloadManager: available system memory: {} MB", memoryMb);
 }
 
 void PreloadManager::loadEverything(PreloadOptions options) {
@@ -205,6 +201,8 @@ void PreloadManager::loadEverything(PreloadOptions options) {
 
     items.insert(items.end(), std::make_move_iterator(m_loadQueue.begin()), std::make_move_iterator(m_loadQueue.end()));
     m_loadQueue.clear();
+
+    log::trace("PreloadManager: loadEverything: loading {} items", items.size());
 
     this->doLoadBatch(std::move(items), std::move(options));
 }
@@ -237,8 +235,6 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
     }
 
     auto timeBegin = Instant::now();
-
-    log::debug("PreloadManager: loading batch of {} items", items.size());
 
     auto texCache = CCTextureCache::get();
     auto sfCache = CCSpriteFrameCache::get();
@@ -291,7 +287,7 @@ void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions 
         state->itemCount.fetch_add(1, std::memory_order::relaxed);
     }
 
-    log::debug("PreloadManager: {} items were enqueued", state->itemCount.load(std::memory_order::relaxed));
+    log::trace("PreloadManager: {} items were enqueued", state->itemCount.load(std::memory_order::relaxed));
 
     // if non-blocking, that's all we need to do
     if (!options.blocking) {

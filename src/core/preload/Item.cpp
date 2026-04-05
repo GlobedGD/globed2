@@ -336,7 +336,7 @@ SpriteFrameInitResult PreloadItemState::_initSpriteFramesInner() {
     auto plistKey = buf.view();
 
     if (pm.m_loadedFrames.lock()->contains(plistKey)) {
-        log::info("PreloadManager: already loaded frames for '{}', skipping", m_item.image);
+        log::trace("PreloadManager: already loaded frames for '{}', skipping", m_item.image);
         return SpriteFrameInitResult::Success;
     }
 
@@ -446,7 +446,7 @@ bool BatchPreloadState::hasFinished() {
         for (auto& item : this->items) {
             auto st = item.state();
             if (st != ItemStateEnum::Ready && st != ItemStateEnum::Failed) {
-                log::debug("PreloadManager: looping again, item {} is incomplete (state {})", item.m_path, (int)st);
+                // log::debug("PreloadManager: looping again, item {} is incomplete (state {})", item.m_path, (int)st);
                 return false;
             }
         }
