@@ -45,7 +45,9 @@ static arc::Semaphore& aresSemaphore() {
 
 static qn::ConnectionDebugOptions getConnOpts() {
     qn::ConnectionDebugOptions opts{};
+#ifdef GLOBED_DEBUG
     opts.packetLossSimulation = globed::setting<float>("core.dev.packet-loss-sim");
+#endif
 
     if (opts.packetLossSimulation != 0.f) {
         log::warn("Packet loss simulation enabled: {}%", opts.packetLossSimulation * 100.f);
