@@ -1764,6 +1764,12 @@ void NetworkManagerImpl::sendSetDiscordPairingState(bool state) {
     });
 }
 
+void NetworkManagerImpl::sendRequestDiscordOauth() {
+    this->sendToCentral([&](CentralMessage::Builder& msg) {
+        msg.setRequestDiscordOauth();
+    });
+}
+
 void NetworkManagerImpl::sendDiscordLinkConfirm(int64_t id, bool confirm) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto m = msg.initDiscordLinkConfirm();
@@ -2419,6 +2425,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::DISCORD_LINK_ATTEMPT: {
             this->invokeListeners(data::decodeUnchecked<msg::DiscordLinkAttemptMessage>(msg.getDiscordLinkAttempt()));
+        } break;
+
+        case CentralMessage::DISCORD_OAUTH_URL: {
+            this->invokeListeners(data::decodeUnchecked<msg::DiscordOauthUrlMessage>(msg.getDiscordOauthUrl()));
         } break;
 
         case CentralMessage::FEATURED_LEVEL: {

@@ -929,6 +929,14 @@ $implDecode(msg::DiscordLinkAttemptMessage, main::DiscordLinkAttemptMessage::Rea
     return out;
 }
 
+/// Discord oauth url
+
+$implDecode(msg::DiscordOauthUrlMessage, main::DiscordOauthUrlMessage::Reader& reader) {
+    return msg::DiscordOauthUrlMessage {
+        .url = reader.getUrl()
+    };
+}
+
 /// Featured level
 
 $implDecode(msg::FeaturedLevelMessage, main::FeaturedLevelMessage::Reader& reader) {
