@@ -1,5 +1,6 @@
 #include <globed/core/ServerManager.hpp>
 #include <globed/core/ValueManager.hpp>
+#include <globed/core/SettingsManager.hpp>
 
 #include <asp/fs.hpp>
 
@@ -113,6 +114,11 @@ void ServerManager::reload() {
     }
 
     if (m_storage.activeIdx >= m_storage.servers.size()) {
+        m_storage.activeIdx = 0;
+    }
+
+    // if custom servers are disabled, switch to main server
+    if (!globed::setting<bool>("core.ui.allow-custom-servers")) {
         m_storage.activeIdx = 0;
     }
 }
