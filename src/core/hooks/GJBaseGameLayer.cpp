@@ -108,6 +108,12 @@ void GlobedGJBGL::setupPostInit() {
     fields.m_ghost = std::make_shared<RemotePlayer>(0, this, fields.m_playerNode);
     this->updateLocalIcons(std::nullopt);
 
+    // disable culling if in editor
+    // TODO: maybe instead figure how to get the camera and radius
+    if (fields.m_editor) {
+        fields.m_noGlobalCulling = true;
+    }
+
     CoreImpl::get().onJoinLevelPostInit(this);
 }
 
