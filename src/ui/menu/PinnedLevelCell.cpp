@@ -116,18 +116,12 @@ void PinnedLevelCell::onLevelLoaded(GJGameLevel* level) {
             cper = m_levelCell->m_mainLayer->getChildByID("percentage-label");
         }
 
-        auto levelName = m_levelCell->m_mainLayer->getChildByID("level-name");
-
-        if (cper && levelName && creator) {
-            // downright disgusting
-            auto point = levelName->getPosition();
-            point.x += levelName->getScaledContentWidth();
-            point.x += 5.f;
-            point.x += creator->getScaledContentWidth();
-            point.x += 4.f;
-
-            cper->setPosition(point);
-            cper->setAnchorPoint({0.f, 0.5f});
+        auto viewBtn = m_levelCell->m_mainLayer->querySelector("main-menu > view-button");
+        if (cper && viewBtn) {
+            auto bpos = viewBtn->getParent()->getPosition() + viewBtn->getPosition();
+            auto ppos = bpos - CCPoint{cper->getContentWidth() / 2.f + 16.f, 0.f};
+            cper->setPosition(ppos);
+            cper->setAnchorPoint({1.f, 0.5f});
         }
     }
 
