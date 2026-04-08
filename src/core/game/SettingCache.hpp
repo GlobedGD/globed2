@@ -27,6 +27,7 @@ struct CachedSettings {
     bool defaultDeathEffects = globed::setting<bool>("core.player.default-death-effects");
     float playerOpacity = globed::setting<float>("core.player.opacity");
     float nameOpacity = globed::setting<float>("core.player.name-opacity");
+    float emoteOpacity = globed::setting<float>("core.player.emote-opacity");
 
     void reload() {
         *this = CachedSettings{};

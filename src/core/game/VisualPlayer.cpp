@@ -524,7 +524,7 @@ void VisualPlayer::updateOpacity() {
         m_nameLabel->updateOpacity(opacity);
 
         if (m_emoteBubble) {
-            m_emoteBubble->setOpacity(opacity);
+            m_emoteBubble->setOpacityMult(mult);
         }
 
         if (m_statusIcons) {

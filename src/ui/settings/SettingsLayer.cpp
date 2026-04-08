@@ -306,6 +306,9 @@ void SettingsLayer::addSettings() {
     this->addSetting<EmoteVolumeCell>("core.player.quick-chat-sfx-volume", "Emote SFX Volume",
         "Sets the volume of sound effects played when certain <cy>emotes</c> are used in levels."
     );
+    this->addSetting<FloatSettingCell>("core.player.emote-opacity", "Emote Opacity",
+        "Sets the opacity of <cy>emotes</c>."
+    );
     this->addSetting<BoolSettingCell>("core.player.show-names", "Player Names",
         "Shows player names above their icons."
     );
