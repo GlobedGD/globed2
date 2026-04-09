@@ -893,6 +893,10 @@ void GlobedGJBGL::handlePlayerLeave(int playerId, bool removeFromMap) {
 
     fields.m_interpolator.removePlayer(playerId);
     PlayerCacheManager::get().evictToLayer2(playerId);
+
+    if (fields.m_voiceOverlay) {
+        fields.m_voiceOverlay->removeStream(playerId);
+    }
 }
 
 void GlobedGJBGL::handleLocalPlayerDeath(PlayerObject* obj) {

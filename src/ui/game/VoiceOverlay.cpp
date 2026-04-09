@@ -82,8 +82,7 @@ void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
             // remove the cell if the user hasnt spoken in over a second
             auto cell = it->second;
             if (cell->sinceLastSpoken() > Duration::fromSecs(1)) {
-                cell->removeFromParent();
-                m_cells.erase(it);
+                this->removeStream(id);
             } else {
                 cell->updateLoudness(loudness);
             }
@@ -99,8 +98,7 @@ void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
 
     if (shouldRecreate) {
         if (it != m_cells.end()) {
-            it->second->removeFromParent();
-            m_cells.erase(it);
+            this->removeStream(id);
         }
 
         PlayerDisplayData data;
@@ -118,6 +116,14 @@ void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
 
     it->second->updateLoudness(loudness);
     it->second->updateLastSpoken();
+}
+
+void VoiceOverlay::removeStream(int id) {
+    auto it = m_cells.find(id);
+    if (it != m_cells.end()) {
+        it->second->removeFromParent();
+        m_cells.erase(it);
+    }
 }
 
 VoiceOverlay* VoiceOverlay::create() {
