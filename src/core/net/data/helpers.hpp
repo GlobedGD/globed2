@@ -583,6 +583,23 @@ $implDecode(msg::LevelDataMessage, game::LevelDataMessage::Reader& reader) {
     return outMsg;
 }
 
+$implDecode(msg::LevelMetaMessage, game::LevelMetaMessage::Reader& reader) {
+    auto metas = reader.getMetas();
+    auto ids = reader.getIds();
+    size_t count = std::min(metas.size(), ids.size());
+
+    msg::LevelMetaMessage outMsg;
+    outMsg.metas.reserve(count);
+
+    for (size_t i = 0; i < count; ++i) {
+        PlayerLevelMeta meta{};
+        meta.progress = metas[i].getProgress();
+        outMsg.metas.emplace_back(ids[i], std::move(meta));
+    }
+
+    return outMsg;
+}
+
 /// Script logs
 
 $implDecode(msg::ScriptLogsMessage, game::ScriptLogsMessage::Reader& reader) {

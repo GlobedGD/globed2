@@ -2134,6 +2134,14 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
     }, !info->m_gameEventQueue.empty());
 }
 
+void NetworkManagerImpl::sendPlayerUpdateMeta(const PlayerLevelMeta& meta, const std::vector<int>& requests) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto upd = msg.initPlayerUpdateMeta();
+        upd.initMeta().setProgress(meta.progress);
+        upd.setRequests({requests.data(), requests.size()});
+    });
+}
+
 void NetworkManagerImpl::queueLevelScript(const std::vector<EmbeddedScript>& scripts) {
     auto info = this->connInfo();
     if (!info) return;
@@ -2629,6 +2637,10 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
             }
 
             this->invokeListeners(data::decodeUnchecked<msg::LevelDataMessage>(m));
+        } break;
+
+        case LEVEL_META: {
+            this->invokeListeners(data::decodeUnchecked<msg::LevelMetaMessage>(msg.getLevelMeta()));
         } break;
 
         case SCRIPT_LOGS: {

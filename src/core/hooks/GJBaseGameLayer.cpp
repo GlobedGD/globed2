@@ -272,6 +272,10 @@ void GlobedGJBGL::setupListeners() {
         this->onLevelDataReceived(message);
     });
 
+    fields.m_levelMetaListener = nm.listen<msg::LevelMetaMessage>([this](const msg::LevelMetaMessage& message) {
+        this->onLevelMetaReceived(message);
+    });
+
     fields.m_voiceListener = nm.listen<msg::VoiceBroadcastMessage>([this](msg::VoiceBroadcastMessage& message) {
         // skip processing completely if voice chat is off
         if (!g_settings.voiceChat) return ListenerResult::Propagate;
@@ -635,6 +639,9 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
     if (prevThrottle != fields.m_throttleUpdates) {
         log::debug("updating data send interval to {}", fields.m_throttleUpdates ? "throttled" : "normal");
     }
+
+    // TODO
+    // NetworkManagerImpl::get().sendPlayerUpdateMeta({1234,}, {myAccountId(),});
 }
 
 void GlobedGJBGL::sendPlayerData(const PlayerState& state) {
@@ -1240,6 +1247,12 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
 
     if (!message.displayDatas.empty()) {
         fields.m_lastDataRequest = 0.f;
+    }
+}
+
+void GlobedGJBGL::onLevelMetaReceived(const msg::LevelMetaMessage& message) {
+    for (auto& [id, meta] : message.metas) {
+        log::info("player {} progress {}", id, meta.progress);
     }
 }
 

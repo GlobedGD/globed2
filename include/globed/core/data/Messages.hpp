@@ -189,6 +189,12 @@ struct LevelDataMessage {
     std::vector<InEvent> events;
 };
 
+// Level meta
+
+struct LevelMetaMessage {
+    std::vector<std::pair<int, PlayerLevelMeta>> metas;
+};
+
 // Voice broadcast
 
 struct VoiceBroadcastMessage {
