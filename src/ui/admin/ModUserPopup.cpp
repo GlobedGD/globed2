@@ -392,6 +392,7 @@ void ModUserPopup::onLoaded(const msg::AdminFetchResponseMessage& msg) {
             .activeBan = std::move(msg.activeBan),
             .activeRoomBan = std::move(msg.activeRoomBan),
             .activeMute = std::move(msg.activeMute),
+            .punishmentCount = msg.punishmentCount,
         };
         queryAccountId = msg.accountId;
     } else if (m_queryNum != 0) {
