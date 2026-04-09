@@ -569,6 +569,7 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
     } else if (connState == Connected && connState != prevState) {
         auto info = m_connInfo.lock();
         if (!*info) info->emplace();
+        (*info)->m_centralUrl = m_connectingCentralUrl;
     }
 
     switch (connState) {
@@ -1149,7 +1150,8 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
 
     m_centralConn->setDebugOptions(getConnOpts());
 
-    auto res = m_centralConn->connect(std::string(url));
+    m_connectingCentralUrl = url;
+    auto res = m_centralConn->connect(m_connectingCentralUrl);
 
     if (!res) {
         FunctionQueue::get().queue([url, err = std::move(res).unwrapErr()] mutable {

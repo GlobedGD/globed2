@@ -375,6 +375,7 @@ private:
     std::atomic<bool> m_gameMustReauth{false};
 
     asp::Mutex<std::optional<ConnectionInfo>> m_connInfo;
+    std::string m_connectingCentralUrl;
     asp::SpinLock<std::pair<std::string, bool>> m_abortCause;
     std::atomic<bool> m_manualDisconnect{false};
 
