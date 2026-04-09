@@ -167,6 +167,7 @@ bool LevelListLayer::init() {
         .parent(this)
         .id("level-list"_spr);
     m_list->setAutoUpdate(false);
+    m_list->getScrollLayer()->setStealingTouches(true);
 
     auto menu = Build<CCMenu>::create()
         .pos(0.f, 0.f)
