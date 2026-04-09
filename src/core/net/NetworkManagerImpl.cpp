@@ -247,18 +247,21 @@ void ConnectionInfo::calculateGameLoss() {
 
     // calculate loss over the last 5 secs and 1 minute
     auto lost5 = asp::iter::from(m_gameProcessedPackets)
+        .copied()
         .filter([&](const auto& packet) {
             return packet.first && now.durationSince(packet.second) <= Duration::fromSecs(5);
         })
         .count();
 
     auto total5 = asp::iter::from(m_gameProcessedPackets)
+        .copied()
         .filter([&](const auto& packet) {
             return now.durationSince(packet.second) <= Duration::fromSecs(5);
         })
         .count();
 
     auto lost1m = asp::iter::from(m_gameProcessedPackets)
+        .copied()
         .filter([](const auto& packet) {
             return packet.first;
         })
