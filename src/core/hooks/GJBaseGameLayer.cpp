@@ -134,7 +134,7 @@ void GlobedGJBGL::setupNecessary() {
     } else if (!fields.m_active) {
         fields.m_pingOverlay->updateWithEditor();
     } else {
-        fields.m_pingOverlay->updatePing(nm.getGamePing().millis());
+        fields.m_pingOverlay->updatePing();
     }
 }
 
@@ -615,7 +615,7 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
         return;
     }
 
-    fields.m_pingOverlay->updatePing(NetworkManagerImpl::get().getGamePing().millis());
+    fields.m_pingOverlay->updatePing();
 
     // check if the user is afk
     auto state = getCurrentGameState();

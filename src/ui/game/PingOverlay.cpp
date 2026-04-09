@@ -1,4 +1,5 @@
 #include "PingOverlay.hpp"
+#include <core/net/NetworkManagerImpl.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -77,14 +78,38 @@ void PingOverlay::updateOpacity() {
     }
 }
 
-void PingOverlay::updatePing(uint32_t ms) {
+static ccColor3B colorForPingAndLoss(uint32_t ping, float loss) {
+    // color based on loss, don't include ping
+    if (loss < 0.05f) { // < 5%
+        return ccColor3B{ 255, 255, 255 };
+    } else if (loss < 0.15f) { // < 15%
+        return ccColor3B{ 255, 255, 0 };
+    } else if (loss < 0.30f) { // < 30%
+        return ccColor3B{ 255, 128, 0 };
+    } else { // >= 30%
+        return ccColor3B{255, 50, 50};
+    }
+}
+
+void PingOverlay::updatePing() {
     if (!m_enabled) {
         this->setVisible(false);
         return;
     }
 
     this->setVisible(true);
-    m_pingLabel->setString(fmt::format("{} ms", ms));
+
+    auto& nm = NetworkManagerImpl::get();
+    auto ping = nm.getGamePing().millis();
+    auto loss = nm.getGameLoss();
+
+    if (loss <= 0.01f) {
+        m_pingLabel->setString(fmt::format("{} ms", ping));
+    } else {
+        m_pingLabel->setString(fmt::format("{} ms ({:.1f}% loss)", ping, loss * 100.f));
+    }
+
+    m_pingLabel->setColor(colorForPingAndLoss(ping, loss));
     this->updateLayout();
 }
 

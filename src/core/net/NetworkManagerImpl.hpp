@@ -110,6 +110,9 @@ struct ConnectionInfo {
     std::queue<OutEvent> m_gameEventQueue;
     std::vector<EmbeddedScript> m_queuedScripts;
     std::deque<std::pair<uint16_t, asp::Instant>> m_gamePlayerDataReqs;
+    std::deque<std::pair<bool, asp::Instant>> m_gameProcessedPackets;
+    float m_gameLoss5Secs = 0.f;
+    float m_gameLoss1Min = 0.f;
     uint16_t m_gameNextMessageId = 1;
 
     bool m_sentFriendList = false;
@@ -130,6 +133,12 @@ struct ConnectionInfo {
         m_authenticating = true;
         m_triedAuthAt = asp::time::Instant::now();
     }
+
+    uint16_t getNextMessageId();
+    /// Handles a message from the game server and returns RTT for this packet
+    /// Also handles loss calculation
+    std::optional<asp::Duration> handleIncomingMessageId(uint16_t id);
+    void calculateGameLoss();
 };
 
 struct GLOBED_DLL LockedConnInfo {
@@ -229,6 +238,11 @@ public:
     PunishReasons getModPunishReasons();
     std::optional<SpecialUserData> getOwnSpecialData();
 
+    /// Returns the estimate packet loss to the game server over the last 5 seconds
+    float getGameLoss();
+    /// Returns the estimate packet loss to the game server over the last 1 minute
+    float getGameLoss1Min();
+
     /// Force the client to resend user icons to the connected server. Does nothing if not connected.
     void invalidateIcons();
     /// Force the client to resend the friend list to the connected server. Does nothing if not connected.
@@ -327,7 +341,6 @@ public:
     void queueGameEvent(OutEvent&& event);
     void sendVoiceData(const EncodedAudioFrame& frame);
     void sendQuickChat(uint32_t id);
-
 
     /// Listeners
 
