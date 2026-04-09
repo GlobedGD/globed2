@@ -6,16 +6,15 @@ namespace globed {
 
 class APSSettingsPopup : public BasePopup {
 public:
-    static APSSettingsPopup* create(APSPlayLayer* layer);
+    static APSSettingsPopup* create();
 
 private:
     APSSettings m_settings;
-    APSPlayLayer* m_layer;
     MessageListener<msg::LevelDataMessage> m_listener;
     CCMenuItemSpriteExtra* m_btn;
     bool m_dirty = false;
 
-    bool init(APSPlayLayer*);
+    bool init();
     void apply();
     void startGame();
     void onClose(CCObject*);

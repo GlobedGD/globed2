@@ -532,7 +532,7 @@ void APSPauseLayer::customSetup() {
     Build<CCSprite>::create("icon-switcheroo.png"_spr)
         .scale(0.9f)
         .intoMenuItem(+[] {
-            if (auto pl = APSPlayLayer::get()) APSSettingsPopup::create(pl)->show();
+            if (APSPlayLayer::get()) APSSettingsPopup::create()->show();
         })
         .scaleMult(1.2f)
         .id("btn-switcheroo"_spr)

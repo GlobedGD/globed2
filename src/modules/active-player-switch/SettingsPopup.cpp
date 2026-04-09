@@ -11,20 +11,19 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool APSSettingsPopup::init(APSPlayLayer* layer) {
+bool APSSettingsPopup::init() {
     if (!Popup::init(340.f, 230.f)) return false;
-    GLOBED_ASSERT(layer);
 
     this->setTitle("Switcheroo Settings");
 
+    auto layer = APSPlayLayer::get();
+    GLOBED_ASSERT(layer);
+
     m_settings = layer->m_fields->m_controller.m_settings;
-    m_layer = layer;
 
     m_btn = Build(ButtonSprite::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.8f))
         .scale(0.85f)
         .intoMenuItem([this] {
-            GLOBED_ASSERT(m_layer); // how tf was this null for 1 person
-
             this->startGame();
             m_btn->removeFromParent();
         })
@@ -190,10 +189,16 @@ void APSSettingsPopup::onClose(CCObject*) {
 }
 
 void APSSettingsPopup::startGame() {
+    auto layer = APSPlayLayer::get();
+    if (!layer) {
+        globed::toastError("failed to get play layer!");
+        return;
+    }
+
     m_dirty = false;
 
-    m_layer->updateSettings(m_settings);
-    m_layer->restartSwitchCycle();
+    layer->updateSettings(m_settings);
+    layer->restartSwitchCycle();
 
     // wait until we receive back the event from the server, then close this popup
     auto circle = Build<cue::LoadingCircle>::create(true)
@@ -214,14 +219,17 @@ void APSSettingsPopup::startGame() {
 
 void APSSettingsPopup::apply() {
     if (!m_dirty) return;
-    m_layer->updateSettings(m_settings);
-    m_layer->sendFullState();
+    auto layer = APSPlayLayer::get();
+    if (layer) {
+        layer->updateSettings(m_settings);
+        layer->sendFullState();
+    }
     m_dirty = false;
 }
 
-APSSettingsPopup* APSSettingsPopup::create(APSPlayLayer* layer) {
+APSSettingsPopup* APSSettingsPopup::create() {
     auto ret = new APSSettingsPopup;
-    if (ret->init(layer)) {
+    if (ret->init()) {
         ret->autorelease();
         return ret;
     }
