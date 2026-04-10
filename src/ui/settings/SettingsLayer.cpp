@@ -273,6 +273,9 @@ void SettingsLayer::addSettings() {
         this->addSetting<BoolSettingCell>("core.dev.ghost-follower", "Ghost Follower",
             "For debugging, enables a ghost player that will follow you in levels."
         );
+        this->addSetting<BoolSettingCell>("core.dev.profile-frame-time", "Profile Frame Time",
+            "Records how long specific processes take during frame update, e.g. interpolation, audio update, playerobject updates, etc."
+        );
         this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Dummy Data",
             "Uses randomly generated data in some places (room list, level list) for testing purposes"
         );

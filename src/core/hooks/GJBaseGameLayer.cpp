@@ -36,6 +36,18 @@ namespace globed {
 static auto& g_settings = CachedSettings::get();
 
 static std::optional<Instant> g_lastEmoteTime;
+static struct {
+    Instant start;
+    Instant postLerp;
+    Instant postRPUpdate;
+    Instant postAudioUpdate;
+    Instant postPreUpdateEnd;
+
+    Instant postGameUpdate;
+    Instant postSendPlayerData;
+    Instant postPeriodicalUpdate;
+    Instant postPostUpdateEnd;
+} g_profilerFrame;
 
 static int myAccountId() {
     return singleton<GJAccountManager>()->m_accountID;
@@ -243,6 +255,7 @@ void GlobedGJBGL::setupAudio() {
 
 void GlobedGJBGL::setupUi() {
     auto& fields = *m_fields.self();
+    auto winSize = CCDirector::get()->getWinSize();
 
     Build<CCNode>::create()
         .id("player-node"_spr)
@@ -261,6 +274,15 @@ void GlobedGJBGL::setupUi() {
         if (pl->m_progressBar) {
             pl->m_progressBar->addChild(fields.m_progressBarContainer);
         }
+    }
+
+    if (globed::setting<bool>("core.dev.profile-frame-time")) {
+        fields.m_profilerOverlay = Build<ProfilerOverlay>::create(CCSize{320.f, 80.f})
+            .id("profiler-overlay"_spr)
+            .anchorPoint(0.f, 0.f)
+            .pos(0.f, 0.f)
+            .zOrder(10)
+            .parent(m_uiLayer);
     }
 }
 
@@ -424,6 +446,8 @@ void GlobedGJBGL::onQuit() {
 }
 
 void GlobedGJBGL::selPreUpdate(float tsdt) {
+    g_profilerFrame.start = Instant::now();
+
     auto& fields = *m_fields.self();
 
     // if we are disconnected from the game server, and no (re)connection is being attempted,
@@ -458,6 +482,8 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
         CCPoint{(float) cameraDelta.first, (float) cameraVector.second},
         CCPoint{(float) cameraVector.first, (float) cameraVector.second}
     );
+
+    g_profilerFrame.postLerp = Instant::now();
 
     fields.m_unknownPlayers.clear();
 
@@ -515,10 +541,14 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
         ++it;
     }
 
+    g_profilerFrame.postRPUpdate = Instant::now();
+
     // update audio
     if (fields.m_audioInterval.tick()) {
         AudioManager::get().updatePlayback(camState.cameraCenter(), fields.m_isVoiceProximity);
     }
+
+    g_profilerFrame.postAudioUpdate = Instant::now();
 
     // -- commented chunk below is from globed v2, we no longer do this optimization for now --
     // // the server might not send any updates if there are no players on the level,
@@ -555,9 +585,13 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
     }
 
     CoreImpl::get().onPreUpdate(this, dt);
+
+    g_profilerFrame.postPreUpdateEnd = Instant::now();
 }
 
 void GlobedGJBGL::selPostUpdate(float dt) {
+    g_profilerFrame.postGameUpdate = Instant::now();
+
     auto& fields = *m_fields.self();
     if (!fields.m_active) return;
 
@@ -573,6 +607,8 @@ void GlobedGJBGL::selPostUpdate(float dt) {
         this->sendPlayerData(state);
     }
 
+    g_profilerFrame.postSendPlayerData = Instant::now();
+
     // update ghost player
     OutFlags ghostFlags{};
     state.accountId = 0;
@@ -584,12 +620,35 @@ void GlobedGJBGL::selPostUpdate(float dt) {
         fields.m_periodicalDelta = 0.f;
     }
 
+    g_profilerFrame.postPeriodicalUpdate = Instant::now();
+
     // fix progressbar
     if constexpr (APPLY_PERCENTAGE_FIX) {
         this->fixProgressBar(state.progress());
     }
 
     CoreImpl::get().onUpdate(this, dt);
+
+    g_profilerFrame.postPostUpdateEnd = Instant::now();
+
+    if (fields.m_profilerOverlay) {
+        auto& fr = g_profilerFrame;
+
+        auto totalTime = fr.postPostUpdateEnd.durationSince(fr.start);
+        fields.m_profilerOverlay->updateWithFrame(ProfilerFrame {
+            .totalTime = totalTime,
+            .samples = {
+                ProfilerSample { "Interpolation", fr.start, fr.postLerp, "#23e8fa" },
+                ProfilerSample { "Player Upd", fr.postLerp, fr.postRPUpdate, "#4caf50" },
+                ProfilerSample { "Audio Upd", fr.postRPUpdate, fr.postAudioUpdate, "#0707f2" },
+                ProfilerSample { "Pre Misc", fr.postAudioUpdate, fr.postPreUpdateEnd, "#757575" },
+                ProfilerSample { "Game Update", fr.postPreUpdateEnd, fr.postGameUpdate, "#ffeb3b" },
+                ProfilerSample { "Send Data", fr.postGameUpdate, fr.postSendPlayerData, "#fb8c00" },
+                ProfilerSample { "Periodical Upd", fr.postSendPlayerData, fr.postPeriodicalUpdate, "#e91e63" },
+                ProfilerSample { "Post Misc", fr.postPeriodicalUpdate, fr.postPostUpdateEnd, "#455a64" },
+            }
+        });
+    }
 }
 
 // Note: this takes percent from 0.0 to 1.0
@@ -1315,6 +1374,7 @@ void GlobedGJBGL::cleanupGlobedAdditions() {
     cue::resetNode(fields.m_playerNode);
     cue::resetNode(fields.m_progressBarContainer);
     cue::resetNode(fields.m_voiceOverlay);
+    cue::resetNode(fields.m_profilerOverlay);
     fields.m_ghost.reset();
     fields.m_interpolator.fullReset();
     if (fields.m_pingOverlay) {

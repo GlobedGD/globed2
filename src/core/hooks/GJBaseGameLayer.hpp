@@ -9,10 +9,11 @@
 #include <globed/util/Interval.hpp>
 #include <ui/game/VoiceOverlay.hpp>
 #include <ui/game/PingOverlay.hpp>
+#include <ui/game/EmoteBubble.hpp>
+#include <ui/game/ProfilerOverlay.hpp>
 #include <ui/misc/NameLabel.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/game/SpeedTracker.hpp>
-#include <ui/game/EmoteBubble.hpp>
 
 namespace globed {
 
@@ -91,6 +92,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         GlobedGJBGL* m_self = nullptr;
         Ref<CCNode> m_progressBarContainer;
         Ref<VoiceOverlay> m_voiceOverlay;
+        Ref<ProfilerOverlay> m_profilerOverlay;
         Ref<PingOverlay> m_pingOverlay;
         Ref<CCSprite> m_noticeAlert;
         geode::WeakRef<PlayerObject> m_cameraFollows;
