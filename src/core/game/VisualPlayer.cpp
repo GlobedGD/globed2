@@ -21,12 +21,16 @@ using namespace geode::prelude;
 
 namespace globed {
 
+namespace $unity {
+
 static auto& g_settings = CachedSettings::get();
 static bool g_changeParticleUpdate = false;
 
 static inline bool lerpDebug() {
     static bool val = Loader::get()->getLaunchFlag("globed/core.dev.lerp-debug");
     return val;
+}
+
 }
 
 VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
@@ -66,6 +70,8 @@ VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
 }
 
 bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
+    using namespace $unity;
+
     this->setTag(VISUAL_PLAYER_TAG);
 
     g_changeParticleUpdate = true;
@@ -154,6 +160,8 @@ void VisualPlayer::updateFromData(
     bool forceHideEverything,
     bool noCulling
 ) {
+    using namespace $unity;
+
     if (lerpDebug()) {
         this->updateLerpTrajectory(data);
     }
@@ -457,8 +465,8 @@ bool VisualPlayer::hideNearby(GJBaseGameLayer* gjbgl) {
     }
 
     return gjbgl->m_level->isPlatformer()
-        ? g_settings.hideNearbyPlat
-        : g_settings.hideNearbyClassic;
+        ? $unity::g_settings.hideNearbyPlat
+        : $unity::g_settings.hideNearbyClassic;
 }
 
 PlayerIconData& VisualPlayer::icons() {
@@ -507,7 +515,7 @@ void VisualPlayer::updateOpacity() {
         mult = distance / 150.f;
     }
 
-    uint8_t opacity = static_cast<uint8_t>(g_settings.playerOpacity * mult * 255.f);
+    uint8_t opacity = static_cast<uint8_t>($unity::g_settings.playerOpacity * mult * 255.f);
 
     this->setOpacity(opacity);
     m_spiderSprite->GJRobotSprite::setOpacity(opacity);
@@ -750,15 +758,13 @@ void VisualPlayer::updateDisplayData() {
     }
 
     m_nameLabel->updateName(ddata.username);
-    m_nameLabel->updateOpacity(g_settings.nameOpacity);
+    m_nameLabel->updateOpacity($unity::g_settings.nameOpacity);
     if (ddata.specialUserData) {
         m_nameLabel->updateWithRoles(*ddata.specialUserData);
     }
+}
 
-    if (g_settings.defaultDeathEffects) {
-        ddata.icons.deathEffect = DEFAULT_DEATH;
-    }
-
+void VisualPlayer::updateIcons() {
     this->updatePlayerObjectIcons(false);
     this->updateIconType(m_prevMode);
 }
@@ -1033,7 +1039,7 @@ VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, RemotePlayer* rp,
 
 struct GLOBED_MODIFY_ATTR VPSchedulerHook : Modify<VPSchedulerHook, CCScheduler> {
     void scheduleUpdateForTarget(CCObject* target, int priority, bool paused) {
-        if (g_changeParticleUpdate) priority = 0;
+        if ($unity::g_changeParticleUpdate) priority = 0;
 
         CCScheduler::scheduleUpdateForTarget(target, priority, paused);
     }

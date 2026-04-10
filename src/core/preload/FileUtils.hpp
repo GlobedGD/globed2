@@ -9,6 +9,8 @@
 # include <Windows.h>
 #else
 # include <sys/stat.h>
+# include <fcntl.h>
+# include <unistd.h>
 #endif
 
 namespace globed {
@@ -16,7 +18,16 @@ namespace globed {
 // mutex that guards ccfileutils file reading
 static inline asp::Mutex<> g_fileMutex;
 
+/// See platform/macos/objc.mm
+#if defined(__APPLE__)
+bool isFileExistImpl(geode::ZStringView path);
+std::string getPathForDirAndFilenameImpl(geode::ZStringView directory, geode::ZStringView filename);
+std::unique_ptr<unsigned char[]> getFileDataImpl(geode::ZStringView path, unsigned long* outSize);
+#endif
+
 // TODO: maybe use AAssetManager again, need to compare
+/// thread-safe version of CCFileUtils::getFileData.
+/// Invariant: path must be a full path already.
 inline std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize) {
 #ifdef GEODE_IS_WINDOWS
     HANDLE file = CreateFileA(
@@ -58,15 +69,10 @@ inline std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, 
     auto _lck = g_fileMutex.lock();
     return std::unique_ptr<unsigned char[]>(fu->getFileData(path, mode, outSize));
 #else
-    auto fu = cocos2d::CCFileUtils::get();
-    return std::unique_ptr<unsigned char[]>(fu->getFileData(path, mode, outSize));
+    return globed::getFileDataImpl(path, outSize);
 #endif
 }
 
-/// See platform/macos/objc.mm (TODO: remove after geode v5.4.2 or v5.5.0)
-#if defined(__APPLE__)
-bool isFileExistImpl(geode::ZStringView path);
-#endif
 
 struct HookedFileUtils : public cocos2d::CCFileUtils {
     static HookedFileUtils& get() {
@@ -86,7 +92,6 @@ struct HookedFileUtils : public cocos2d::CCFileUtils {
 #endif
     }
 
-    $override
     gd::string getPathForFilename(const gd::string& filename, const gd::string& resolutionDirectory, const gd::string& searchPath) {
         return getPathForFilename2(filename, resolutionDirectory, searchPath);
     }
@@ -102,13 +107,21 @@ struct HookedFileUtils : public cocos2d::CCFileUtils {
         }
 
         geode::utils::StringBuffer<512> buf;
-        buf.append("{}{}{}{}", searchPath, filePath, resolutionDirectory, file);
+        buf.append("{}{}{}", searchPath, filePath, resolutionDirectory);
+
+#ifndef __APPLE__
+        buf.append(file);
 
         if (this->fileExists(buf.c_str())) {
             return gd::string(buf.data(), buf.size());
-        } else {
-            return gd::string{};
         }
+        return gd::string{};
+#else
+        // Apple quirks
+        geode::utils::StringBuffer<512> fileBuf;
+        fileBuf.append("{}", file);
+        return globed::getPathForDirAndFilenameImpl(buf.c_str(), fileBuf.c_str());
+#endif
     }
 };
 

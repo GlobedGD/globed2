@@ -50,6 +50,7 @@ private:
 
     PlayerState m_state;
     PlayerDisplayData m_data;
+    std::optional<PlayerIconData> m_pendingIcons;
     bool m_dataInitialized = false;
     bool m_dataOutdated = false;
     bool m_forceHide = false;
@@ -65,6 +66,9 @@ private:
     std::optional<uint16_t> m_teamId;
     std::shared_ptr<VoiceStream> m_voiceStream;
     std::shared_ptr<std::mutex> m_voiceStreamMutex;
+
+    void beginDataUpdate();
+    void doUpdateIcons();
 };
 
 }

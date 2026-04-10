@@ -48,6 +48,12 @@ enum class ItemStateEnum : uint8_t {
     Failed,
 };
 
+enum class SpriteFrameInitResult {
+    Success,
+    Pending,
+    Failed,
+};
+
 struct PreloadItemState {
     PreloadItem m_item;
     gd::string m_path;
@@ -73,6 +79,7 @@ struct PreloadItemState {
     }
 
     bool process();
+    void invokeCallback(std::optional<ItemStateEnum> state = std::nullopt);
     void cleanup();
     void enqueueImageDecode();
 
@@ -81,16 +88,29 @@ struct PreloadItemState {
     void finalizePBO();
 
     void initSpriteFrames();
+    SpriteFrameInitResult _initSpriteFramesInner();
 };
 
-using MtTextureCallback = geode::CopyableFunction<void(PreloadItemState&)>;
+using MtTextureCallback = geode::CopyableFunction<void(BatchPreloadState&, PreloadItemState&)>;
 
-struct BatchPreloadState {
+struct BatchPreloadState : asp::EnableSharedFromThis<BatchPreloadState> {
     std::vector<PreloadItemState> items;
     std::atomic<size_t> itemCount{0};
+    std::atomic<size_t> initedTextures{0};
     std::atomic<size_t> completedItems{0};
     MtTextureCallback callback;
+    geode::Function<void()> completionCallback;
+    asp::Channel<PreloadItemState*> texRequests;
     asp::ThreadPool* pool;
+    std::atomic<bool> queuedUpdate{false};
+    bool m_blockingMode = false;
+
+    // Call this from main thread only!
+    bool doProcess();
+    void insertTexture(PreloadItemState& state);
+    bool hasFinished();
+    void cleanup();
+    void maybeEnqueueMTUpdate();
 };
 
 }

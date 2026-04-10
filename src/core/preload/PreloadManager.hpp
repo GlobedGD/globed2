@@ -49,6 +49,8 @@ struct PreloadOptions {
     /// This can be used for e.g. drawing things on the screen and updating progress.
     /// If this returns true then the preload manager will manually draw the current scene for you.
     geode::Function<bool(const PreloadProgress&)> callback;
+    /// The callback that will be invoked in main thread once preloading is finished
+    geode::Function<void()> completionCallback;
 };
 
 class PreloadManager : public SingletonBase<PreloadManager> {
@@ -61,6 +63,8 @@ public:
     void loadNextBatch(PreloadOptions options = {});
     // Loads all assets in a single call, blocking the main thread until all assets are loaded
     void loadEverything(PreloadOptions options = {});
+    // Loads the given icons
+    void loadIcons(PlayerIconData icons, PreloadOptions options = {});
 
     // Returns the number of assets that have been loaded so far
     size_t getLoadedCount();
@@ -69,6 +73,8 @@ public:
 
     /// Returns whether death effects have been loaded
     bool deathEffectsLoaded();
+    /// Returns whether all icons have been loaded
+    bool iconsLoaded();
 
     cocos2d::CCTexture2D* getCachedIcon(int iconType, int id);
     void setCachedIcon(int iconType, int id, cocos2d::CCTexture2D* texture);
@@ -87,7 +93,6 @@ private:
         TextureQuality texQuality;
         size_t gameSearchPathIdx = -1;
         std::vector<size_t> texturePackIndices;
-        std::unique_ptr<asp::ThreadPool> threadPool;
 
         // time measurements
         asp::time::Instant preInitTime;
@@ -97,6 +102,7 @@ private:
     PreloadContext m_context = PreloadContext::None;
     std::deque<PreloadItem> m_loadQueue;
     SessionState m_sstate;
+    std::unique_ptr<asp::ThreadPool> m_threadPool;
     size_t m_totalCount = 0;
 
     bool m_iconsLoaded = false;

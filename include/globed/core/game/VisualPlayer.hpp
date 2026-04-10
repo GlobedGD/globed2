@@ -46,7 +46,11 @@ public:
 
     void setStickyState(bool p1, bool sticky);
 
+    // this does NOT update icons
     void updateDisplayData();
+    // this does update icons
+    void updateIcons();
+
     void updateTeam(uint16_t teamId);
     void playDeathEffect();
     void handleSpiderTp(const SpiderTeleportData& tp);
@@ -131,6 +135,8 @@ private:
     void cancelPlatformerJumpAnim();
 
     void updateLerpTrajectory(const PlayerObjectData& data);
+
+    void beginAsyncIconLoad();
 };
 
 }
