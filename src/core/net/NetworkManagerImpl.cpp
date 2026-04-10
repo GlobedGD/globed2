@@ -212,6 +212,85 @@ bool GameServer::updateLatency(uint32_t latency) {
     return jitter > (int32_t)(avgLatency * 0.5f) && jitter > 30;
 }
 
+uint16_t ConnectionInfo::getNextMessageId() {
+    // check for lost messages - declare as lost if not received in over a second or if >= 15 messages are not received
+    auto now = Instant::now();
+    while (!m_gamePlayerDataReqs.empty()) {
+        auto& [id, time] = m_gamePlayerDataReqs.front();
+        auto elapsed = now.durationSince(time);
+
+        if (m_gamePlayerDataReqs.size() > 15 || elapsed > Duration::fromSecs(1)) {
+            log::trace("Declaring message {} as lost (not received after {})", id, elapsed);
+            m_gameProcessedPackets.push_back({true, time});
+            m_gamePlayerDataReqs.pop_front();
+        } else {
+            // the requests are ordered, so we can stop checking after the first non-lost one
+            break;
+        }
+    }
+
+    this->calculateGameLoss();
+
+    auto outId = m_gameNextMessageId++;
+    m_gamePlayerDataReqs.emplace_back(outId, Instant::now());
+
+    return outId;
+}
+
+void ConnectionInfo::calculateGameLoss() {
+    // discard all results more than a minute old
+    auto now = Instant::now();
+    auto maxAge = Duration::fromSecs(60);
+    while (!m_gameProcessedPackets.empty() && now.durationSince(m_gameProcessedPackets.front().second) > maxAge) {
+        m_gameProcessedPackets.pop_front();
+    }
+
+    // calculate loss over the last 5 secs and 1 minute
+    auto lost5 = asp::iter::from(m_gameProcessedPackets)
+        .copied()
+        .filter([&](const auto& packet) {
+            return packet.first && now.durationSince(packet.second) <= Duration::fromSecs(5);
+        })
+        .count();
+
+    auto total5 = asp::iter::from(m_gameProcessedPackets)
+        .copied()
+        .filter([&](const auto& packet) {
+            return now.durationSince(packet.second) <= Duration::fromSecs(5);
+        })
+        .count();
+
+    auto lost1m = asp::iter::from(m_gameProcessedPackets)
+        .copied()
+        .filter([](const auto& packet) {
+            return packet.first;
+        })
+        .count();
+
+    auto total1m = m_gameProcessedPackets.size();
+
+    m_gameLoss5Secs = total5 > 0 ? (float)lost5 / total5 : 0.f;
+    m_gameLoss1Min = total1m > 0 ? (float)lost1m / total1m : 0.f;
+}
+
+std::optional<Duration> ConnectionInfo::handleIncomingMessageId(uint16_t id) {
+    auto it = std::ranges::find_if(m_gamePlayerDataReqs, [id](const auto& req) {
+        return req.first == id;
+    });
+
+    std::optional<Duration> rtt;
+    if (it != m_gamePlayerDataReqs.end()) {
+        rtt = it->second.elapsed();
+        // declare as not lost
+        m_gameProcessedPackets.push_back({false, it->second});
+
+        m_gamePlayerDataReqs.erase(it);
+
+    }
+
+    return rtt;
+}
+
 WorkerState createWorkerState() {
     auto [tx, rx] = arc::mpsc::channel<std::pair<std::string, qn::PingResult>>(32);
     return WorkerState{std::move(tx), std::move(rx)};
@@ -493,6 +572,7 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
     } else if (connState == Connected && connState != prevState) {
         auto info = m_connInfo.lock();
         if (!*info) info->emplace();
+        (*info)->m_centralUrl = m_connectingCentralUrl;
     }
 
     switch (connState) {
@@ -1073,7 +1153,8 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
 
     m_centralConn->setDebugOptions(getConnOpts());
 
-    auto res = m_centralConn->connect(std::string(url));
+    m_connectingCentralUrl = url;
+    auto res = m_centralConn->connect(m_connectingCentralUrl);
 
     if (!res) {
         FunctionQueue::get().queue([url, err = std::move(res).unwrapErr()] mutable {
@@ -1353,6 +1434,16 @@ std::optional<SpecialUserData> NetworkManagerImpl::getOwnSpecialData() {
     }
 
     return std::nullopt;
+}
+
+float NetworkManagerImpl::getGameLoss() {
+    auto info = this->connInfo();
+    return info ? info->m_gameLoss5Secs : 0.f;
+}
+
+float NetworkManagerImpl::getGameLoss1Min() {
+    auto info = this->connInfo();
+    return info ? info->m_gameLoss1Min : 0.f;
 }
 
 void NetworkManagerImpl::invalidateIcons() {
@@ -2016,11 +2107,6 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
         return;
     }
 
-    // if there are too many data requests in flight, kill some
-    if (info->m_gamePlayerDataReqs.size() > 15) {
-        info->m_gamePlayerDataReqs.pop_front();
-    }
-
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto playerData = msg.initPlayerData();
         auto data = playerData.initData();
@@ -2049,10 +2135,17 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
         playerData.setEventData(kj::ArrayPtr{eventData.data(), eventData.size()});
 
         // allocate another message id
-        uint16_t msgId = info->m_gameNextMessageId++;
+        uint16_t msgId = info->getNextMessageId();
         playerData.setMessageId(msgId);
-        info->m_gamePlayerDataReqs.emplace_back(msgId, Instant::now());
     }, !info->m_gameEventQueue.empty());
+}
+
+void NetworkManagerImpl::sendPlayerUpdateMeta(const PlayerLevelMeta& meta, const std::vector<int>& requests) {
+    this->sendToGame([&](GameMessage::Builder& msg) {
+        auto upd = msg.initPlayerUpdateMeta();
+        upd.initMeta().setProgress(meta.progress);
+        upd.setRequests({requests.data(), requests.size()});
+    });
 }
 
 void NetworkManagerImpl::queueLevelScript(const std::vector<EmbeddedScript>& scripts) {
@@ -2542,26 +2635,22 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
             auto m = msg.getLevelData();
             uint16_t messageId = m.getMessageId();
 
-            if (messageId != 0) {
-                // erase the request and estimate the RTT
-                auto lock = m_connInfo.lock();
-                auto& connInfo = **lock;
-                auto it = std::ranges::find_if(connInfo.m_gamePlayerDataReqs, [messageId](const auto& req) {
-                    return req.first == messageId;
-                });
+            // erase the request and estimate the RTT
+            auto lock = m_connInfo.lock();
+            auto& connInfo = **lock;
+            if (auto rtt = connInfo.handleIncomingMessageId(messageId)) {
+                m_gameConn->updateLatency(*rtt);
 
-                if (it != connInfo.m_gamePlayerDataReqs.end()) {
-                    auto rtt = it->second.elapsed();
-                    connInfo.m_gamePlayerDataReqs.erase(it);
-                    m_gameConn->updateLatency(rtt);
-
-                    if (m_debugLogs.load(relaxed)) {
-                        log::debug("Game server RTT: {}", rtt);
-                    }
+                if (m_debugLogs.load(relaxed)) {
+                    log::debug("Game server RTT: {}", *rtt);
                 }
             }
 
             this->invokeListeners(data::decodeUnchecked<msg::LevelDataMessage>(m));
+        } break;
+
+        case LEVEL_META: {
+            this->invokeListeners(data::decodeUnchecked<msg::LevelMetaMessage>(msg.getLevelMeta()));
         } break;
 
         case SCRIPT_LOGS: {

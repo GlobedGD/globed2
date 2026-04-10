@@ -1,5 +1,6 @@
 #include "EmoteBubble.hpp"
 #include <globed/core/EmoteManager.hpp>
+#include <core/game/SettingCache.hpp>
 
 #include <UIBuilder.hpp>
 #include <asp/format.hpp>
@@ -21,12 +22,13 @@ EmoteBubble* EmoteBubble::create() {
 }
 
 bool EmoteBubble::init() {
-    if (!CCNode::init()) return false;
+    if (!CCNodeRGBA::init()) return false;
 
     m_emoteSpr = CCSprite::createWithSpriteFrameName("emote_0.png"_spr);
 
     m_bubbleSpr = Build<CCSprite>::createSpriteName("bubble_emote_spr.png"_spr)
         .anchorPoint(0.5f, 0.5f)
+        .cascadeOpacity(true)
         .parent(this);
     cue::rescaleToMatch(m_bubbleSpr, 56.f);
     m_initialScale = m_bubbleSpr->getScale();
@@ -35,6 +37,11 @@ bool EmoteBubble::init() {
 
     this->customToggleVis(false);
     this->scheduleUpdate();
+
+    float opacity = CachedSettings::get().emoteOpacity;
+    m_baseOpacity = opacity * 255.f;
+    this->setCascadeOpacityEnabled(true);
+    this->setOpacity(static_cast<uint8_t>(m_baseOpacity));
 
     return true;
 }
@@ -95,6 +102,9 @@ void EmoteBubble::update(float dt) {
 
     this->setContentSize(m_bubbleSpr->getContentSize() * std::abs(m_bubbleSpr->getScale()));
     m_bubbleSpr->setPosition(this->getContentSize() / 2.f);
+
+    // for whatever reason it doesnt work otherwise
+    this->setOpacity(this->getOpacity());
 }
 
 void EmoteBubble::flipBubble(bool flipped) {
@@ -106,8 +116,17 @@ void EmoteBubble::flipBubble(bool flipped) {
 }
 
 void EmoteBubble::setOpacity(uint8_t op) {
-    m_bubbleSpr->setOpacity(op);
-    m_emoteSpr->setOpacity(op);
+    m_baseOpacity = op;
+    CCNodeRGBA::setOpacity(static_cast<uint8_t>((float)m_baseOpacity * m_opacityMult));
+}
+
+uint8_t EmoteBubble::getOpacity() {
+    return static_cast<uint8_t>(m_baseOpacity * m_opacityMult);
+}
+
+void EmoteBubble::setOpacityMult(float mult) {
+    m_opacityMult = mult;
+    this->setOpacity(m_baseOpacity);
 }
 
 bool EmoteBubble::isPlaying() {

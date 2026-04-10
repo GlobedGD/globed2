@@ -108,6 +108,12 @@ void GlobedGJBGL::setupPostInit() {
     fields.m_ghost = std::make_shared<RemotePlayer>(0, this, fields.m_playerNode);
     this->updateLocalIcons(std::nullopt);
 
+    // disable culling if in editor
+    // TODO: maybe instead figure how to get the camera and radius
+    if (fields.m_editor) {
+        fields.m_noGlobalCulling = true;
+    }
+
     CoreImpl::get().onJoinLevelPostInit(this);
 }
 
@@ -128,7 +134,7 @@ void GlobedGJBGL::setupNecessary() {
     } else if (!fields.m_active) {
         fields.m_pingOverlay->updateWithEditor();
     } else {
-        fields.m_pingOverlay->updatePing(nm.getGamePing().millis());
+        fields.m_pingOverlay->updatePing();
     }
 }
 
@@ -264,6 +270,10 @@ void GlobedGJBGL::setupListeners() {
 
     fields.m_levelDataListener = nm.listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& message) {
         this->onLevelDataReceived(message);
+    });
+
+    fields.m_levelMetaListener = nm.listen<msg::LevelMetaMessage>([this](const msg::LevelMetaMessage& message) {
+        this->onLevelMetaReceived(message);
     });
 
     fields.m_voiceListener = nm.listen<msg::VoiceBroadcastMessage>([this](msg::VoiceBroadcastMessage& message) {
@@ -609,7 +619,7 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
         return;
     }
 
-    fields.m_pingOverlay->updatePing(NetworkManagerImpl::get().getGamePing().millis());
+    fields.m_pingOverlay->updatePing();
 
     // check if the user is afk
     auto state = getCurrentGameState();
@@ -629,6 +639,9 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
     if (prevThrottle != fields.m_throttleUpdates) {
         log::debug("updating data send interval to {}", fields.m_throttleUpdates ? "throttled" : "normal");
     }
+
+    // TODO
+    // NetworkManagerImpl::get().sendPlayerUpdateMeta({1234,}, {myAccountId(),});
 }
 
 void GlobedGJBGL::sendPlayerData(const PlayerState& state) {
@@ -887,6 +900,10 @@ void GlobedGJBGL::handlePlayerLeave(int playerId, bool removeFromMap) {
 
     fields.m_interpolator.removePlayer(playerId);
     PlayerCacheManager::get().evictToLayer2(playerId);
+
+    if (fields.m_voiceOverlay) {
+        fields.m_voiceOverlay->removeStream(playerId);
+    }
 }
 
 void GlobedGJBGL::handleLocalPlayerDeath(PlayerObject* obj) {
@@ -1230,6 +1247,12 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
 
     if (!message.displayDatas.empty()) {
         fields.m_lastDataRequest = 0.f;
+    }
+}
+
+void GlobedGJBGL::onLevelMetaReceived(const msg::LevelMetaMessage& message) {
+    for (auto& [id, meta] : message.metas) {
+        log::info("player {} progress {}", id, meta.progress);
     }
 }
 

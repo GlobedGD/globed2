@@ -245,7 +245,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
     m_rightMenu->updateLayout();
 
     // update width of the room name accordingly, so it fits
-    roomNameLabel->limitLabelWidth(200.f - playerCountWrapper->getContentWidth(), 0.48f, 0.1f);
+    roomNameLabel->limitLabelWidth(195.f - playerCountWrapper->getContentWidth(), 0.48f, 0.1f);
     roomNameLayout->updateLayout();
 
     // add a background

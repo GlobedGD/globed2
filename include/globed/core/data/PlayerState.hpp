@@ -101,4 +101,8 @@ struct SpiderTeleportData {
     cocos2d::CCPoint from, to;
 };
 
+struct PlayerLevelMeta {
+    uint32_t progress;
+};
+
 }

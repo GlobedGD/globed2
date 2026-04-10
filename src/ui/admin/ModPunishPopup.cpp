@@ -86,20 +86,22 @@ bool ModPunishPopup::init(int accountId, UserPunishmentType type, std::optional<
         .collect();
 
     constexpr static auto HOUR = Duration::fromHours(1);
+    constexpr static auto WEEK = Duration::fromWeeks(1);
     constexpr static auto DAY = Duration::fromDays(1);
     constexpr static auto MONTH = Duration::fromDays(30);
+    constexpr static auto YEAR = Duration::fromYears(1);
 
     // quick buttons for duration
     for (Duration off : std::initializer_list<Duration>{
         HOUR * 6,
         DAY * 1,
         DAY * 3,
-        DAY * 7,
-        DAY * 14,
+        WEEK * 1,
+        WEEK * 2,
         DAY * 30,
         MONTH * 3,
         MONTH * 6,
-        MONTH * 12,
+        YEAR * 1,
         Duration{}
     }) {
         std::string labeltext;
@@ -108,10 +110,15 @@ bool ModPunishPopup::init(int accountId, UserPunishmentType type, std::optional<
         if (off.isZero()) {
             labeltext = "Permanent";
             scale = 0.675f;
+        } else if (off >= YEAR) {
+            auto years = off.days() / YEAR.days();
+            labeltext = fmt::format("{}y", years);
         } else if (off >= MONTH) {
             auto months = off.days() / MONTH.days();
-            labeltext = fmt::format("{}mo", months);
-            scale = 0.835f;
+            labeltext = fmt::format("{}m", months);
+        } else if (off >= WEEK) {
+            auto weeks = off.weeks();
+            labeltext = fmt::format("{}w", weeks);
         } else if (off >= DAY) {
             auto days = off.days();
             labeltext = fmt::format("{}d", days);
