@@ -18,7 +18,7 @@ inline RootApiTable* table() {
             g_table = res.unwrap();
         } else {
             auto mod = geode::Loader::get()->getInstalledMod("dankmeme.globed2");
-            if (!mod->isOrWillBeEnabled()) {
+            if (!mod || !mod->isOrWillBeEnabled()) {
                 knownMissing = true;
             }
         }
