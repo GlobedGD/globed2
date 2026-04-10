@@ -14,6 +14,7 @@
 #include <core/preload/PreloadManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/game/SettingCache.hpp>
+#include <ui/settings/DiscordLinkPopup.hpp>
 
 #include <Geode/modify/GameObject.hpp>
 #include <Geode/loader/GameEvent.hpp>
@@ -337,27 +338,48 @@ void GlobedGJBGL::maybeShowVCAlert(msg::ChatNotPermittedReason reason) {
         return;
     }
 
-    CStr title;
-    std::string message;
+    PopupRef ref;
 
     switch (reason) {
         case msg::ChatNotPermittedReason::NotLinked: {
-            title = "Not Linked";
-            message = "In order to use <cy>voice chat</c> on Globed, you must open <cg>Globed settings</c> and link your <cb>Discord</c> account.\n\n"
-                      "This notice was shown because you tried to activate voice chat while not linked.";
+            ref = PopupManager::get().quickPopup(
+                "Not Linked",
+
+                "In order to use <cy>voice chat</c> on Globed, you must open <cg>Globed settings</c> and link your <cb>Discord</c> account.\n\n"
+                "Do you want to link now?",
+
+                "No", "Yes",
+                [](auto, bool accepted) {
+                    if (!accepted) return;
+
+                    DiscordLinkPopup::create()->show();
+                }
+            );
         } break;
 
         case msg::ChatNotPermittedReason::Muted: {
-            title = "Muted";
-            message = "You have been <cr>muted</c> by the server moderators, and cannot use voice chat.\n\n"
-                      "This notice was shown because you tried to activate voice chat while muted.";
+            ref = PopupManager::get().alert(
+                "Muted",
+
+                "You have been <cr>muted</c> by the server moderators, and cannot use voice chat.\n\n"
+                "This notice was shown because you tried to activate voice chat while muted."
+            );
+        } break;
+
+        case msg::ChatNotPermittedReason::LevelDisabled: {
+            ref = PopupManager::get().alert(
+                "Voice Chat Disabled",
+
+                "Voice chat is currently disabled in this level. This is a <cy>global</c> limitation for <cy>everybody</c> on this level, and it cannot be bypassed.\n\n"
+                "This notice was shown because you tried to activate voice chat while it was disabled."
+            );
         } break;
 
         // rest are usually temporary errors or cannot happen
         default: return;
     }
 
-    PopupManager::get().alert(title, message).showQueue();
+    ref.showQueue();
     fields.m_showedMutedAlert = true;
 }
 

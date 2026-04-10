@@ -290,8 +290,9 @@ enum class ChatNotPermittedReason {
     RateLimited = 2,
     Unknown = 3,
     Disallowed = 4,
+    LevelDisabled = 5,
 
-    Last_ = Disallowed,
+    Last_ = LevelDisabled,
 };
 
 struct ChatNotPermittedMessage {
