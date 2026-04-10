@@ -54,7 +54,9 @@ void VoiceOverlay::update(float dt) {
     for (auto& [id, player] : gjbgl->m_fields->m_players) {
         this->updateStream(*player, false);
     }
-    this->updateStream(*gjbgl->m_fields->m_ghost, true);
+    if (gjbgl->m_fields->m_ghost) {
+        this->updateStream(*gjbgl->m_fields->m_ghost, true);
+    }
 
     this->updateLayout();
 }
