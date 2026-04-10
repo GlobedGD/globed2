@@ -209,7 +209,7 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
 }
 
 void DiscordLinkPopup::addLinkingText() {
-    m_waitingLabel1 = Build<CCLabelBMFont>::create("Requesting OAuth2 URL...", "bigFont.fnt")
+    m_waitingLabel1 = Build<CCLabelBMFont>::create("Requesting URL...", "bigFont.fnt")
         .scale(0.5f)
         .pos(this->fromCenter(0.f, -40.f))
         .id("waiting-label1")
