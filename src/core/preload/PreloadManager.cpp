@@ -117,10 +117,10 @@ void PreloadManager::initLoadQueue() {
         addIcons(IconType::Swing, 1, 43);
         addIcons(IconType::Jetpack, 1, 8);
 
-        for (size_t i = 1; i <= 7; i++ ){
-            m_loadQueue.emplace_back(asp::BoxedString::format("streak_{:02}_001.png", i));
-            m_loadQueue.back().iconType = IconType::Special;
-        }
+        // for (size_t i = 1; i <= 7; i++ ){
+        //     m_loadQueue.emplace_back(asp::BoxedString::format("streak_{:02}_001.png", i));
+        //     m_loadQueue.back().iconType = IconType::Special;
+        // }
     }
 
     m_totalCount = m_loadQueue.size();

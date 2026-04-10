@@ -44,5 +44,43 @@ bool isFileExistImpl(geode::ZStringView path) {
     return fullpath != nil;
 }
 
+std::string getPathForDirAndFilenameImpl(geode::ZStringView directory, geode::ZStringView filename) {
+    if (!directory.empty() && directory.view().front() == '/') {
+        // absolute path
+        geode::utils::StringBuffer<1024> fullBuf;
+        fullBuf.append("{}{}", directory, filename);
+        if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithUTF8String:fullBuf.c_str()]]) {
+            return fullBuf.str();
+        }
+    } else {
+        // relative path
+        NSString* fp = [[NSBundle mainBundle]
+            pathForResource:[NSString stringWithUTF8String:filename.c_str()]
+            ofType:nil
+            inDirectory:[NSString stringWithUTF8String:directory.c_str()]
+        ];
+        if (fp) {
+            return std::string([fp UTF8String]);
+        }
+    }
+    return std::string{};
+}
+
+std::unique_ptr<unsigned char[]> getFileDataImpl(geode::ZStringView path, unsigned long* outSize) {
+    NSString* nsp = [NSString stringWithUTF8String:path.c_str()];
+    NSError* error = nil;
+    NSData* data = [NSData dataWithContentsOfFile:nsp options:NSDataReadingMappedIfSafe error:&error];
+
+    if (data) {
+        if (outSize) *outSize = [data length];
+        auto buffer = std::make_unique<unsigned char[]>([data length]);
+        [data getBytes:buffer.get() length:[data length]];
+        return buffer;
+    }
+
+    if (outSize) *outSize = 0;
+    log::warn("Failed to read path '{}': {}", path, [[error localizedDescription] UTF8String]);
+    return nullptr;
+}
 
 }
