@@ -16,7 +16,9 @@ using namespace geode::prelude;
 
 namespace globed {
 
+namespace $unity {
 static auto& g_settings = CachedSettings::get();
+}
 
 RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode) : m_state(), m_parentNode(parentNode) {
     m_state.accountId = playerId;
@@ -243,7 +245,7 @@ void RemotePlayer::initData(const PlayerDisplayData& data, bool outdated, uint16
     m_dataOutdated = outdated;
     m_data = data;
 
-    if (g_settings.defaultDeathEffects) {
+    if ($unity::g_settings.defaultDeathEffects) {
         m_data.icons.deathEffect = DEFAULT_DEATH;
     }
 
