@@ -11,29 +11,17 @@ namespace globed {
 #ifndef GEODE_IS_IOS
 struct GLOBED_MODIFY_ATTR CCStringHook : Modify<CCStringHook, CCString> {
     static void onModify(auto& self) {
-        (void) self.setHookPriority("cocos2d::CCString::floatValue", Priority::Replace);
-        (void) self.setHookPriority("cocos2d::CCString::doubleValue", Priority::Replace);
         (void) self.setHookPriority("cocos2d::CCString::intValue", Priority::Replace);
         (void) self.setHookPriority("cocos2d::CCString::uintValue", Priority::Replace);
-    }
-
-    float floatValue() {
-        return utils::numFromString<float>(m_sString).unwrapOr(0.0f);
-    }
-
-    double doubleValue() {
-        return utils::numFromString<double>(m_sString).unwrapOr(0.0);
     }
 
     int intValue() {
         return utils::numFromString<int>(m_sString).unwrapOr(0);
     }
 
-#ifndef GEODE_IS_IOS
     unsigned int uintValue() {
         return utils::numFromString<unsigned int>(m_sString).unwrapOr(0);
     }
-#endif
 };
 #endif
 
