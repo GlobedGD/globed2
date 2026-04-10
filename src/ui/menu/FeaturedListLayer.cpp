@@ -25,6 +25,7 @@ bool FeaturedListLayer::init() {
         .parent(this)
         .pos(winSize / 2.f)
         .id("level-list"_spr);
+    m_list->getScrollLayer()->setStealingTouches(true);
 
     Build<CCSprite>::create("icon-featured-label.png"_spr)
         .zOrder(10)

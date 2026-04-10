@@ -262,14 +262,19 @@ void SettingsLayer::addSettings() {
             "This may break on more <cy>restrictive networks</c>, and enabling this option will make Globed use the system DNS servers instead. "
             "<cy>Note: this requires a restart</c>"
         );
+#ifdef GLOBED_DEBUG
         this->addSetting<FloatSettingCell>("core.dev.packet-loss-sim", "Packet Loss Simulation",
             "Artificially simulate outbound packet loss for testing purposes. Results depend on the transport: for <cy>TCP</c> the data is permanently lost, for <cy>UDP</c> the data may be resent if it was a reliable message, for <cy>QUIC</c> there's no loss as it will be handled by the protocol."
         );
+#endif
 
         this->addHeader("core.dev-debug", "Developer (Misc)", m_globedTab);
 
         this->addSetting<BoolSettingCell>("core.dev.ghost-follower", "Ghost Follower",
             "For debugging, enables a ghost player that will follow you in levels."
+        );
+        this->addSetting<BoolSettingCell>("core.dev.profile-frame-time", "Profile Frame Time",
+            "Records how long specific processes take during frame update, e.g. interpolation, audio update, playerobject updates, etc."
         );
         this->addSetting<BoolSettingCell>("core.dev.fake-data", "Use Dummy Data",
             "Uses randomly generated data in some places (room list, level list) for testing purposes"
@@ -303,6 +308,9 @@ void SettingsLayer::addSettings() {
     );
     this->addSetting<EmoteVolumeCell>("core.player.quick-chat-sfx-volume", "Emote SFX Volume",
         "Sets the volume of sound effects played when certain <cy>emotes</c> are used in levels."
+    );
+    this->addSetting<FloatSettingCell>("core.player.emote-opacity", "Emote Opacity",
+        "Sets the opacity of <cy>emotes</c>."
     );
     this->addSetting<BoolSettingCell>("core.player.show-names", "Player Names",
         "Shows player names above their icons."

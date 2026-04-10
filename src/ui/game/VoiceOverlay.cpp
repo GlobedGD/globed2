@@ -7,16 +7,12 @@ using namespace geode::prelude;
 using namespace asp::time;
 
 static constexpr float VOICE_OVERLAY_PAD_X = 5.f;
+static float g_threshold = 0.f;
 
 namespace globed {
 
 bool VoiceOverlay::init() {
     CCNode::init();
-
-    m_threshold = globed::setting<float>("core.level.voice-overlay-threshold");
-    SettingsManager::get().listenForChanges<double>("core.level.voice-overlay-threshold", [this](double value) {
-        m_threshold = value;
-    });
 
     this->schedule(schedule_selector(VoiceOverlay::update), 1.f / 30.f);
 
@@ -78,7 +74,7 @@ void VoiceOverlay::updateStream(RemotePlayer& player, bool local) {
 }
 
 void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
-    bool shouldShow = loudness >= m_threshold && !starving;
+    bool shouldShow = loudness >= g_threshold && !starving;
     auto it = m_cells.find(id);
 
     if (!shouldShow) {
@@ -86,8 +82,7 @@ void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
             // remove the cell if the user hasnt spoken in over a second
             auto cell = it->second;
             if (cell->sinceLastSpoken() > Duration::fromSecs(1)) {
-                cell->removeFromParent();
-                m_cells.erase(it);
+                this->removeStream(id);
             } else {
                 cell->updateLoudness(loudness);
             }
@@ -103,8 +98,7 @@ void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
 
     if (shouldRecreate) {
         if (it != m_cells.end()) {
-            it->second->removeFromParent();
-            m_cells.erase(it);
+            this->removeStream(id);
         }
 
         PlayerDisplayData data;
@@ -124,6 +118,14 @@ void VoiceOverlay::updateStream(int id, bool starving, float loudness) {
     it->second->updateLastSpoken();
 }
 
+void VoiceOverlay::removeStream(int id) {
+    auto it = m_cells.find(id);
+    if (it != m_cells.end()) {
+        it->second->removeFromParent();
+        m_cells.erase(it);
+    }
+}
+
 VoiceOverlay* VoiceOverlay::create() {
     auto ret = new VoiceOverlay;
     if (ret->init()) {
@@ -135,4 +137,11 @@ VoiceOverlay* VoiceOverlay::create() {
     return nullptr;
 }
 
+}
+
+$on_mod(Loaded) {
+    g_threshold = globed::setting<float>("core.level.voice-overlay-threshold");
+    globed::SettingsManager::get().listenForChanges<double>("core.level.voice-overlay-threshold", [](double value) {
+        g_threshold = value;
+    });
 }

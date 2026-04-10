@@ -9,10 +9,11 @@
 #include <globed/util/Interval.hpp>
 #include <ui/game/VoiceOverlay.hpp>
 #include <ui/game/PingOverlay.hpp>
+#include <ui/game/EmoteBubble.hpp>
+#include <ui/game/ProfilerOverlay.hpp>
 #include <ui/misc/NameLabel.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/game/SpeedTracker.hpp>
-#include <ui/game/EmoteBubble.hpp>
 
 namespace globed {
 
@@ -63,6 +64,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         std::vector<int> m_unknownPlayers;
         float m_lastDataRequest = 0.f;
         MessageListener<msg::LevelDataMessage> m_levelDataListener;
+        MessageListener<msg::LevelMetaMessage> m_levelMetaListener;
         MessageListener<msg::VoiceBroadcastMessage> m_voiceListener;
         MessageListener<msg::QuickChatBroadcastMessage> m_quickChatListener;
         MessageListener<msg::ChatNotPermittedMessage> m_mutedListener;
@@ -90,6 +92,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         GlobedGJBGL* m_self = nullptr;
         Ref<CCNode> m_progressBarContainer;
         Ref<VoiceOverlay> m_voiceOverlay;
+        Ref<ProfilerOverlay> m_profilerOverlay;
         Ref<PingOverlay> m_pingOverlay;
         Ref<CCSprite> m_noticeAlert;
         geode::WeakRef<PlayerObject> m_cameraFollows;
@@ -189,6 +192,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
 
 private:
     void onLevelDataReceived(const msg::LevelDataMessage& message);
+    void onLevelMetaReceived(const msg::LevelMetaMessage& message);
     void onVoiceDataReceived(msg::VoiceBroadcastMessage& message);
     void onQuickChatReceived(int accountId, uint32_t quickChatId);
     void onJoinSessionFailed(const msg::JoinSessionFailedMessage& message);

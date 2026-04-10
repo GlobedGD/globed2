@@ -14,10 +14,10 @@ public:
     void update(float) override;
     void updateSoft();
     void reposition();
+    void removeStream(int id);
 
 private:
     std::unordered_map<int, VoiceOverlayCell*> m_cells;
-    float m_threshold = 0.f;
 
     bool init() override;
 

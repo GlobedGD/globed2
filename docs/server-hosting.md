@@ -16,6 +16,8 @@ Both servers have some settings that allow you to tweak buffer pools (higher/low
 
 You must either **port forward**, use a VPN service like Radmin VPN or use a public tunnel like playit.gg. All of this is not covered by this guide, and is something you need to figure on your own.
 
+Note that if your **public IP** differs from the address people use to connect, you **must** configure the `server_address` option in the game server config. This is explained in more detail later.
+
 ### What protocols does Globed use?
 
 By default, TCP and UDP are used for central server, while game server uses UDP primarily. By modifying the configuration, it is possible to use any combination of the four protocols for both servers: TCP, UDP, QUIC, WebSockets. (WebSockets currently only work on central server)
@@ -70,6 +72,20 @@ INFO game_server::handler: Globed game server is running! Build date: ...
 ```
 
 For extended configuration, see [Game Server Configuration](#game-server-configuration)
+
+## Ensuring the game server is reachable
+
+An important step for people from the outside world to be able to connect is to ensure that your connection address is correct. On launch, the server will print something like this:
+```log
+INFO game_server::handler: - Accepting connections on: udp://1.2.3.4:4349
+```
+
+Here, `1.2.3.4` will be your public IP, obtained via a web request. If you are running this on a VPS or on a port forwarded machine, that might be enough. However, if you use a VPN/proxy service, that will not work. You must set this to be something that can be reached by other players. For example, if you use Radmin VPN and your IP inside the VPN is `5.6.7.8`, you want to add this to the config file:
+```toml
+server_address = "udp://5.6.7.8:4349"
+```
+
+The URL format is flexible and described in the [URL format](#url-format) section, for example you can also use TCP as the protocol or use a domain name for connections.
 
 ## Central Server Configuration
 

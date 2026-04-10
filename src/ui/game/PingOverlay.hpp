@@ -11,7 +11,7 @@ class PingOverlay : public CCNode {
 public:
     static PingOverlay* create();
 
-    void updatePing(uint32_t ms);
+    void updatePing();
     void updateWithDisconnected();
     void updateWithEditor();
 

@@ -1258,6 +1258,7 @@ void GlobedMenuLayer::update(float dt) {
     switch (connState) {
         case ConnectionState::Disconnected: {
             newState = MenuState::Disconnected;
+            m_roomId = -1;
         } break;
 
         case ConnectionState::DnsResolving: {

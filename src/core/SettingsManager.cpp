@@ -54,9 +54,12 @@ SettingsManager::SettingsManager() {
 
     // Player settings
     this->registerSetting("core.player.opacity", 1.0f);
+    this->registerLimits("core.player.opacity", 0.f, 1.f);
     this->registerSetting("core.player.quick-chat-enabled", true);
     this->registerSetting("core.player.quick-chat-sfx", true);
     this->registerSetting("core.player.quick-chat-sfx-volume", 0.5f);
+    this->registerSetting("core.player.emote-opacity", 1.0f);
+    this->registerLimits("core.player.emote-opacity", 0.f, 1.f);
     this->registerSetting("core.player.show-names", true);
     this->registerSetting("core.player.dual-name", true);
     this->registerSetting("core.player.name-opacity", 1.0f);
@@ -132,6 +135,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.dev.fake-data", false);
     this->registerSetting("core.dev.cert-verification", true);
     this->registerSetting("core.dev.ghost-follower", false);
+    this->registerSetting("core.dev.profile-frame-time", false);
 }
 
 void SettingsManager::loadSaveSlots() {

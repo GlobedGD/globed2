@@ -194,8 +194,14 @@ void NameLabel::addBadge(cocos2d::CCSprite* badge) {
 }
 
 void NameLabel::removeAllBadges() {
+    std::vector<CCNode*> toRemove;
+
     for (auto child : m_badgeContainer->getChildrenExt()) {
         if (child == m_teamLabel) continue;
+        toRemove.push_back(child);
+    }
+
+    for (auto child : toRemove) {
         child->removeFromParent();
     }
 }
