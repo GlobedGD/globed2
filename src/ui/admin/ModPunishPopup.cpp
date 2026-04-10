@@ -116,9 +116,8 @@ bool ModPunishPopup::init(int accountId, UserPunishmentType type, std::optional<
         } else if (off >= MONTH) {
             auto months = off.days() / MONTH.days();
             labeltext = fmt::format("{}m", months);
-            scale = 0.835f;
         } else if (off >= WEEK) {
-            auto weeks = off.days() / WEEK.days();
+            auto weeks = off.weeks();
             labeltext = fmt::format("{}w", weeks);
         } else if (off >= DAY) {
             auto days = off.days();
