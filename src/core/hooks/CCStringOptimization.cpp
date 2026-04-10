@@ -8,6 +8,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
+#ifndef GEODE_IS_IOS
 struct GLOBED_MODIFY_ATTR CCStringHook : Modify<CCStringHook, CCString> {
     static void onModify(auto& self) {
         (void) self.setHookPriority("cocos2d::CCString::floatValue", Priority::Replace);
@@ -28,12 +29,11 @@ struct GLOBED_MODIFY_ATTR CCStringHook : Modify<CCStringHook, CCString> {
         return utils::numFromString<int>(m_sString).unwrapOr(0);
     }
 
-#ifndef GEODE_IS_IOS
     unsigned int uintValue() {
         return utils::numFromString<unsigned int>(m_sString).unwrapOr(0);
     }
-#endif
 };
+#endif
 
 GLOBED_DLL bool CCString_initHook(CCString* self, const char* format, va_list args) {
     // check if we can cheat, %i is a very common case and we can do it faster
