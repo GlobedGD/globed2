@@ -28,6 +28,7 @@ protected:
     cue::PlayerIcon* m_playerIcon;
     geode::LazySprite* m_avatar = nullptr;
     bool m_activelyWaiting = false;
+    bool m_linked = false;
 
     MessageListener<msg::DiscordLinkStateMessage> m_stateListener;
     MessageListener<msg::DiscordOauthUrlMessage> m_oauthListener;

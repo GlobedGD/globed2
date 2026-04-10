@@ -36,13 +36,22 @@ bool DiscordLinkPopup::init() {
 
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .with([&](auto spr) { cue::rescaleToMatch(spr, 20.f); })
-        .intoMenuItem(+[] {
-            globed::alert(
-                "Discord Link",
-                "In this menu you can link your <cb>Discord</c> account to your <cg>Geometry Dash</c> account.\n\n"
-                "This unlocks some benefits, such as the ability to use <cj>voice chat</c> and sync your <cb>Discord</c> roles (for <cp>Supporters</c> or <cl>Moderators</c>).\n\n"
-                "To start, you <cr>must</c> join our <cb>Discord</c> server, by clicking the button in the bottom left."
-            );
+        .intoMenuItem([this] {
+            if (m_linked) {
+                globed::alert(
+                    "Discord Link",
+                    "In this menu you can link your <cb>Discord</c> account to your <cg>Geometry Dash</c> account.\n\n"
+                    "This unlocks some benefits, such as the ability to use <cj>voice chat</c> and sync your <cb>Discord</c> roles (for <cp>Supporters</c> or <cl>Moderators</c>).\n\n"
+                    "<cy>Note: it is not possible to unlink your account manually. You must contact the staff team to do so.</c>"
+                );
+            } else {
+                globed::alert(
+                    "Discord Link",
+                    "In this menu you can link your <cb>Discord</c> account to your <cg>Geometry Dash</c> account.\n\n"
+                    "This unlocks some benefits, such as the ability to use <cj>voice chat</c> and sync your <cb>Discord</c> roles (for <cp>Supporters</c> or <cl>Moderators</c>).\n\n"
+                    "To start, you <cr>must</c> join our <cb>Discord</c> server, by clicking the button in the bottom left."
+                );
+            }
         })
         .pos(this->fromBottomRight(18.f, 18.f))
         .id("info-btn")
@@ -127,6 +136,8 @@ void DiscordLinkPopup::onClose(CCObject*) {
 }
 
 void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, const std::string& avatarUrl) {
+    m_linked = id != 0;
+
     if (id == 0) {
         if (m_activelyWaiting) return;
 
