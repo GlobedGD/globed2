@@ -83,3 +83,4 @@ __pycache__
 config.toml
 
 ios-building
+frida-*.js

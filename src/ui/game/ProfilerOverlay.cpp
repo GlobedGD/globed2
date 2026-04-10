@@ -1,6 +1,7 @@
 #include "ProfilerOverlay.hpp"
 
 #include <ui/Core.hpp>
+#include <cue/Util.hpp>
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
@@ -140,8 +141,15 @@ void ProfilerOverlay::addNewEntryToLegend(std::string_view name, cocos2d::ccColo
         .collect();
     label->limitLabelWidth(70.f, 0.5f, 0.1f);
 
+    cue::resetNode(m_legendBg);
+
     container->updateLayout();
     m_legend->updateLayout();
+
+    m_legendBg = cue::attachBackground(m_legend, cue::BackgroundOptions {
+        .opacity = 127,
+        .cornerRoundness = -1.f,
+    });
 }
 
 ProfilerOverlay* ProfilerOverlay::create(CCSize size) {

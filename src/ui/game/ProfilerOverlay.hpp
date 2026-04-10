@@ -38,6 +38,7 @@ private:
     std::deque<std::pair<asp::Instant, ProfilerFrame>> m_frames;
     CCSize m_drawSize;
     CCNode* m_legend;
+    CCNode* m_legendBg = nullptr;
     std::unordered_set<std::string> m_legendNames;
     float m_smoothedMaxTime = 1.f / 60.f;
 
