@@ -412,6 +412,7 @@ void ModPunishPopup::startWaiting() {
     }
 
     m_loadPopup = LoadingPopup::create();
+    m_loadPopup->setClosable(true);
     m_loadPopup->show();
 }
 

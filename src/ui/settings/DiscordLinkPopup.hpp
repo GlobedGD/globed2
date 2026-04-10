@@ -28,15 +28,17 @@ protected:
     cue::PlayerIcon* m_playerIcon;
     geode::LazySprite* m_avatar = nullptr;
     bool m_activelyWaiting = false;
+    bool m_linked = false;
 
     MessageListener<msg::DiscordLinkStateMessage> m_stateListener;
-    MessageListener<msg::DiscordLinkAttemptMessage> m_attemptListener;
+    MessageListener<msg::DiscordOauthUrlMessage> m_oauthListener;
 
     bool init() override;
     void onClose(CCObject*) override;
 
     void onStateLoaded(uint64_t id, const std::string& username, const std::string& avatarUrl);
-    void onAttemptReceived(uint64_t id, const std::string& username, const std::string& avatarUrl);
+    // void onAttemptReceived(uint64_t id, const std::string& username, const std::string& avatarUrl);
+    void onOauthUrlReceived(geode::ZStringView url);
 
     void addLinkingText();
 

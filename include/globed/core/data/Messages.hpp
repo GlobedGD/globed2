@@ -257,6 +257,11 @@ struct DiscordLinkAttemptMessage {
     std::string avatarUrl;
 };
 
+// Discord Oauth URL (new flow)
+struct DiscordOauthUrlMessage {
+    std::string url;
+};
+
 // Featured level
 
 struct FeaturedLevelMessage {

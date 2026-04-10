@@ -291,6 +291,7 @@ public:
     void sendFetchCredits();
     void sendGetDiscordLinkState();
     void sendSetDiscordPairingState(bool state);
+    void sendRequestDiscordOauth();
     void sendDiscordLinkConfirm(int64_t id, bool confirm);
     void sendGetFeaturedList(uint32_t page);
     void sendGetFeaturedLevel();

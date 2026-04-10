@@ -36,13 +36,22 @@ bool DiscordLinkPopup::init() {
 
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .with([&](auto spr) { cue::rescaleToMatch(spr, 20.f); })
-        .intoMenuItem(+[] {
-            globed::alert(
-                "Discord Link",
-                "In this menu you can link your <cb>Discord</c> account to your <cg>Geometry Dash</c> account.\n\n"
-                "This unlocks some benefits, such as the ability to use <cj>voice chat</c> and sync your <cb>Discord</c> roles (for <cp>Supporters</c> or <cl>Moderators</c>).\n\n"
-                "To start, you <cr>must</c> join our <cb>Discord</c> server, by clicking the button in the bottom left."
-            );
+        .intoMenuItem([this] {
+            if (m_linked) {
+                globed::alert(
+                    "Discord Link",
+                    "In this menu you can link your <cb>Discord</c> account to your <cg>Geometry Dash</c> account.\n\n"
+                    "This unlocks some benefits, such as the ability to use <cj>voice chat</c> and sync your <cb>Discord</c> roles (for <cp>Supporters</c> or <cl>Moderators</c>).\n\n"
+                    "<cy>Note: it is not possible to unlink your account manually. You must contact the staff team to do so.</c>"
+                );
+            } else {
+                globed::alert(
+                    "Discord Link",
+                    "In this menu you can link your <cb>Discord</c> account to your <cg>Geometry Dash</c> account.\n\n"
+                    "This unlocks some benefits, such as the ability to use <cj>voice chat</c> and sync your <cb>Discord</c> roles (for <cp>Supporters</c> or <cl>Moderators</c>).\n\n"
+                    "To start, you <cr>must</c> join our <cb>Discord</c> server, by clicking the button in the bottom left."
+                );
+            }
         })
         .pos(this->fromBottomRight(18.f, 18.f))
         .id("info-btn")
@@ -111,8 +120,8 @@ bool DiscordLinkPopup::init() {
         this->onStateLoaded(msg.id, msg.username, msg.avatarUrl);
     });
 
-    m_attemptListener = nm.listen<msg::DiscordLinkAttemptMessage>([this](const auto& msg) {
-        this->onAttemptReceived(msg.id, msg.username, msg.avatarUrl);
+    m_oauthListener = nm.listen<msg::DiscordOauthUrlMessage>([this](const auto& msg) {
+        this->onOauthUrlReceived(msg.url);
     });
 
     this->requestState(0.f);
@@ -127,6 +136,8 @@ void DiscordLinkPopup::onClose(CCObject*) {
 }
 
 void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, const std::string& avatarUrl) {
+    m_linked = id != 0;
+
     if (id == 0) {
         if (m_activelyWaiting) return;
 
@@ -139,7 +150,7 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
         m_startBtn = Build<ButtonSprite>::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .scale(0.95f)
             .intoMenuItem([this](auto btn) {
-                NetworkManagerImpl::get().sendSetDiscordPairingState(true);
+                NetworkManagerImpl::get().sendRequestDiscordOauth();
                 btn->removeFromParent();
                 this->addLinkingText();
             })
@@ -152,7 +163,6 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
 
     m_activelyWaiting = false;
     this->unschedule(schedule_selector(DiscordLinkPopup::requestState));
-
 
     if (!username.empty()) {
         m_nameLabel->setString(username.c_str());
@@ -199,31 +209,39 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
 }
 
 void DiscordLinkPopup::addLinkingText() {
-    cue::resetNode(m_discordBtn);
-
-    m_waitingLabel1 = Build<CCLabelBMFont>::create("Waiting to link...", "bigFont.fnt")
+    m_waitingLabel1 = Build<CCLabelBMFont>::create("Requesting OAuth2 URL...", "bigFont.fnt")
         .scale(0.5f)
         .pos(this->fromCenter(0.f, -40.f))
         .id("waiting-label1")
         .parent(m_mainLayer);
 
-    m_waitingLabel2 = Build<CCLabelBMFont>::create("Use /link command on Discord!", "bigFont.fnt")
-        .scale(0.4f)
+    m_waitingLabel2 = Build<CCLabelBMFont>::create("", "bigFont.fnt")
         .pos(this->fromBottom(24.f))
         .id("waiting-label2")
         .parent(m_mainLayer);
 }
 
-void DiscordLinkPopup::onAttemptReceived(uint64_t id, const std::string& username, const std::string& avatarUrl) {
-    auto popup = DiscordLinkAttemptPopup::create(id, username, avatarUrl);
-    popup->setCallback([this, id](bool confirm) {
-        NetworkManagerImpl::get().sendDiscordLinkConfirm(id, confirm);
+// void DiscordLinkPopup::onAttemptReceived(uint64_t id, const std::string& username, const std::string& avatarUrl) {
+//     auto popup = DiscordLinkAttemptPopup::create(id, username, avatarUrl);
+//     popup->setCallback([this, id](bool confirm) {
+//         NetworkManagerImpl::get().sendDiscordLinkConfirm(id, confirm);
 
-        if (confirm) {
-            this->startWaitingForRefresh();
-        }
-    });
-    popup->show();
+//         if (confirm) {
+//             this->startWaitingForRefresh();
+//         }
+//     });
+//     popup->show();
+// }
+
+void DiscordLinkPopup::onOauthUrlReceived(ZStringView url) {
+    utils::web::openLinkInBrowser(url);
+    this->startWaitingForRefresh();
+
+    if (!m_waitingLabel1 || !m_waitingLabel2) return;
+
+    m_waitingLabel1->setString("Open your browser!");
+    m_waitingLabel2->setString("Waiting for confirmation...");
+    m_waitingLabel2->limitLabelWidth(m_size.width * 0.8f, 0.4f, 0.1f);
 }
 
 void DiscordLinkPopup::startWaitingForRefresh() {
