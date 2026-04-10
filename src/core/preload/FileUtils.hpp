@@ -9,6 +9,8 @@
 # include <Windows.h>
 #else
 # include <sys/stat.h>
+# include <fcntl.h>
+# include <unistd.h>
 #endif
 
 namespace globed {
@@ -17,6 +19,8 @@ namespace globed {
 static inline asp::Mutex<> g_fileMutex;
 
 // TODO: maybe use AAssetManager again, need to compare
+/// thread-safe version of CCFileUtils::getFileData.
+/// Invariant: path must be a full path already.
 inline std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize) {
 #ifdef GEODE_IS_WINDOWS
     HANDLE file = CreateFileA(
@@ -58,8 +62,37 @@ inline std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, 
     auto _lck = g_fileMutex.lock();
     return std::unique_ptr<unsigned char[]>(fu->getFileData(path, mode, outSize));
 #else
-    auto fu = cocos2d::CCFileUtils::get();
-    return std::unique_ptr<unsigned char[]>(fu->getFileData(path, mode, outSize));
+    int fd = -1;
+
+    auto errored = [&]{
+        if (fd != -1) close(fd);
+        if (outSize) *outSize = 0;
+        return nullptr;
+    };
+
+    // open n shit
+    fd = open(path, O_RDONLY);
+    if (fd == -1) {
+        return errored();
+    }
+
+    struct stat st;
+    if (fstat(fd, &st) == -1) {
+        return errored();
+    }
+
+    auto buffer = std::make_unique<unsigned char[]>(st.st_size);
+    ssize_t totalRead = 0;
+    while (totalRead < st.st_size) {
+        ssize_t bytesRead = read(fd, buffer.get() + totalRead, st.st_size - totalRead);
+        if (bytesRead <= 0) {
+            return errored();
+        }
+    }
+
+    close(fd);
+    if (outSize) *outSize = st.st_size;
+    return buffer;
 #endif
 }
 
