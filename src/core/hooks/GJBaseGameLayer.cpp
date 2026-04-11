@@ -329,6 +329,13 @@ void GlobedGJBGL::setupListeners() {
     fields.m_joinFailedListener = nm.listen<msg::JoinSessionFailedMessage>([this](const msg::JoinSessionFailedMessage& msg) {
         this->onJoinSessionFailed(msg);
     });
+
+    fields.m_discordStateListener = nm.listen<msg::DiscordLinkStateMessage>([this](const msg::DiscordLinkStateMessage& msg) {
+        if (msg.id != 0) {
+            // linked! :)
+            m_fields->m_knownNotLinked = false;
+        }
+    });
 }
 
 void GlobedGJBGL::maybeShowVCAlert(msg::ChatNotPermittedReason reason) {

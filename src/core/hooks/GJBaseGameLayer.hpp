@@ -69,6 +69,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         MessageListener<msg::QuickChatBroadcastMessage> m_quickChatListener;
         MessageListener<msg::ChatNotPermittedMessage> m_mutedListener;
         MessageListener<msg::JoinSessionFailedMessage> m_joinFailedListener;
+        MessageListener<msg::DiscordLinkStateMessage> m_discordStateListener;
 
         uint8_t m_deathCount = 0;
         bool m_lastLocalDeathReal = false;
