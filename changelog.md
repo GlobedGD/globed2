@@ -1,3 +1,23 @@
+## v2.1.0
+
+* Add fast asynchronous icon loading, eliminating most lag spikes when a player joins even if Preload Assets is disabled
+* Add emote opacity setting
+* Replace the clumsy Discord link system with a faster, more convenient system that uses OAuth2
+* Allow linking a Discord account without exiting the level
+* Add a developer option to show a performance overlay
+* Add a packet loss counter to the ping overlay (only shown when loss is detected)
+* Offload all audio decoding to a thread, preventing lag spikes when someone uses voice chat
+* Hook some slow parts of the game to increase performance
+* Disable culling in the editor to prevent all players disappearing
+* Show the keybind to undeafen in the deafened notification
+* Make the level list scrollable by dragging the view button (note: this requires the Better Touch Prio mod to be installed)
+* Fix players staying on the voice overlay forever after leaving the level
+* Fix crash in `globed::api::available()`
+* Fix misnamed SFX files causing 2 emotes to not play SFX
+* Fix several rare crashes & visual bugs
+* Fix Globed features to have consistent names
+* Fix minor typos in the UI
+
 ## v2.0.2
 
 * Fix emote SFX being loud for a millisecond when played
