@@ -19,10 +19,10 @@ import sys
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v5.6.1"
-XTLS_VERSION = "12695fe"
+XTLS_VERSION = "e29f88a"
 QUNET_VERSION = "f13b136"
 SERVER_SHARED_VERSION = "3f0d323"
-CUE_VERSION = "55a3118"
+CUE_VERSION = "8b84655"
 
 if sys.version_info < (3, 12):
     raise RuntimeError("Globed's build system requires Python 3.12 or higher")
@@ -378,7 +378,7 @@ def main(build: Build):
     })
 
     if 'scripting-ui' in gc.modules:
-        build.add_geode_dep("alphalaneous.editortab_api", ">=2.0.7")
+        build.add_geode_dep("alphalaneous.editortab_api", ">=2.1.0")
         build.mod_json["resources"]["sprites"].append("resources/editor/*.png")
 
     # fixup mod.json version in debug builds, be more strict for release builds
@@ -443,9 +443,9 @@ def main(build: Build):
     build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static", options = {
         "PUGIXML_NO_EXCEPTIONS": "ON",
     })
-    build.add_cpm_dep("GlobedGD/argon", "v1.4.7")
+    build.add_cpm_dep("GlobedGD/argon", "v1.4.8")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
-    build.add_cpm_dep("Prevter/AdvancedLabel", "7e0eff9", link_name="advanced_label")
+    build.add_cpm_dep("Prevter/AdvancedLabel", "17ed1c1", link_name="advanced_label")
 
     if gc.voice:
         build.add_cpm_dep("xiph/opus", "v1.6.1", {
