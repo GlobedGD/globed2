@@ -773,6 +773,14 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
             this->connInfo()->m_gameServerUrl.clear();
             cur.reset();
             lastReq.reset();
+
+            auto err = m_gameConn->lastError();
+            if (err != qn::ConnectionError::Success) {
+                geode::queueInMainThread([err = std::move(err)] {
+                    log::warn("Connection to game server failed: {}", err.message());
+                    globed::toastError("[Globed] Connection to the game server failed,\nsee game logs for more detailed information");
+                });
+            }
         }
     }
 
