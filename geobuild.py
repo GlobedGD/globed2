@@ -22,7 +22,7 @@ REQUIRED_GEODE_VERSION = "v5.6.1"
 XTLS_VERSION = "e29f88a"
 QUNET_VERSION = "f13b136"
 SERVER_SHARED_VERSION = "3f0d323"
-CUE_VERSION = "8b84655"
+CUE_VERSION = "d1c7ad2"
 
 if sys.version_info < (3, 12):
     raise RuntimeError("Globed's build system requires Python 3.12 or higher")
