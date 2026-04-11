@@ -883,6 +883,9 @@ void NetworkManagerImpl::threadPingGameServers(LockedConnInfo& info) {
                 if (res.timedOut) {
                     log::debug("Ping to server {} timed out", srvkey);
                     return;
+                } else if (res.errored) {
+                    log::warn("Ping to server {} errored!", srvkey);
+                    return;
                 }
 
                 (void) tx.trySend({srvkey, res});
