@@ -51,6 +51,8 @@ void VoiceOverlay::reposition() {
 
 void VoiceOverlay::update(float dt) {
     auto gjbgl = GlobedGJBGL::get();
+    if (!gjbgl) return; // who knows?
+
     for (auto& [id, player] : gjbgl->m_fields->m_players) {
         this->updateStream(*player, false);
     }
