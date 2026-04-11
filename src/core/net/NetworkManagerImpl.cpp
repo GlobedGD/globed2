@@ -766,6 +766,7 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
             } else {
                 info->m_gameServerUrl = cur->url;
                 info->m_gameServerId = cur->serverId;
+                cur->triedConnecting = true;
             }
         } else {
             // already tried connecting to this server and failed, so give it up
