@@ -12,28 +12,23 @@ namespace globed {
 bool ProgressIcon::init() {
     if (!CCNode::init()) return false;
 
-    this->updateIcons(cue::Icons{});
+    m_icon = Build(LazyPlayerIcon::create(cue::Icons{}))
+        .scale(0.5f)
+        .anchorPoint(0.5f, 0.5f)
+        .pos(0.f, -10.f)
+        .parent(this);
+
+    m_line = Build<CCLayerColor>::create(ccColor4B{0, 0, 0, 0}, 2.f, 6.f)
+        .pos(0.f, 5.f)
+        .parent(this);
 
     return true;
 }
 
 void ProgressIcon::updateIcons(const cue::Icons& data) {
-    cue::resetNode(m_line);
-    cue::resetNode(m_icon);
-
     auto col1 = singleton<GameManager>()->colorForIdx(data.color1);
-
-    m_line = Build<CCLayerColor>::create(ccColor4B{col1.r, col1.g, col1.b, 255}, 2.f, 6.f)
-        .pos(0.f, 5.f)
-        .parent(this);
-
-    float progressOpacity = globed::setting<float>("core.level.progress-opacity");
-
-    m_icon = Build(LazyPlayerIcon::create(data))
-        .scale(0.5f)
-        .anchorPoint(0.5f, 0.5f)
-        .pos(0.f, -10.f)
-        .parent(this);
+    m_line->setColor(col1);
+    m_icon->updateIcons(data);
 
     this->recalcOpacity();
 }

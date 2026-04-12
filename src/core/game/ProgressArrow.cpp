@@ -12,20 +12,16 @@ namespace globed {
 bool ProgressArrow::init() {
     if (!CCNode::init()) return false;
 
-    this->updateIcons(cue::Icons{});
+    m_icon = Build(LazyPlayerIcon::create(cue::Icons{}))
+        .scale(0.5f)
+        .anchorPoint(0.5f, 0.5f)
+        .parent(this);
 
     return true;
 }
 
 void ProgressArrow::updateIcons(const cue::Icons& icons) {
-    cue::resetNode(m_icon);
-
-    float progressOpacity = globed::setting<float>("core.level.progress-opacity");
-
-    m_icon = Build(LazyPlayerIcon::create(icons))
-        .scale(0.5f)
-        .anchorPoint(0.5f, 0.5f)
-        .parent(this);
+    m_icon->updateIcons(icons);
 }
 
 void ProgressArrow::updatePosition(
