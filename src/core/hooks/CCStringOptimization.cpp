@@ -67,6 +67,8 @@ GLOBED_DLL CCString* CCString_createHook(const char* format, ...) {
 
 }
 
+#define CCSTRING_IOS_INIT_OFFSET 0x268bbc
+
 $execute {
     void* initAddr = nullptr;
     void* createAddr = nullptr;
@@ -89,10 +91,18 @@ $execute {
 
     // tulip does not support var arg functions and macos has the init inlined :)
     return;
-#else
+#elif defined(GEODE_IS_IOS)
     static_assert(GEODE_COMP_GD_VERSION == 22081, "Update function");
     // initWithFormatAndValist ios
-    initAddr = (void*)(geode::base::get() + 0x268bbc);
+    if (Loader::get()->isPatchless()) {
+        auto hook = GEODE_MOD_STATIC_HOOK(CCSTRING_IOS_INIT_OFFSET, &globed::CCString_initHook, cocos2d::CCString::initWithFormatAndValist);
+        if (hook) {
+            hook.unwrap()->setPriority(Priority::Replace);
+        }
+        return;
+    } else {
+        initAddr = (void*)(geode::base::get() + CCSTRING_IOS_INIT_OFFSET);
+    }
 #endif
 
     if (initAddr) {
@@ -100,8 +110,8 @@ $execute {
             initAddr,
             &globed::CCString_initHook,
             "cocos2d::CCString::initWithFormatAndValist"
-        ).unwrap();
-        hook->setPriority(Priority::Replace);
+        ).unwrapOrDefault();
+        if (hook) hook->setPriority(Priority::Replace);
     } else {
         log::error("Failed to find CCString function to hook");
     }
