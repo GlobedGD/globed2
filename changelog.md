@@ -11,6 +11,7 @@
 * Disable culling in the editor to prevent all players disappearing
 * Show the keybind to undeafen in the deafened notification
 * Make the level list scrollable by dragging the view button (note: this requires the Better Touch Prio mod to be installed)
+* Remove some duplicate emotes; add heart & broken heart emotes
 * Fix players staying on the voice overlay forever after leaving the level
 * Fix crash in `globed::api::available()`
 * Fix misnamed SFX files causing 2 emotes to not play SFX
