@@ -39,6 +39,12 @@ static std::optional<PreloadItem> makeIconItem(IconType type, int id) {
     };
 }
 
+static PreloadItem makeDeathEffectItem(int id) {
+    return PreloadItem {
+        asp::BoxedString::format("PlayerExplosion_{:02}.png", id - 1)
+    };
+}
+
 PreloadManager::PreloadManager() {
     // spawn ncpus+4 threads, since some amount of time is spent on blocking (mutexes, file io)
     size_t workers = std::thread::hardware_concurrency() + 4;
@@ -85,8 +91,8 @@ void PreloadManager::initLoadQueue() {
     if (!m_deathEffectsLoaded && loadDe) {
         m_deathEffectsLoaded = true;
 
-        for (size_t i = 1; i < 20; i++) {
-            m_loadQueue.emplace_back(asp::BoxedString::format("PlayerExplosion_{:02}.png", i));
+        for (size_t i = 2; i < 21; i++) {
+            m_loadQueue.emplace_back(makeDeathEffectItem(i));
         }
     }
 
@@ -233,6 +239,29 @@ void PreloadManager::loadIcons(PlayerIconData icons, PreloadOptions options) {
     doPush(IconType::Spider, icons.spider);
     doPush(IconType::Swing, icons.swing);
     doPush(IconType::Jetpack, icons.jetpack);
+
+    bool loadDeath = !m_deathEffectsLoaded
+        && icons.deathEffect > 1
+        && !asp::iter::contains(m_loadingDeathEffects, icons.deathEffect)
+        && !asp::iter::contains(m_loadedDeathEffects, icons.deathEffect);
+
+    if (loadDeath) {
+        items.emplace_back(makeDeathEffectItem(icons.deathEffect));
+        m_loadingDeathEffects.push_back(icons.deathEffect);
+
+        // cheat a little
+        options.completionCallback = [this, id = icons.deathEffect, cb = std::move(options.completionCallback)] mutable {
+            log::trace("finished loading death effect {}", id);
+
+            m_loadedDeathEffects.push_back(id);
+            auto it = std::ranges::find(m_loadingDeathEffects, id);
+            if (it != m_loadingDeathEffects.end()) {
+                m_loadingDeathEffects.erase(it);
+            }
+
+            if (cb) cb();
+        };
+    }
 
     this->doLoadBatch(std::move(items), std::move(options));
 }
@@ -471,6 +500,10 @@ size_t PreloadManager::getTotalCount() {
 
 bool PreloadManager::deathEffectsLoaded() {
     return m_deathEffectsLoaded;
+}
+
+bool PreloadManager::deathEffectLoaded(int id) {
+    return m_deathEffectsLoaded || asp::iter::contains(m_loadedDeathEffects, id);
 }
 
 bool PreloadManager::iconsLoaded() {

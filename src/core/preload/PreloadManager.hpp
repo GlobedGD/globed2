@@ -71,8 +71,10 @@ public:
     // Returns the total number of assets that will be loaded
     size_t getTotalCount();
 
-    /// Returns whether death effects have been loaded
+    /// Returns whether all death effects have been loaded
     bool deathEffectsLoaded();
+    /// Returns whether a specific death effect has been loaded
+    bool deathEffectLoaded(int id);
     /// Returns whether all icons have been loaded
     bool iconsLoaded();
 
@@ -109,6 +111,8 @@ private:
     bool m_deathEffectsLoaded = false;
     asp::SpinLock<geode::utils::StringSet> m_loadedFrames;
     std::unordered_map<std::pair<int, int>, geode::Ref<cocos2d::CCTexture2D>, PairIntIntHash> m_loadedIcons;
+    std::vector<int> m_loadedDeathEffects;
+    std::vector<int> m_loadingDeathEffects;
 
     PreloadManager();
     ~PreloadManager();

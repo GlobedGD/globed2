@@ -785,12 +785,14 @@ void VisualPlayer::playDeathEffect() {
     auto* gm = globed::singleton<GameManager>();
 
     int oldEffect = gm->getPlayerDeathEffect();
-    gm->setPlayerDeathEffect(this->icons().deathEffect);
+    int newEffect = this->icons().deathEffect;
 
-    // prevent a crash here if somehow death effects arent preloaded
-    if (this->icons().deathEffect != 1 && !PreloadManager::get().deathEffectsLoaded()) {
-        gm->setPlayerDeathEffect(1);
+    // prevent a crash here if this effect hasn't fully loaded yet; use default as fallback
+    if (newEffect != 1 && !PreloadManager::get().deathEffectLoaded(newEffect)) {
+        newEffect = 1;
     }
+
+    gm->setPlayerDeathEffect(newEffect);
 
     // find all children in the object layer so we can later compare and see what nodes were added by playerDestroyed
     auto children = m_gameLayer->m_objectLayer->getChildrenExt();
