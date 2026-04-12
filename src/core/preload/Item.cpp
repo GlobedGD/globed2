@@ -190,6 +190,12 @@ static void checkGL(std::string_view where) {
     }
 }
 
+static void checkGLDbg(std::string_view where) {
+#ifdef GLOBED_DEBUG
+    checkGL(where);
+#endif
+}
+
 static void clearGLError() {
     while (glGetError() != GL_NO_ERROR);
 }
@@ -218,17 +224,17 @@ void PreloadItemState::enqueuePBOCreation() {
 
     if (g_opengl.supportsImmutableTex) {
         g_opengl.pglTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
-        checkGL("glTexStorage2D");
+        checkGLDbg("glTexStorage2D");
     } else {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        checkGL("glTexImage2D");
+        checkGLDbg("glTexImage2D");
     }
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
     glBufferData(GL_PIXEL_UNPACK_BUFFER, byteSize, nullptr, GL_STREAM_DRAW);
 
     void* ptr = g_opengl.pglMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, byteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-    checkGL("glMapBufferRange");
+    checkGLDbg("glMapBufferRange");
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
