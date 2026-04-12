@@ -1337,7 +1337,8 @@ void GlobedMenuLayer::updatePreferredServerLabel(bool connected) {
         return;
     }
 
-    auto preferredId = nm.getPreferredServer().value_or(0);
+    auto& rm = RoomManager::get();
+    auto preferredId = rm.pickServerId().value_or(0);
     auto preferredServer = nm.getGameServer(preferredId);
     if (preferredServer) {
         m_preferredServerLabel->setString(preferredServer->name);

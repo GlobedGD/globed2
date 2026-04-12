@@ -17,6 +17,7 @@
 * Fix several rare crashes & visual bugs
 * Fix Globed features to have consistent names
 * Fix minor typos in the UI
+* Fix server label in the menu not respecting room override
 
 ## v2.0.2
 
