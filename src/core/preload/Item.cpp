@@ -458,6 +458,9 @@ bool BatchPreloadState::hasFinished() {
 }
 
 void BatchPreloadState::cleanup() {
+    for (auto& item : this->items) {
+        item.cleanup();
+    }
     this->items.clear();
     this->callback = {};
     this->completionCallback = {};
