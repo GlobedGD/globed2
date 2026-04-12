@@ -25,8 +25,8 @@ bool ProfilerOverlay::init(CCSize size) {
         .parent(this);
 
     this->setContentSize(size);
-
-    this->redraw();
+    this->doUpdate(0.f);
+    this->schedule(schedule_selector(ProfilerOverlay::doUpdate), 1.f / 30.f);
 
     return true;
 }
@@ -49,8 +49,7 @@ void ProfilerOverlay::redraw() {
     float xstep = m_drawSize.width / static_cast<float>(count);
 
     float maxTime = asp::iter::from(m_frames)
-        .copied()
-        .map([](auto pair) { return pair.second.totalTime.template seconds<float>(); })
+        .map([](auto ref) { return ref.get().second.totalTime.template seconds<float>(); })
         .max()
         .value_or(0.f);
 
@@ -93,9 +92,14 @@ void ProfilerOverlay::redraw() {
             };
 
             m_drawNode->drawPolygon(vertices, 4, sample.color, 1, {0.f, 0.f, 0.f, 0.f});
+
             y += sheight;
         }
     }
+}
+
+void ProfilerOverlay::doUpdate(float) {
+    this->redraw();
 }
 
 void ProfilerOverlay::updateWithFrame(const ProfilerFrame& frame) {
@@ -106,8 +110,8 @@ void ProfilerOverlay::updateWithFrame(const ProfilerFrame& frame) {
 
     m_frames.emplace_back(Instant::now(), frame);
 
-    // keep last 3 seconds of data in the graph
-    auto cutoff = Instant::now() - Duration::fromSecs(3);
+    // keep last 2 seconds of data in the graph
+    auto cutoff = Instant::now() - Duration::fromSecs(2);
 
     while (!m_frames.empty()) {
         auto& [time, _] = m_frames.front();
@@ -117,8 +121,6 @@ void ProfilerOverlay::updateWithFrame(const ProfilerFrame& frame) {
             break;
         }
     }
-
-    this->redraw();
 
     for (auto& sample : frame.samples) {
         if (m_legendNames.insert(sample.name).second) {

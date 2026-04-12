@@ -32,6 +32,7 @@ public:
     static ProfilerOverlay* create(CCSize size);
 
     void updateWithFrame(const ProfilerFrame& frame);
+    void doUpdate(float);
 
 private:
     cocos2d::CCDrawNode* m_drawNode;
