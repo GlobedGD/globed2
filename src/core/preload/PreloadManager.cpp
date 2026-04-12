@@ -266,6 +266,16 @@ void PreloadManager::loadIcons(PlayerIconData icons, PreloadOptions options) {
     this->doLoadBatch(std::move(items), std::move(options));
 }
 
+void PreloadManager::loadIcon(IconType ty, int icon, PreloadOptions options) {
+    std::vector<PreloadItem> items;
+
+    if (auto item = makeIconItem(ty, icon)) {
+        items.emplace_back(std::move(*item));
+    }
+
+    this->doLoadBatch(std::move(items), std::move(options));
+}
+
 void PreloadManager::doLoadBatch(std::vector<PreloadItem> items, PreloadOptions options) {
     if (!m_sstate.initialized) {
         this->initSessionState();

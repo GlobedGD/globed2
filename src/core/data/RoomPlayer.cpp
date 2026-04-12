@@ -4,8 +4,8 @@
 
 namespace globed {
 
-cue::PlayerIcon* MinimalRoomPlayer::createIcon() const {
-    return cue::PlayerIcon::create(this->toIcons());
+LazyPlayerIcon* MinimalRoomPlayer::createIcon() const {
+    return LazyPlayerIcon::create(this->toIcons());
 }
 
 cue::Icons MinimalRoomPlayer::toIcons() const {

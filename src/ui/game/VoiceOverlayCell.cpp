@@ -39,7 +39,7 @@ bool VoiceOverlayCell::init(const PlayerDisplayData& data) {
         .parent(m_wrapper)
         .collect();
 
-    auto icon = Build<cue::PlayerIcon>::create(convertPlayerIcons(data.icons))
+    auto icon = Build<LazyPlayerIcon>::create(convertPlayerIcons(data.icons))
         .scale(0.45f)
         .parent(m_wrapper)
         .collect();

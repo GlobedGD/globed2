@@ -22,7 +22,7 @@ void ProgressArrow::updateIcons(const cue::Icons& icons) {
 
     float progressOpacity = globed::setting<float>("core.level.progress-opacity");
 
-    m_icon = Build(cue::PlayerIcon::create(icons))
+    m_icon = Build(LazyPlayerIcon::create(icons))
         .scale(0.5f)
         .anchorPoint(0.5f, 0.5f)
         .parent(this);

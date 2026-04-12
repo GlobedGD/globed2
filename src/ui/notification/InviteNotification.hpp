@@ -3,7 +3,6 @@
 #include <globed/core/data/Messages.hpp>
 
 #include <Geode/Geode.hpp>
-#include <cue/PlayerIcon.hpp>
 
 namespace globed {
 

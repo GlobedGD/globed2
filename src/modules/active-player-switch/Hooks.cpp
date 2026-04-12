@@ -320,7 +320,7 @@ void APSPlayLayer::showNextPlayerNotification(int id) {
         return;
     }
 
-    auto icon = cue::PlayerIcon::create(icons);
+    auto icon = LazyPlayerIcon::create(icons);
 
     Notification::create(fmt::format("Switching to {} soon!", username), icon, 0.5f)->show();
 }

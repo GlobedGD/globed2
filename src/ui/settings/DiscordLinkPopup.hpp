@@ -3,9 +3,9 @@
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <ui/BasePopup.hpp>
+#include <ui/misc/LazyPlayerIcon.hpp>
 
 #include <Geode/ui/NineSlice.hpp>
-#include <cue/PlayerIcon.hpp>
 
 namespace globed {
 
@@ -25,7 +25,7 @@ protected:
     cocos2d::CCLabelBMFont* m_idLabel = nullptr;
     cocos2d::CCLabelBMFont* m_waitingLabel1 = nullptr;
     cocos2d::CCLabelBMFont* m_waitingLabel2 = nullptr;
-    cue::PlayerIcon* m_playerIcon;
+    LazyPlayerIcon* m_playerIcon;
     geode::LazySprite* m_avatar = nullptr;
     bool m_activelyWaiting = false;
     bool m_linked = false;

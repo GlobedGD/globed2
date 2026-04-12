@@ -8,7 +8,7 @@
 #include <ui/admin/Common.hpp>
 
 #include <UIBuilder.hpp>
-#include <cue/PlayerIcon.hpp>
+#include <ui/misc/LazyPlayerIcon.hpp>
 
 using namespace geode::prelude;
 

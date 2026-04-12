@@ -2,9 +2,9 @@
 #include <globed/prelude.hpp>
 #include <ui/misc/NameLabel.hpp>
 #include <ui/misc/CellGradients.hpp>
+#include <ui/misc/LazyPlayerIcon.hpp>
 
 #include <Geode/Geode.hpp>
-#include <cue/PlayerIcon.hpp>
 
 namespace globed {
 
@@ -31,7 +31,7 @@ protected:
     };
 
     CCMenuItemSpriteExtra* m_usernameBtn;
-    cue::PlayerIcon* m_cubeIcon;
+    LazyPlayerIcon* m_cubeIcon;
     CCNode* m_leftContainer;
     CCMenu* m_rightMenu;
     CCNode* m_gradient = nullptr;

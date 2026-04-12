@@ -3,9 +3,9 @@
 #include <globed/util/gd.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <modules/two-player/TwoPlayerModule.hpp>
+#include <ui/misc/LazyPlayerIcon.hpp>
 
 #include <UIBuilder.hpp>
-#include <cue/PlayerIcon.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -37,7 +37,7 @@ bool LinkRequestPopup::init(int accountId, UserListPopup* popup) {
         icons = convertPlayerIcons(rp->displayData().icons);
     }
 
-    Build<cue::PlayerIcon>::create(icons)
+    Build<LazyPlayerIcon>::create(icons)
         .pos(this->fromCenter(0.f, 10.f))
         .parent(m_mainLayer);
 

@@ -67,7 +67,7 @@ bool DiscordLinkPopup::init() {
         .parent(m_mainLayer)
         .collect();
 
-    m_playerIcon = Build(cue::PlayerIcon::create(icons))
+    m_playerIcon = Build(LazyPlayerIcon::create(icons))
         .with([&](auto spr) { cue::rescaleToMatch(spr, ICON_SIZE); })
         .parent(m_playerCard);
 

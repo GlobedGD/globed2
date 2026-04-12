@@ -3,17 +3,16 @@
 
 #include <Geode/Geode.hpp>
 #ifdef GLOBED_BUILD
-# include <cue/PlayerIcon.hpp>
+# include <ui/misc/LazyPlayerIcon.hpp>
 #else
 namespace cue {
-
 struct Icons;
-class PlayerIcon;
-
 }
 #endif
 
 namespace globed {
+
+class LazyPlayerIcon;
 
 class GLOBED_DLL ProgressIcon : public CCNode {
 public:
@@ -31,7 +30,7 @@ public:
 
 private:
     cocos2d::CCLayerColor* m_line = nullptr;
-    cue::PlayerIcon* m_icon = nullptr;
+    LazyPlayerIcon* m_icon = nullptr;
     bool m_forceOnTop = false;
 
     bool init();

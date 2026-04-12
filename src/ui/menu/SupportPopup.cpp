@@ -5,7 +5,7 @@
 
 #include <UIBuilder.hpp>
 #include <cue/RepeatingBackground.hpp>
-#include <cue/PlayerIcon.hpp>
+#include <ui/misc/LazyPlayerIcon.hpp>
 
 using namespace geode::prelude;
 
@@ -150,12 +150,12 @@ bool SupportPopup::init() {
 
     auto* gm = GameManager::sharedState();
 
-    cue::PlayerIcon* player;
-    Build<cue::PlayerIcon>::create(globed::getPlayerIcons())
+    LazyPlayerIcon* player;
+    Build<LazyPlayerIcon>::create(globed::getPlayerIcons())
         .anchorPoint(0.5f, 0.5f)
         .pos(-65.f, 81.5f)
         .parent(clippingNode)
-        .with([&](cue::PlayerIcon* player) {
+        .with([&](LazyPlayerIcon* player) {
             auto playerSequence = CCSequence::create(
                 CCDelayTime::create(0.25f),
                 CCCallFunc::create(this, callfunc_selector(SupportPopup::kofiEnableParticlesCallback)),

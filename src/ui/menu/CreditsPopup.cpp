@@ -2,9 +2,9 @@
 #include <globed/core/PopupManager.hpp>
 #include <globed/core/actions.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
+#include <ui/misc/LazyPlayerIcon.hpp>
 
 #include <UIBuilder.hpp>
-#include <cue/PlayerIcon.hpp>
 
 using namespace geode::prelude;
 
@@ -32,7 +32,7 @@ private:
     bool init(const CreditsUser& user) {
         CCNode::init();
 
-        auto* sp = Build(cue::PlayerIcon::create(cue::Icons {
+        auto* sp = Build(LazyPlayerIcon::create(cue::Icons {
             .type = IconType::Cube,
             .id = user.cube,
             .color1 = user.color1.asIdx(),

@@ -1,8 +1,8 @@
 #include "ModAuditLogPopup.hpp"
 #include <core/net/NetworkManagerImpl.hpp>
+#include <ui/misc/LazyPlayerIcon.hpp>
 
 #include <UIBuilder.hpp>
-#include <cue/PlayerIcon.hpp>
 #include <asp/time/SystemTime.hpp>
 #include <asp/iter.hpp>
 
@@ -116,7 +116,7 @@ private:
                 .parent(this);
         } else {
             // boring ui
-            Build(cue::PlayerIcon::create(
+            Build(LazyPlayerIcon::create(
                 IconType::Cube,
                 mod.cube,
                 mod.color1,

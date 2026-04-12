@@ -5,7 +5,7 @@
 #include "../../core/SessionId.hpp"
 
 #ifdef GLOBED_BUILD
-# include <cue/PlayerIcon.hpp>
+# include <ui/misc/LazyPlayerIcon.hpp>
 #endif
 
 namespace globed {
@@ -18,7 +18,7 @@ struct MinimalRoomPlayer {
     ColorId<uint16_t> glowColor;
 
 #ifdef GLOBED_BUILD
-    cue::PlayerIcon* createIcon() const;
+    LazyPlayerIcon* createIcon() const;
     cue::Icons toIcons() const;
 #endif
 
@@ -26,7 +26,7 @@ struct MinimalRoomPlayer {
 };
 
 struct RoomPlayer : MinimalRoomPlayer {
-    SessionId session = SessionId{};
+    SessionId session{};
     uint16_t teamId;
     std::optional<SpecialUserData> specialUserData;
 

@@ -65,6 +65,8 @@ public:
     void loadEverything(PreloadOptions options = {});
     // Loads the given icons
     void loadIcons(PlayerIconData icons, PreloadOptions options = {});
+    // Loads the given icon
+    void loadIcon(IconType ty, int icon, PreloadOptions options = {});
 
     // Returns the number of assets that have been loaded so far
     size_t getLoadedCount();

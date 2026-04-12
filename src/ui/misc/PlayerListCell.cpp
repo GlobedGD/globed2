@@ -40,7 +40,7 @@ bool PlayerListCell::init(
         .anchorPoint(0.f, 0.5f)
         .parent(this);
 
-    m_cubeIcon = Build(cue::PlayerIcon::create(icons))
+    m_cubeIcon = Build(LazyPlayerIcon::create(icons))
         .id("icon")
         .parent(m_leftContainer);
     m_cubeIcon->setLayoutOptions(AxisLayoutOptions::create()->setNextGap(5.f));

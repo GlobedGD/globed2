@@ -3,19 +3,17 @@
 
 #include <Geode/Geode.hpp>
 #ifdef GLOBED_BUILD
-# include <cue/PlayerIcon.hpp>
+# include <ui/misc/LazyPlayerIcon.hpp>
 #else
 namespace cue {
-
 struct Icons;
-class PlayerIcon;
-
 }
 #endif
 
 namespace globed {
 
 struct GameCameraState;
+class LazyPlayerIcon;
 
 class GLOBED_DLL ProgressArrow : public CCNode {
 public:
@@ -29,7 +27,7 @@ public:
     void updatePosition(const GameCameraState& cam, CCPoint playerPos, double angle);
 
 private:
-    cue::PlayerIcon* m_icon = nullptr;
+    LazyPlayerIcon* m_icon = nullptr;
 
     bool init();
 };
