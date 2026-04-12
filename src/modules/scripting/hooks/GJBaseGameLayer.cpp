@@ -345,10 +345,6 @@ void SCBaseGameLayer::processCustomMoveActions(float dt) {
     }
 }
 
-void SCBaseGameLayer::unfollowAllForPlayer(int id) {
-    // TODO: im too sleepy to do this rn
-}
-
 std::vector<std::string>& SCBaseGameLayer::getLogs() {
     return m_fields->m_logBuffer;
 }

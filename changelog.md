@@ -1,6 +1,7 @@
 ## v2.1.0
 
 * Add fast asynchronous icon loading, eliminating most lag spikes when a player joins even if Preload Assets is disabled
+* Add several more optimizations to improve performance with a large amount of players
 * Add emote opacity setting
 * Replace the clumsy Discord link system with a faster, more convenient system that uses OAuth2
 * Allow linking a Discord account without exiting the level
