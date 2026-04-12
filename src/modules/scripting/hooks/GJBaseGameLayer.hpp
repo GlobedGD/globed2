@@ -94,16 +94,14 @@ struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBas
     size_t getCustomFollowIndex(int player, int group);
     CustomFollowedData positionForPlayer(int player);
 
-    void unfollowAllForPlayer(int id);
     void processCustomActions(float);
     void processCustomFollowActions(float);
     void processCustomMoveActions(float);
 
-    void rotateObjects(cocos2d::CCArray* p0, float p1, cocos2d::CCPoint p2, cocos2d::CCPoint p3, bool p4, bool p5) {
-        geode::log::debug("rotateObjects({}, {}, {}, {}, {}, {})", p0, p1, p2, p3, p4, p5);
-        GJBaseGameLayer::rotateObjects(p0, p1, p2, p3, p4, p5);
-    }
-
+    // void rotateObjects(cocos2d::CCArray* p0, float p1, cocos2d::CCPoint p2, cocos2d::CCPoint p3, bool p4, bool p5) {
+    //     geode::log::debug("rotateObjects({}, {}, {}, {}, {}, {})", p0, p1, p2, p3, p4, p5);
+    //     GJBaseGameLayer::rotateObjects(p0, p1, p2, p3, p4, p5);
+    // }
 };
 
 }
