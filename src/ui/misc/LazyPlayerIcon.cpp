@@ -7,10 +7,15 @@ using namespace geode::prelude;
 
 namespace globed {
 
+static bool shouldSkipLoading(const cue::Icons& icons) {
+    auto& pm = PreloadManager::get();
+
+    return pm.iconsLoaded() || pm.getCachedIcon((int)icons.type, icons.id);
+}
+
 bool LazyPlayerIcon::init(const Icons& icons) {
     // if all icons have already been preloaded, we can skip the lazy loading
-    auto& pm = PreloadManager::get();
-    if (pm.iconsLoaded()) {
+    if (shouldSkipLoading(icons)) {
         return PlayerIcon::init(icons);
     }
 
@@ -23,8 +28,7 @@ bool LazyPlayerIcon::init(const Icons& icons) {
 }
 
 void LazyPlayerIcon::updateIcons(const Icons& icons) {
-    auto& pm = PreloadManager::get();
-    if (pm.iconsLoaded()) {
+    if (shouldSkipLoading(icons)) {
         return PlayerIcon::updateIcons(icons);
     }
 
@@ -44,7 +48,8 @@ void LazyPlayerIcon::updateIcons(const Icons& icons) {
 
         self->onLoaded();
     };
-    pm.loadIcon(icons.type, icons.id, std::move(opts));
+
+    PreloadManager::get().loadIcon(icons.type, icons.id, std::move(opts));
 }
 
 void LazyPlayerIcon::onLoaded() {
