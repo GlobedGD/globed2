@@ -168,12 +168,12 @@ void SCBaseGameLayer::customFollowPlayerMov(int player, int group, bool enable) 
     auto gjbgl = GlobedGJBGL::get(this);
 
     if (!enable) {
-        this->disableCustomFollow(player, group, false, true);
+        this->disableCustomFollow(player, group, true, false);
         return;
     }
 
     auto& action = this->insertCustomFollow(player, group);
-    action.m_pos = enable;
+    action.m_pos = true;
 }
 
 void SCBaseGameLayer::customFollowPlayerRot(int player, int group, int center, bool enable) {
@@ -188,7 +188,7 @@ void SCBaseGameLayer::customFollowPlayerRot(int player, int group, int center, b
     }
 
     auto& action = this->insertCustomFollow(player, group);
-    action.m_rot = enable;
+    action.m_rot = true;
     action.m_centerGroupId = center;
 }
 
@@ -204,7 +204,6 @@ CustomFollowAction& SCBaseGameLayer::insertCustomFollow(int player, int group) {
             .m_groupId = group,
         });
         idx = fields.m_followActions.size() - 1;
-
     }
 
     if (!fields.m_lastPlayerPositions.contains(player)) {
@@ -230,11 +229,11 @@ void SCBaseGameLayer::disableCustomFollow(int player, int group, bool disableMov
 
     auto& action = fields.m_followActions[idx];
     if (disableMov) {
-        action.m_pos = disableMov;
+        action.m_pos = false;
     }
 
     if (disableRot) {
-        action.m_rot = disableRot;
+        action.m_rot = false;
     }
 
     if (!action.m_rot && !action.m_pos) {
