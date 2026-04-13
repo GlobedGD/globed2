@@ -21,6 +21,7 @@ void CollisionModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool e
         (void) this->disable();
     } else {
         // safe mode is forced in collision mode
+        log::info("Collision - enabling safe mode for the level");
         gjbgl->setPermanentSafeMode();
     }
 }

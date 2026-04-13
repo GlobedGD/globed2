@@ -45,6 +45,7 @@ void TwoPlayerModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool e
         (void) this->disable();
     } else {
         // safe mode is forced in 2 player mode
+        log::info("2p mode - enabling safe mode for the level");
         gjbgl->setPermanentSafeMode();
 
         // enable low latency interpolator

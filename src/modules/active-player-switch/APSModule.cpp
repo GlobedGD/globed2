@@ -18,6 +18,7 @@ void APSModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor)
         (void) this->disable();
     } else {
         // force safe mode
+        log::info("Switcheroo - enabling safe mode for the level");
         gjbgl->setPermanentSafeMode();
 
         auto& lerper = gjbgl->m_fields->m_interpolator;
