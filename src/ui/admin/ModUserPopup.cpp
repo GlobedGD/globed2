@@ -397,6 +397,9 @@ void ModUserPopup::onLoaded(const msg::AdminFetchResponseMessage& msg) {
         queryAccountId = msg.accountId;
     } else if (m_queryNum != 0) {
         queryAccountId = m_queryNum;
+    } else {
+        // try to see if m_query is an integer
+        queryAccountId = utils::numFromString<int>(m_query).unwrapOr(0);
     }
 
     // if this is a refresh, reuse the user score
