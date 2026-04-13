@@ -74,6 +74,7 @@ protected:
         m_toggler = Build(CCMenuItemExt::createTogglerWithStandardSprites(0.7f, [this](auto toggler) {
             m_popup->onToggled(m_ptr, !toggler->isOn());
         }))
+            .cascadeColor(true)
             .scale(0.85f)
             .pos(this->getContentWidth() - 16.f, CELL_HEIGHT / 2.f)
             .parent(this)
@@ -254,6 +255,7 @@ bool RoomSettingsPopup::init(RoomSettings s) {
             Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f, [this, setup](auto toggler) {
                 this->onToggled(setup.m_ptr, !toggler->isOn());
             }))
+                .cascadeColor(true)
                 .parent(cell)
                 .store(setup.m_toggler);
 
@@ -298,6 +300,11 @@ bool RoomSettingsPopup::init(RoomSettings s) {
     return true;
 }
 
+void RoomSettingsPopup::setCanModify(bool can) {
+    m_canModify = can;
+    this->reloadCheckboxes();
+}
+
 void RoomSettingsPopup::onToggled(bool RoomSettings::* bptr, bool state) {
     auto it = std::ranges::find(m_cellSetups, bptr, &RoomSetting::m_ptr);
     if (it == m_cellSetups.end()) return;
@@ -326,6 +333,8 @@ void RoomSettingsPopup::reloadCheckboxes() {
             bool value = m_settings.*setup.m_ptr;
             if (setup.m_invert) value = !value;
             setup.m_toggler->toggle(value);
+            setup.m_toggler->setEnabled(m_canModify);
+            setup.m_toggler->setColor(m_canModify ? ccWHITE : ccGRAY);
         }
     }
 

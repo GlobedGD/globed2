@@ -864,23 +864,22 @@ void GlobedMenuLayer::initSideButtons() {
         );
     }
 
-    if (rm.isOwner()) {
-        auto btn = makeButton(
-            CCSprite::create("settings01.png"_spr),
-            m_leftSideMenu,
-            LeftBtn::Settings,
-            "btn-settings",
-            [] {
-                auto& rm = RoomManager::get();
-                auto popup = RoomSettingsPopup::create(rm.getSettings());
-                popup->setCallback([](RoomSettings settings) {
-                    RoomManager::get().getSettings() = settings;
-                    NetworkManagerImpl::get().sendUpdateRoomSettings(settings);
-                });
-                popup->show();
-            }
-        );
-    }
+    makeButton(
+        CCSprite::create("settings01.png"_spr),
+        m_leftSideMenu,
+        LeftBtn::Settings,
+        "btn-settings",
+        [] {
+            auto& rm = RoomManager::get();
+            auto popup = RoomSettingsPopup::create(rm.getSettings());
+            popup->setCanModify(RoomManager::get().isOwner());
+            popup->setCallback([](RoomSettings settings) {
+                RoomManager::get().getSettings() = settings;
+                NetworkManagerImpl::get().sendUpdateRoomSettings(settings);
+            });
+            popup->show();
+        }
+    );
 
     // close room button
     if (!rm.isInGlobal() && (rm.isOwner() || NetworkManagerImpl::get().isAuthorizedModerator())) {

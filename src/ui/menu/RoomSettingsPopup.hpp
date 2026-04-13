@@ -17,12 +17,14 @@ public:
 
     void setCallback(Callback cb) { m_callback = std::move(cb); }
     void onToggled(bool RoomSettings::* bptr, bool state);
+    void setCanModify(bool can);
 
     RoomSettings m_settings;
 protected:
     cue::ListNode* m_list = nullptr;
     Callback m_callback;
     CCMenuItemSpriteExtra* m_safeModeBtn;
+    bool m_canModify = false;
 
     enum class RoomSettingKind {
         Room,
