@@ -93,7 +93,7 @@ SettingsManager::SettingsManager() {
 
     // Overlay
     this->registerSetting("core.overlay.enabled", true);
-    this->registerSetting("core.overlay.opacity", 0.3f);
+    this->registerSetting("core.overlay.opacity", 0.4f);
     this->registerLimits("core.overlay.opacity", 0.f, 1.f);
     this->registerSetting("core.overlay.always-show", false);
     this->registerSetting("core.overlay.position", 3);
