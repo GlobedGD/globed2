@@ -272,7 +272,7 @@ void CreateRoomPopup::waitForResponse() {
             case InvalidSettings: reason = "Invalid room settings"; break;
             case InvalidServer: reason = "Invalid server chosen, this server is unavailable. Please choose a different server or try again later"; break;
             case ServerDown: reason = "The server is currently down, please try again later"; break;
-            case InappropriateName: reason = "Inappropriate room name, please choose a different name. Bypassing the filter may result in a <cr>ban</c>."; break;
+            case InappropriateName: reason = "Inappropriate room name, please choose a different name. Bypassing the filter may result in a ban."; break;
             default: reason = "Unknown reason"; break;
         }
 
