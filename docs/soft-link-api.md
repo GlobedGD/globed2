@@ -48,3 +48,10 @@ You can take a look at other available functions in your intellisense. There are
 * `api::misc` - misc functions that might be useful for mods
 
 This API is currently not very complete, and a fairly small subset of functions are available. If you want to use something not exposed here, use the Link API or make a PR or an issue telling us what should be added.
+
+
+## Backward / forward compatibility
+
+Globed soft-link API maintains both backwards and forwards ABI compatibility - invoking a globed function will not crash no matter if the user has an outdated or a newer version of Globed than you target. If a function does not exist at runtime, it will return a meaningless, default result, so you should be prepared to handle that. Always build against the most recent headers of Globed and check if the functions you use have a doc comment saying which version they were added/removed in. If appropriate, check the version via `globed::api::isAtLeast("vx.x.x")` before calling them.
+
+While there may be exceptions in the future, API functions are generally never removed and thus you don't need to worry about a future version of Globed breaking your mod. If certain functionality was completely removed from Globed, the functions will be kept but will return errors or meaningless values.
