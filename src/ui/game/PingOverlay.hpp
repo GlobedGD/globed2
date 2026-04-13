@@ -21,6 +21,7 @@ public:
 private:
     Label* m_pingLabel = nullptr;
     Label* m_versionLabel = nullptr;
+    float m_prevLoss = 0.f;
     bool m_enabled, m_conditional;
 
     bool init() override;

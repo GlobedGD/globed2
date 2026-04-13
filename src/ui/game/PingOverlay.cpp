@@ -69,12 +69,19 @@ void PingOverlay::reloadFromSettings() {
 }
 
 void PingOverlay::updateOpacity() {
-    auto op = static_cast<uint8_t>(globed::setting<float>("core.overlay.opacity") * 255.f);
+    float baseOp = globed::setting<float>("core.overlay.opacity");
+    float pingOp = baseOp;
 
-    m_pingLabel->setOpacity(op);
+    // if there is packet loss, make the overlay slightly more visible
+    if (m_prevLoss >= 0.01f) {
+        float mult = 1.5f + m_prevLoss;
+        pingOp = std::clamp(pingOp * mult, 0.0f, 1.0f);
+    }
+
+    m_pingLabel->setOpacity(static_cast<uint8_t>(pingOp * 255.f));
 
     if (m_versionLabel) {
-        m_versionLabel->setOpacity(op);
+        m_versionLabel->setOpacity(static_cast<uint8_t>(baseOp * 255.f));
     }
 }
 
@@ -100,10 +107,13 @@ void PingOverlay::updatePing() {
     this->setVisible(true);
 
     auto& nm = NetworkManagerImpl::get();
+    bool connected = nm.isGameConnected();
     auto ping = nm.getGamePing().millis();
     auto loss = nm.getGameLoss();
 
-    if (loss <= 0.01f) {
+    if (!connected) {
+        m_pingLabel->setString("? ms");
+    } else if (loss <= 0.01f) {
         m_pingLabel->setString(fmt::format("{} ms", ping));
     } else {
         m_pingLabel->setString(fmt::format("{} ms ({:.1f}% loss)", ping, loss * 100.f));
@@ -111,6 +121,11 @@ void PingOverlay::updatePing() {
 
     m_pingLabel->setColor(colorForPingAndLoss(ping, loss));
     this->updateLayout();
+
+    if (m_prevLoss != loss) {
+        m_prevLoss = loss;
+        this->updateOpacity();
+    }
 }
 
 void PingOverlay::updateWithDisconnected() {
