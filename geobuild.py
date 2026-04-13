@@ -443,7 +443,7 @@ def main(build: Build):
     build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static", options = {
         "PUGIXML_NO_EXCEPTIONS": "ON",
     })
-    build.add_cpm_dep("GlobedGD/argon", "v1.4.8")
+    build.add_cpm_dep("GlobedGD/argon", "v1.4.9")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
     build.add_cpm_dep("Prevter/AdvancedLabel", "17ed1c1", link_name="advanced_label")
 
