@@ -11,10 +11,11 @@
 * Hook some slow parts of the game to increase performance
 * Disable culling in the editor to prevent all players disappearing
 * Show the keybind to undeafen in the deafened notification
+* Allow everybody in the room to see room settings instead of just the owner
 * Make the level list scrollable by dragging the view button (note: this requires the Better Touch Prio mod to be installed)
 * Remove some duplicate emotes; add heart & broken heart emotes
 * Fix players staying on the voice overlay forever after leaving the level
-* Fix crash in `globed::api::available()`
+* Add `globed::api::getPlayerIds`, `getPlayers`, `getPlayerCount`; fix crash in `globed::api::available()`
 * Fix misnamed SFX files causing 2 emotes to not play SFX
 * Fix several rare crashes & visual bugs
 * Fix Globed features to have consistent names
