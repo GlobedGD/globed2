@@ -166,6 +166,27 @@ static GameSubtable* makeGameTable() {
         if (auto gjbgl = GlobedGJBGL::getActive()) gjbgl->updateLocalIcons(icons);
     });
 
+    GLOBED_VTABLE_INIT(table, getPlayerIds, -> std::vector<int> {
+        if (auto gjbgl = GlobedGJBGL::getActive()) {
+            return asp::iter::keys(gjbgl->m_fields->m_players).collect();
+        }
+        return {};
+    });
+
+    GLOBED_VTABLE_INIT(table, getPlayers, -> std::vector<std::shared_ptr<RemotePlayer>> {
+        if (auto gjbgl = GlobedGJBGL::getActive()) {
+            return asp::iter::values(gjbgl->m_fields->m_players).collect();
+        }
+        return {};
+    });
+
+    GLOBED_VTABLE_INIT(table, getPlayerCount, -> size_t {
+        if (auto gjbgl = GlobedGJBGL::getActive()) {
+            return gjbgl->m_fields->m_players.size();
+        }
+        return 0;
+    });
+
     return table;
 }
 

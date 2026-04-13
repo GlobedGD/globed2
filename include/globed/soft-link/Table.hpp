@@ -75,6 +75,11 @@ struct GameSubtable : VTable {
 
     // since v5.0.1
     GLOBED_VTABLE_FUNC(updateLocalIcons, void, std::optional<PlayerIconData>);
+
+    // since v5.1.0
+    GLOBED_VTABLE_FUNC(getPlayerIds, std::vector<int>);
+    GLOBED_VTABLE_FUNC(getPlayers, std::vector<std::shared_ptr<RemotePlayer>>);
+    GLOBED_VTABLE_FUNC(getPlayerCount, size_t);
 };
 
 struct PlayerSubtable : VTable {

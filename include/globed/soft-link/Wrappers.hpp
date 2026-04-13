@@ -232,6 +232,21 @@ inline void updateLocalIcons(PlayerIconData icons) {
     if (auto t = table()) t->game->updateLocalIcons(icons);
 }
 
+inline std::vector<int> getPlayerIds() {
+    if (auto t = table()) return t->game->getPlayerIds();
+    return {};
+}
+
+inline std::vector<std::shared_ptr<RemotePlayer>> getPlayers() {
+    if (auto t = table()) return t->game->getPlayers();
+    return {};
+}
+
+inline size_t getPlayerCount() {
+    if (auto t = table()) return t->game->getPlayerCount();
+    return 0;
+}
+
 } // namespace api::game
 
 namespace api::player {
