@@ -33,6 +33,18 @@ bool available() {
     return table() != nullptr;
 }
 
+/// Returns whether the user has at least this version of Globed installed.
+/// For example if v2.1.0 is passed, this will return true if the user has v2.1.0, v2.1.1, v2.2.0, v3.0.0, etc.
+bool isAtLeast(std::string version) {
+    auto mod = geode::Loader::get()->getInstalledMod("dankmeme.globed2");
+    if (!mod) return false;
+
+    auto globedVer = mod->getVersion();
+    auto reqVer = geode::VersionInfo::parse(std::move(version));
+
+    return reqVer && globedVer >= reqVer.unwrap();
+}
+
 }
 
 namespace api::net {
@@ -223,25 +235,36 @@ inline RemotePlayer* getPlayer(int playerId) {
 /// Updates the player icons in the progress indicators (at screen edges and progress bar)
 /// Uses the data from GameManager, to pass custom data use the other overload.
 /// If custom data is passed, it will be reset back to GameManager data when re-entering the level.
+/// Added in Globed v2.0.1.
 inline void updateLocalIcons() {
     if (auto t = table()) t->game->updateLocalIcons(std::nullopt);
 }
 
 /// Updates the player icons in the progress indicators (at screen edges and progress bar)
+/// Added in Globed v2.0.1.
 inline void updateLocalIcons(PlayerIconData icons) {
     if (auto t = table()) t->game->updateLocalIcons(icons);
 }
 
+/// Returns IDs of all players that are in the same level as this user.
+/// Returns an empty vector if not in an active session.
+/// Added in Globed v2.1.0.
 inline std::vector<int> getPlayerIds() {
     if (auto t = table()) return t->game->getPlayerIds();
     return {};
 }
 
+/// Returns RemotePlayer objects for all players that are in the same level as this user.
+/// Returns an empty vector if not in an active session.
+/// Added in Globed v2.1.0.
 inline std::vector<std::shared_ptr<RemotePlayer>> getPlayers() {
     if (auto t = table()) return t->game->getPlayers();
     return {};
 }
 
+/// Returns the number of players that are in the same level as this user.
+/// Returns 0 if not in an active session.
+/// Added in Globed v2.1.0.
 inline size_t getPlayerCount() {
     if (auto t = table()) return t->game->getPlayerCount();
     return 0;
