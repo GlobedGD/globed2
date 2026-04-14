@@ -38,6 +38,7 @@ protected:
     bool init(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun);
     void setDuration(asp::time::Duration dur, bool inCallback = false);
     void setReason(const std::string& reason);
+    void appendReason(const std::string& reason);
     void inputChanged();
     void submit();
     void submitRemoval();

@@ -12,15 +12,15 @@ namespace globed {
 class ModPunishReasonsPopup : public BasePopup {
 public:
     static ModPunishReasonsPopup* create(UserPunishmentType type);
-    using Callback = geode::Function<void(const std::string&)>;
+    using Callback = geode::Function<void(const std::string&, bool)>;
 
     inline void setCallback(Callback&& cb) {
         m_callback = std::move(cb);
     }
 
-    inline void invokeCallback(const std::string& reason) {
+    inline void invokeCallback(const std::string& reason, bool append) {
         if (m_callback) {
-            m_callback(reason);
+            m_callback(reason, append);
         }
 
         this->onClose(nullptr);
