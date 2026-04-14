@@ -1,3 +1,7 @@
+## v2.1.2
+
+* Fix room settings not being modifiable on the room creation menu
+
 ## v2.1.1
 
 * Fix a deadlock causing hangs or crashes during authentication
