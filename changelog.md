@@ -1,12 +1,12 @@
 ## v2.1.0
 
-* Add fast asynchronous icon loading, eliminating most lag spikes when a player joins even if Preload Assets is disabled
-* Add several more optimizations to improve performance with a large amount of players
-* Add emote opacity setting
-* Replace the clumsy Discord link system with a faster, more convenient system that uses OAuth2
-* Allow linking a Discord account without exiting the level
-* Add a developer option to show a performance overlay
-* Add a packet loss counter to the ping overlay (only shown when loss is detected)
+* Add <cg>fast asynchronous icon loading</c>, eliminating most <cr>lag spikes</c> when a player joins even if <cy>Preload Assets</c> is disabled
+* Add several more <cg>optimizations</c> to improve performance with a large amount of players
+* Add <cy>emote opacity</c> setting
+* Replace the clumsy <cb>Discord</c> link system with a faster, more convenient system that uses OAuth2
+* Allow linking a <cb>Discord</c> account without exiting the level
+* Add a developer option to show a <cy>performance overlay</c>
+* Add a <cy>packet loss</c> counter to the ping overlay (only shown when loss is detected)
 * Offload all audio decoding to a thread, preventing lag spikes when someone uses voice chat
 * Hook some slow parts of the game to increase performance
 * Disable culling in the editor to prevent all players disappearing
