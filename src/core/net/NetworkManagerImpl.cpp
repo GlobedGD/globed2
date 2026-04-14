@@ -1003,6 +1003,8 @@ Future<> NetworkManagerImpl::threadTryAuth() {
 
         info.relock();
         info->startedAuth();
+        info.unlock();
+
         this->sendCentralAuth(AuthKind::Argon, *res);
     } else {
         info->startedAuth();
