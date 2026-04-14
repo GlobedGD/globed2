@@ -1,3 +1,7 @@
+## v2.1.1
+
+* Fix a deadlock causing hangs or crashes during authentication
+
 ## v2.1.0
 
 * Add <cg>fast asynchronous icon loading</c>, eliminating most <cr>lag spikes</c> when a player joins even if <cy>Preload Assets</c> is disabled
