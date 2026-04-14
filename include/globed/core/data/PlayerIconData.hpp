@@ -27,6 +27,8 @@ struct PlayerIconData {
     bool defaultMini;
 
     static PlayerIconData getOwn();
+
+    bool operator==(const PlayerIconData& other) const = default;
 };
 
 }

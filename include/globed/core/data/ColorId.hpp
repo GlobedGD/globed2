@@ -15,6 +15,10 @@ struct ColorId {
         return *this;
     }
 
+    bool operator==(const ColorId& other) const {
+        return this->value == other.value;
+    }
+
     cocos2d::ccColor3B asColor() const {
         return GameManager::get()->colorForIdx(this->asIdx());
     }

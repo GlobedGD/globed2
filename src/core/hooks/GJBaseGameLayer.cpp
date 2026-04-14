@@ -96,6 +96,9 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
 
     fields.m_interpolator.setPlatformer(level->isPlatformer());
 
+    // invalidate player icons so they are refreshed and new ones are sent to the server, if applicable
+    nm.invalidateIcons();
+
     if (fields.m_active) {
         RoomManager::get().joinLevel(level);
         CoreImpl::get().onJoinLevel(this, level, editor);

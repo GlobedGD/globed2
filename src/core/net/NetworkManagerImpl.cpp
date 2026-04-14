@@ -572,7 +572,10 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
     } else if (connState == Connected && connState != prevState) {
         auto info = m_connInfo.lock();
         if (!*info) info->emplace();
-        (*info)->m_centralUrl = m_connectingCentralUrl;
+
+        auto& i = **info;
+        i.m_centralUrl = m_connectingCentralUrl;
+        i.m_icons = m_connectingIcons;
     }
 
     switch (connState) {
@@ -925,7 +928,7 @@ void NetworkManagerImpl::threadMaybeResendOwnData(LockedConnInfo& info) {
         auto update = msg.initUpdateOwnData();
 
         if (icons) {
-            data::encode(PlayerIconData::getOwn(), update.initIcons());
+            data::encode(info->m_icons, update.initIcons());
         }
 
         if (friendList) {
@@ -939,10 +942,12 @@ void NetworkManagerImpl::threadMaybeResendOwnData(LockedConnInfo& info) {
         }
     });
 
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        auto update = msg.initUpdateIcons();
-        data::encode(PlayerIconData::getOwn(), update.initIcons());
-    });
+    if (icons) {
+        this->sendToGame([&](GameMessage::Builder& msg) {
+            auto update = msg.initUpdateIcons();
+            data::encode(info->m_icons, update.initIcons());
+        });
+    }
 
     info->m_sentIcons = true;
     info->m_sentFriendList = true;
@@ -1027,10 +1032,11 @@ void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         int accountId = g_argonData.accountId;
         int userId = g_argonData.userId;
+        auto icons = this->connInfo()->m_icons;
 
         auto login = msg.initLogin();
         login.setAccountId(accountId);
-        data::encode(PlayerIconData::getOwn(), login.initIcons());
+        data::encode(icons, login.initIcons());
         if (kind != AuthKind::Plain) {
             auto uid = this->computeUident(accountId);
             login.setUident(kj::arrayPtr(uid.data(), uid.size()));
@@ -1166,6 +1172,7 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
     m_centralConn->setDebugOptions(getConnOpts());
 
     m_connectingCentralUrl = url;
+    m_connectingIcons = PlayerIconData::getOwn();
     auto res = m_centralConn->connect(m_connectingCentralUrl);
 
     if (!res) {
@@ -1458,11 +1465,15 @@ float NetworkManagerImpl::getGameLoss1Min() {
     return info ? info->m_gameLoss1Min : 0.f;
 }
 
-void NetworkManagerImpl::invalidateIcons() {
+void NetworkManagerImpl::invalidateIcons(bool force) {
+    auto newIcons = PlayerIconData::getOwn();
+
     auto info = this->connInfo();
-    if (info) {
+    if (info && (force || newIcons != info->m_icons)) {
         info->m_sentIcons = false;
+        info->m_icons = newIcons;
     }
+
     m_workerNotify.notifyOne();
 }
 
@@ -2090,7 +2101,10 @@ void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, boo
         auto login = msg.initLogin();
         login.setAccountId(g_argonData.accountId);
         login.setToken(this->getUToken().value_or(""));
-        data::encode(PlayerIconData::getOwn(), login.initIcons());
+
+        auto icons = this->connInfo()->m_icons;
+        data::encode(icons, login.initIcons());
+
         gatherUserSettings(login.initSettings());
 
         if (id.asU64() != 0) {

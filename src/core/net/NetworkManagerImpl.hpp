@@ -117,6 +117,7 @@ struct ConnectionInfo {
 
     bool m_sentFriendList = false;
     bool m_sentIcons = true; // icons are sent at login
+    PlayerIconData m_icons;
 
     // server data send in login ok message
     std::vector<UserRole> m_allRoles;
@@ -244,7 +245,7 @@ public:
     float getGameLoss1Min();
 
     /// Force the client to resend user icons to the connected server. Does nothing if not connected.
-    void invalidateIcons();
+    void invalidateIcons(bool force = false);
     /// Force the client to resend the friend list to the connected server. Does nothing if not connected.
     void invalidateFriendList();
     void markAuthorizedModerator();
@@ -378,6 +379,7 @@ private:
 
     asp::Mutex<std::optional<ConnectionInfo>> m_connInfo;
     std::string m_connectingCentralUrl;
+    PlayerIconData m_connectingIcons;
     asp::SpinLock<std::pair<std::string, bool>> m_abortCause;
     std::atomic<bool> m_manualDisconnect{false};
 

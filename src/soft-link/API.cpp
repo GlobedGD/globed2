@@ -84,7 +84,7 @@ static NetSubtable* makeNetTable() {
     });
 
     GLOBED_VTABLE_INIT(table, invalidateIcons, () {
-        NetworkManagerImpl::get().invalidateIcons();
+        NetworkManagerImpl::get().invalidateIcons(true);
     });
 
     GLOBED_VTABLE_INIT(table, invalidateFriendList, () {
