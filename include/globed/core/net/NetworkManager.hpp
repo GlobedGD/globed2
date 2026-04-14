@@ -70,7 +70,7 @@ public:
     }
 
     template <typename T, typename F>
-    geode::ListenerHandle listenGlobal(F&& callback, int priority = 0, bool threadSafe = false) {
+    geode::ListenerHandle* listenGlobal(F&& callback, int priority = 0, bool threadSafe = false) {
         return MessageEvent<T>(threadSafe).listen(std::forward<F>(callback), priority).leak();
     }
 
