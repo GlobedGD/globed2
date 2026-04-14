@@ -10,10 +10,11 @@
 * Offload all audio decoding to a thread, preventing lag spikes when someone uses voice chat
 * Hook some slow parts of the game to increase performance
 * Disable culling in the editor to prevent all players disappearing
-* Show the keybind to undeafen in the deafened notification
+* Refresh icons every time you reopen a level instead of having to reconnect to the server
 * Allow everybody in the room to see room settings instead of just the owner
 * Make the level list scrollable by dragging the view button (note: this requires the Better Touch Prio mod to be installed)
 * Remove some duplicate emotes; add heart & broken heart emotes
+* Show the keybind to undeafen in the deafened notification
 * Fix players staying on the voice overlay forever after leaving the level
 * Add `globed::api::getPlayerIds`, `getPlayers`, `getPlayerCount`; fix crash in `globed::api::available()`
 * Fix misnamed SFX files causing 2 emotes to not play SFX
