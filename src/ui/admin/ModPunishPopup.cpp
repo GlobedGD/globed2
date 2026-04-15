@@ -59,8 +59,11 @@ bool ModPunishPopup::init(int accountId, UserPunishmentType type, std::optional<
     Build<CCSprite>::createSpriteName("btn_chatHistory_001.png")
         .intoMenuItem([this, type] {
             auto popup = ModPunishReasonsPopup::create(type);
-            popup->setCallback([this](const std::string& reason) {
-                this->setReason(reason);
+            popup->setCallback([this](const std::string& reason, bool append) {
+                if (!append)
+                    this->setReason(reason);
+                else
+                    this->appendReason(reason);
             });
             popup->show();
         })
@@ -337,6 +340,13 @@ void ModPunishPopup::setCallback(Callback&& cb) {
 
 void ModPunishPopup::setReason(const std::string& reason) {
     m_reasonInput->setString(reason);
+}
+
+void ModPunishPopup::appendReason(const std::string& reason) {
+    if (m_reasonInput->getString().empty())
+        return setReason(reason);
+
+    m_reasonInput->setString(m_reasonInput->getString() + " + " + reason);
 }
 
 void ModPunishPopup::inputChanged() {

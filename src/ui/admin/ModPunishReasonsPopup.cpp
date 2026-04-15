@@ -72,7 +72,16 @@ private:
                 cue::rescaleToMatch(spr, BUTTON_SIZE);
             })
             .intoMenuItem([this] {
-                m_popup->invokeCallback(m_reason);
+                m_popup->invokeCallback(m_reason, false);
+            })
+            .parent(m_rightMenu);
+
+        Build<CCSprite>::createSpriteName("GJ_plusBtn_001.png")
+            .with([&](auto spr) {
+                cue::rescaleToMatch(spr, BUTTON_SIZE);
+            })
+            .intoMenuItem([this] {
+                m_popup->invokeCallback(m_reason, true);
             })
             .parent(m_rightMenu);
 
