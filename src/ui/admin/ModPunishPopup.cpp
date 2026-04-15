@@ -346,7 +346,7 @@ void ModPunishPopup::appendReason(const std::string& reason) {
     if (m_reasonInput->getString().empty())
         return setReason(reason);
 
-    m_reasonInput->setString(m_reasonInput->getString() + " + " + reason);
+    m_reasonInput->setString(fmt::format("{} + {}", m_reasonInput->getString(), reason));
 }
 
 void ModPunishPopup::inputChanged() {
