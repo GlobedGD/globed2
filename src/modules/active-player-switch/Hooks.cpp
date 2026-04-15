@@ -521,6 +521,13 @@ void APSPauseLayer::customSetup() {
         return;
     }
 
+    auto pl = APSPlayLayer::get();
+    if (!pl || !pl->m_fields->m_controller.m_pl) {
+        log::warn("pl = {}, controller = {}", pl, pl ? (void*)pl->m_fields->m_controller.m_pl : nullptr);
+        globed::toastError("[Globed] APSPlayLayer not properly initialized");
+        return;
+    }
+
     auto winSize = globed::get<CCDirector>()->getWinSize();
 
     auto menu = this->getChildByID("playerlist-menu"_spr);

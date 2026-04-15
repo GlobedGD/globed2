@@ -24,6 +24,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
 
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayLayer::destroyPlayer", 0x500000);
+        (void) self.setHookPriority("PlayLayer::init", -100);
     }
 
     $override
