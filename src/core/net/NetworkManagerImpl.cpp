@@ -2193,7 +2193,7 @@ void NetworkManagerImpl::queueLevelScript(const std::vector<EmbeddedScript>& scr
 void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scripts) {
     this->sendToGame([&](GameMessage::Builder& msg) {
         data::encode(scripts, msg.initSendLevelScript());
-    }, true, true);
+    }, true, false);
 }
 
 void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
