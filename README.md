@@ -1,6 +1,6 @@
 # Globed
 
-[![Mod Version](https://api.geode-sdk.org/v1/mods/dankmeme.globed2/status_badge?stat=version)](https://geode-sdk.org/mods/dankmeme.globed2) [![Geode Version](https://api.geode-sdk.org/v1/mods/dankmeme.globed2/status_badge?stat=geode_version)](https://geode-sdk.org/install) [![GD Version](https://api.geode-sdk.org/v1/mods/dankmeme.globed2/status_badge?stat=gd_version)](https://geometrydash.com/news) [![Downloads](https://api.geode-sdk.org/v1/mods/dankmeme.globed2/status_badge?stat=downloads)](https://geode-sdk.org/mods/dankmeme.globed2)
+[![Mod Version](https://api.geode-sdk.org/v1/mods/dankmeme.globed2/status_badge?stat=version)](https://geode-sdk.org/mods/dankmeme.globed2) [![Geode Version](https://api.geode-sdk.org/v1/mods/dankmeme.globed2/status_badge?stat=geode_version)](https://geode-sdk.org/install) [![GD Version](https://api.geode-sdk.org/v1/mods/dankmeme.globed2/status_badge?stat=gd_version)](https://geometrydash.com/games) [![Downloads](https://api.geode-sdk.org/v1/mods/dankmeme.globed2/status_badge?stat=downloads)](https://geode-sdk.org/mods/dankmeme.globed2)
 
 Globed is an open-source, highly customizable multiplayer mod for Geometry Dash.
 
