@@ -28,6 +28,7 @@ bool ProgressIcon::init() {
 void ProgressIcon::updateIcons(const cue::Icons& data) {
     auto col1 = singleton<GameManager>()->colorForIdx(data.color1);
     m_line->setColor(col1);
+    m_line->setOpacity(255);
     m_icon->updateIcons(data);
 
     this->recalcOpacity();
