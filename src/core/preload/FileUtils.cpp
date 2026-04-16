@@ -1,8 +1,11 @@
 #include "FileUtils.hpp"
-#include <android/asset_manager.h>
-#include <android/asset_manager_jni.h>
-#include <jni.h>
-#include <Geode/cocos/platform/android/jni/JniHelper.h>
+
+#ifdef GEODE_IS_ANDROID
+# include <android/asset_manager.h>
+# include <android/asset_manager_jni.h>
+# include <jni.h>
+# include <Geode/cocos/platform/android/jni/JniHelper.h>
+#endif
 
 using namespace geode::prelude;
 
