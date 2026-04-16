@@ -51,7 +51,3 @@ private:
     static bool supportsGLExtension(std::string_view ext);
 } g_opengl;
 
-static void initGL() {
-    g_opengl.initialize();
-}
-
