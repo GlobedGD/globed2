@@ -96,6 +96,7 @@ private:
         bool hasTexturePack;
         TextureQuality texQuality;
         size_t gameSearchPathIdx = -1;
+        size_t highTexturesIdx = -1;
         std::vector<size_t> texturePackIndices;
 
         // time measurements

@@ -4,6 +4,7 @@
 # include <android/asset_manager.h>
 # include <android/asset_manager_jni.h>
 # include <jni.h>
+# include <unistd.h>
 # include <Geode/cocos/platform/android/jni/JniHelper.h>
 #endif
 
@@ -38,6 +39,57 @@ static std::unique_ptr<AAsset, AAssetDeleter> openAAsset(std::string_view path, 
 
     return std::unique_ptr<AAsset, AAssetDeleter>(AAssetManager_open(g_assetManager, buf.c_str(), mode));
 }
+
+static std::pair<
+    std::unique_ptr<unsigned char[]>,
+    size_t
+> openAndReadAAsset(std::string_view path) {
+    auto asset = openAAsset(path, AASSET_MODE_UNKNOWN);
+    if (!asset) {
+        log::debug("AAssetManager: failed to open asset '{}'", path);
+        return {};
+    }
+
+    size_t size = AAsset_getLength(asset.get());
+    auto buffer = std::make_unique<unsigned char[]>(size);
+    size_t bytesRead = AAsset_read(asset.get(), buffer.get(), size);
+    if (bytesRead != size) {
+        log::debug("AAssetManager: failed to read asset '{}'", path);
+        return {};
+    }
+
+    return { std::move(buffer), size };
+}
+
+static std::pair<
+    std::unique_ptr<unsigned char[]>,
+    size_t
+> openAndReadDisk(const char* path) {
+    int fd = open(path, O_RDONLY);
+    if (fd == -1) {
+        log::debug("openAndReadDisk: failed to open file '{}'", path);
+        return {};
+    }
+
+    struct stat fst;
+    if (fstat(fd, &fst) == -1) {
+        close(fd);
+        log::debug("openAndReadDisk: failed to stat file '{}'", path);
+        return {};
+    }
+
+    auto buffer = std::make_unique<unsigned char[]>(fst.st_size);
+    ssize_t bytesRead = read(fd, buffer.get(), fst.st_size);
+    close(fd);
+
+    if (bytesRead != fst.st_size) {
+        log::debug("openAndReadDisk: failed to read file '{}'", path);
+        return {};
+    }
+
+    return { std::move(buffer), static_cast<size_t>(bytesRead) };
+}
+
 #endif
 
 gd::string HookedFileUtils::getPathForFilename2(std::string_view filename, std::string_view resolutionDirectory, std::string_view searchPath) {
@@ -131,24 +183,17 @@ std::unique_ptr<unsigned char[]> getFileDataThreadSafe(const char* path, const c
     return buffer;
 
 #elif defined GEODE_IS_ANDROID
-    auto asset = openAAsset(path, AASSET_MODE_UNKNOWN);
-    if (!asset) {
-        log::debug("AAssetManager: failed to open asset '{}'", path);
-        if (outSize) *outSize = 0;
-        return nullptr;
+    std::string_view sv{path};
+    if (!sv.empty() && sv[0] == '/') {
+        auto result = openAndReadDisk(path);
+        if (outSize) *outSize = result.second;
+        return std::move(result.first);
+    } else {
+        // relative path, read from .apk
+        auto result = openAndReadAAsset(path);
+        if (outSize) *outSize = result.second;
+        return std::move(result.first);
     }
-
-    size_t size = AAsset_getLength(asset.get());
-    auto buffer = std::make_unique<unsigned char[]>(size);
-    size_t bytesRead = AAsset_read(asset.get(), buffer.get(), size);
-    if (bytesRead != size) {
-        log::debug("AAssetManager: failed to read asset '{}'", path);
-        if (outSize) *outSize = 0;
-        return nullptr;
-    }
-
-    if (outSize) *outSize = size;
-    return buffer;
 #else
     return globed::getFileDataImpl(path, outSize);
 #endif
@@ -170,6 +215,11 @@ bool initializeAAssetManager() {
 }
 
 bool isFileExistImpl(geode::ZStringView path) {
+    auto v = path.view();
+    if (!v.empty() && v[0] == '/') {
+        // absolute path
+        return access(path.data(), F_OK) == 0;
+    }
     return openAAsset(path, AASSET_MODE_UNKNOWN) != nullptr;
 }
 

@@ -428,11 +428,23 @@ void PreloadManager::initSessionState() {
 
     fs::path resourceDir = dirs::getGameDir() / "Resources";
     fs::path textureLdrUnzipped = dirs::getGeodeDir() / "unzipped" / "geode.texture-loader" / "resources";
+    fs::path highGraphicsFolder;
+
+    if (auto mod = Loader::get()->getLoadedMod("weebify.high-graphics-android")) {
+        highGraphicsFolder = mod->getConfigDir(false) / Loader::get()->getGameVersion();
+        if (!asp::fs::exists(highGraphicsFolder)) {
+            highGraphicsFolder.clear();
+        }
+    }
 
     size_t idx = 0;
     for (const auto& path : CCFileUtils::get()->getSearchPaths()) {
         std::string_view sv{path};
         auto fspath = fs::path(sv);
+
+        if (asp::fs::equivalent(fspath, highGraphicsFolder).unwrapOr(false)) {
+            m_sstate.highTexturesIdx = idx;
+        }
 
         if (sv.find("geode.texture-loader") != sv.npos) {
             // this might be the unzipped/ folder, if so, ignore it
@@ -463,7 +475,13 @@ void PreloadManager::initSessionState() {
     m_sstate.initialized = true;
     m_sstate.postInitTime = Instant::now();
 
-    log::debug("PreloadManager: initialized session state in {}", m_sstate.postInitTime.durationSince(m_sstate.preInitTime).toString());
+    log::info("PreloadManager: initialized session state in {}", m_sstate.postInitTime.durationSince(m_sstate.preInitTime).toString());
+    log::debug(
+        "TPs: {}, quality: {}, game idx: {}, high graphics idx: {}, tp idxs: {}",
+        m_sstate.hasTexturePack, (int)m_sstate.texQuality,
+        m_sstate.gameSearchPathIdx, m_sstate.highTexturesIdx,
+        m_sstate.texturePackIndices
+    );
 }
 
 void PreloadManager::resetState() {
@@ -639,7 +657,13 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
         TRY_PATH(sp);
     }
 
-    // try the gd resource folder
+    // then check high graphics for android
+    if (m_sstate.highTexturesIdx != (size_t)-1) {
+        auto& sp = searchPaths.at(m_sstate.highTexturesIdx);
+        TRY_PATH(sp);
+    }
+
+    // now try the gd resource folder
     if (m_sstate.gameSearchPathIdx != (size_t)-1) {
         auto& sp = searchPaths.at(m_sstate.gameSearchPathIdx);
         TRY_PATH(sp);
