@@ -1,3 +1,10 @@
+## v2.1.3
+
+* Fix crash when starting switcheroo
+* Fix texture loading crashing on Android due to unsafe file reading
+* Fix the line over players in the progress bar being invisible
+* Several network fixes for unstable links (namely reconnection, quicker disconnects, retransmission improvements)
+
 ## v2.1.2
 
 * Fix room settings not being modifiable on the room creation menu
