@@ -1,3 +1,7 @@
+## v2.1.4
+
+* Fix tiny player textures when using High Graphics on Mobile mod (and other mods that may use absolute paths for icons)
+
 ## v2.1.3
 
 * Fix crash when starting switcheroo
