@@ -11,6 +11,13 @@ struct FollowPlayerData {
     bool enable;
 };
 
+struct FollowAbsoluteData {
+    int player;
+    int group;
+    int center;
+    bool enable;
+};
+
 struct FollowRotationData {
     int player;
     int group;
@@ -25,6 +32,19 @@ inline geode::Result<FollowPlayerData> decodeFollowPlayerData(qn::ByteReader& re
 
     out.enable = val & (1 << 15);
     out.group = (int)(val & 0b01111111'11111111);
+    out.player = READER_UNWRAP(reader.readI32());
+
+    return geode::Ok(out);
+}
+
+inline geode::Result<FollowAbsoluteData> decodeFollowAbsoluteData(qn::ByteReader& reader) {
+    FollowAbsoluteData out{};
+
+    uint16_t val = READER_UNWRAP(reader.readU16());
+
+    out.enable = val & (1 << 15);
+    out.group = (int)(val & 0b01111111'11111111);
+    out.center = READER_UNWRAP(reader.readU16());
     out.player = READER_UNWRAP(reader.readI32());
 
     return geode::Ok(out);

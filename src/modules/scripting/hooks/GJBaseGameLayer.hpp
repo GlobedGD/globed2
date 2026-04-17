@@ -27,7 +27,7 @@ struct CustomFollowAction {
     int m_playerId;
     int m_groupId;
     int m_centerGroupId = 0;
-    bool m_pos, m_rot;
+    bool m_pos, m_rot, m_abs = false;
 
     bool operator==(const CustomFollowAction&) const = default;
 };
@@ -86,6 +86,7 @@ struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBas
     void customRotateBy(int group, int center, double theta);
 
     void customFollowPlayerMov(int player, int group, bool enable);
+    void customFollowPlayerAbs(int player, int group, int center, bool enable);
     void customFollowPlayerRot(int player, int group, int center, bool enable);
     void removeCustomFollow(int player, int group);
 

@@ -174,6 +174,22 @@ void SCBaseGameLayer::customFollowPlayerMov(int player, int group, bool enable) 
 
     auto& action = this->insertCustomFollow(player, group);
     action.m_pos = true;
+    action.m_abs = false;
+}
+
+void SCBaseGameLayer::customFollowPlayerAbs(int player, int group, int center, bool enable) {
+    auto& fields = *m_fields.self();
+    auto gjbgl = GlobedGJBGL::get(this);
+
+    if (!enable) {
+        this->disableCustomFollow(player, group, true, false);
+        return;
+    }
+
+    auto& action = this->insertCustomFollow(player, group);
+    action.m_pos = true;
+    action.m_abs = true;
+    action.m_centerGroupId = center;
 }
 
 void SCBaseGameLayer::customFollowPlayerRot(int player, int group, int center, bool enable) {
@@ -305,12 +321,19 @@ void SCBaseGameLayer::processCustomFollowActions(float) {
         auto& lastData = it->second;
 
         if (action.m_pos) {
-            float dx = data.pos.x - lastData.pos.x;
-            float dy = data.pos.y - lastData.pos.y;
-            this->customMoveBy(action.m_groupId, dx, dy);
+            if (!action.m_abs) {
+                // relative
+                float dx = data.pos.x - lastData.pos.x;
+                float dy = data.pos.y - lastData.pos.y;
+                this->customMoveBy(action.m_groupId, dx, dy);
+            } else {
+                // absolute
+                this->customMoveTo(action.m_groupId, action.m_centerGroupId, data.pos.x, data.pos.y, 0.0f);
+            }
         }
 
         if (action.m_rot) {
+            // rotation
             float dr = globed::normalizeAngle(data.rot - lastData.rot);
             this->customRotateBy(action.m_groupId, action.m_centerGroupId, dr);
         }
@@ -399,6 +422,10 @@ void SCBaseGameLayer::handleEvent(const InEvent& event) {
         auto& data = event.as<FollowPlayerEvent>().data;
 
         this->customFollowPlayerMov(data.player, data.group, data.enable);
+    } else if (event.is<FollowAbsoluteEvent>()) {
+        auto& data = event.as<FollowAbsoluteEvent>().data;
+
+        this->customFollowPlayerAbs(data.player, data.group, data.center, data.enable);
     } else if (event.is<FollowRotationEvent>()) {
         auto& data = event.as<FollowRotationEvent>().data;
 
