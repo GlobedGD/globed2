@@ -5,7 +5,7 @@
 #include <globed/core/PopupManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
-#include <UIBuilder.hpp>
+#include <ui/Core.hpp>
 #include <cue/Util.hpp>
 
 using namespace geode::prelude;
@@ -15,7 +15,7 @@ namespace globed {
 static constexpr CCSize ICON_SIZE {40.f, 40.f};
 
 bool DiscordLinkPopup::init() {
-    if (!BasePopup::init(280.f, 160.f)) return false;
+    if (!BasePopup::init(280.f, 175.f)) return false;
 
     this->setTitle("Link Discord Account");
 
@@ -62,7 +62,7 @@ bool DiscordLinkPopup::init() {
         .anchorPoint(0.5f, 0.5f)
         .contentSize(m_size.width * 0.85f, m_size.height * 0.55f)
         .layout(RowLayout::create()->setAutoScale(false))
-        .pos(this->fromCenter(0.f, 8.f))
+        .pos(this->fromTop(72.f))
         .id("player-card")
         .parent(m_mainLayer)
         .collect();
@@ -179,8 +179,9 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
 
     cue::resetNode(m_idLabel);
     cue::resetNode(m_background);
-    cue::resetNode(m_waitingLabel1);
-    cue::resetNode(m_waitingLabel2);
+    cue::resetNode(m_waitingContainer);
+    m_waitingLabel1 = nullptr;
+    m_waitingLabel2 = nullptr;
     cue::resetNode(m_avatar);
 
     m_dataContainer->updateLayout();
@@ -209,16 +210,22 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
 }
 
 void DiscordLinkPopup::addLinkingText() {
+    m_waitingContainer = Build(ColumnContainer::create(6.f))
+        .pos(this->fromCenter(0.f, -26.f))
+        .id("waiting-container")
+        .parent(m_mainLayer)
+        .collect();
+
     m_waitingLabel1 = Build<CCLabelBMFont>::create("Requesting URL...", "bigFont.fnt")
         .scale(0.5f)
-        .pos(this->fromCenter(0.f, -40.f))
         .id("waiting-label1")
-        .parent(m_mainLayer);
+        .parent(m_waitingContainer);
 
     m_waitingLabel2 = Build<CCLabelBMFont>::create("", "bigFont.fnt")
-        .pos(this->fromBottom(24.f))
         .id("waiting-label2")
-        .parent(m_mainLayer);
+        .parent(m_waitingContainer);
+
+    m_waitingContainer->updateLayout();
 }
 
 // void DiscordLinkPopup::onAttemptReceived(uint64_t id, const std::string& username, const std::string& avatarUrl) {
@@ -242,6 +249,16 @@ void DiscordLinkPopup::onOauthUrlReceived(ZStringView url) {
     m_waitingLabel1->setString("Open your browser!");
     m_waitingLabel2->setString("Waiting for confirmation...");
     m_waitingLabel2->limitLabelWidth(m_size.width * 0.8f, 0.4f, 0.1f);
+
+    m_copyBtn = Build<ButtonSprite>::create("Copy Link", "bigFont.fnt", "GJ_button_01.png", 0.7f)
+        .scale(0.8f)
+        .intoMenuItem([url = std::string{url}](auto btn) {
+            utils::clipboard::write(url);
+            globed::toastSuccess("Link copied to clipboard! Open it in your browser to continue.");
+        })
+        .scaleMult(1.1f)
+        .pos(this->fromBottom(22.f))
+        .parent(m_buttonMenu);
 }
 
 void DiscordLinkPopup::startWaitingForRefresh() {

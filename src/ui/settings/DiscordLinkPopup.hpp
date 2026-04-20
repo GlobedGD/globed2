@@ -18,6 +18,7 @@ protected:
     geode::NineSlice* m_background;
     CCMenuItemSpriteExtra* m_discordBtn = nullptr;
     CCMenuItemSpriteExtra* m_startBtn = nullptr;
+    CCMenuItemSpriteExtra* m_copyBtn = nullptr;
     cocos2d::CCNode* m_statusContainer = nullptr;
     cocos2d::CCNode* m_dataContainer = nullptr;
     cocos2d::CCLabelBMFont* m_statusLabel = nullptr;
@@ -25,6 +26,7 @@ protected:
     cocos2d::CCLabelBMFont* m_idLabel = nullptr;
     cocos2d::CCLabelBMFont* m_waitingLabel1 = nullptr;
     cocos2d::CCLabelBMFont* m_waitingLabel2 = nullptr;
+    cocos2d::CCNode* m_waitingContainer = nullptr;
     LazyPlayerIcon* m_playerIcon;
     geode::LazySprite* m_avatar = nullptr;
     bool m_activelyWaiting = false;
