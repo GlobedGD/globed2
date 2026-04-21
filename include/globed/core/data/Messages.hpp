@@ -262,6 +262,11 @@ struct DiscordOauthUrlMessage {
     std::string url;
 };
 
+struct DiscordUnlinkResultMessage {
+    bool success;
+    std::string error;
+};
+
 // Featured level
 
 struct FeaturedLevelMessage {

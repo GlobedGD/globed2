@@ -6,6 +6,7 @@
 #include <ui/misc/LazyPlayerIcon.hpp>
 
 #include <Geode/ui/NineSlice.hpp>
+#include <cue/LoadingCircle.hpp>
 
 namespace globed {
 
@@ -17,8 +18,7 @@ protected:
     cocos2d::CCNode* m_playerCard;
     geode::NineSlice* m_background;
     CCMenuItemSpriteExtra* m_discordBtn = nullptr;
-    CCMenuItemSpriteExtra* m_startBtn = nullptr;
-    CCMenuItemSpriteExtra* m_copyBtn = nullptr;
+    CCMenuItemSpriteExtra* m_activeBtn = nullptr;
     cocos2d::CCNode* m_statusContainer = nullptr;
     cocos2d::CCNode* m_dataContainer = nullptr;
     cocos2d::CCLabelBMFont* m_statusLabel = nullptr;
@@ -34,6 +34,7 @@ protected:
 
     MessageListener<msg::DiscordLinkStateMessage> m_stateListener;
     MessageListener<msg::DiscordOauthUrlMessage> m_oauthListener;
+    MessageListener<msg::DiscordUnlinkResultMessage> m_unlinkListener;
 
     bool init() override;
     void onClose(CCObject*) override;
@@ -45,7 +46,9 @@ protected:
     void addLinkingText();
 
     void startWaitingForRefresh();
+    void startWaitingForUnlink();
     void requestState(float dt);
+
 };
 
 }

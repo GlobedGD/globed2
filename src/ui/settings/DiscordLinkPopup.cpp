@@ -1,3 +1,5 @@
+// the code of this popup is so shit but i feel it's too unimportant to rewrite rn
+
 #include "DiscordLinkPopup.hpp"
 #include "DiscordLinkAttemptPopup.hpp"
 #include <globed/util/gd.hpp>
@@ -124,6 +126,23 @@ bool DiscordLinkPopup::init() {
         this->onOauthUrlReceived(msg.url);
     });
 
+    m_unlinkListener = nm.listen<msg::DiscordUnlinkResultMessage>([this](const auto& msg) {
+        if (msg.success) {
+            globed::alert(
+                "Unlink Successful",
+                "<cg>Your Discord account has been successfully unlinked!</c>"
+            );
+            this->onClose(nullptr);
+        } else {
+            globed::alertFormat(
+                "Unlink Failed",
+                "Failed to unlink your Discord account: <cy>{}</c>\n\nPlease contact the staff team if you need assistance.",
+                msg.error
+            );
+            this->onClose(nullptr);
+        }
+    });
+
     this->requestState(0.f);
     // this->onStateLoaded(612930885230002208, "dank_meme01", "https://cdn.discordapp.com/avatars/612930885230002208/57793059bc19ed4cc2c36ae1c321b423.png?size=1024");
 
@@ -145,9 +164,10 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
         m_statusLabel->setColor(ccColor3B{ 255, 64, 64 });
         m_statusContainer->updateLayout();
 
-        cue::resetNode(m_startBtn);
+        cue::resetNode(m_activeBtn);
+        cue::resetNode(m_waitingContainer);
 
-        m_startBtn = Build<ButtonSprite>::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+        m_activeBtn = Build<ButtonSprite>::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .scale(0.95f)
             .intoMenuItem([this](auto btn) {
                 NetworkManagerImpl::get().sendRequestDiscordOauth();
@@ -183,6 +203,7 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
     m_waitingLabel1 = nullptr;
     m_waitingLabel2 = nullptr;
     cue::resetNode(m_avatar);
+    cue::resetNode(m_activeBtn);
 
     m_dataContainer->updateLayout();
 
@@ -207,6 +228,25 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
     m_playerCard->updateLayout();
 
     m_background = cue::attachBackground(m_playerCard);
+
+    // unlink button
+    m_activeBtn = Build<ButtonSprite>::create("Unlink", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+        .scale(0.9f)
+        .intoMenuItem([this](auto btn) {
+            globed::confirmPopup(
+                "Confirm Unlink",
+                "Are you sure you want to unlink your <cb>Discord</c> account? You may lose access to your roles and voice chat.",
+                "Cancel", "Ok",
+                [this, btn](auto) {
+                    NetworkManagerImpl::get().sendRequestDiscordUnlink();
+                    btn->removeFromParent();
+                    this->startWaitingForUnlink();
+                }
+            );
+        })
+        .scaleMult(1.1f)
+        .pos(this->fromBottom(26.f))
+        .parent(m_buttonMenu);
 }
 
 void DiscordLinkPopup::addLinkingText() {
@@ -250,7 +290,8 @@ void DiscordLinkPopup::onOauthUrlReceived(ZStringView url) {
     m_waitingLabel2->setString("Waiting for confirmation...");
     m_waitingLabel2->limitLabelWidth(m_size.width * 0.8f, 0.4f, 0.1f);
 
-    m_copyBtn = Build<ButtonSprite>::create("Copy Link", "bigFont.fnt", "GJ_button_01.png", 0.7f)
+    cue::resetNode(m_activeBtn);
+    m_activeBtn = Build<ButtonSprite>::create("Copy Link", "bigFont.fnt", "GJ_button_01.png", 0.7f)
         .scale(0.8f)
         .intoMenuItem([url = std::string{url}](auto btn) {
             utils::clipboard::write(url);
@@ -264,6 +305,18 @@ void DiscordLinkPopup::onOauthUrlReceived(ZStringView url) {
 void DiscordLinkPopup::startWaitingForRefresh() {
     m_activelyWaiting = true;
     this->schedule(schedule_selector(DiscordLinkPopup::requestState), 1.0f);
+}
+
+void DiscordLinkPopup::startWaitingForUnlink() {
+    m_activelyWaiting = true;
+
+    auto circle = Build(cue::LoadingCircle::create())
+        .scale(0.6f)
+        .pos(this->fromBottom(24.f))
+        .parent(m_mainLayer)
+        .collect();
+    circle->fadeIn();
+    m_waitingContainer = circle;
 }
 
 void DiscordLinkPopup::requestState(float) {

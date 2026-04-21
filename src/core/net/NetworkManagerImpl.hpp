@@ -293,6 +293,7 @@ public:
     void sendGetDiscordLinkState();
     void sendSetDiscordPairingState(bool state);
     void sendRequestDiscordOauth();
+    void sendRequestDiscordUnlink();
     void sendDiscordLinkConfirm(int64_t id, bool confirm);
     void sendGetFeaturedList(uint32_t page);
     void sendGetFeaturedLevel();

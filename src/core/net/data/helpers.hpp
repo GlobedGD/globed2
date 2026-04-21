@@ -954,6 +954,15 @@ $implDecode(msg::DiscordOauthUrlMessage, main::DiscordOauthUrlMessage::Reader& r
     };
 }
 
+/// Discord unlink result
+
+$implDecode(msg::DiscordUnlinkResultMessage, main::DiscordUnlinkResultMessage::Reader& reader) {
+    msg::DiscordUnlinkResultMessage out{};
+    out.success = reader.getSuccess();
+    out.error = reader.getError();
+    return out;
+}
+
 /// Featured level
 
 $implDecode(msg::FeaturedLevelMessage, main::FeaturedLevelMessage::Reader& reader) {
