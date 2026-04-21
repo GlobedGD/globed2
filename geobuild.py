@@ -20,7 +20,7 @@ import sys
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v5.6.1"
 XTLS_VERSION = "e29f88a"
-QUNET_VERSION = "b80393c"
+QUNET_VERSION = "2ca8bfe"
 SERVER_SHARED_VERSION = "28172d0"
 CUE_VERSION = "d1c7ad2"
 
