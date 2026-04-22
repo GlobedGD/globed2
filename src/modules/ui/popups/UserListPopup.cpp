@@ -435,14 +435,16 @@ bool UserListPopup::init() {
         .updateLayout();
 
     // create button to open user settings
-    Build<CCSprite>::create("privacySettings.png"_spr)
-        .scale(0.8f)
-        .intoMenuItem([] {
-            UserSettingsPopup::create()->show();
-        })
-        .scaleMult(1.15f)
-        .parent(m_buttonMenu)
-        .pos(this->fromTopRight(108.f, 23.f));
+    if (NetworkManagerImpl::get().canChangeUserSettings()) {
+        Build<CCSprite>::create("privacySettings.png"_spr)
+            .scale(0.8f)
+            .intoMenuItem([] {
+                UserSettingsPopup::create()->show();
+            })
+            .scaleMult(1.15f)
+            .parent(m_buttonMenu)
+            .pos(this->fromTopRight(108.f, 23.f));
+    }
 
     // Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedUserListPopup::onToggleVoiceSort), 0.7f))
     //     .id("toggle-voice-sort"_spr)

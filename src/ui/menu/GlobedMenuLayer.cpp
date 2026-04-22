@@ -904,20 +904,23 @@ void GlobedMenuLayer::initSideButtons() {
     }
 
     /// Right side buttons
+    auto& nm = NetworkManagerImpl::get();
 
     // user settings button
-    makeButton(
-        CCSprite::create("privacySettings.png"_spr),
-        m_rightSideMenu,
-        RightBtn::PrivacySettings,
-        "btn-privacy-settings",
-        [] {
-            UserSettingsPopup::create()->show();
-        }
-    );
+    if (nm.canChangeUserSettings()) {
+        makeButton(
+            CCSprite::create("privacySettings.png"_spr),
+            m_rightSideMenu,
+            RightBtn::PrivacySettings,
+            "btn-privacy-settings",
+            [] {
+                UserSettingsPopup::create()->show();
+            }
+        );
+    }
 
     // mod panel button
-    if (NetworkManagerImpl::get().isModerator()) {
+    if (nm.isModerator()) {
         auto badge = globed::createMyBadge();
         if (!badge) {
             badge = globed::createBadge("role-unknown.png");

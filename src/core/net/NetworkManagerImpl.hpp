@@ -251,6 +251,9 @@ public:
     void markAuthorizedModerator();
     void deauthorizeMod();
 
+    /// Gets whether this user can change their user settings, aka they are either a moderator or have allowed it in the settings
+    bool canChangeUserSettings();
+
     /// Get the ID of the current featured level on this server
     std::optional<FeaturedLevelMeta> getFeaturedLevel();
     bool hasViewedFeaturedLevel();

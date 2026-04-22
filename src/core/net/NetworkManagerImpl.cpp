@@ -59,9 +59,15 @@ static qn::ConnectionDebugOptions getConnOpts() {
 }
 
 static void gatherUserSettings(auto&& out) {
-    out.setHideInLevel(globed::setting<bool>("core.user.hide-in-levels"));
-    out.setHideInMenus(globed::setting<bool>("core.user.hide-in-menus"));
-    out.setHideRoles(globed::setting<bool>("core.user.hide-roles"));
+    bool allow = globed::NetworkManagerImpl::get().canChangeUserSettings();
+
+    if (allow) {
+        out.setHideInLevel(globed::setting<bool>("core.user.hide-in-levels"));
+        out.setHideInMenus(globed::setting<bool>("core.user.hide-in-menus"));
+        out.setHideRoles(globed::setting<bool>("core.user.hide-roles"));
+    }
+
+    // these are always set
     out.setDisableNotices(globed::setting<bool>("core.ui.disable-notices"));
     out.setFriendsOnlyVc(globed::setting<bool>("core.audio.only-friends"));
 }
@@ -1501,6 +1507,10 @@ void NetworkManagerImpl::deauthorizeMod() {
     if (info) {
         info->m_authorizedModerator = false;
     }
+}
+
+bool NetworkManagerImpl::canChangeUserSettings() {
+    return this->isModerator() || globed::setting<bool>("core.user.allow-user-settings");
 }
 
 std::optional<FeaturedLevelMeta> NetworkManagerImpl::getFeaturedLevel() {

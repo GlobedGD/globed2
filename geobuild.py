@@ -21,7 +21,7 @@ import sys
 REQUIRED_GEODE_VERSION = "v5.6.1"
 XTLS_VERSION = "e29f88a"
 QUNET_VERSION = "2ca8bfe"
-SERVER_SHARED_VERSION = "28172d0"
+SERVER_SHARED_VERSION = "d731f27"
 CUE_VERSION = "d1c7ad2"
 
 if sys.version_info < (3, 12):

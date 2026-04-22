@@ -208,7 +208,10 @@ void SettingsLayer::addSettings() {
         {"Nobody", InvitesFrom::Nobody},
     });
     this->addSetting<BoolSettingCell>("core.ui.disable-notices", "Disable Notices",
-        "Entirely disables <cy>Notices</c>, which are a way for <cj>Globed staff</c> to communicate important information to users."
+        "Entirely disables <cy>Notices</c>, which are a way for <cj>Globed staff</c> to communicate information to users."
+    );
+    this->addSetting<BoolSettingCell>("core.user.allow-user-settings", "Enable User Settings",
+        "Adds a button in the main menu & in-game where you can change certain visibility settings, for example making yourself invisible to all other players."
     );
 
     // Preload
