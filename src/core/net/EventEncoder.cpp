@@ -1,16 +1,25 @@
 #include "EventEncoder.hpp"
 #include <asp/iter.hpp>
 
+/// Event dictionary encoding:
+/// u32 builtinsVersion
+/// u32 totalEvents
+/// for each mod:
+/// - StringVar id
+/// - varuint count
+/// - for each event:
+/// - - StringVar name
+
 using namespace geode::prelude;
 
 static constexpr uint32_t CENTRAL_BUILTINS_VERSION = 1;
 static constexpr std::array CENTRAL_BUILTINS {
-    ""
+    "test"_spr
 };
 
 static constexpr uint32_t GAME_BUILTINS_VERSION = 1;
 static constexpr std::array GAME_BUILTINS {
-    ""
+    "test"_spr
 };
 
 namespace globed {
@@ -18,6 +27,13 @@ namespace globed {
 EventEncoder::EventEncoder() {}
 
 void EventEncoder::registerEvent(std::string name) {
+    if (name.size() < 3) return;
+
+    auto slash = name.find('/');
+    if (slash == name.npos || slash == 0 || slash == name.size() - 1) {
+        return;
+    }
+
     m_events.emplace(std::move(name));
 }
 
@@ -35,22 +51,37 @@ EventDictionary EventEncoder::finalize(bool game) const {
     std::unordered_map<std::string, std::vector<std::string>> splat;
     for (std::string_view ev : m_events) {
         auto slash = ev.find('/');
-        auto modId = slash == ev.npos ? "" : ev.substr(0, slash);
+        auto modId = ev.substr(0, slash);
         auto remainder = ev.substr(slash + 1);
 
-        splat[std:::string{modId}]
+        splat[std::string{modId}].push_back(std::string{remainder});
     }
 
+    EventDictionary out{};
+
     size_t totalEvents = events.size() + builtins.size();
+    uint32_t currentId = 0;
+
     // builtins are the first ids, custom events go after them
-    uint32_t currentId = builtins.size();
+    for (auto& builtin : builtins) {
+        out.mapping[currentId++] = builtin;
+    }
 
     qn::HeapByteWriter buf;
+    buf.writeU32(bver);
+    buf.writeU32(totalEvents);
 
-    return EventDictionary {
-        .builtinsVersion = BUILTINS_VERSION,
-        .data = buf.toVector(),
-    };
+    for (auto& [modId, events] : splat) {
+        buf.writeStringVar(modId);
+        buf.writeVarUint(events.size()).unwrap();
+        for (const auto& event : events) {
+            buf.writeStringVar(event);
+            out.mapping[currentId++] = asp::BoxedString::format("{}/{}", modId, event);
+        }
+    }
+
+    out.data = std::move(buf).intoVector();
+    return out;
 }
 
 }
