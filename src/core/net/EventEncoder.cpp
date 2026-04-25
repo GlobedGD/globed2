@@ -62,7 +62,25 @@ std::optional<Result<RawBorrowedEvent>> EventIterator::next() {
     } else {
         id = GEODE_UNWRAP(m_reader.readU32());
     }
-    return std::nullopt;
+
+    auto strId = m_dictionary.lookup(id);
+    if (!strId) {
+        return Err("unknown event ID (not in dictionary): {}", strId);
+    }
+
+    EventFlags flags = static_cast<EventFlags>(GEODE_UNWRAP(m_reader.readU8()));
+    // we don't really care about flags sent by the server besides NO_DATA
+
+    RawBorrowedEvent out{};
+    out.name = *strId;
+
+    if ((flags & EventFlags::NO_DATA) == 0) {
+        auto len = GEODE_UNWRAP(m_reader.readVarUint());
+        auto pos = m_reader.position();
+        out.data = GEODE_UNWRAP(m_reader.source().slice(pos, len));
+    }
+
+    return Ok(std::move(out));
 }
 
 EventEncoder::EventEncoder() {}

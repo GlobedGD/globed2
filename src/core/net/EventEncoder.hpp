@@ -8,7 +8,7 @@
 namespace globed {
 
 struct EventFlags {
-    enum {
+    enum class Type {
         /// This event targets specific players, specified at runtime.
         /// If this is not specified, the event is sent to everyone in the same room/session.
         TARGET_PLAYERS = 1 << 0,
@@ -20,6 +20,9 @@ struct EventFlags {
         URGENT = 1 << 3,
     };
 
+    using enum Type;
+
+    EventFlags(Type val) : _val(static_cast<uint8_t>(val)) {}
     EventFlags(uint8_t val) : _val(val) {}
     EventFlags() : _val(0) {}
 
