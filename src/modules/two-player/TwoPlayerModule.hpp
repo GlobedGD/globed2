@@ -3,7 +3,7 @@
 #include <globed/core/ModuleCrtp.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
-#include <qunet/buffers/ByteReader.hpp>
+#include <dbuf/ByteReader.hpp>
 
 namespace globed {
 

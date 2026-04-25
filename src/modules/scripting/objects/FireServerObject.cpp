@@ -43,7 +43,7 @@ void FireServerObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, gd::vector<
     NetworkManagerImpl::get().queueGameEvent(std::move(ev));
 }
 
-static Result<FireServerPayload, qn::ByteReaderError> decodePayload(qn::ByteReader& reader) {
+static Result<FireServerPayload, dbuf::ByteReader<>Error> decodePayload(dbuf::ByteReader<>& reader) {
     FireServerPayload out{};
     out.eventId = GEODE_UNWRAP(reader.readU16());
     out.argCount = GEODE_UNWRAP(reader.readU8());
@@ -68,7 +68,7 @@ static Result<FireServerPayload, qn::ByteReaderError> decodePayload(qn::ByteRead
     return Ok(out);
 }
 
-static void encodePayload(const FireServerPayload& payload, qn::HeapByteWriter& writer) {
+static void encodePayload(const FireServerPayload& payload, dbuf::ByteWriter& writer) {
     writer.writeU16(payload.eventId);
     writer.writeU8(payload.argCount);
 
@@ -102,8 +102,8 @@ static void encodePayload(const FireServerPayload& payload, qn::HeapByteWriter& 
 }
 
 std::optional<FireServerPayload> FireServerObject::decodePayload() {
-    return ExtendedObjectBase::decodePayloadOpt<FireServerPayload>([&](qn::ByteReader& reader) -> Result<FireServerPayload> {
-        auto payload = READER_UNWRAP(::globed::decodePayload(reader));
+    return ExtendedObjectBase::decodePayloadOpt<FireServerPayload>([&](dbuf::ByteReader<>& reader) -> Result<FireServerPayload> {
+        auto payload = GEODE_UNWRAP(::globed::decodePayload(reader));
 
         // validate the payload
         if (payload.eventId >= EVENT_GLOBED_BASE) {
@@ -123,7 +123,7 @@ std::optional<FireServerPayload> FireServerObject::decodePayload() {
 }
 
 void FireServerObject::encodePayload(const FireServerPayload& args) {
-    ExtendedObjectBase::encodePayload([&](qn::HeapByteWriter& writer) {
+    ExtendedObjectBase::encodePayload([&](dbuf::ByteWriter& writer) {
         ::globed::encodePayload(args, writer);
         return true;
     });

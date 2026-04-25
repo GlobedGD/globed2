@@ -1,14 +1,23 @@
 #include "EventEncoder.hpp"
-#include <asp/iter.hpp>
 
 /// Event dictionary encoding:
 /// u32 builtinsVersion
 /// u32 totalEvents
 /// for each mod:
-/// - StringVar id
+/// - StringU8 id
 /// - varuint count
 /// - for each event:
-/// - - StringVar name
+/// - - StringU8 name
+
+/// Events encoding, for the event buffer in messages, which may contain many events
+/// varuint count
+/// for each event:
+/// - [u8/u16/u32] id (type dependant on total event count in the dictionary)
+/// - u8 flags
+/// - [optional] varuint amount of player ids, if TARGET_PLAYERS flag is set
+/// - [optional] array of i32 player ids, if TARGET_PLAYERS flag is set
+/// - [optional] varuint length of the data, unless the NO_DATA flag is set
+/// - [optional] blob data
 
 using namespace geode::prelude;
 
@@ -24,17 +33,58 @@ static constexpr std::array GAME_BUILTINS {
 
 namespace globed {
 
+/// Dictionary
+
+std::optional<asp::BoxedString> EventDictionary::lookup(uint32_t id) const {
+    if (id >= mapping.size()) return std::nullopt;
+    return mapping[id];
+}
+
+std::optional<uint32_t> EventDictionary::lookupId(std::string_view name) const {
+    return asp::iter::from(mapping).enumerate().find([&](auto& el) {
+        return el.second == name;
+    }).transform([](auto el) {
+        return el.first;
+    });
+}
+
+/// Event iterator, allows zero alloc iteration over events in a buffer
+
+EventIterator::EventIterator(std::span<const uint8_t> data, EventDictionary& dictionary) : m_reader(data), m_dictionary(dictionary) {}
+
+std::optional<Result<RawBorrowedEvent>> EventIterator::next() {
+    size_t total = m_dictionary.mapping.size();
+    uint32_t id;
+    if (total < 256) {
+        id = GEODE_UNWRAP(m_reader.readU8());
+    } else if (total < 65536) {
+        id = GEODE_UNWRAP(m_reader.readU16());
+    } else {
+        id = GEODE_UNWRAP(m_reader.readU32());
+    }
+    return std::nullopt;
+}
+
 EventEncoder::EventEncoder() {}
 
-void EventEncoder::registerEvent(std::string name) {
-    if (name.size() < 3) return;
+bool EventEncoder::registerEvent(std::string name) {
+    if (name.size() < 3) return false;
 
     auto slash = name.find('/');
     if (slash == name.npos || slash == 0 || slash == name.size() - 1) {
-        return;
+        return false;
+    }
+
+    std::string_view sv{name};
+    auto modId = sv.substr(0, slash);
+    auto eventId = sv.substr(slash + 1);
+
+    if (modId.size() >= 127 || eventId.size() >= 127) {
+        return false;
     }
 
     m_events.emplace(std::move(name));
+    return true;
 }
 
 EventDictionary EventEncoder::finalize(bool game) const {
@@ -60,27 +110,27 @@ EventDictionary EventEncoder::finalize(bool game) const {
     EventDictionary out{};
 
     size_t totalEvents = events.size() + builtins.size();
-    uint32_t currentId = 0;
 
     // builtins are the first ids, custom events go after them
     for (auto& builtin : builtins) {
-        out.mapping[currentId++] = builtin;
+        out.mapping.emplace_back(builtin);
     }
 
-    qn::HeapByteWriter buf;
+    dbuf::ByteWriter buf;
     buf.writeU32(bver);
     buf.writeU32(totalEvents);
 
     for (auto& [modId, events] : splat) {
-        buf.writeStringVar(modId);
-        buf.writeVarUint(events.size()).unwrap();
+        buf.writeStringU8(modId);
+        buf.writeVarUint(events.size());
         for (const auto& event : events) {
-            buf.writeStringVar(event);
-            out.mapping[currentId++] = asp::BoxedString::format("{}/{}", modId, event);
+            buf.writeStringU8(event);
+            out.mapping.emplace_back(asp::BoxedString::format("{}/{}", modId, event));
         }
     }
 
-    out.data = std::move(buf).intoVector();
+    auto written = buf.written();
+    out.data = std::vector<uint8_t>{written.begin(), written.end()};
     return out;
 }
 

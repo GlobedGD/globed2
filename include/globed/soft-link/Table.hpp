@@ -5,6 +5,7 @@
 #include "../core/data/Event.hpp"
 #include "../core/data/FeaturedLevel.hpp"
 #include "../core/data/PlayerIconData.hpp"
+#include "../core/Event.hpp"
 #include "../util/vtable.hpp"
 
 #include <Geode/utils/function.hpp>
@@ -30,8 +31,8 @@ struct NetSubtable : VTable {
     GLOBED_VTABLE_FUNC(getUserRoles, std::vector<UserRole>);
     GLOBED_VTABLE_FUNC(getUserRoleIds, std::vector<uint8_t>);
     GLOBED_VTABLE_FUNC(getUserHighestRole, std::optional<UserRole>);
-    GLOBED_VTABLE_FUNC(findRole, std::optional<UserRole>, uint8_t /* numeric id */);
-    GLOBED_VTABLE_FUNC(findRoleStr, std::optional<UserRole>, std::string_view /* string id */);
+    GLOBED_VTABLE_FUNC(findRole, std::optional<UserRole>, uint8_t numericId);
+    GLOBED_VTABLE_FUNC(findRoleStr, std::optional<UserRole>, std::string_view stringId);
     GLOBED_VTABLE_FUNC(isModerator, bool);
     GLOBED_VTABLE_FUNC(isAuthorizedModerator, bool);
 
@@ -40,26 +41,30 @@ struct NetSubtable : VTable {
 
     GLOBED_VTABLE_FUNC(getFeaturedLevel, std::optional<FeaturedLevelMeta>);
     GLOBED_VTABLE_FUNC(queueGameEvent, void, OutEvent&&);
+
+    // since v2.2.0
+    GLOBED_VTABLE_FUNC(sendEvent, void, std::string_view id, std::vector<uint8_t> data, const EventSendOptions& options);
+    GLOBED_VTABLE_FUNC(registerEvent, void, std::string_view id, EventServer server);
 };
 
 struct GameSubtable : VTable {
     GameSubtable();
     GLOBED_VTABLE_FUNC(isActive, bool);
     GLOBED_VTABLE_FUNC(isSafeMode, bool);
-    GLOBED_VTABLE_FUNC(killLocalPlayer, void, bool /* fake */);
+    GLOBED_VTABLE_FUNC(killLocalPlayer, void, bool fake);
 
     GLOBED_VTABLE_FUNC(cancelLocalRespawn, void);
-    GLOBED_VTABLE_FUNC(causeLocalRespawn, void, bool /* full reset */);
+    GLOBED_VTABLE_FUNC(causeLocalRespawn, void, bool fullReset);
     GLOBED_VTABLE_FUNC(enableSafeMode, void);
     GLOBED_VTABLE_FUNC(resetSafeMode, void);
     GLOBED_VTABLE_FUNC(enablePermanentSafeMode, void);
-    GLOBED_VTABLE_FUNC(toggleCullingEnabled, void, bool /* culling */);
-    GLOBED_VTABLE_FUNC(toggleExtendedData, void, bool /* extended */);
+    GLOBED_VTABLE_FUNC(toggleCullingEnabled, void, bool culling);
+    GLOBED_VTABLE_FUNC(toggleExtendedData, void, bool extended);
 
-    GLOBED_VTABLE_FUNC(playSelfEmote, bool, uint32_t /* emote id */);
-    GLOBED_VTABLE_FUNC(playSelfFavoriteEmote, bool, uint32_t /* which */);
+    GLOBED_VTABLE_FUNC(playSelfEmote, bool, uint32_t emoteId);
+    GLOBED_VTABLE_FUNC(playSelfFavoriteEmote, bool, uint32_t which);
 
-    GLOBED_VTABLE_FUNC(getPlayer, RemotePlayer*, int /* player id */);
+    GLOBED_VTABLE_FUNC(getPlayer, RemotePlayer*, int player);
 
     // since v2.0.1
     GLOBED_VTABLE_FUNC(updateLocalIcons, void, std::optional<PlayerIconData>);
@@ -83,7 +88,7 @@ struct PlayerSubtable : VTable {
     GLOBED_VTABLE_FUNC(getUsername, std::string, RemotePlayer*);
     GLOBED_VTABLE_FUNC(getIcons, geode::Result<PlayerIconData>, RemotePlayer*);
 
-    GLOBED_VTABLE_FUNC(setForceHide, void, RemotePlayer*, bool /* hidden */);
+    GLOBED_VTABLE_FUNC(setForceHide, void, RemotePlayer*, bool hidden);
 };
 
 struct MiscSubtable : VTable {

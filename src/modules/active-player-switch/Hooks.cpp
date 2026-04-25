@@ -227,7 +227,7 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
 
     fields.m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& msg) {
         auto& controller = m_fields->m_controller;
-        for (auto& event : msg.events) {
+        for (auto& event : msg.oldEvents) {
             if (event.is<SwitcherooFullStateEvent>()) {
                 controller.handleStateEvent(event.as<SwitcherooFullStateEvent>());
             } else if (event.is<SwitcherooSwitchEvent>()) {
@@ -385,7 +385,8 @@ void APSPlayLayer::sendFullState(bool restarting) {
     ev.playerIndication = fields.m_controller.m_settings.m_showNextPlayer;
     ev.restarting = restarting;
 
-    NetworkManagerImpl::get().queueGameEvent(ev);
+    // TODO events
+    // NetworkManagerImpl::get().queueGameEvent(ev);
 }
 
 void APSPlayLayer::updateSettings(const APSSettings& settings) {
@@ -412,7 +413,8 @@ void APSPlayLayer::handleUpdate(float dt) {
     if (fields.m_controlling) {
         auto ev = controller.poll();
         if (ev) {
-            NetworkManagerImpl::get().queueGameEvent(std::move(*ev));
+            // TODO events
+            // NetworkManagerImpl::get().queueGameEvent(std::move(*ev));
         }
     }
 

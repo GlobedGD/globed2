@@ -1,17 +1,14 @@
-#include <globed/core/data/Event.hpp>
+#include <globed/core/data/OldEvent.hpp>
 
-using qn::ByteReader;
-using qn::HeapByteWriter;
 using namespace geode::prelude;
-
-#define READER_UNWRAP(...) GEODE_UNWRAP((__VA_ARGS__).mapErr([&](auto&& err) { return err.message(); }));
+using namespace dbuf;
 
 namespace globed {
 
 // In n out events
 
-Result<CounterChangeEvent> CounterChangeEvent::decode(ByteReader& reader) {
-    uint64_t rawData = READER_UNWRAP(reader.readU64());
+Result<CounterChangeEvent> CounterChangeEvent::decode(ByteReader<>& reader) {
+    uint64_t rawData = GEODE_UNWRAP(reader.readU64());
 
     uint8_t rawType = (rawData >> 56) & 0xff;
     uint32_t itemId = (rawData >> 32) & 0x00fffff;
@@ -22,7 +19,7 @@ Result<CounterChangeEvent> CounterChangeEvent::decode(ByteReader& reader) {
     });
 }
 
-Result<> CounterChangeEvent::encode(HeapByteWriter& writer) {
+Result<> CounterChangeEvent::encode(ByteWriter<>& writer) {
     writer.writeU16(EVENT_COUNTER_CHANGE);
 
     uint64_t rawData =
@@ -36,26 +33,26 @@ Result<> CounterChangeEvent::encode(HeapByteWriter& writer) {
     return Ok();
 }
 
-Result<TwoPlayerLinkRequestEvent> TwoPlayerLinkRequestEvent::decode(ByteReader& reader) {
-    int id = READER_UNWRAP(reader.readI32());
-    bool player1 = READER_UNWRAP(reader.readBool());
+Result<TwoPlayerLinkRequestEvent> TwoPlayerLinkRequestEvent::decode(ByteReader<>& reader) {
+    int id = GEODE_UNWRAP(reader.readI32());
+    bool player1 = GEODE_UNWRAP(reader.readBool());
 
     return Ok(TwoPlayerLinkRequestEvent { id, player1 });
 }
 
-Result<> TwoPlayerLinkRequestEvent::encode(HeapByteWriter& writer) {
+Result<> TwoPlayerLinkRequestEvent::encode(ByteWriter<>& writer) {
     writer.writeU16(EVENT_2P_LINK_REQUEST);
     writer.writeI32(playerId);
     writer.writeBool(player1);
     return Ok();
 }
 
-Result<TwoPlayerUnlinkEvent> TwoPlayerUnlinkEvent::decode(ByteReader& reader) {
-    int id = READER_UNWRAP(reader.readI32());
+Result<TwoPlayerUnlinkEvent> TwoPlayerUnlinkEvent::decode(ByteReader<>& reader) {
+    int id = GEODE_UNWRAP(reader.readI32());
     return Ok(TwoPlayerUnlinkEvent { id });
 }
 
-Result<> TwoPlayerUnlinkEvent::encode(HeapByteWriter& writer) {
+Result<> TwoPlayerUnlinkEvent::encode(ByteWriter<>& writer) {
     writer.writeU16(EVENT_2P_UNLINK);
     writer.writeI32(playerId);
     return Ok();
@@ -63,38 +60,38 @@ Result<> TwoPlayerUnlinkEvent::encode(HeapByteWriter& writer) {
 
 // In events
 
-Result<DisplayDataRefreshed> DisplayDataRefreshed::decode(qn::ByteReader& reader) {
-    int playerId = READER_UNWRAP(reader.readI32());
+Result<DisplayDataRefreshed> DisplayDataRefreshed::decode(dbuf::ByteReader<>& reader) {
+    int playerId = GEODE_UNWRAP(reader.readI32());
     return Ok(DisplayDataRefreshed { playerId });
 }
 
-Result<SpawnGroupEvent> SpawnGroupEvent::decode(qn::ByteReader& reader) {
+Result<SpawnGroupEvent> SpawnGroupEvent::decode(dbuf::ByteReader<>& reader) {
     return Ok(GEODE_UNWRAP(decodeSpawnData(reader)));
 }
 
-Result<SetItemEvent> SetItemEvent::decode(qn::ByteReader& reader) {
+Result<SetItemEvent> SetItemEvent::decode(dbuf::ByteReader<>& reader) {
     return Ok(GEODE_UNWRAP(decodeSetItemData(reader)));
 }
 
-Result<MoveGroupEvent> MoveGroupEvent::decode(qn::ByteReader& reader) {
+Result<MoveGroupEvent> MoveGroupEvent::decode(dbuf::ByteReader<>& reader) {
     return Ok(GEODE_UNWRAP(decodeMoveGroupData(reader)));
 }
 
-Result<FollowPlayerEvent> FollowPlayerEvent::decode(qn::ByteReader& reader) {
+Result<FollowPlayerEvent> FollowPlayerEvent::decode(dbuf::ByteReader<>& reader) {
     return Ok(GEODE_UNWRAP(decodeFollowPlayerData(reader)));
 }
 
-Result<FollowAbsoluteEvent> FollowAbsoluteEvent::decode(qn::ByteReader& reader) {
+Result<FollowAbsoluteEvent> FollowAbsoluteEvent::decode(dbuf::ByteReader<>& reader) {
     return Ok(GEODE_UNWRAP(decodeFollowAbsoluteData(reader)));
 }
 
-Result<FollowRotationEvent> FollowRotationEvent::decode(qn::ByteReader& reader) {
+Result<FollowRotationEvent> FollowRotationEvent::decode(dbuf::ByteReader<>& reader) {
     return Ok(GEODE_UNWRAP(decodeFollowRotationData(reader)));
 }
 
-Result<SwitcherooFullStateEvent> SwitcherooFullStateEvent::decode(qn::ByteReader& reader) {
-    int activePlayer = READER_UNWRAP(reader.readI32());
-    uint8_t flags = READER_UNWRAP(reader.readU8());
+Result<SwitcherooFullStateEvent> SwitcherooFullStateEvent::decode(dbuf::ByteReader<>& reader) {
+    int activePlayer = GEODE_UNWRAP(reader.readI32());
+    uint8_t flags = GEODE_UNWRAP(reader.readU8());
 
     bool active = (flags & 0b00000001) != 0;
     bool indication = (flags & 0b00000010) != 0;
@@ -105,7 +102,7 @@ Result<SwitcherooFullStateEvent> SwitcherooFullStateEvent::decode(qn::ByteReader
     });
 }
 
-Result<> SwitcherooFullStateEvent::encode(qn::HeapByteWriter& writer) {
+Result<> SwitcherooFullStateEvent::encode(ByteWriter<>& writer) {
     writer.writeU16(EVENT_SWITCHEROO_FULLSTATE);
     writer.writeI32(activePlayer);
 
@@ -119,14 +116,14 @@ Result<> SwitcherooFullStateEvent::encode(qn::HeapByteWriter& writer) {
     return Ok();
 }
 
-Result<SwitcherooSwitchEvent> SwitcherooSwitchEvent::decode(qn::ByteReader& reader) {
-    auto playerId = READER_UNWRAP(reader.readI32());
-    auto type = READER_UNWRAP(reader.readU8());
+Result<SwitcherooSwitchEvent> SwitcherooSwitchEvent::decode(dbuf::ByteReader<>& reader) {
+    auto playerId = GEODE_UNWRAP(reader.readI32());
+    auto type = GEODE_UNWRAP(reader.readU8());
 
     return Ok(SwitcherooSwitchEvent { playerId, Type(type) });
 }
 
-Result<> SwitcherooSwitchEvent::encode(qn::HeapByteWriter& writer) {
+Result<> SwitcherooSwitchEvent::encode(ByteWriter<>& writer) {
     writer.writeU16(EVENT_SWITCHEROO_SWITCH);
     writer.writeI32(playerId);
     writer.writeU8(type);
@@ -134,8 +131,8 @@ Result<> SwitcherooSwitchEvent::encode(qn::HeapByteWriter& writer) {
     return Ok();
 }
 
-Result<InEvent> InEvent::decode(ByteReader& reader) {
-    auto type = READER_UNWRAP(reader.readU16());
+Result<InEvent> InEvent::decode(ByteReader<>& reader) {
+    auto type = GEODE_UNWRAP(reader.readU16());
 
 #define MAP_TO(ty, cls) case ty: return Ok(GEODE_UNWRAP(cls::decode(reader)))
     switch (type) {
@@ -171,7 +168,7 @@ Result<InEvent> InEvent::decode(ByteReader& reader) {
 
 // Out events
 
-Result<> ScriptedEvent::encode(HeapByteWriter& writer) {
+Result<> ScriptedEvent::encode(ByteWriter<>& writer) {
     writer.writeU16(type);
 
     writer.writeU8(args.size());
@@ -213,18 +210,18 @@ Result<> ScriptedEvent::encode(HeapByteWriter& writer) {
     return Ok();
 }
 
-Result<> RequestScriptLogsEvent::encode(HeapByteWriter& writer) {
+Result<> RequestScriptLogsEvent::encode(ByteWriter<>& writer) {
     writer.writeU16(EVENT_SCR_REQUEST_SCRIPT_LOGS);
     return Ok();
 }
 
-Result<> UnknownEvent::encode(HeapByteWriter& writer) {
+Result<> UnknownEvent::encode(ByteWriter<>& writer) {
     writer.writeU16(type);
     writer.writeBytes(rawData.data(), rawData.size());
     return Ok();
 }
 
-Result<> OutEvent::encode(HeapByteWriter& writer) {
+Result<> OutEvent::encode(ByteWriter<>& writer) {
     return std::visit([&](auto&& obj) {
         return obj.encode(writer);
     }, m_kind);

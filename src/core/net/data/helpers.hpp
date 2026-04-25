@@ -7,7 +7,7 @@
 #include <globed/util/assert.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
 
-#include <qunet/buffers/ByteReader.hpp>
+#include <dbuf/ByteReader.hpp>
 #include <capnp/compat/std-iterator.h>
 
 namespace globed::data {
@@ -569,16 +569,17 @@ $implDecode(msg::LevelDataMessage, game::LevelDataMessage::Reader& reader) {
         }
     }
 
-    qn::ByteReader evReader{eventData.begin(), eventData.size()};
+    // TODO events
+    // dbuf::ByteReader evReader{eventData.begin(), eventData.size()};
 
-    while (evReader.remainingSize() > 0) {
-        if (auto res = InEvent::decode(evReader)) {
-            outMsg.events.push_back(std::move(*res));
-        } else {
-            geode::log::warn("failed to decode event: {}", res.unwrapErr());
-            break;
-        }
-    }
+    // while (evReader.remainingSize() > 0) {
+    //     if (auto res = InEvent::decode(evReader)) {
+    //         outMsg.oldEvents.push_back(std::move(*res));
+    //     } else {
+    //         geode::log::warn("failed to decode event: {}", res.unwrapErr());
+    //         break;
+    //     }
+    // }
 
     return outMsg;
 }

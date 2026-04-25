@@ -15,6 +15,7 @@
 namespace globed {
 
 class NetworkManagerImpl;
+struct EventOptions;
 
 class GLOBED_DLL NetworkManager : public SingletonBase<NetworkManager> {
 public:
@@ -57,7 +58,6 @@ public:
     bool hasViewedFeaturedLevel();
     void setViewedFeaturedLevel();
 
-    void queueGameEvent(OutEvent&& event);
     void sendQuickChat(uint32_t id);
 
     // Listeners
@@ -74,7 +74,7 @@ public:
         return MessageEvent<T>(threadSafe).listen(std::forward<F>(callback), priority).leak();
     }
 
-    static ccColor3B latencyToColor(uint64_t ms);
+    static cocos2d::ccColor3B latencyToColor(uint64_t ms);
 
 private:
     friend class SingletonBase;

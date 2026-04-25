@@ -96,7 +96,15 @@ static NetSubtable* makeNetTable() {
     });
 
     GLOBED_VTABLE_INIT(table, queueGameEvent, (OutEvent&& event) {
-        NetworkManagerImpl::get().queueGameEvent(std::move(event));
+        // NetworkManagerImpl::get().queueGameEvent(std::move(event));
+    });
+
+    GLOBED_VTABLE_INIT(table, sendEvent, (std::string_view id, std::vector<uint8_t> data, const EventSendOptions& options) {
+        NetworkManagerImpl::get().sendEvent(id, std::move(data), options);
+    });
+
+    GLOBED_VTABLE_INIT(table, registerEvent, (std::string_view id, EventServer server) {
+        NetworkManagerImpl::get().registerEvent(id, server);
     });
 
     return table;

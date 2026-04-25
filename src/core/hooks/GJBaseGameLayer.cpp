@@ -1317,7 +1317,7 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
     }
 
     // check for refreshed events
-    for (auto& event : message.events) {
+    for (auto& event : message.oldEvents) {
         if (event.is<DisplayDataRefreshed>()) {
             int player = event.as<DisplayDataRefreshed>().playerId;
 

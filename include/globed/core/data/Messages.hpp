@@ -8,6 +8,7 @@
 #include "FeaturedLevel.hpp"
 #include "UserRole.hpp"
 #include "Event.hpp"
+#include "OldEvent.hpp"
 #include "RoomTeam.hpp"
 #include "UserPunishment.hpp"
 #include "FetchedMod.hpp"
@@ -186,7 +187,8 @@ struct LevelListMessage {
 struct LevelDataMessage {
     std::vector<PlayerState> players;
     std::vector<PlayerDisplayData> displayDatas;
-    std::vector<InEvent> events;
+    std::vector<InEvent> oldEvents;
+    std::vector<RawEvent> events;
 };
 
 // Level meta

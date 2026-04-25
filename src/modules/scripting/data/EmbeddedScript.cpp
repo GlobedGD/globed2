@@ -2,8 +2,8 @@
 #include <Geode/Geode.hpp>
 #include <qunet/compression/ZstdDecompressor.hpp>
 #include <qunet/compression/ZstdCompressor.hpp>
-#include <qunet/buffers/ByteReader.hpp>
-#include <qunet/buffers/HeapByteWriter.hpp>
+#include <dbuf/ByteReader.hpp>
+#include <dbuf/ByteWriter.hpp>
 #include <globed/util/format.hpp>
 
 using namespace geode::prelude;
@@ -37,7 +37,7 @@ Result<EmbeddedScript> EmbeddedScript::decode(std::span<const uint8_t> data) {
     auto offset = *offsetRes;
     data = data.subspan(offset);
 
-    qn::ByteReader reader{data};
+    dbuf::ByteReader<> reader{data};
     size_t decompressedLen = MAP_UNWRAP(reader.readU32());
     data = data.subspan(4);
 
@@ -49,7 +49,7 @@ Result<EmbeddedScript> EmbeddedScript::decode(std::span<const uint8_t> data) {
     MAP_UNWRAP(qn::decompressZstd(data.data(), data.size(), decompressedBuf.get(), decompressedLen));
     log::debug("Decompressed: {}", hexEncode(decompressedBuf.get(), decompressedLen));
 
-    reader = qn::ByteReader{decompressedBuf.get(), decompressedLen};
+    reader = dbuf::ByteReader<>{decompressedBuf.get(), decompressedLen};
     script.main = MAP_UNWRAP(reader.readBool());
     script.filename = MAP_UNWRAP(reader.readStringU16());
     script.content = MAP_UNWRAP(reader.readStringU32());
@@ -95,7 +95,7 @@ std::optional<size_t> EmbeddedScript::decodeHeader(std::span<const uint8_t> data
 }
 
 Result<std::vector<uint8_t>> EmbeddedScript::encode(bool includePrefix, std::string_view prefixStr) const {
-    qn::HeapByteWriter writer;
+    dbuf::ByteWriter writer;
     writer.writeBool(this->main);
     MAP_UNWRAP(writer.writeStringU16(this->filename));
     MAP_UNWRAP(writer.writeStringU32(this->content));
@@ -108,7 +108,7 @@ Result<std::vector<uint8_t>> EmbeddedScript::encode(bool includePrefix, std::str
     auto rawData = writer.written();
     size_t bound = qn::ZstdCompressor::compressBound(rawData.size());
 
-    qn::HeapByteWriter outWriter;
+    dbuf::ByteWriter outWriter;
     if (includePrefix) {
         outWriter.writeBytes((uint8_t*) prefixStr.data(), prefixStr.size());
         outWriter.writeU8(0);

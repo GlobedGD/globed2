@@ -441,7 +441,7 @@ Future<> NetworkManagerImpl::asyncInit() {
             m_centralLogger->sendPacketLog(bytes, false);
         }
 
-        qn::ByteReader breader{bytes};
+        dbuf::ByteReader<> breader{bytes};
         size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
 
         size_t remBytes = bytes.size() - breader.position();
@@ -480,7 +480,7 @@ Future<> NetworkManagerImpl::asyncInit() {
             m_gameLogger->sendPacketLog(bytes, false);
         }
 
-        qn::ByteReader breader{bytes};
+        dbuf::ByteReader<> breader{bytes};
         size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
 
         size_t remBytes = bytes.size() - breader.position();
@@ -582,6 +582,8 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
         auto& i = **info;
         i.m_centralUrl = m_connectingCentralUrl;
         i.m_icons = m_connectingIcons;
+        i.m_centralDict = m_centralEventEncoder.lock()->finalize(false);
+        i.m_gameDict = m_gameEventEncoder.lock()->finalize(true);
     }
 
     switch (connState) {
@@ -1093,7 +1095,7 @@ Result<> NetworkManagerImpl::sendMessageToConnection(
     }
 
     size_t unpackedSize = capnp::computeSerializedSizeInWords(msg) * 8;
-    qn::ArrayByteWriter<8> writer;
+    dbuf::ArrayByteWriter<8> writer;
     writer.writeVarUint(unpackedSize).unwrap();
     auto unpSizeBuf = writer.written();
 
@@ -2167,23 +2169,23 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
             reqs.set(i, dataRequests[i]);
         }
 
-        qn::HeapByteWriter eventEncoder;
-        for (size_t i = 0; i < std::min<size_t>(64, info->m_gameEventQueue.size()); i++) {
-            auto& event = info->m_gameEventQueue.front();
-            if (auto err = event.encode(eventEncoder).err()) {
-                log::warn("Failed to encode event: {}", *err);
-            }
+        // dbuf::ByteWriter eventEncoder;
+        // for (size_t i = 0; i < std::min<size_t>(64, info->m_gameEventQueue.size()); i++) {
+        //     auto& event = info->m_gameEventQueue.front();
+        //     if (auto err = event.encode(eventEncoder).err()) {
+        //         log::warn("Failed to encode event: {}", *err);
+        //     }
 
-            info->m_gameEventQueue.pop();
-        }
+        //     info->m_gameEventQueue.pop();
+        // }
 
-        auto eventData = std::move(eventEncoder).intoVector();
-        playerData.setEventData(kj::ArrayPtr{eventData.data(), eventData.size()});
+        // auto eventData = std::move(eventEncoder).intoVector();
+        // playerData.setEventData(kj::ArrayPtr{eventData.data(), eventData.size()});
 
         // allocate another message id
         uint16_t msgId = info->getNextMessageId();
         playerData.setMessageId(msgId);
-    }, !info->m_gameEventQueue.empty());
+    });
 }
 
 void NetworkManagerImpl::sendPlayerUpdateMeta(const PlayerLevelMeta& meta, const std::vector<int>& requests) {
@@ -2212,12 +2214,12 @@ void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scri
     }, true, false);
 }
 
-void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
-    auto info = this->connInfo();
-    if (!info) return;
+// void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
+//     auto info = this->connInfo();
+//     if (!info) return;
 
-    info->m_gameEventQueue.push(std::move(event));
-}
+//     info->m_gameEventQueue.push(std::move(event));
+// }
 
 void NetworkManagerImpl::sendVoiceData(const EncodedAudioFrame& frame) {
     this->sendToGame([&](GameMessage::Builder& msg) {
@@ -2239,6 +2241,31 @@ void NetworkManagerImpl::sendQuickChat(uint32_t id) {
 }
 
 // Messages for both servers
+
+void NetworkManagerImpl::sendEvent(std::string_view id, std::vector<uint8_t> data, const EventSendOptions& options) {
+    bool central = options.server == EventServer::Central || options.server == EventServer::Both;
+    bool game = options.server == EventServer::Game || options.server == EventServer::Both;
+    // TODO
+}
+
+void NetworkManagerImpl::registerEvent(std::string_view id, EventServer server) {
+    bool central = server == EventServer::Central || server == EventServer::Both;
+    bool game = server == EventServer::Game || server == EventServer::Both;
+
+    if (central) {
+        this->registerEventWith(id, *m_centralEventEncoder.lock());
+    }
+    if (game) {
+        this->registerEventWith(id, *m_gameEventEncoder.lock());
+    }
+}
+
+void NetworkManagerImpl::registerEventWith(std::string_view id, EventEncoder& encoder) {
+    if (!encoder.registerEvent(std::string{id})) {
+        log::error("Failed to register event with ID '{}'", id);
+        log::error("The event ID is most likely invalid (too long or incorrectly formatted), event IDs must be in form 'mod.id/event-name'");
+    }
+}
 
 void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab) {
     auto info = this->connInfo();

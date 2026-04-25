@@ -20,7 +20,8 @@ TwoPlayerModule::TwoPlayerModule() {
 
         if (mod.isEnabled()) {
             for (auto& event : msg.events) {
-                mod.handleEvent(event);
+                // TODO events
+                // mod.handleEvent(event);
             }
         }
     });
@@ -240,11 +241,13 @@ void TwoPlayerModule::unlink(bool silent) {
 }
 
 void TwoPlayerModule::sendUnlinkEventTo(int id) {
-    NetworkManagerImpl::get().queueGameEvent(TwoPlayerUnlinkEvent { id });
+    // TODO events
+    // NetworkManagerImpl::get().queueGameEvent(TwoPlayerUnlinkEvent { id });
 }
 
 void TwoPlayerModule::sendLinkEventTo(int id, bool player2) {
-    NetworkManagerImpl::get().queueGameEvent(TwoPlayerLinkRequestEvent { id, !player2 });
+    // TODO events
+    // NetworkManagerImpl::get().queueGameEvent(TwoPlayerLinkRequestEvent { id, !player2 });
 }
 
 void TwoPlayerModule::linkSuccess(int id, bool player2) {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <qunet/buffers/ByteReader.hpp>
+#include <dbuf/ByteReader.hpp>
 #include <modules/scripting/objects/ExtendedObjectBase.hpp>
 
 namespace globed {
@@ -10,11 +10,11 @@ struct SetItemData {
     int value;
 };
 
-inline geode::Result<SetItemData> decodeSetItemData(qn::ByteReader& reader) {
+inline geode::Result<SetItemData> decodeSetItemData(dbuf::ByteReader<>& reader) {
     SetItemData out{};
 
-    out.itemId = READER_UNWRAP(reader.readVarUint());
-    out.value = READER_UNWRAP(reader.readVarInt());
+    out.itemId = GEODE_UNWRAP(reader.readVarUint());
+    out.value = GEODE_UNWRAP(reader.readVarInt());
 
     return geode::Ok(out);
 }

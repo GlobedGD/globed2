@@ -1,4 +1,5 @@
 #pragma once
+#define GLOBED_SOFTLINK_INCLUDED
 #include "Table.hpp"
 
 namespace globed {
@@ -43,6 +44,21 @@ bool isAtLeast(std::string version) {
     auto reqVer = geode::VersionInfo::parse(std::move(version));
 
     return reqVer && globedVer >= reqVer.unwrap();
+}
+
+/// Waits until Globed is loaded and invokes the callback. If Globed is already loaded, the callback is invoked immediately.
+template <typename F>
+void waitForGlobed(F&& callback) {
+    if (geode::Loader::get()->isModLoaded("dankmeme.globed2")) {
+        callback();
+    } else {
+        auto mod = geode::Loader::get()->getInstalledMod("dankmeme.globed2");
+        if (!mod) return;
+
+        geode::ModStateEvent(geode::ModEventType::Loaded, mod).listen([callback = std::forward<F>(callback)] mutable {
+            callback();
+        }).leak();
+    }
 }
 
 }
@@ -151,8 +167,16 @@ inline std::optional<FeaturedLevelMeta> getFeaturedLevel() {
 }
 
 /// Queues an event, do not use this.
-inline void queueGameEvent(OutEvent&& event) {
-    if (auto t = table()) t->net->queueGameEvent(std::move(event));
+// inline void queueGameEvent(OutEvent&& event) {
+//     if (auto t = table()) t->net->queueGameEvent(std::move(event));
+// }
+
+inline void sendEvent(std::string_view id, std::vector<uint8_t> data, const EventSendOptions& options) {
+    if (auto t = table()) t->net->sendEvent(id, std::move(data), options);
+}
+
+inline void registerEvent(std::string_view id, EventServer server) {
+    if (auto t = table()) t->net->registerEvent(id, server);
 }
 
 } // namespace api::net
@@ -347,5 +371,19 @@ inline gd::string fullPathForFilename(std::string_view filename, bool ignoreSuff
 }
 
 } // namespace api::misc
+
+// we do a little sneaky
+
+template <ValidEventType Derived>
+void ServerEvent<Derived>::_register() {
+    globed::api::waitForGlobed([] {
+        globed::api::net::registerEvent(Derived::id(), Derived::server());
+    });
+}
+
+template <ValidEventType Derived>
+void ServerEvent<Derived>::send(this const Derived& self, const EventSendOptions& options) {
+    globed::api::net::sendEvent(self.id(), self.encode(), options);
+}
 
 }

@@ -1,28 +1,108 @@
 #pragma once
-#include <qunet/buffers/HeapByteWriter.hpp>
-#include <qunet/buffers/ByteReader.hpp>
-#include <unordered_map>
+#include <globed/core/Event.hpp>
+#include <dbuf/ByteWriter.hpp>
+#include <dbuf/ByteReader.hpp>
 #include <asp/ptr/BoxedString.hpp>
+#include <asp/iter.hpp>
 
 namespace globed {
 
+struct EventFlags {
+    enum {
+        /// This event targets specific players, specified at runtime.
+        /// If this is not specified, the event is sent to everyone in the same room/session.
+        TARGET_PLAYERS = 1 << 0,
+        /// This event has no data.
+        NO_DATA = 1 << 1,
+        /// This event is reliable and must be delivered.
+        RELIABLE = 1 << 2,
+        /// This event is high priority and should be sent without much extra delay.
+        URGENT = 1 << 3,
+    };
+
+    EventFlags(uint8_t val) : _val(val) {}
+    EventFlags() : _val(0) {}
+
+    operator uint8_t() const { return _val; }
+
+    EventFlags& operator|=(EventFlags other) {
+        _val |= other._val;
+        return *this;
+    }
+
+    EventFlags operator&(EventFlags other) const {
+        return EventFlags{ (uint8_t)(_val & other._val) };
+    }
+
+private:
+    uint8_t _val;
+};
+
 struct EventDictionary {
     std::vector<uint8_t> data;
-    std::unordered_map<uint32_t, asp::BoxedString> mapping;
+    std::vector<asp::BoxedString> mapping;
 
-    std::optional<asp::BoxedString> lookup(uint32_t id) const {
-        auto it = mapping.find(id);
-        if (it != mapping.end()) {
-            return it->second;
+    std::optional<asp::BoxedString> lookup(uint32_t id) const;
+    std::optional<uint32_t> lookupId(std::string_view name) const;
+
+    template <typename Wr>
+    bool writeOne(
+        dbuf::ByteWriter<Wr>& writer,
+        std::string_view id,
+        std::span<const uint8_t> data,
+        const EventSendOptions& options
+    ) {
+        auto nid = this->lookupId(id);
+        if (!nid) return false;
+
+        size_t total = mapping.size();
+
+        if (total < 256) {
+            writer.writeU8(*nid);
+        } else if (total < 65536) {
+            writer.writeU16(*nid);
+        } else {
+            writer.writeU32(*nid);
         }
-        return std::nullopt;
+
+        auto flagPos = writer.position();
+        writer.writeU8(0); // placeholder
+
+        EventFlags flags{};
+
+        if (!options.targetPlayers.empty()) {
+            flags |= EventFlags::TARGET_PLAYERS;
+            writer.writeVarUint(options.targetPlayers.size());
+            for (int pid : options.targetPlayers) {
+                writer.writeI32(pid);
+            }
+        }
+
+        if (data.empty()) {
+            flags |= EventFlags::NO_DATA;
+        } else {
+            writer.writeVarUint(data.size());
+            writer.writeBytes(data);
+        }
     }
+};
+
+class EventIterator : public asp::iter::Iter<EventIterator, geode::Result<RawBorrowedEvent>> {
+public:
+    using Item = geode::Result<RawBorrowedEvent>;
+
+    EventIterator(std::span<const uint8_t> data, EventDictionary& dictionary);
+    std::optional<Item> next();
+
+private:
+    dbuf::ByteReader<> m_reader;
+    EventDictionary& m_dictionary;
 };
 
 class EventEncoder {
 public:
     EventEncoder();
-    void registerEvent(std::string name);
+    bool registerEvent(std::string name);
     EventDictionary finalize(bool game) const;
 
 private:
