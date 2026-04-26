@@ -140,7 +140,7 @@ EventDictionary EventEncoder::finalize(bool game) const {
 
     for (auto& [modId, events] : splat) {
         buf.writeStringU8(modId);
-        buf.writeVarUint(events.size());
+        buf.writeVarUint(events.size()).unwrap();
         for (const auto& event : events) {
             buf.writeStringU8(event);
             out.mapping.emplace_back(asp::BoxedString::format("{}/{}", modId, event));
