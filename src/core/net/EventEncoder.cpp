@@ -95,7 +95,7 @@ std::optional<Result<RawBorrowedEvent>> EventIterator::next() {
     out.name = *strId;
 
     if ((flags & EventFlags::SENT_BY_PLAYER) != 0) {
-        out.sender = GEODE_UNWRAP(m_reader.readI32());
+        out.options.sender = GEODE_UNWRAP(m_reader.readI32());
     }
 
     if ((flags & EventFlags::NO_DATA) == 0) {
