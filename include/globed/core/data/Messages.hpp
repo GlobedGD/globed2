@@ -187,7 +187,7 @@ struct LevelListMessage {
 struct LevelDataMessage {
     std::vector<PlayerState> players;
     std::vector<PlayerDisplayData> displayDatas;
-    std::vector<InEvent> oldEvents;
+    std::vector<InEvent> oldEvents; // TODO remove
     std::vector<RawEvent> events;
 };
 

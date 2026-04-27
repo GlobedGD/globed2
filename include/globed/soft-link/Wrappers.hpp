@@ -171,7 +171,7 @@ inline std::optional<FeaturedLevelMeta> getFeaturedLevel() {
 //     if (auto t = table()) t->net->queueGameEvent(std::move(event));
 // }
 
-inline void sendEvent(std::string_view id, std::vector<uint8_t> data, const EventSendOptions& options) {
+inline void sendEvent(std::string_view id, std::vector<uint8_t> data, const EventOptions& options) {
     if (auto t = table()) t->net->sendEvent(id, std::move(data), options);
 }
 
@@ -382,7 +382,7 @@ void ServerEvent<Derived>::_register() {
 }
 
 template <ValidEventType Derived>
-void ServerEvent<Derived>::send(this const Derived& self, const EventSendOptions& options) {
+void ServerEvent<Derived>::send(this const Derived& self, const EventOptions& options) {
     globed::api::net::sendEvent(self.id(), self.encode(), options);
 }
 

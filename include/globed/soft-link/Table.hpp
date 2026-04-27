@@ -43,7 +43,7 @@ struct NetSubtable : VTable {
     GLOBED_VTABLE_FUNC(queueGameEvent, void, OutEvent&&);
 
     // since v2.2.0
-    GLOBED_VTABLE_FUNC(sendEvent, void, std::string_view id, std::vector<uint8_t> data, const EventSendOptions& options);
+    GLOBED_VTABLE_FUNC(sendEvent, void, std::string_view id, std::vector<uint8_t> data, const EventOptions& options);
     GLOBED_VTABLE_FUNC(registerEvent, void, std::string_view id, EventServer server);
 };
 

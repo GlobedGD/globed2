@@ -5,11 +5,6 @@
 
 namespace globed {
 
-enum class EventServer {
-    Central = 1,
-    Game = 2,
-    Both = 3,
-};
 
 template <typename T>
 concept EventDefinesServer = requires {
@@ -31,16 +26,6 @@ struct ServerEventAutoInit {
     }
 };
 
-struct EventSendOptions {
-    EventSendOptions() = default;
-
-    EventServer server = EventServer::Central;
-    std::vector<int> targetPlayers;
-    bool reliable = false;
-    bool urgent = false;
-    char _reserved[88] = {};
-};
-static_assert(sizeof(EventSendOptions) == 128);
 
 template <ValidEventType Derived>
 struct ServerEvent {
@@ -58,7 +43,7 @@ struct ServerEvent {
 
     /// Defined in soft-link/Wrappers.hpp
     static void _register();
-    void send(this const Derived& self, const EventSendOptions& options = {});
+    void send(this const Derived& self, const EventOptions& options = {});
 
     template <typename F>
     static geode::ListenerHandle listen(F callback, int priority = 0) {

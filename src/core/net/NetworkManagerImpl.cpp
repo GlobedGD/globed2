@@ -183,6 +183,41 @@ static Future<Result<std::string>> startArgonAuth() {
     return argon::startAuth(g_argonData);
 }
 
+template <EventServer Server>
+static void decodeEventsInto(std::span<const uint8_t> events, EventDictionary& dict, std::vector<RawEvent>& out) {
+    for (auto result : EventIterator{events, dict}) {
+        if (!result) {
+            log::warn("Failed to decode event: {}", result.unwrapErr());
+            continue;
+        }
+
+        auto& ev = result.unwrap();
+        ev.options.server = Server;
+
+        out.push_back({
+            .name = std::move(ev.name),
+            .data = std::vector<uint8_t>(ev.data.begin(), ev.data.end()),
+            .options = std::move(ev.options)
+        });
+    }
+}
+
+template <size_t Limit = 64>
+static auto encodeEventsInto(std::deque<RawEvent>& events, EventDictionary& dict, auto& wr) {
+    size_t toEncode = std::min<size_t>(Limit, events.size());
+
+    std::vector<RawEvent> eventVec;
+    for (size_t i = 0; i < toEncode; i++) {
+        auto& event = events.front();
+        eventVec.emplace_back(std::move(event));
+        events.pop_front();
+    }
+
+    dict.writeMany(wr, eventVec);
+    auto eventData = wr.written();
+    return kj::ArrayPtr{eventData.data(), eventData.size()};
+}
+
 static void updateServers(ConnectionInfo& info, auto& newServers) {
     info.m_gameServers.clear();
 
@@ -2169,18 +2204,8 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
             reqs.set(i, dataRequests[i]);
         }
 
-        // dbuf::ByteWriter eventEncoder;
-        // for (size_t i = 0; i < std::min<size_t>(64, info->m_gameEventQueue.size()); i++) {
-        //     auto& event = info->m_gameEventQueue.front();
-        //     if (auto err = event.encode(eventEncoder).err()) {
-        //         log::warn("Failed to encode event: {}", *err);
-        //     }
-
-        //     info->m_gameEventQueue.pop();
-        // }
-
-        // auto eventData = std::move(eventEncoder).intoVector();
-        // playerData.setEventData(kj::ArrayPtr{eventData.data(), eventData.size()});
+        dbuf::ByteWriter<> wr;
+        playerData.setEventData(encodeEventsInto(info->m_gameEventQueue, info->m_gameDict, wr));
 
         // allocate another message id
         uint16_t msgId = info->getNextMessageId();
@@ -2242,10 +2267,21 @@ void NetworkManagerImpl::sendQuickChat(uint32_t id) {
 
 // Messages for both servers
 
-void NetworkManagerImpl::sendEvent(std::string_view id, std::vector<uint8_t> data, const EventSendOptions& options) {
+void NetworkManagerImpl::sendEvent(std::string_view id, std::vector<uint8_t> data, const EventOptions& options) {
     bool central = options.server == EventServer::Central || options.server == EventServer::Both;
     bool game = options.server == EventServer::Game || options.server == EventServer::Both;
-    // TODO
+
+    auto info = this->connInfo();
+    if (!info) return;
+
+    if (central) {
+        info->m_centralEventQueue.emplace_back(id, data, options);
+    }
+    if (game) {
+        info->m_gameEventQueue.emplace_back(id, std::move(data), options);
+    }
+
+    // TODO: signal somehow?
 }
 
 void NetworkManagerImpl::registerEvent(std::string_view id, EventServer server) {
@@ -2723,7 +2759,12 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
                 }
             }
 
-            this->invokeListeners(data::decodeUnchecked<msg::LevelDataMessage>(m));
+            auto msg = data::decodeUnchecked<msg::LevelDataMessage>(m);
+
+            // decode events
+            decodeEventsInto<EventServer::Game>(m.getEventData(), connInfo.m_gameDict, msg.events);
+
+            this->invokeListeners(std::move(msg));
         } break;
 
         case LEVEL_META: {

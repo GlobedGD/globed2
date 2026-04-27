@@ -46,6 +46,21 @@ private:
     uint8_t _val;
 };
 
+struct EventDictionary;
+
+class EventIterator : public asp::iter::Iter<EventIterator, geode::Result<RawBorrowedEvent>> {
+public:
+    using Item = geode::Result<RawBorrowedEvent>;
+
+    EventIterator(std::span<const uint8_t> data, EventDictionary& dictionary);
+    std::optional<Item> next();
+
+private:
+    dbuf::ByteReader<> m_reader;
+    EventDictionary& m_dictionary;
+};
+
+
 struct EventDictionary {
     std::vector<uint8_t> data;
     std::vector<asp::BoxedString> mapping;
@@ -58,7 +73,7 @@ struct EventDictionary {
         dbuf::ByteWriter<Wr>& writer,
         std::string_view id,
         std::span<const uint8_t> data,
-        const EventSendOptions& options
+        const EventOptions& options
     ) {
         auto nid = this->lookupId(id);
         if (!nid) return false;
@@ -81,7 +96,7 @@ struct EventDictionary {
         if (!options.targetPlayers.empty()) {
             flags |= EventFlags::TARGET_PLAYERS;
             writer.writeVarUint(options.targetPlayers.size());
-            for (int pid : options.targetPlayers) {
+            for (int32_t pid : options.targetPlayers) {
                 writer.writeI32(pid);
             }
         }
@@ -93,18 +108,24 @@ struct EventDictionary {
             writer.writeBytes(data);
         }
     }
-};
 
-class EventIterator : public asp::iter::Iter<EventIterator, geode::Result<RawBorrowedEvent>> {
-public:
-    using Item = geode::Result<RawBorrowedEvent>;
+    /// writes events, includes the length
+    template <typename Wr>
+    void writeMany(
+        dbuf::ByteWriter<Wr>& writer,
+        auto& events
+    ) {
+        writer.writeVarUint(events.size()).unwrap();
+        for (const auto& event : events) {
+            if (!this->writeOne(writer, event.name, event.data, event.options)) {
+                geode::log::warn("Failed to encode event '{}', skipping", event.name);
+            }
+        }
+    }
 
-    EventIterator(std::span<const uint8_t> data, EventDictionary& dictionary);
-    std::optional<Item> next();
-
-private:
-    dbuf::ByteReader<> m_reader;
-    EventDictionary& m_dictionary;
+    EventIterator decode(std::span<const uint8_t> data) {
+        return EventIterator{data, *this};
+    }
 };
 
 class EventEncoder {

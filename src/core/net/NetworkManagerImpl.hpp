@@ -104,12 +104,14 @@ struct ConnectionInfo {
     bool m_authenticating = false;
     asp::time::Instant m_triedAuthAt;
     EventDictionary m_centralDict;
+    std::deque<RawEvent> m_centralEventQueue;
 
     // game server info
     std::string m_gameServerUrl;
     uint8_t m_gameServerId;
     bool m_gameEstablished = false;
     EventDictionary m_gameDict;
+    std::deque<RawEvent> m_gameEventQueue;
     std::vector<EmbeddedScript> m_queuedScripts;
     std::deque<std::pair<uint16_t, asp::Instant>> m_gamePlayerDataReqs;
     std::deque<std::pair<bool, asp::Instant>> m_gameProcessedPackets;
@@ -337,7 +339,7 @@ public:
     void sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab = false);
     void sendLeaveSession();
 
-    void sendEvent(std::string_view id, std::vector<uint8_t> data, const EventSendOptions& options);
+    void sendEvent(std::string_view id, std::vector<uint8_t> data, const EventOptions& options);
     void registerEvent(std::string_view id, EventServer server);
 
     // Game server

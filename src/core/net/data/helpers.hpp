@@ -569,18 +569,6 @@ $implDecode(msg::LevelDataMessage, game::LevelDataMessage::Reader& reader) {
         }
     }
 
-    // TODO events
-    // dbuf::ByteReader evReader{eventData.begin(), eventData.size()};
-
-    // while (evReader.remainingSize() > 0) {
-    //     if (auto res = InEvent::decode(evReader)) {
-    //         outMsg.oldEvents.push_back(std::move(*res));
-    //     } else {
-    //         geode::log::warn("failed to decode event: {}", res.unwrapErr());
-    //         break;
-    //     }
-    // }
-
     return outMsg;
 }
 
