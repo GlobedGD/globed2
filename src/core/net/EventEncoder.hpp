@@ -18,6 +18,11 @@ struct EventFlags {
         RELIABLE = 1 << 2,
         /// This event is high priority and should be sent without much extra delay.
         URGENT = 1 << 3,
+        /// This event was sent to us by another player
+        SENT_BY_PLAYER = 1 << 4,
+
+        /// There is another byte that has extra flags
+        EXTENDED_FLAGS = 1 << 7
     };
 
     using enum Type;

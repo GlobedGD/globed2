@@ -16,6 +16,7 @@
 /// - u8 flags
 /// - [optional] varuint amount of player ids, if TARGET_PLAYERS flag is set
 /// - [optional] array of i32 player ids, if TARGET_PLAYERS flag is set
+/// - [optional] i32 player id, sender of the event, if SENT_BY_PLAYER flag is set
 /// - [optional] varuint length of the data, unless the NO_DATA flag is set
 /// - [optional] blob data
 
@@ -28,7 +29,23 @@ static constexpr std::array CENTRAL_BUILTINS {
 
 static constexpr uint32_t GAME_BUILTINS_VERSION = 1;
 static constexpr std::array GAME_BUILTINS {
-    "test"_spr
+    "globed/counter-change",
+    "globed/display-data-refreshed",
+
+    "globed/scripting.custom",
+    "globed/scripting.spawn-group",
+    "globed/scripting.set-item",
+    "globed/scripting.request-script-logs",
+    "globed/scripting.move-group",
+    "globed/scripting.move-group-absolute",
+    "globed/scripting.follow-player",
+    "globed/scripting.follow-rotation",
+
+    "globed/2p.link",
+    "globed/2p.unlink",
+
+    "globed/switcheroo.full-state",
+    "globed/switcheroo.switch",
 };
 
 namespace globed {
@@ -69,10 +86,17 @@ std::optional<Result<RawBorrowedEvent>> EventIterator::next() {
     }
 
     EventFlags flags = static_cast<EventFlags>(GEODE_UNWRAP(m_reader.readU8()));
-    // we don't really care about flags sent by the server besides NO_DATA
+    if ((flags & EventFlags::EXTENDED_FLAGS) != 0) {
+        // for future use, currently unused
+        uint8_t extFlags = GEODE_UNWRAP(m_reader.readU8());
+    }
 
     RawBorrowedEvent out{};
     out.name = *strId;
+
+    if ((flags & EventFlags::SENT_BY_PLAYER) != 0) {
+        out.sender = GEODE_UNWRAP(m_reader.readI32());
+    }
 
     if ((flags & EventFlags::NO_DATA) == 0) {
         auto len = GEODE_UNWRAP(m_reader.readVarUint());
@@ -107,7 +131,9 @@ bool EventEncoder::registerEvent(std::string name) {
 
 EventDictionary EventEncoder::finalize(bool game) const {
     auto& bver = game ? GAME_BUILTINS_VERSION : CENTRAL_BUILTINS_VERSION;
-    auto& builtins = game ? GAME_BUILTINS : CENTRAL_BUILTINS;
+    auto builtins = game
+        ? std::span<const char* const>{GAME_BUILTINS}
+        : std::span<const char* const>{CENTRAL_BUILTINS};
 
     // sort all events, remove builtins
     auto events = asp::iter::consume(m_events).filter([&](auto& el) {
