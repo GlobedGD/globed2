@@ -209,11 +209,12 @@ void APSSettingsPopup::startGame() {
     m_buttonMenu->setEnabled(false);
 
     m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& msg) {
-        for (auto& event : msg.oldEvents) {
-            if (event.is<SwitcherooFullStateEvent>()) {
-                this->onClose(nullptr);
-            }
-        }
+        // TODO: events
+        // for (auto& event : msg.oldEvents) {
+        //     if (event.is<SwitcherooFullStateEvent>()) {
+        //         this->onClose(nullptr);
+        //     }
+        // }
     }, 1);
 }
 

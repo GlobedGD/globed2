@@ -1316,19 +1316,20 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
         fields.m_interpolator.updatePlayer(player, fields.m_lastServerUpdate);
     }
 
-    // check for refreshed events
-    for (auto& event : message.oldEvents) {
-        if (event.is<DisplayDataRefreshed>()) {
-            int player = event.as<DisplayDataRefreshed>().playerId;
+    // TODO events
+    // // check for refreshed events
+    // for (auto& event : message.) {
+    //     if (event.is<DisplayDataRefreshed>()) {
+    //         int player = event.as<DisplayDataRefreshed>().playerId;
 
-            // refresh this player's data
-            PlayerCacheManager::get().evictToLayer2(player);
-            fields.m_lastDataRequest = 0.f;
-            if (auto rp = this->getPlayer(player)) {
-                rp->markDataOutdated();
-            }
-        }
-    }
+    //         // refresh this player's data
+    //         PlayerCacheManager::get().evictToLayer2(player);
+    //         fields.m_lastDataRequest = 0.f;
+    //         if (auto rp = this->getPlayer(player)) {
+    //             rp->markDataOutdated();
+    //         }
+    //     }
+    // }
 
     for (auto& dd : message.displayDatas) {
         if (dd.accountId <= 0) continue; // should never happen?

@@ -227,13 +227,14 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
 
     fields.m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& msg) {
         auto& controller = m_fields->m_controller;
-        for (auto& event : msg.oldEvents) {
-            if (event.is<SwitcherooFullStateEvent>()) {
-                controller.handleStateEvent(event.as<SwitcherooFullStateEvent>());
-            } else if (event.is<SwitcherooSwitchEvent>()) {
-                controller.handleSwitchEvent(event.as<SwitcherooSwitchEvent>());
-            }
-        }
+        // TODO events
+        // for (auto& event : msg.oldEvents) {
+        //     if (event.is<SwitcherooFullStateEvent>()) {
+        //         controller.handleStateEvent(event.as<SwitcherooFullStateEvent>());
+        //     } else if (event.is<SwitcherooSwitchEvent>()) {
+        //         controller.handleSwitchEvent(event.as<SwitcherooSwitchEvent>());
+        //     }
+        // }
     }, -10);
 
     this->addEventListener(

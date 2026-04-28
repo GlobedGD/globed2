@@ -15,15 +15,16 @@ using namespace geode::prelude;
 namespace globed {
 
 TwoPlayerModule::TwoPlayerModule() {
-    NetworkManagerImpl::get().listenGlobal<msg::LevelDataMessage>([](const auto& msg) {
-        auto& mod = TwoPlayerModule::get();
+    // TODO: rework this to use event struct
+    NetworkManagerImpl::get().listenGlobal<msg::EventsMessage>([](const auto& msg) {
+        // auto& mod = TwoPlayerModule::get();
 
-        if (mod.isEnabled()) {
-            for (auto& event : msg.events) {
-                // TODO events
-                // mod.handleEvent(event);
-            }
-        }
+        // if (mod.isEnabled()) {
+        //     for (auto& event : msg.events) {
+        //         // TODO events
+        //         // mod.handleEvent(event);
+        //     }
+        // }
     });
 }
 

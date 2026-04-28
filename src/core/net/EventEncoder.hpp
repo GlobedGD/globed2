@@ -95,7 +95,7 @@ struct EventDictionary {
 
         if (!options.targetPlayers.empty()) {
             flags |= EventFlags::TARGET_PLAYERS;
-            writer.writeVarUint(options.targetPlayers.size());
+            writer.writeVarUint(options.targetPlayers.size()).unwrap();
             for (int32_t pid : options.targetPlayers) {
                 writer.writeI32(pid);
             }
