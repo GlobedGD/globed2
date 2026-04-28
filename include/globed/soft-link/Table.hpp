@@ -40,7 +40,7 @@ struct NetSubtable : VTable {
     GLOBED_VTABLE_FUNC(invalidateFriendList, void);
 
     GLOBED_VTABLE_FUNC(getFeaturedLevel, std::optional<FeaturedLevelMeta>);
-    GLOBED_VTABLE_FUNC(queueGameEvent, void, OutEvent&&);
+    GLOBED_VTABLE_FUNC(queueGameEvent, void, void*); // dont use
 
     // since v2.2.0
     GLOBED_VTABLE_FUNC(sendEvent, void, std::string_view id, std::vector<uint8_t> data, const EventOptions& options);
