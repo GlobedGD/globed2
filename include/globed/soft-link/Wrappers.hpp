@@ -49,6 +49,9 @@ bool isAtLeast(std::string version) {
 /// Waits until Globed is loaded and invokes the callback. If Globed is already loaded, the callback is invoked immediately.
 template <typename F>
 void waitForGlobed(F&& callback) {
+#ifdef GLOBED_BUILD
+    callback();
+#else
     if (geode::Loader::get()->isModLoaded("dankmeme.globed2")) {
         callback();
     } else {
@@ -59,6 +62,7 @@ void waitForGlobed(F&& callback) {
             callback();
         }).leak();
     }
+#endif
 }
 
 }
@@ -371,20 +375,5 @@ inline gd::string fullPathForFilename(std::string_view filename, bool ignoreSuff
 }
 
 } // namespace api::misc
-
-// we do a little sneaky
-
-template <typename Derived>
-void ServerEvent<Derived>::_register() {
-    static_assert(ValidEventType<Derived>);
-    globed::api::waitForGlobed([] {
-        globed::api::net::registerEvent(Derived::id(), Derived::server());
-    });
-}
-
-template <typename Derived>
-void ServerEvent<Derived>::send(this const Derived& self, const EventOptions& options) {
-    globed::api::net::sendEvent(self.id(), self.encode(), options);
-}
 
 }

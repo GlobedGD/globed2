@@ -1,6 +1,7 @@
 #pragma once
 #include "data/Messages.hpp"
 #include "net/MessageListener.hpp"
+#include "../soft-link/API.hpp"
 #include <span>
 
 namespace globed {
@@ -41,9 +42,11 @@ struct ServerEvent {
         return Derived::Id;
     }
 
-    /// Defined in soft-link/Wrappers.hpp
     static void _register();
-    void send(this const Derived& self, const EventOptions& options = {});
+
+    void send(this const Derived& self, const EventOptions& options) {
+        globed::api::net::sendEvent(self.id(), self.encode(), options);
+    }
 
     template <typename F>
     static geode::ListenerHandle listen(F callback, int priority = 0) {
@@ -66,5 +69,13 @@ private:
     static inline ServerEventAutoInit<Derived> s_autoInit;
     static inline auto s_autoInitRef = &ServerEvent::s_autoInit;
 };
+
+template <typename Derived>
+void ServerEvent<Derived>::_register() {
+    static_assert(ValidEventType<Derived>);
+    globed::api::waitForGlobed([] {
+        globed::api::net::registerEvent(Derived::id(), Derived::server());
+    });
+}
 
 }

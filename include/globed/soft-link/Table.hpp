@@ -5,7 +5,7 @@
 #include "../core/data/Event.hpp"
 #include "../core/data/FeaturedLevel.hpp"
 #include "../core/data/PlayerIconData.hpp"
-#include "../core/Event.hpp"
+// #include "../core/Event.hpp"
 #include "../util/vtable.hpp"
 
 #include <Geode/utils/function.hpp>
