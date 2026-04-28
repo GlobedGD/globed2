@@ -9,11 +9,7 @@ namespace globed {
 std::vector<uint8_t> DisplayDataRefreshedEvent::encode() const {
     dbuf::ByteWriter wr;
     wr.writeI32(playerId);
-    auto written = wr.written();
-
-    std::vector<uint8_t> out;
-    out.assign_range(wr.written());
-    return out;
+    return std::move(wr).intoInner();
 }
 
 Result<DisplayDataRefreshedEvent> DisplayDataRefreshedEvent::decode(std::span<const uint8_t> data) {

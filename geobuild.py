@@ -429,6 +429,7 @@ def main(build: Build):
         "XTLS_ENABLE_SOCKET": "ON",
         "XTLS_ENABLE_ARC_SOCKET": "ON",
     })
+    build.add_cpm_dep("dankmeme01/dbuf", "v1.1.0")
     build.add_cpm_dep("dankmeme01/qunet-cpp", QUNET_VERSION, {
         "QUNET_QUIC_SUPPORT": "ON" if gc.ext_transports else "OFF",
         "QUNET_WS_SUPPORT": "ON" if gc.ext_transports else "OFF",
