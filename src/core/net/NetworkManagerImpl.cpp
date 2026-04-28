@@ -203,12 +203,16 @@ static void decodeEventsInto(std::span<const uint8_t> events, EventDictionary& d
 }
 
 template <size_t Limit = 64>
-static auto encodeEventsInto(std::deque<RawEvent>& events, EventDictionary& dict, auto& wr) {
+static auto encodeEventsInto(std::deque<RawEvent>& events, EventDictionary& dict, auto& wr, bool& reliable) {
     size_t toEncode = std::min<size_t>(Limit, events.size());
 
     std::vector<RawEvent> eventVec;
     for (size_t i = 0; i < toEncode; i++) {
         auto& event = events.front();
+        if (event.options.reliable) {
+            reliable = true;
+        }
+
         eventVec.emplace_back(std::move(event));
         events.pop_front();
     }
@@ -2190,6 +2194,10 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
         return;
     }
 
+    dbuf::ByteWriter<> wr;
+    bool reliable = false;
+    auto eventData = encodeEventsInto(info->m_gameEventQueue, info->m_gameDict, wr, reliable);
+
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto playerData = msg.initPlayerData();
         auto data = playerData.initData();
@@ -2204,13 +2212,12 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
             reqs.set(i, dataRequests[i]);
         }
 
-        dbuf::ByteWriter<> wr;
-        playerData.setEventData(encodeEventsInto(info->m_gameEventQueue, info->m_gameDict, wr));
+        playerData.setEventData(eventData);
 
         // allocate another message id
         uint16_t msgId = info->getNextMessageId();
         playerData.setMessageId(msgId);
-    });
+    }, reliable);
 }
 
 void NetworkManagerImpl::sendPlayerUpdateMeta(const PlayerLevelMeta& meta, const std::vector<int>& requests) {
