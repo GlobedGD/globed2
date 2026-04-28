@@ -30,13 +30,13 @@ inline RootApiTable* table() {
 
 /// Returns whether globed is available and api functions can be used.
 /// If this returns false, return values of api functions are meaningless.
-bool available() {
+inline bool available() {
     return table() != nullptr;
 }
 
 /// Returns whether the user has at least this version of Globed installed.
 /// For example if v2.1.0 is passed, this will return true if the user has v2.1.0, v2.1.1, v2.2.0, v3.0.0, etc.
-bool isAtLeast(std::string version) {
+inline bool isAtLeast(std::string version) {
     auto mod = geode::Loader::get()->getInstalledMod("dankmeme.globed2");
     if (!mod) return false;
 
