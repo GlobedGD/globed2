@@ -27,7 +27,7 @@ struct ServerEventAutoInit {
 };
 
 
-template <ValidEventType Derived>
+template <typename Derived>
 struct ServerEvent {
     static EventServer server() {
         if constexpr (EventDefinesServer<Derived>) {

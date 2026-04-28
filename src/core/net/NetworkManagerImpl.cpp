@@ -2777,8 +2777,8 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
 
             lock.unlock();
 
-            this->invokeListeners(std::move(msg));
             this->invokeListeners(std::move(evmsg));
+            this->invokeListeners(std::move(msg));
         } break;
 
         case LEVEL_META: {

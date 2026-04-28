@@ -3,6 +3,7 @@
 #include <Geode/modify/GJBaseGameLayer.hpp>
 #include <globed/config.hpp>
 #include <globed/core/game/RemotePlayer.hpp>
+#include <globed/core/game/GameEvents.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/util/BoolExt.hpp>
@@ -70,6 +71,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         MessageListener<msg::ChatNotPermittedMessage> m_mutedListener;
         MessageListener<msg::JoinSessionFailedMessage> m_joinFailedListener;
         MessageListener<msg::DiscordLinkStateMessage> m_discordStateListener;
+        geode::ListenerHandle m_displayDataListener;
 
         uint8_t m_deathCount = 0;
         bool m_lastLocalDeathReal = false;
@@ -197,6 +199,7 @@ private:
     void onVoiceDataReceived(msg::VoiceBroadcastMessage& message);
     void onQuickChatReceived(int accountId, uint32_t quickChatId);
     void onJoinSessionFailed(const msg::JoinSessionFailedMessage& message);
+    void onDisplayDataRefreshed(const DisplayDataRefreshedEvent& ev);
 
     void cleanupGlobedAdditions();
     void fixProgressBar(float percent);

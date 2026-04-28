@@ -55,7 +55,7 @@ void waitForGlobed(F&& callback) {
         auto mod = geode::Loader::get()->getInstalledMod("dankmeme.globed2");
         if (!mod) return;
 
-        geode::ModStateEvent(geode::ModEventType::Loaded, mod).listen([callback = std::forward<F>(callback)] mutable {
+        geode::ModStateEvent(geode::ModEventType::Loaded, mod).listen([callback = std::forward<F>(callback)] {
             callback();
         }).leak();
     }
@@ -374,14 +374,15 @@ inline gd::string fullPathForFilename(std::string_view filename, bool ignoreSuff
 
 // we do a little sneaky
 
-template <ValidEventType Derived>
+template <typename Derived>
 void ServerEvent<Derived>::_register() {
+    static_assert(ValidEventType<Derived>);
     globed::api::waitForGlobed([] {
         globed::api::net::registerEvent(Derived::id(), Derived::server());
     });
 }
 
-template <ValidEventType Derived>
+template <typename Derived>
 void ServerEvent<Derived>::send(this const Derived& self, const EventOptions& options) {
     globed::api::net::sendEvent(self.id(), self.encode(), options);
 }
