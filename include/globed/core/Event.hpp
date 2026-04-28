@@ -47,8 +47,10 @@ struct ServerEvent {
 
     template <typename F>
     static geode::ListenerHandle listen(F callback, int priority = 0) {
-        return MessageEvent<msg::LevelDataMessage>{false}.listen([cb = std::move(callback)](const msg::LevelDataMessage& data) {
+        return MessageEvent<msg::EventsMessage>{false}.listen([cb = std::move(callback)](const msg::EventsMessage& data) {
             for (auto& ev : data.events) {
+                if (ev.name != id()) continue;
+
                 auto dec = Derived::decode(ev.data);
                 if (dec.isOk()) {
                     cb(std::move(dec).unwrap());

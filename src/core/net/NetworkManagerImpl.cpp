@@ -2682,6 +2682,16 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             this->invokeListeners(std::move(m));
         } break;
 
+        case CentralMessage::EVENTS: {
+            // decode events
+            auto connInfo = this->connInfo();
+            msg::EventsMessage evmsg;
+            decodeEventsInto<EventServer::Central>(msg.getEvents(), connInfo->m_centralDict, evmsg.events);
+            connInfo.unlock();
+
+            this->invokeListeners(std::move(evmsg));
+        } break;
+
         default: {
             return Err("Received unknown message type: {}", std::to_underlying(msg.which()));
         } break;
@@ -2762,9 +2772,13 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
             auto msg = data::decodeUnchecked<msg::LevelDataMessage>(m);
 
             // decode events
-            decodeEventsInto<EventServer::Game>(m.getEventData(), connInfo.m_gameDict, msg.events);
+            msg::EventsMessage evmsg;
+            decodeEventsInto<EventServer::Game>(m.getEventData(), connInfo.m_gameDict, evmsg.events);
+
+            lock.unlock();
 
             this->invokeListeners(std::move(msg));
+            this->invokeListeners(std::move(evmsg));
         } break;
 
         case LEVEL_META: {
@@ -2789,6 +2803,16 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
 
         case KICKED: {
             // TODO
+        } break;
+
+        case EVENTS: {
+            // decode events
+            auto connInfo = this->connInfo();
+            msg::EventsMessage evmsg;
+            decodeEventsInto<EventServer::Game>(msg.getEvents(), connInfo->m_gameDict, evmsg.events);
+            connInfo.unlock();
+
+            this->invokeListeners(std::move(evmsg));
         } break;
 
         default: {

@@ -104,9 +104,11 @@ struct EventDictionary {
         if (data.empty()) {
             flags |= EventFlags::NO_DATA;
         } else {
-            writer.writeVarUint(data.size());
+            writer.writeVarUint(data.size()).unwrap();
             writer.writeBytes(data);
         }
+
+        return true;
     }
 
     /// writes events, includes the length
