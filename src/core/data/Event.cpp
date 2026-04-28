@@ -60,11 +60,6 @@ Result<> TwoPlayerUnlinkEvent::encode(ByteWriter<>& writer) {
 
 // In events
 
-Result<DisplayDataRefreshed> DisplayDataRefreshed::decode(dbuf::ByteReader<>& reader) {
-    int playerId = GEODE_UNWRAP(reader.readI32());
-    return Ok(DisplayDataRefreshed { playerId });
-}
-
 Result<SpawnGroupEvent> SpawnGroupEvent::decode(dbuf::ByteReader<>& reader) {
     return Ok(GEODE_UNWRAP(decodeSpawnData(reader)));
 }
@@ -136,7 +131,6 @@ Result<InEvent> InEvent::decode(ByteReader<>& reader) {
 
 #define MAP_TO(ty, cls) case ty: return Ok(GEODE_UNWRAP(cls::decode(reader)))
     switch (type) {
-        MAP_TO(EVENT_DISPLAY_DATA_REFRESHED, DisplayDataRefreshed);
         MAP_TO(EVENT_COUNTER_CHANGE, CounterChangeEvent);
         MAP_TO(EVENT_SCR_SPAWN_GROUP, SpawnGroupEvent);
         MAP_TO(EVENT_SCR_SET_ITEM, SetItemEvent);

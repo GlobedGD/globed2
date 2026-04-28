@@ -53,8 +53,7 @@ This API is currently not very complete, and a fairly small subset of functions 
 
 Server events are a feature of Globed that allows the client to send arbitrary data to the server, which may then be forwarded to other players. This is how Globed implements certain gamemodes (e.g. Switcheroo or 2 player mode) without actually hardcoding any functionality in the server!
 
-TODO
-
+For more information on how they can be used, see [Server Events](./server-events.md) page.
 
 ## Backward / forward compatibility
 

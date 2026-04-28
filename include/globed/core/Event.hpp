@@ -44,8 +44,14 @@ struct ServerEvent {
 
     static void _register();
 
-    void send(this const Derived& self, const EventOptions& options) {
+    void send(this const Derived& self, const EventOptions& options = {}) {
         globed::api::net::sendEvent(self.id(), self.encode(), options);
+    }
+
+    void send(this const Derived& self, EventServer server) {
+        EventOptions opts{};
+        opts.server = server;
+        return self.send(opts);
     }
 
     template <typename F>

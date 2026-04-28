@@ -26,7 +26,6 @@ namespace globed {
 
 constexpr uint16_t EVENT_GLOBED_BASE = 0xf000;
 constexpr uint16_t EVENT_COUNTER_CHANGE = 0xf001;
-constexpr uint16_t EVENT_DISPLAY_DATA_REFRESHED = 0xf004;
 
 constexpr uint16_t EVENT_SCR_SPAWN_GROUP = 0xf010;
 constexpr uint16_t EVENT_SCR_SET_ITEM = 0xf011;
@@ -80,12 +79,6 @@ struct TwoPlayerUnlinkEvent {
 };
 
 // Incoming events
-
-struct DisplayDataRefreshed {
-    int playerId;
-
-    static Result<DisplayDataRefreshed> decode(dbuf::ByteReader<>& reader);
-};
 
 struct SpawnGroupEvent {
     SpawnData data;
@@ -151,7 +144,6 @@ struct InEvent {
         UnknownEvent
 #ifdef GLOBED_BUILD
         ,CounterChangeEvent,
-        DisplayDataRefreshed,
         SpawnGroupEvent,
         SetItemEvent,
         MoveGroupEvent,

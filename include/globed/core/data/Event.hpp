@@ -17,7 +17,7 @@ struct EventOptions final {
 
     EventServer server = EventServer::Central;
     std::vector<int32_t> targetPlayers;
-    int32_t sender = 0; // player id, 0 if server
+    int32_t sender = 0; // ONLY valid for server -> client; player id, 0 if server
     bool reliable = false;
     bool urgent = false;
     char _reserved[88] = {};
