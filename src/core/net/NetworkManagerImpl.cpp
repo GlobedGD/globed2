@@ -1096,7 +1096,14 @@ void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token
 
         switch (kind) {
             case AuthKind::Utoken: {
-                log::debug("attempting login with user token {}", token);
+                log::debug(
+                    "attempting login with user token {}",
+#ifdef GLOBED_DEBUG
+                    token
+#else
+                    "<redacted>"
+#endif
+                );
                 login.setUtoken(token);
             } break;
 
