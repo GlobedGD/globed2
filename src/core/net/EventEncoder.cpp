@@ -67,9 +67,22 @@ std::optional<uint32_t> EventDictionary::lookupId(std::string_view name) const {
 
 /// Event iterator, allows zero alloc iteration over events in a buffer
 
-EventIterator::EventIterator(std::span<const uint8_t> data, EventDictionary& dictionary) : m_reader(data), m_dictionary(dictionary) {}
+EventIterator::EventIterator(std::span<const uint8_t> data, EventDictionary& dictionary) : m_reader(data), m_dictionary(dictionary) {
+    m_remCount = m_reader.readVarUint().unwrapOr(0);
+}
 
 std::optional<Result<RawBorrowedEvent>> EventIterator::next() {
+    if (m_reader.remainingSize() == 0 || m_eof || m_remCount == 0) {
+        if (m_remCount == 0) {
+            return std::nullopt;
+        } else {
+            return Err("unexpected EOF, could not read {} remaining events", m_remCount);
+        }
+    }
+
+    // set eof preemptively, so in case we error out the next call will be a no-op
+    m_eof = true;
+
     size_t total = m_dictionary.mapping.size();
     uint32_t id;
     if (total < 256) {
@@ -103,6 +116,9 @@ std::optional<Result<RawBorrowedEvent>> EventIterator::next() {
         auto pos = m_reader.position();
         out.data = GEODE_UNWRAP(m_reader.source().slice(pos, len));
     }
+
+    m_eof = false;
+    m_remCount--;
 
     return Ok(std::move(out));
 }

@@ -1083,16 +1083,22 @@ void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         int accountId = g_argonData.accountId;
         int userId = g_argonData.userId;
-        auto icons = this->connInfo()->m_icons;
 
         auto login = msg.initLogin();
         login.setAccountId(accountId);
-        data::encode(icons, login.initIcons());
         if (kind != AuthKind::Plain) {
             auto uid = this->computeUident(accountId);
             login.setUident(kj::arrayPtr(uid.data(), uid.size()));
         }
         gatherUserSettings(login.initSettings());
+
+        {
+            auto info = this->connInfo();
+            data::encode(info->m_icons, login.initIcons());
+
+            auto& dict = info->m_centralDict.data;
+            login.setEventDictionary(kj::arrayPtr(dict.data(), dict.size()));
+        }
 
         switch (kind) {
             case AuthKind::Utoken: {
@@ -2170,8 +2176,13 @@ void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, boo
         login.setAccountId(g_argonData.accountId);
         login.setToken(this->getUToken().value_or(""));
 
-        auto icons = this->connInfo()->m_icons;
-        data::encode(icons, login.initIcons());
+        {
+            auto info = this->connInfo();
+            data::encode(info->m_icons, login.initIcons());
+
+            auto& dict = info->m_gameDict.data;
+            login.setEventDictionary(kj::arrayPtr(dict.data(), dict.size()));
+        }
 
         gatherUserSettings(login.initSettings());
 

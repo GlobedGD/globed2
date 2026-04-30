@@ -58,6 +58,8 @@ public:
 private:
     dbuf::ByteReader<> m_reader;
     EventDictionary& m_dictionary;
+    size_t m_remCount = 0;
+    bool m_eof = false;
 };
 
 
