@@ -203,8 +203,11 @@ static void decodeEventsInto(std::span<const uint8_t> events, EventDictionary& d
 }
 
 template <size_t Limit = 64>
-static auto encodeEventsInto(std::deque<RawEvent>& events, EventDictionary& dict, auto& wr, bool& reliable) {
+static std::optional<kj::ArrayPtr<const uint8_t>> encodeEventsInto(std::deque<RawEvent>& events, EventDictionary& dict, auto& wr, bool& reliable) {
     size_t toEncode = std::min<size_t>(Limit, events.size());
+    if (toEncode == 0) {
+        return std::nullopt;
+    }
 
     std::vector<RawEvent> eventVec;
     for (size_t i = 0; i < toEncode; i++) {
@@ -2230,7 +2233,7 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
             reqs.set(i, dataRequests[i]);
         }
 
-        playerData.setEventData(eventData);
+        if (eventData) playerData.setEventData(*eventData);
 
         // allocate another message id
         uint16_t msgId = info->getNextMessageId();
