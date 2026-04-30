@@ -3,7 +3,7 @@
     "name": "Globed",
     "developer": "dankmeme",
     "geode": "5.6.1",
-    "version": "v2.1.4",
+    "version": "v2.2.0-beta.1",
     "gd": {
         "win": "2.2081",
         "android": "2.2081",
