@@ -11,17 +11,17 @@ using namespace asp::time;
 
 namespace globed {
 
-bool ModPunishPopup::init(GJUserScore* userScore, UserPunishmentType type, std::optional<UserPunishment> pun) {
+bool ModPunishPopup::init(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun) {
     if (!BasePopup::init(350.f, 250.f)) return false;
 
     switch (type) {
-        case UserPunishmentType::Ban: this->setTitle(fmt::format("Ban/Unban {}", userScore->m_userName)); break;
-        case UserPunishmentType::RoomBan: this->setTitle(fmt::format("Room ban/unban {}", userScore->m_userName)); break;
-        case UserPunishmentType::Mute: this->setTitle(fmt::format("Mute/Unmute {}", userScore->m_userName)); break;
+        case UserPunishmentType::Ban: this->setTitle("Ban/Unban user"); break;
+        case UserPunishmentType::RoomBan: this->setTitle("Room ban/unban user"); break;
+        case UserPunishmentType::Mute: this->setTitle("Mute/Unmute user"); break;
     }
 
     m_punishment = std::move(pun);
-    m_userScore = userScore;
+    m_accountId = accountId;
     m_type = type;
 
     auto* rootLayout = Build<CCNode>::create()
@@ -280,7 +280,7 @@ bool ModPunishPopup::init(GJUserScore* userScore, UserPunishmentType type, std::
         Build<ButtonSprite>::create(type != UserPunishmentType::Mute ? "Unban" : "Unmute", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .scale(0.9f)
             .intoMenuItem([this, type] {
-                std::string content = fmt::format("Are you sure you want to <cr>{}</c> {}?", type != UserPunishmentType::Mute ? "unban" : "unmute", m_userScore->m_userName);
+                std::string content = fmt::format("Are you sure you want to <cr>{}</c> this user?", type != UserPunishmentType::Mute ? "unban" : "unmute");
                 createQuickPopup("Unban User", content, "Cancel", "Yes", [this](FLAlertLayer* alert, bool btn2) {
                     if (btn2)
                         this->submitRemoval();
@@ -382,15 +382,15 @@ void ModPunishPopup::submit() {
 
     switch (m_type) {
         case UserPunishmentType::Ban: {
-            nm.sendAdminBan(m_userScore->m_accountID, reason, expiresAt);
+            nm.sendAdminBan(m_accountId, reason, expiresAt);
         } break;
 
         case UserPunishmentType::Mute: {
-            nm.sendAdminMute(m_userScore->m_accountID, reason, expiresAt);
+            nm.sendAdminMute(m_accountId, reason, expiresAt);
         } break;
 
         case UserPunishmentType::RoomBan: {
-            nm.sendAdminRoomBan(m_userScore->m_accountID, reason, expiresAt);
+            nm.sendAdminRoomBan(m_accountId, reason, expiresAt);
         } break;
     }
 }
@@ -402,15 +402,15 @@ void ModPunishPopup::submitRemoval() {
 
     switch (m_type) {
         case UserPunishmentType::Ban: {
-            nm.sendAdminUnban(m_userScore->m_accountID);
+            nm.sendAdminUnban(m_accountId);
         } break;
 
         case UserPunishmentType::Mute: {
-            nm.sendAdminUnmute(m_userScore->m_accountID);
+            nm.sendAdminUnmute(m_accountId);
         } break;
 
         case UserPunishmentType::RoomBan: {
-            nm.sendAdminRoomUnban(m_userScore->m_accountID);
+            nm.sendAdminRoomUnban(m_accountId);
         } break;
     }
 }
@@ -448,10 +448,10 @@ void ModPunishPopup::stopWaiting(const msg::AdminResultMessage& msg) {
 }
 
 ModPunishPopup* ModPunishPopup::create(
-    GJUserScore* userScore, UserPunishmentType type, std::optional<UserPunishment> punishment
+    int accountId, UserPunishmentType type, std::optional<UserPunishment> punishment
 ) {
     auto ret = new ModPunishPopup();
-    if (ret->init(userScore, type, std::move(punishment))) {
+    if (ret->init(accountId, type, std::move(punishment))) {
         ret->autorelease();
         return ret;
     }
