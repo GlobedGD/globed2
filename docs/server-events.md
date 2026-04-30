@@ -21,9 +21,8 @@ Below is an example of a basic skeleton for a server event
 #include <dbuf/ByteWriter.hpp>
 #include <dbuf/ByteReader.hpp>
 
-struct MyEvent : globed::ServerEvent<MyEvent> {
-    // Type specifies the server to which this event can be sent, more information below
-    static constexpr auto Type = globed::EventServer::Game;
+// Second argument specifies the server to which this event can be sent, more information below
+struct MyEvent : globed::ServerEvent<MyEvent, globed::EventServer::Game> {
     // String ID that uniquely identifies the event, must include the mod ID there
     static constexpr auto Id = "my-event"_spr;
 
@@ -56,6 +55,8 @@ struct MyEvent : globed::ServerEvent<MyEvent> {
 Every event should specify whether it will be used only on the game server, the central server, or both. Sending and receiving will fail if this is incorrectly specified. Choose the server depending on event's purpose:
 * Central server: can be sent to anybody online without being in a level, flexible but may have higher latency
 * Game server: can only be sent to people in the same session as you, more efficient and fast
+
+Server is specified in the template argument: e.g. `ServerEvent<T, EventServer::Both>`. It can be omitted, then it will default to `Both` so the event will be usable with both servers.
 
 All events *should* have a globally unique ID in the form `mod.id/event-id`. There are no constraints on the event ID after the slash, besides that it should be shorter than 127 characters. `"mod.id/event-id"`, `"event-id"_spr`, `"my_epic.event"_spr` are all valid IDs.
 

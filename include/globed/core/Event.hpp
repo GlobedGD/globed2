@@ -7,11 +7,6 @@
 namespace globed {
 
 template <typename T>
-concept EventDefinesServer = requires {
-    { T::Type } -> std::convertible_to<EventServer>;
-};
-
-template <typename T>
 concept ValidEventType = requires(const T t, std::span<const uint8_t> data) {
     { T::Id } -> std::convertible_to<std::string_view>;
 
@@ -26,15 +21,10 @@ struct ServerEventAutoInit {
     }
 };
 
-
-template <typename Derived>
+template <typename Derived, EventServer Server = EventServer::Both>
 struct ServerEvent {
     static EventServer server() {
-        if constexpr (EventDefinesServer<Derived>) {
-            return Derived::Type;
-        } else {
-            return EventServer::Both;
-        }
+        return Server;
     }
 
     static std::string_view id() {
@@ -87,8 +77,8 @@ private:
     static inline auto s_autoInitRef = &ServerEvent::s_autoInit;
 };
 
-template <typename Derived>
-void ServerEvent<Derived>::_register() {
+template <typename Derived, EventServer Server>
+void ServerEvent<Derived, Server>::_register() {
     static_assert(ValidEventType<Derived>);
     globed::api::waitForGlobed([] {
         globed::api::net::registerEvent(Derived::id(), Derived::server());

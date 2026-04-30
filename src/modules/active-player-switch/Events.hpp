@@ -3,8 +3,7 @@
 
 namespace globed {
 
-struct APSFullStateEvent : ServerEvent<APSFullStateEvent> {
-    static constexpr auto Type = EventServer::Game;
+struct APSFullStateEvent : ServerEvent<APSFullStateEvent, EventServer::Game> {
     static constexpr auto Id = "globed/switcheroo.full-state";
 
     APSFullStateEvent(int activePlayer, bool gameActive, bool playerIndication, bool restarting)
@@ -19,8 +18,7 @@ struct APSFullStateEvent : ServerEvent<APSFullStateEvent> {
     bool restarting = false;
 };
 
-struct APSSwitchEvent : ServerEvent<APSSwitchEvent> {
-    static constexpr auto Type = EventServer::Game;
+struct APSSwitchEvent : ServerEvent<APSSwitchEvent, EventServer::Game> {
     static constexpr auto Id = "globed/switcheroo.switch";
 
     int playerId;
