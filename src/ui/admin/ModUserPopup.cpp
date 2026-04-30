@@ -336,7 +336,7 @@ void ModUserPopup::showPunishmentPopup(UserPunishmentType type) {
         type == UserPunishmentType::Mute ? m_data->activeMute :
         m_data->activeRoomBan;
 
-    auto popup = ModPunishPopup::create(m_data->accountId, type, active);
+    auto popup = ModPunishPopup::create(m_score, type, active);
     popup->setCallback([this] {
         this->fullRefresh();
     });

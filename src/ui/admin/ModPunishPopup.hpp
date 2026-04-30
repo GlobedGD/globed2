@@ -16,14 +16,14 @@ class ModUserPopup;
 class ModPunishPopup : public BasePopup {
 public:
     static ModPunishPopup* create(
-        int accountId, UserPunishmentType type, std::optional<UserPunishment> punishment
+        GJUserScore* userScore, UserPunishmentType type, std::optional<UserPunishment> punishment
     );
     using Callback = geode::Function<void()>;
 
     void setCallback(Callback&& cb);
 
 protected:
-    int m_accountId;
+    GJUserScore* m_userScore;
     UserPunishmentType m_type;
     std::optional<UserPunishment> m_punishment;
     Callback m_callback;
@@ -35,7 +35,7 @@ protected:
     MessageListener<msg::AdminResultMessage> m_listener;
     LoadingPopup* m_loadPopup = nullptr;
 
-    bool init(int accountId, UserPunishmentType type, std::optional<UserPunishment> pun);
+    bool init(GJUserScore* userScore, UserPunishmentType type, std::optional<UserPunishment> pun);
     void setDuration(asp::time::Duration dur, bool inCallback = false);
     void setReason(const std::string& reason);
     void appendReason(const std::string& reason);
