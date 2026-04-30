@@ -3,7 +3,7 @@
 #include <globed/core/ModuleCrtp.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
-#include <dbuf/ByteReader.hpp>
+#include "Events.hpp"
 
 namespace globed {
 
@@ -73,8 +73,7 @@ private:
     void sendLinkEventTo(int id, bool player2);
     void linkSuccess(int id, bool player2);
 
-    void handleEvent(const InEvent& event);
-    void handleLinkEvent(const TwoPlayerLinkRequestEvent& reader);
+    void handleLinkEvent(const TwoPlayerLinkEvent& reader);
     void handleUnlinkEvent(const TwoPlayerUnlinkEvent& reader);
 
     void updateFromLinkedPlayer(PlayerObject* local, VisualPlayer* linked);

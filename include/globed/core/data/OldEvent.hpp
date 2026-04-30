@@ -63,21 +63,6 @@ struct CounterChangeEvent {
     Result<> encode(dbuf::ByteWriter<>& writer);
 };
 
-struct TwoPlayerLinkRequestEvent {
-    int playerId;
-    bool player1;
-
-    static Result<TwoPlayerLinkRequestEvent> decode(dbuf::ByteReader<>& reader);
-    Result<> encode(dbuf::ByteWriter<>& writer);
-};
-
-struct TwoPlayerUnlinkEvent {
-    int playerId;
-
-    static Result<TwoPlayerUnlinkEvent> decode(dbuf::ByteReader<>& reader);
-    Result<> encode(dbuf::ByteWriter<>& writer);
-};
-
 // Incoming events
 
 struct SpawnGroupEvent {
@@ -128,9 +113,7 @@ struct InEvent {
         MoveGroupEvent,
         FollowPlayerEvent,
         FollowAbsoluteEvent,
-        FollowRotationEvent,
-        TwoPlayerLinkRequestEvent,
-        TwoPlayerUnlinkEvent
+        FollowRotationEvent
 #endif
     >;
 
@@ -178,8 +161,6 @@ struct OutEvent {
         UnknownEvent
 #ifdef GLOBED_BUILD
         ,CounterChangeEvent,
-        TwoPlayerLinkRequestEvent,
-        TwoPlayerUnlinkEvent,
         ScriptedEvent,
         RequestScriptLogsEvent
 #endif
@@ -191,8 +172,6 @@ struct OutEvent {
 
 #ifdef GLOBED_BUILD
     OutEvent(CounterChangeEvent e) : m_kind(std::move(e)) {}
-    OutEvent(TwoPlayerLinkRequestEvent e) : m_kind(std::move(e)) {}
-    OutEvent(TwoPlayerUnlinkEvent e) : m_kind(std::move(e)) {}
     OutEvent(ScriptedEvent e) : m_kind(std::move(e)) {}
     OutEvent(RequestScriptLogsEvent e) : m_kind(std::move(e)) {}
 

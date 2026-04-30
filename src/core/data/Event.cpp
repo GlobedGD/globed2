@@ -33,31 +33,6 @@ Result<> CounterChangeEvent::encode(ByteWriter<>& writer) {
     return Ok();
 }
 
-Result<TwoPlayerLinkRequestEvent> TwoPlayerLinkRequestEvent::decode(ByteReader<>& reader) {
-    int id = GEODE_UNWRAP(reader.readI32());
-    bool player1 = GEODE_UNWRAP(reader.readBool());
-
-    return Ok(TwoPlayerLinkRequestEvent { id, player1 });
-}
-
-Result<> TwoPlayerLinkRequestEvent::encode(ByteWriter<>& writer) {
-    writer.writeU16(EVENT_2P_LINK_REQUEST);
-    writer.writeI32(playerId);
-    writer.writeBool(player1);
-    return Ok();
-}
-
-Result<TwoPlayerUnlinkEvent> TwoPlayerUnlinkEvent::decode(ByteReader<>& reader) {
-    int id = GEODE_UNWRAP(reader.readI32());
-    return Ok(TwoPlayerUnlinkEvent { id });
-}
-
-Result<> TwoPlayerUnlinkEvent::encode(ByteWriter<>& writer) {
-    writer.writeU16(EVENT_2P_UNLINK);
-    writer.writeI32(playerId);
-    return Ok();
-}
-
 // In events
 
 Result<SpawnGroupEvent> SpawnGroupEvent::decode(dbuf::ByteReader<>& reader) {
@@ -96,8 +71,6 @@ Result<InEvent> InEvent::decode(ByteReader<>& reader) {
         MAP_TO(EVENT_SCR_FOLLOW_PLAYER, FollowPlayerEvent);
         MAP_TO(EVENT_SCR_FOLLOW_ABSOLUTE, FollowAbsoluteEvent);
         MAP_TO(EVENT_SCR_FOLLOW_ROTATION, FollowRotationEvent);
-        MAP_TO(EVENT_2P_LINK_REQUEST, TwoPlayerLinkRequestEvent);
-        MAP_TO(EVENT_2P_UNLINK, TwoPlayerUnlinkEvent);
         default: break;
     }
 #undef MAP_TO

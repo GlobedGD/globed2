@@ -15,17 +15,13 @@ using namespace geode::prelude;
 namespace globed {
 
 TwoPlayerModule::TwoPlayerModule() {
-    // TODO: rework this to use event struct
-    NetworkManagerImpl::get().listenGlobal<msg::EventsMessage>([](const auto& msg) {
-        // auto& mod = TwoPlayerModule::get();
+    TwoPlayerLinkEvent::listen([this](const auto& msg) {
+        this->handleLinkEvent(msg);
+    }).leak();
 
-        // if (mod.isEnabled()) {
-        //     for (auto& event : msg.events) {
-        //         // TODO events
-        //         // mod.handleEvent(event);
-        //     }
-        // }
-    });
+    TwoPlayerUnlinkEvent::listen([this](const auto& msg) {
+        this->handleUnlinkEvent(msg);
+    }).leak();
 }
 
 void TwoPlayerModule::onModuleInit() {
@@ -242,13 +238,12 @@ void TwoPlayerModule::unlink(bool silent) {
 }
 
 void TwoPlayerModule::sendUnlinkEventTo(int id) {
-    // TODO events
-    // NetworkManagerImpl::get().queueGameEvent(TwoPlayerUnlinkEvent { id });
+    TwoPlayerUnlinkEvent { id }.send();
 }
 
 void TwoPlayerModule::sendLinkEventTo(int id, bool player2) {
-    // TODO events
-    // NetworkManagerImpl::get().queueGameEvent(TwoPlayerLinkRequestEvent { id, !player2 });
+    // in the event, send what THEY will become, aka if we are p2, send that they will be p1
+    TwoPlayerLinkEvent { id, player2 }.send();
 }
 
 void TwoPlayerModule::linkSuccess(int id, bool player2) {
@@ -263,17 +258,7 @@ void TwoPlayerModule::linkSuccess(int id, bool player2) {
     }
 }
 
-void TwoPlayerModule::handleEvent(const InEvent& event) {
-    if (event.is<TwoPlayerLinkRequestEvent>()) {
-        auto& ev = event.as<TwoPlayerLinkRequestEvent>();
-        this->handleLinkEvent(ev);
-    } else if (event.is<TwoPlayerUnlinkEvent>()) {
-        auto& ev = event.as<TwoPlayerUnlinkEvent>();
-        this->handleUnlinkEvent(ev);
-    }
-}
-
-void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkRequestEvent& event) {
+void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkEvent& event) {
     // are we already linked? if so, send an unlink if it's a different player (rejecting the link attempt)
     if (m_linkedPlayer) {
         if (*m_linkedPlayer != event.playerId) {
