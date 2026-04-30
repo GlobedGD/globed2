@@ -1,13 +1,14 @@
 #pragma once
-#include <Geode/Geode.hpp>
-#include <Geode/modify/GJBaseGameLayer.hpp>
 #include <globed/config.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <modules/scripting/ScriptingModule.hpp>
 #include <modules/scripting/objects/ListenEventObject.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
+#include "../Events.hpp"
 
+#include <Geode/Geode.hpp>
+#include <Geode/modify/GJBaseGameLayer.hpp>
 #include <asp/time/SystemTime.hpp>
 
 namespace globed {
@@ -46,7 +47,7 @@ struct CustomFollowedData {
 
 struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBaseGameLayer> {
     struct Fields {
-        MessageListener<msg::LevelDataMessage> m_listener;
+        std::vector<geode::ListenerHandle> m_eventListeners;
         MessageListener<msg::ScriptLogsMessage> m_logsListener;
         std::vector<std::string> m_logBuffer;
         std::deque<std::pair<asp::time::SystemTime, float>> m_memLimitBuffer;
@@ -63,7 +64,21 @@ struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBas
     static SCBaseGameLayer* get(GJBaseGameLayer* base = nullptr);
 
     void postInit(const std::vector<EmbeddedScript>& scripts);
-    void handleEvent(const InEvent& event);
+
+    template <typename T>
+    void listenEvent() {
+        m_fields->m_eventListeners.push_back(
+            T::listen([this](const auto& msg) { this->handleEvent(msg); })
+        );
+    }
+
+    void handleEvent(const SpawnGroupEvent& event);
+    void handleEvent(const SetItemEvent& event);
+    void handleEvent(const MoveGroupEvent& event);
+    void handleEvent(const FollowPlayerEvent& event);
+    void handleEvent(const FollowAbsoluteEvent& event);
+    void handleEvent(const FollowRotationEvent& event);
+    void handleEvent(const ScriptedEvent& event);
 
     void addEventListener(const ListenEventPayload& obj);
     void sendLogRequest(float);

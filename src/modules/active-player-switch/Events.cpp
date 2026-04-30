@@ -1,4 +1,6 @@
 #include "Events.hpp"
+#include <dbuf/ByteWriter.hpp>
+#include <dbuf/ByteReader.hpp>
 
 using namespace geode::prelude;
 

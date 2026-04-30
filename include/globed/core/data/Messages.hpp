@@ -8,7 +8,6 @@
 #include "FeaturedLevel.hpp"
 #include "UserRole.hpp"
 #include "Event.hpp"
-#include "OldEvent.hpp"
 #include "RoomTeam.hpp"
 #include "UserPunishment.hpp"
 #include "FetchedMod.hpp"

@@ -1,9 +1,10 @@
 #include "Events.hpp"
+#include <dbuf/ByteReader.hpp>
+#include <dbuf/ByteWriter.hpp>
 
 using namespace geode::prelude;
 
 namespace globed {
-
 
 std::vector<uint8_t> TwoPlayerLinkEvent::encode() const {
     dbuf::ByteWriter<> writer;

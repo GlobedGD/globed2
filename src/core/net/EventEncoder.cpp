@@ -37,9 +37,9 @@ static constexpr std::array GAME_BUILTINS {
     "globed/scripting.set-item",
     "globed/scripting.request-script-logs",
     "globed/scripting.move-group",
-    "globed/scripting.move-group-absolute",
     "globed/scripting.follow-player",
     "globed/scripting.follow-rotation",
+    "globed/scripting.follow-absolute",
 
     "globed/2p.link",
     "globed/2p.unlink",

@@ -5,6 +5,7 @@
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/data/UserRole.hpp>
 #include <globed/util/assert.hpp>
+#include <globed/util/format.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
 
 #include <dbuf/ByteReader.hpp>

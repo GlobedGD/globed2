@@ -10,7 +10,15 @@ template <typename T>
 concept ValidEventType = requires(const T t, std::span<const uint8_t> data) {
     { T::Id } -> std::convertible_to<std::string_view>;
 
+};
+
+template <typename T>
+concept EncodableEvent = ValidEventType<T> && requires(const T t) {
     { t.encode() } -> std::convertible_to<std::vector<uint8_t>>;
+};
+
+template <typename T>
+concept DecodableEvent = ValidEventType<T> && requires(std::span<const uint8_t> data) {
     { T::decode(data) } -> std::convertible_to<geode::Result<T>>;
 };
 
@@ -33,17 +41,17 @@ struct ServerEvent {
 
     static void _register();
 
-    void send(this const Derived& self, const EventOptions& options) {
+    void send(this const Derived& self, const EventOptions& options) requires EncodableEvent<Derived> {
         globed::api::net::sendEvent(self.id(), self.encode(), options);
     }
 
-    void send(this const Derived& self, EventServer server) {
+    void send(this const Derived& self, EventServer server) requires EncodableEvent<Derived> {
         EventOptions opts{};
         opts.server = server;
         return self.send(opts);
     }
 
-    void send(this const Derived& self) {
+    void send(this const Derived& self) requires EncodableEvent<Derived> {
         EventOptions opts{};
         auto targetServer = self.server();
 
@@ -57,7 +65,7 @@ struct ServerEvent {
     }
 
     template <typename F>
-    static geode::ListenerHandle listen(F callback, int priority = 0) {
+    static geode::ListenerHandle listen(F callback, int priority = 0) requires DecodableEvent<Derived> {
         return MessageEvent<msg::EventsMessage>{false}.listen([cb = std::move(callback)](const msg::EventsMessage& data) {
             for (auto& ev : data.events) {
                 if (ev.name != id()) continue;
