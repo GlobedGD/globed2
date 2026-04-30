@@ -10,7 +10,7 @@ public:
 
 private:
     APSSettings m_settings;
-    MessageListener<msg::LevelDataMessage> m_listener;
+    geode::ListenerHandle m_listener;
     CCMenuItemSpriteExtra* m_btn;
     bool m_dirty = false;
 

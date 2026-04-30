@@ -2302,6 +2302,8 @@ void NetworkManagerImpl::sendEvent(std::string_view id, std::vector<uint8_t> dat
     auto info = this->connInfo();
     if (!info) return;
 
+    log::debug("Enqueue event '{}' ({} bytes), central: {}, game: {}", id, data.size(), central, game);
+
     if (central) {
         info->m_centralEventQueue.emplace_back(id, data, options);
     }

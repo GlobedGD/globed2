@@ -116,27 +116,6 @@ struct FollowRotationEvent {
     static Result<FollowRotationEvent> decode(dbuf::ByteReader<>& reader);
 };
 
-struct SwitcherooFullStateEvent {
-    int activePlayer = 0;
-    bool gameActive = false;
-    bool playerIndication = false;
-    bool restarting = false;
-
-    static Result<SwitcherooFullStateEvent> decode(dbuf::ByteReader<>& reader);
-    Result<> encode(dbuf::ByteWriter<>& writer);
-};
-
-struct SwitcherooSwitchEvent {
-    int playerId;
-    enum Type : uint8_t {
-        Switch = 0,
-        Warning = 1,
-    } type;
-
-    static Result<SwitcherooSwitchEvent> decode(dbuf::ByteReader<>& reader);
-    Result<> encode(dbuf::ByteWriter<>& writer);
-};
-
 #endif
 
 struct InEvent {
@@ -151,9 +130,7 @@ struct InEvent {
         FollowAbsoluteEvent,
         FollowRotationEvent,
         TwoPlayerLinkRequestEvent,
-        TwoPlayerUnlinkEvent,
-        SwitcherooSwitchEvent,
-        SwitcherooFullStateEvent
+        TwoPlayerUnlinkEvent
 #endif
     >;
 
@@ -204,9 +181,7 @@ struct OutEvent {
         TwoPlayerLinkRequestEvent,
         TwoPlayerUnlinkEvent,
         ScriptedEvent,
-        RequestScriptLogsEvent,
-        SwitcherooSwitchEvent,
-        SwitcherooFullStateEvent
+        RequestScriptLogsEvent
 #endif
     >;
 
@@ -220,8 +195,6 @@ struct OutEvent {
     OutEvent(TwoPlayerUnlinkEvent e) : m_kind(std::move(e)) {}
     OutEvent(ScriptedEvent e) : m_kind(std::move(e)) {}
     OutEvent(RequestScriptLogsEvent e) : m_kind(std::move(e)) {}
-    OutEvent(SwitcherooSwitchEvent e) : m_kind(std::move(e)) {}
-    OutEvent(SwitcherooFullStateEvent e) : m_kind(std::move(e)) {}
 
     Result<> encode(dbuf::ByteWriter<>& writer);
 #endif

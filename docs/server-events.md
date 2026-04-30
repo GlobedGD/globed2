@@ -66,7 +66,9 @@ Sending an event is straightforward:
 ```cpp
 MyEvent event{42};
 
-// Sends this event to the central server (!)
+// Sends this event to the *default* server.
+// If the event is enabled specifically only on central/game server, it sends it to the enabled server.
+// If the event is enabled for both servers, sends it to the *central* server.
 event.send();
 
 // Sends this event to the game server

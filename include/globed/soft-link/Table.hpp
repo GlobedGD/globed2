@@ -112,6 +112,11 @@ static_assert(sizeof(RootApiTable) == sizeof(void*) * 64);
 #undef MY_MOD_ID
 #define MY_MOD_ID "dankmeme.globed2"
 
+#ifndef GLOBED_BUILD
 inline geode::Result<RootApiTable*> getRootTable() GEODE_EVENT_EXPORT(&getRootTable, ());
+#else
+// kinda required because geode does not support calling exports within the same mod
+geode::Result<RootApiTable*> getRootTable();
+#endif
 
 }

@@ -6,10 +6,9 @@
 
 namespace globed {
 
-
 template <typename T>
 concept EventDefinesServer = requires {
-    { T::Type } -> std::same_as<EventServer>;
+    { T::Type } -> std::convertible_to<EventServer>;
 };
 
 template <typename T>
@@ -44,7 +43,7 @@ struct ServerEvent {
 
     static void _register();
 
-    void send(this const Derived& self, const EventOptions& options = {}) {
+    void send(this const Derived& self, const EventOptions& options) {
         globed::api::net::sendEvent(self.id(), self.encode(), options);
     }
 
@@ -52,6 +51,18 @@ struct ServerEvent {
         EventOptions opts{};
         opts.server = server;
         return self.send(opts);
+    }
+
+    void send(this const Derived& self) {
+        EventOptions opts{};
+        auto targetServer = self.server();
+
+        if (targetServer == EventServer::Both) {
+            // default to central server if enabled on both
+            targetServer = EventServer::Central;
+        }
+
+        self.send(opts);
     }
 
     template <typename F>
