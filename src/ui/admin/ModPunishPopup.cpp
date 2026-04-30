@@ -277,13 +277,12 @@ bool ModPunishPopup::init(int accountId, UserPunishmentType type, std::optional<
         .parent(menu);
 
     if (m_punishment) {
-        Build<ButtonSprite>::create(type != UserPunishmentType::Mute ? "Unban" : "Unmute", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+        Build<ButtonSprite>::create(type == UserPunishmentType::Mute ? "Unmute" : "Unban", "bigFont.fnt", "GJ_button_06.png", 0.8f)
             .scale(0.9f)
             .intoMenuItem([this, type] {
-                std::string content = fmt::format("Are you sure you want to <cr>{}</c> this user?", type != UserPunishmentType::Mute ? "unban" : "unmute");
-                createQuickPopup("Unban User", content, "Cancel", "Yes", [this](FLAlertLayer* alert, bool btn2) {
-                    if (btn2)
-                        this->submitRemoval();
+                std::string content = fmt::format("Are you sure you want to <cr>{}</c> this user?", type == UserPunishmentType::Mute ? "unmute" : "unban");
+                confirmPopup(type == UserPunishmentType::Mute ? "Unmute User" : "Unban User", content, "Cancel", "Yes", [this](FLAlertLayer* layer) {
+                    this->submitRemoval();
                 });
             })
             .parent(menu);
