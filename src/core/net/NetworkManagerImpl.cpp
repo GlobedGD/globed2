@@ -38,6 +38,8 @@ using enum std::memory_order;
 using namespace asp::time;
 using namespace arc;
 
+static constexpr auto CENTRAL_EVENT_FLUSH_INTERVAL = Duration::fromMillis(50);
+
 static arc::Semaphore& aresSemaphore() {
     static arc::Semaphore sema{0};
     return sema;
@@ -652,6 +654,9 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                 // check if icons or friend list need to be resent
                 this->threadMaybeResendOwnData(info);
 
+                // send events
+                this->threadMaybeSendEvents(info);
+
                 // reset the timer to ping game servers if the server list was updated
                 if (info->m_gameServersUpdated) {
                     log::debug("Pinging servers again soon");
@@ -701,6 +706,14 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                     [&] {
                         auto info = this->connInfo();
                         this->threadPingGameServers(info);
+                    }
+                ),
+
+                arc::selectee(
+                    arc::sleepUntil(m_workerState.nextEventFlush),
+                    [&] {
+                        auto info = this->connInfo();
+                        this->threadMaybeSendEvents(info);
                     }
                 )
             );
@@ -1001,6 +1014,20 @@ void NetworkManagerImpl::threadMaybeResendOwnData(LockedConnInfo& info) {
 
     info->m_sentIcons = true;
     info->m_sentFriendList = true;
+}
+
+void NetworkManagerImpl::threadMaybeSendEvents(LockedConnInfo& info) {
+    m_workerState.nextEventFlush = Instant::now() + CENTRAL_EVENT_FLUSH_INTERVAL;
+
+    dbuf::ByteWriter<> wr;
+    bool reliable = false;
+    auto eventData = encodeEventsInto(info->m_centralEventQueue, info->m_centralDict, wr, reliable);
+
+    if (eventData) {
+        this->sendToCentral([&](CentralMessage::Builder& msg) {
+            msg.setEvents(kj::arrayPtr(eventData->begin(), eventData->size()));
+        });
+    }
 }
 
 Future<> NetworkManagerImpl::threadSetupLogger(bool central) {
@@ -2306,12 +2333,13 @@ void NetworkManagerImpl::sendEvent(std::string_view id, std::vector<uint8_t> dat
 
     if (central) {
         info->m_centralEventQueue.emplace_back(id, data, options);
+        if (options.urgent) {
+            m_workerNotify.notifyOne();
+        }
     }
     if (game) {
         info->m_gameEventQueue.emplace_back(id, std::move(data), options);
     }
-
-    // TODO: signal somehow?
 }
 
 void NetworkManagerImpl::registerEvent(std::string_view id, EventServer server) {

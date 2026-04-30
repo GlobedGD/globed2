@@ -59,7 +59,8 @@ struct GameServerJoinRequest {
 
 struct WorkerState {
     /// Next time to ping game servers
-    asp::time::Instant nextGSPing = asp::time::Instant::farFuture();
+    asp::Instant nextGSPing = asp::Instant::farFuture();
+    asp::Instant nextEventFlush = asp::Instant::now();
     arc::mpsc::Sender<std::pair<std::string, qn::PingResult>> pingResultTx;
     arc::mpsc::Receiver<std::pair<std::string, qn::PingResult>> pingResultRx;
     qn::ConnectionState prevCentralState{qn::ConnectionState::Disconnected};
@@ -102,7 +103,7 @@ struct ConnectionInfo {
     bool m_gameServersUpdated = true;
     bool m_established = false;
     bool m_authenticating = false;
-    asp::time::Instant m_triedAuthAt;
+    asp::Instant m_triedAuthAt;
     EventDictionary m_centralDict;
     std::deque<RawEvent> m_centralEventQueue;
 
@@ -410,6 +411,7 @@ private:
     arc::Future<> threadGameWorkerLoop();
     void threadPingGameServers(LockedConnInfo& info);
     void threadMaybeResendOwnData(LockedConnInfo& info);
+    void threadMaybeSendEvents(LockedConnInfo& info);
     arc::Future<> threadTryAuth();
     arc::Future<> threadSetupLogger(bool central);
     void threadFlushLogger(bool central);
