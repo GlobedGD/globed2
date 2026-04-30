@@ -51,6 +51,7 @@ struct ServerEvent {
             // default to central server if enabled on both
             targetServer = EventServer::Central;
         }
+        opts.server = targetServer;
 
         self.send(opts);
     }
