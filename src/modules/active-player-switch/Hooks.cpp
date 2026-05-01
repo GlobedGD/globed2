@@ -381,7 +381,10 @@ void APSPlayLayer::sendFullState(bool restarting) {
         restarting
     };
 
-    ev.send();
+    EventOptions opts{};
+    opts.server = EventServer::Game;
+    opts.sendBack = true;
+    ev.send(opts);
 }
 
 void APSPlayLayer::updateSettings(const APSSettings& settings) {
@@ -408,7 +411,10 @@ void APSPlayLayer::handleUpdate(float dt) {
     if (fields.m_controlling) {
         auto ev = controller.poll();
         if (ev) {
-            ev->send();
+            EventOptions opts{};
+            opts.server = EventServer::Game;
+            opts.sendBack = true;
+            ev->send(opts);
         }
     }
 
