@@ -15,12 +15,12 @@ using namespace geode::prelude;
 namespace globed {
 
 TwoPlayerModule::TwoPlayerModule() {
-    TwoPlayerLinkEvent::listen([this](const auto& msg) {
-        this->handleLinkEvent(msg);
+    TwoPlayerLinkEvent::listen([this](const auto& msg, const auto& opts) {
+        this->handleLinkEvent(msg, opts.sender);
     }).leak();
 
-    TwoPlayerUnlinkEvent::listen([this](const auto& msg) {
-        this->handleUnlinkEvent(msg);
+    TwoPlayerUnlinkEvent::listen([this](const auto& msg, const auto& opts) {
+        this->handleUnlinkEvent(msg, opts.sender);
     }).leak();
 }
 
@@ -238,12 +238,12 @@ void TwoPlayerModule::unlink(bool silent) {
 }
 
 void TwoPlayerModule::sendUnlinkEventTo(int id) {
-    TwoPlayerUnlinkEvent { id }.send();
+    TwoPlayerUnlinkEvent{}.send(id);
 }
 
 void TwoPlayerModule::sendLinkEventTo(int id, bool player2) {
     // in the event, send what THEY will become, aka if we are p2, send that they will be p1
-    TwoPlayerLinkEvent { id, player2 }.send();
+    TwoPlayerLinkEvent{ player2 }.send(id);
 }
 
 void TwoPlayerModule::linkSuccess(int id, bool player2) {
@@ -258,24 +258,24 @@ void TwoPlayerModule::linkSuccess(int id, bool player2) {
     }
 }
 
-void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkEvent& event) {
+void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkEvent& event, int playerId) {
     // are we already linked? if so, send an unlink if it's a different player (rejecting the link attempt)
     if (m_linkedPlayer) {
-        if (*m_linkedPlayer != event.playerId) {
-            this->sendUnlinkEventTo(event.playerId);
+        if (*m_linkedPlayer != playerId) {
+            this->sendUnlinkEventTo(playerId);
         }
         return;
     }
 
     // are we currently trying to link? check if it's the right user
     if (m_linkAttempt) {
-        if (*m_linkAttempt != event.playerId) {
-            this->sendUnlinkEventTo(event.playerId);
+        if (*m_linkAttempt != playerId) {
+            this->sendUnlinkEventTo(playerId);
             return;
         }
 
         // successful link!
-        this->linkSuccess(event.playerId, !event.player1);
+        this->linkSuccess(playerId, !event.player1);
         return;
     }
 
@@ -283,7 +283,7 @@ void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkEvent& event) {
     std::string username;
 
     if (auto pl = GlobedGJBGL::get()) {
-        if (auto player = pl->getPlayer(event.playerId)) {
+        if (auto player = pl->getPlayer(playerId)) {
             if (player->isDataInitialized()) {
                 username = player->displayData().username;
             }
@@ -291,7 +291,7 @@ void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkEvent& event) {
     }
 
     if (username.empty()) {
-        username = fmt::format("Unknown ({})", event.playerId);
+        username = fmt::format("Unknown ({})", playerId);
     }
 
     globed::quickPopup(
@@ -299,26 +299,26 @@ void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkEvent& event) {
         fmt::format("<cg>{}</c> wants to link with you. You will be playing as the <cy>{} player</c>. Agree to link?", username, event.player1 ? "first" : "second"),
         "Cancel",
         "Agree",
-        [this, event](auto, bool agree) {
+        [this, event, playerId](auto, bool agree) {
             if (!agree) {
-                this->sendUnlinkEventTo(event.playerId);
+                this->sendUnlinkEventTo(playerId);
             } else {
                 // successful link! make sure to send confirmation event
-                this->sendLinkEventTo(event.playerId, !event.player1);
-                this->linkSuccess(event.playerId, !event.player1);
+                this->sendLinkEventTo(playerId, !event.player1);
+                this->linkSuccess(playerId, !event.player1);
             }
         }
     );
 }
 
-void TwoPlayerModule::handleUnlinkEvent(const TwoPlayerUnlinkEvent& event) {
-    if (m_linkedPlayer == event.playerId) {
+void TwoPlayerModule::handleUnlinkEvent(const TwoPlayerUnlinkEvent& event, int playerId ) {
+    if (m_linkedPlayer == playerId) {
         this->unlink(true);
         return;
     }
 
     // if this is from the current link attempt, cancel the attempt
-    if (m_linkAttempt == event.playerId) {
+    if (m_linkAttempt == playerId) {
         m_linkAttempt.reset();
     }
 }

@@ -73,8 +73,8 @@ private:
     void sendLinkEventTo(int id, bool player2);
     void linkSuccess(int id, bool player2);
 
-    void handleLinkEvent(const TwoPlayerLinkEvent& reader);
-    void handleUnlinkEvent(const TwoPlayerUnlinkEvent& reader);
+    void handleLinkEvent(const TwoPlayerLinkEvent& reader, int playerId);
+    void handleUnlinkEvent(const TwoPlayerUnlinkEvent& reader, int playerId);
 
     void updateFromLinkedPlayer(PlayerObject* local, VisualPlayer* linked);
 };
