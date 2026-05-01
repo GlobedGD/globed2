@@ -19,7 +19,7 @@ public:
 
     static Derived& get() {
         if (!g_instance) {
-            auto res = Core::get().addModule(Derived{});
+            auto res = Core::get().addModule<Derived>();
 
             if (!res) {
                 geode::utils::terminate(fmt::format("Failed to initialize module {}: {}", globed::getTypenameConstexpr<Derived>(), res.unwrapErr()));
@@ -39,6 +39,7 @@ public:
 
 private:
     friend Derived;
+    friend class Core;
     ModuleCrtpBase() = default;
 
     static inline std::shared_ptr<Derived> g_instance;
