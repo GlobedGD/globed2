@@ -95,7 +95,7 @@ std::optional<Result<RawBorrowedEvent>> EventIterator::next() {
 
     auto strId = m_dictionary.lookup(id);
     if (!strId) {
-        return Err("unknown event ID (not in dictionary): {}", strId);
+        return Err("unknown event ID (not in dictionary): {}", id);
     }
 
     EventFlags flags = static_cast<EventFlags>(GEODE_UNWRAP(m_reader.readU8()));
@@ -119,6 +119,7 @@ std::optional<Result<RawBorrowedEvent>> EventIterator::next() {
         auto len = GEODE_UNWRAP(m_reader.readVarUint());
         auto pos = m_reader.position();
         out.data = GEODE_UNWRAP(m_reader.source().slice(pos, len));
+        GEODE_UNWRAP(m_reader.skip(len));
     }
 
     m_eof = false;
