@@ -124,7 +124,7 @@ struct EventDictionary {
 
         writer.performAt(flagPos, [&](auto& writer) {
             writer.writeU8((uint8_t) flags);
-        });
+        }).unwrap();
 
         return true;
     }

@@ -311,7 +311,7 @@ void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkEvent& event, int playe
     );
 }
 
-void TwoPlayerModule::handleUnlinkEvent(const TwoPlayerUnlinkEvent& event, int playerId ) {
+void TwoPlayerModule::handleUnlinkEvent(const TwoPlayerUnlinkEvent& event, int playerId) {
     if (m_linkedPlayer == playerId) {
         this->unlink(true);
         return;
