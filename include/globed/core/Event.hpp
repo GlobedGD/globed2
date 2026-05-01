@@ -35,6 +35,14 @@ struct ServerEvent {
         return Server;
     }
 
+    static EventServer defaultSendServer() {
+        // default to central server if enabled on both
+        if (Server == EventServer::Both) {
+            return EventServer::Central;
+        }
+        return Server;
+    }
+
     static std::string_view id() {
         return Derived::Id;
     }
@@ -45,22 +53,27 @@ struct ServerEvent {
         globed::api::net::sendEvent(self.id(), self.encode(), options);
     }
 
+    /// Sends this event to the specified server.
+    /// All the send options are default, and the event is sent to everybody in the room/session.
     void send(this const Derived& self, EventServer server) requires EncodableEvent<Derived> {
         EventOptions opts{};
         opts.server = server;
         return self.send(opts);
     }
 
+    /// Sends this event to the default server, targetting a specific player.
+    void send(this const Derived& self, int playerId) requires EncodableEvent<Derived> {
+        EventOptions opts{};
+        opts.server = defaultSendServer();
+        opts.targetPlayers.push_back(playerId);
+        return self.send(opts);
+    }
+
+    /// Sends this event to the default server, which will be Central if both are enabled.
+    /// All the send options are default, and the event is sent to everybody in the room/session.
     void send(this const Derived& self) requires EncodableEvent<Derived> {
         EventOptions opts{};
-        auto targetServer = self.server();
-
-        if (targetServer == EventServer::Both) {
-            // default to central server if enabled on both
-            targetServer = EventServer::Central;
-        }
-        opts.server = targetServer;
-
+        opts.server = defaultSendServer();
         self.send(opts);
     }
 
@@ -72,7 +85,20 @@ struct ServerEvent {
 
                 auto dec = Derived::decode(ev.data);
                 if (dec.isOk()) {
-                    cb(std::move(dec).unwrap());
+                    // callback 1 - no data
+                    if constexpr (requires { cb(); }) {
+                        cb();
+                    }
+                    // callback 2 - only event struct
+                    else if constexpr (requires { cb(std::move(dec).unwrap()); }) {
+                        cb(std::move(dec).unwrap());
+                    }
+                    // callback 3 - event struct and options
+                    else if constexpr (requires { cb(std::move(dec).unwrap(), ev.options); }) {
+                        cb(std::move(dec).unwrap(), ev.options);
+                    } else {
+                        static_assert(!std::is_same_v<F, F>, "invalid callback for ServerEvent::listen");
+                    }
                 } else {
                     geode::log::warn("failed to decode event {}: {}", id(), dec.unwrapErr());
                 }
