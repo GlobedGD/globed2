@@ -29,6 +29,11 @@ struct ServerEventAutoInit {
     }
 };
 
+struct SkipRemainingEvents {};
+
+template <typename F, typename E>
+bool invokeEventCallback(F&& cb, const E& e, const EventOptions& options);
+
 template <typename Derived, EventServer Server = EventServer::Both>
 struct ServerEvent {
     static EventServer server() {
@@ -85,19 +90,9 @@ struct ServerEvent {
 
                 auto dec = Derived::decode(ev.data);
                 if (dec.isOk()) {
-                    // callback 1 - no data
-                    if constexpr (requires { cb(); }) {
-                        cb();
-                    }
-                    // callback 2 - only event struct
-                    else if constexpr (requires { cb(std::move(dec).unwrap()); }) {
-                        cb(std::move(dec).unwrap());
-                    }
-                    // callback 3 - event struct and options
-                    else if constexpr (requires { cb(std::move(dec).unwrap(), ev.options); }) {
-                        cb(std::move(dec).unwrap(), ev.options);
-                    } else {
-                        static_assert(!std::is_same_v<F, F>, "invalid callback for ServerEvent::listen");
+                    auto skip = invokeEventCallback(cb, std::move(dec).unwrap(), ev.options);
+                    if (skip) {
+                        break;
                     }
                 } else {
                     geode::log::warn("failed to decode event {}: {}", id(), dec.unwrapErr());
@@ -118,6 +113,24 @@ void ServerEvent<Derived, Server>::_register() {
     globed::api::waitForGlobed([] {
         globed::api::net::registerEvent(Derived::id(), Derived::server());
     });
+}
+
+template <typename F, typename E>
+bool invokeEventCallback(F&& cb, const E& e, const EventOptions& options) {
+    auto invoke = [&] {
+        if constexpr (std::is_invocable_v<F, const E&, const EventOptions&>) {
+            return std::invoke(cb, e, options);
+        } else if constexpr (std::is_invocable_v<F, const E&>) {
+            return std::invoke(cb, e);
+        } else {
+            return std::invoke(cb);
+        }
+    };
+
+    using Ret = decltype(invoke());
+    invoke();
+
+    return std::is_same_v<Ret, SkipRemainingEvents>;
 }
 
 }

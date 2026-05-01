@@ -100,6 +100,18 @@ auto handle = MyEvent::listen([](const MyEvent& event) {
 });
 ```
 
+In case your listener needs to unregister itself (for example, you close a popup in the lambda which should destroy the listener), care must be taken to return `globed::SkipRemainingEvents{}`. Otherwise, if the event is queued more than once in a single batch, your callback will **always** be called multiple times, which may lead to UB:
+
+```cpp
+m_handle = MyEvent::listen([](const MyEvent& event) {
+    this->onClose(nullptr);
+
+    // this ensures the lambda will NOT be called again while processing this batch of events,
+    // and avoids a use-after-free if the listener got deallocated here
+    return globed::SkipRemainingEvents{};
+});
+```
+
 ## Low-level interface
 
 If the high-level, CRTP based interfaces above are not enough and you want more control, you may choose to use the lower-level APIs.

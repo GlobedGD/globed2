@@ -210,6 +210,7 @@ void APSSettingsPopup::startGame() {
 
     m_listener = APSFullStateEvent::listen([this](const auto& ev) {
         this->onClose(nullptr);
+        return SkipRemainingEvents{};
     }, 5);
 }
 
