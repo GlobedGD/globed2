@@ -17,6 +17,8 @@ void RoomManager::joinLevel(int levelId, int author, bool platformer, bool edito
         // construct a session ID
         auto id = SessionId::fromParts(*srv, m_roomId, levelId);
         nm.sendJoinSession(id, author, platformer, editorCollab);
+    } else {
+        log::warn("Failed to choose a server to join the level, no servers available");
     }
 }
 
@@ -120,7 +122,6 @@ std::optional<uint8_t> RoomManager::pickServerId() {
         if (auto serverId = NetworkManagerImpl::get().getPreferredServer()) {
             return *serverId;
         } else {
-            log::warn("Failed to choose a server to join the level, no servers available");
             return std::nullopt;
         }
     } else {

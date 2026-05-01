@@ -196,6 +196,13 @@ static void decodeEventsInto(std::span<const uint8_t> events, EventDictionary& d
         auto& ev = result.unwrap();
         ev.options.server = Server;
 
+        log::debug(
+            "Received event '{}' from {} server, sender: {}",
+            ev.name,
+            Server == EventServer::Central ? "central" : "game",
+            ev.options.sender
+        );
+
         out.push_back({
             .name = std::move(ev.name),
             .data = std::vector<uint8_t>(ev.data.begin(), ev.data.end()),
