@@ -16,14 +16,14 @@ struct EventOptions final {
     EventOptions() = default;
 
     EventServer server = EventServer::Central;
-    std::vector<int32_t> targetPlayers;
     int32_t sender = 0; // ONLY valid for server -> client; player id, 0 if server
+    std::vector<int32_t> targetPlayers;
     bool reliable = true;
     bool urgent = false;
     bool sendBack = false;
-    char _reserved[88] = {};
+
+    void* _reserved[8] = {};
 };
-static_assert(sizeof(EventOptions) == 128);
 
 struct RawBorrowedEvent final {
     asp::BoxedString name;
