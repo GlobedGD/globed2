@@ -111,6 +111,10 @@ std::optional<Result<RawBorrowedEvent>> EventIterator::next() {
         out.options.sender = GEODE_UNWRAP(m_reader.readI32());
     }
 
+    if ((flags & EventFlags::SEND_BACK) != 0) {
+        out.options.sendBack = true;
+    }
+
     if ((flags & EventFlags::NO_DATA) == 0) {
         auto len = GEODE_UNWRAP(m_reader.readVarUint());
         auto pos = m_reader.position();

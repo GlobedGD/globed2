@@ -20,6 +20,8 @@ struct EventFlags {
         URGENT = 1 << 3,
         /// This event was sent to us by another player
         SENT_BY_PLAYER = 1 << 4,
+        /// This event should be echoed back to the player that sent it.
+        SEND_BACK = 1 << 5,
 
         /// There is another byte that has extra flags
         EXTENDED_FLAGS = 1 << 7
@@ -109,6 +111,20 @@ struct EventDictionary {
             writer.writeVarUint(data.size()).unwrap();
             writer.writeBytes(data);
         }
+
+        if (options.reliable) {
+            flags |= EventFlags::RELIABLE;
+        }
+        if (options.urgent) {
+            flags |= EventFlags::URGENT;
+        }
+        if (options.sendBack) {
+            flags |= EventFlags::SEND_BACK;
+        }
+
+        writer.performAt(flagPos, [&](auto& writer) {
+            writer.writeU8((uint8_t) flags);
+        });
 
         return true;
     }
