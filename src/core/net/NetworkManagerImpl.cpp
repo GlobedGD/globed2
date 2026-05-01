@@ -190,7 +190,7 @@ static void decodeEventsInto(std::span<const uint8_t> events, EventDictionary& d
     for (auto result : EventIterator{events, dict}) {
         if (!result) {
             log::warn("Failed to decode event: {}", result.unwrapErr());
-            continue;
+            break;
         }
 
         auto& ev = result.unwrap();
