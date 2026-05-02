@@ -19,6 +19,7 @@ SettingsManager::SettingsManager() {
     // Preload
     this->registerSetting("core.preload.enabled", true);
     this->registerSetting("core.preload.defer", false);
+    this->registerSetting("core.preload.force-preload", false);
     // hidden preload settings
     this->registerSetting("core.preload.batch-size", 0);
     this->registerSetting("core.preload.use-pbos", true);

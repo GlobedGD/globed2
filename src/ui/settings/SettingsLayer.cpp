@@ -271,6 +271,10 @@ void SettingsLayer::addSettings() {
         );
 #endif
 
+        this->addSetting<BoolSettingCell>("core.preload.force-preload", "Force Preloading",
+            "Forces all icons and death effects to preload regardless of available RAM. When disabled, preloading may be skipped if there isn't enough RAM available."
+        );
+
         this->addHeader("core.dev-debug", "Developer (Misc)", m_globedTab);
 
         this->addSetting<BoolSettingCell>("core.dev.ghost-follower", "Ghost Follower",

@@ -55,9 +55,19 @@ PreloadManager::~PreloadManager() {}
 
 void PreloadManager::initLoadQueue() {
     auto memoryMb = this->getAvailableMemory() / 1024 / 1024;
-    bool enoughForIcons = memoryMb && memoryMb > 500;
-    bool enoughForEffects = memoryMb && memoryMb > 900;
-    log::info("PreloadManager: available system memory: {} MB", memoryMb);
+    uint64_t mbForIcons = 300;
+    uint64_t mbForEffects = 500;
+    if (globed::setting<bool>("core.preload.force-preload")) {
+        mbForIcons = 0;
+        mbForEffects = 0;
+    } else if (getTextureQuality() == TextureQuality::High) {
+        mbForIcons *= 2;
+        mbForEffects *= 2;
+    }
+
+    bool enoughForIcons = memoryMb >= mbForIcons;
+    bool enoughForEffects = memoryMb >= mbForEffects;
+    log::info("PreloadManager: available system memory: {} MB, load icons: {}, effects: {}", memoryMb, enoughForIcons, enoughForEffects);
 
     auto gm = globed::singleton<GameManager>();
     m_totalCount = 0;

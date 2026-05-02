@@ -28,6 +28,12 @@
             "description": "Forcibly disables asset preloading, overriding any other option set in Globed settings. This should only be set if Globed crashes on launch due to preloading.",
             "default": false
         },
+        "force-preload": {
+            "type": "bool",
+            "name": "Force Preload",
+            "description": "Forces asset preloading regardless of available RAM (only works if preloading is not disabled). When this is disabled (the default), preloading may be skipped if the system is low on RAM.",
+            "default": false
+        },
         "keybinds-title": {
             "type": "title",
             "name": "Keybinds"
