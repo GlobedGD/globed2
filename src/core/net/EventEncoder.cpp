@@ -24,7 +24,7 @@ using namespace geode::prelude;
 
 static constexpr uint32_t CENTRAL_BUILTINS_VERSION = 1;
 static constexpr std::array CENTRAL_BUILTINS {
-    "test"_spr
+    "globed/test"
 };
 
 static constexpr uint32_t GAME_BUILTINS_VERSION = 1;
@@ -164,7 +164,7 @@ EventDictionary EventEncoder::finalize(bool game) const {
 
     // as an optimization we dont encode event names one by one, we group them by mod id
     std::unordered_map<std::string, std::vector<std::string>> splat;
-    for (std::string_view ev : m_events) {
+    for (std::string_view ev : events) {
         auto slash = ev.find('/');
         auto modId = ev.substr(0, slash);
         auto remainder = ev.substr(slash + 1);
