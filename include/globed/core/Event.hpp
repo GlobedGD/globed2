@@ -109,7 +109,7 @@ private:
 
 template <typename Derived, EventServer Server>
 void ServerEvent<Derived, Server>::_register() {
-    static_assert(ValidEventType<Derived>);
+    static_assert(ValidEventType<Derived>, "All events must define an ID");
     globed::api::waitForGlobed([] {
         globed::api::net::registerEvent(Derived::id(), Derived::server());
     });

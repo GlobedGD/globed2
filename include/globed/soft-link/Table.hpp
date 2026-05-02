@@ -1,16 +1,18 @@
 #pragma once
 
 #include "../core/net/ConnectionState.hpp"
+#include "../core/net/MessageListener.hpp"
 #include "../core/data/UserRole.hpp"
 #include "../core/data/Event.hpp"
 #include "../core/data/FeaturedLevel.hpp"
 #include "../core/data/PlayerIconData.hpp"
-// #include "../core/Event.hpp"
+#include "../core/data/RoomSettings.hpp"
+#include "../core/data/RoomTeam.hpp"
+#include "../core/SessionId.hpp"
 #include "../util/vtable.hpp"
 
 #include <Geode/utils/function.hpp>
 #include <Geode/loader/Dispatch.hpp>
-#include "../core/net/MessageListener.hpp"
 
 namespace globed {
 
@@ -96,6 +98,28 @@ struct MiscSubtable : VTable {
     GLOBED_VTABLE_FUNC(fullPathForFilename, gd::string, std::string_view, bool);
 };
 
+// Since v2.2.0 (entire table is null before)
+struct RoomSubtable : VTable {
+    RoomSubtable();
+
+    GLOBED_VTABLE_FUNC(isInRoom, bool);
+    GLOBED_VTABLE_FUNC(getId, uint32_t);
+    GLOBED_VTABLE_FUNC(isOwner, bool);
+    GLOBED_VTABLE_FUNC(getOwner, int);
+    GLOBED_VTABLE_FUNC(pickServerId, std::optional<uint8_t>);
+    GLOBED_VTABLE_FUNC(getSettings, RoomSettings*);
+    GLOBED_VTABLE_FUNC(getPasscode, uint32_t);
+    GLOBED_VTABLE_FUNC(getPinnedLevel, SessionId);
+    GLOBED_VTABLE_FUNC(getCurrentWarpLevel, SessionId);
+
+    GLOBED_VTABLE_FUNC(getCurrentTeamId, uint16_t);
+    GLOBED_VTABLE_FUNC(getCurrentTeam, std::optional<RoomTeam>);
+    GLOBED_VTABLE_FUNC(getTeam, std::optional<RoomTeam>, uint16_t id);
+    GLOBED_VTABLE_FUNC(getTeamIdForPlayer, std::optional<uint16_t>, int playerId);
+
+    GLOBED_VTABLE_FUNC(makeSessionId, SessionId, int levelId);
+};
+
 struct RootApiTable {
     RootApiTable(); // intentionally not dllexported
 
@@ -103,7 +127,8 @@ struct RootApiTable {
     GameSubtable* game = nullptr;
     PlayerSubtable* player = nullptr;
     MiscSubtable* misc = nullptr;
-    void* _reserved[64 - 4] = {nullptr};
+    RoomSubtable* room = nullptr;
+    void* _reserved[64 - 5] = {nullptr};
 };
 
 static_assert(sizeof(RootApiTable) == sizeof(void*) * 64);

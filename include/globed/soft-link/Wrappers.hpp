@@ -28,6 +28,11 @@ inline RootApiTable* table() {
     return g_table;
 }
 
+inline RoomSubtable* roomTable() {
+    if (auto t = table()) return t->room;
+    return nullptr;
+}
+
 /// Returns whether globed is available and api functions can be used.
 /// If this returns false, return values of api functions are meaningless.
 inline bool available() {
@@ -375,5 +380,108 @@ inline gd::string fullPathForFilename(std::string_view filename, bool ignoreSuff
 }
 
 } // namespace api::misc
+
+namespace api::room {
+
+/// Returns whether the user is connected to a server and in a room (not the global room)
+/// Added in Globed v2.2.0.
+inline bool isInRoom() {
+    if (auto t = roomTable()) return t->isInRoom();
+    return false;
+}
+
+/// Returns the current room ID, or 0 if in the global room.
+/// Added in Globed v2.2.0.
+inline uint32_t getId() {
+    if (auto t = roomTable()) return t->getId();
+    return 0;
+}
+
+/// Returns whether this user is the owner of the current room.
+/// Added in Globed v2.2.0.
+inline bool isOwner() {
+    if (auto t = roomTable()) return t->isOwner();
+    return false;
+}
+
+/// Returns the account ID of the room owner, or 0 if in the global room.
+/// Added in Globed v2.2.0.
+inline int getOwner() {
+    if (auto t = roomTable()) return t->getOwner();
+    return 0;
+}
+
+/// Picks the ID of the server that will be preferred for joining levels.
+/// This will be the server ID chosen by the room owner, if in a room.
+/// Otherwise, this is either user's preferred server or the best one (determined by ping and other heuristics).
+/// Added in Globed v2.2.0.
+inline std::optional<uint8_t> pickServerId() {
+    if (auto t = roomTable()) return t->pickServerId();
+    return std::nullopt;
+}
+
+/// Returns the room settings, or nullptr if not in a room or the information is unavailable.
+/// Added in Globed v2.2.0.
+inline RoomSettings* getSettings() {
+    if (auto t = roomTable()) return t->getSettings();
+    return nullptr;
+}
+
+/// Returns the passcode of the room. This may not always be known.
+/// Added in Globed v2.2.0.
+inline uint32_t getPasscode() {
+    if (auto t = roomTable()) return t->getPasscode();
+    return 0;
+}
+
+/// Returns the pinned level in the current room, or a default constructed session ID.
+/// Added in Globed v2.2.0.
+inline SessionId getPinnedLevel() {
+    if (auto t = roomTable()) return t->getPinnedLevel();
+    return SessionId{};
+}
+
+/// Added in Globed v2.2.0.
+inline SessionId getCurrentWarpLevel() {
+    if (auto t = roomTable()) return t->getCurrentWarpLevel();
+    return SessionId{};
+}
+
+/// Returns the ID of the team the player is currently on, or 0 if not in a room with teams.
+/// Added in Globed v2.2.0.
+inline uint16_t getCurrentTeamId() {
+    if (auto t = roomTable()) return t->getCurrentTeamId();
+    return 0;
+}
+
+/// Returns data about the player's team, or nullopt if not in a room with teams.
+/// Added in Globed v2.2.0.
+inline std::optional<RoomTeam> getCurrentTeam() {
+    if (auto t = roomTable()) return t->getCurrentTeam();
+    return std::nullopt;
+}
+
+/// Returns data about a team given its ID, or nullopt if not in a room with teams or the team doesn't exist.
+/// Added in Globed v2.2.0.
+inline std::optional<RoomTeam> getTeam(uint16_t id) {
+    if (auto t = roomTable()) return t->getTeam(id);
+    return std::nullopt;
+}
+
+/// Returns the team ID of a player given their account ID, or nullopt if not in a room with teams.
+/// Added in Globed v2.2.0.
+inline std::optional<uint16_t> getTeamIdForPlayer(int playerId) {
+    if (auto t = roomTable()) return t->getTeamIdForPlayer(playerId);
+    return std::nullopt;
+}
+
+/// Makes up a session ID that contains the correct server ID and room ID for the given level ID.
+/// Added in Globed v2.2.0.
+inline SessionId makeSessionId(int levelId) {
+    if (auto t = roomTable()) return t->makeSessionId(levelId);
+    return SessionId{};
+}
+
+} // namespace api::room
 
 }

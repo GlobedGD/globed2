@@ -33,6 +33,7 @@ struct MyEvent : globed::ServerEvent<MyEvent, globed::EventServer::Game> {
 
     // This function encodes the event struct into bytes that will be sent to other users
     // Encoding is unspecified, i.e. this can return a utf-8 string or binary data, or nothing
+    // This function may be omitted, but then `send()` will be inaccessible
     std::vector<uint8_t> encode() const {
         dbuf::ByteWriter wr;
         wr.writeI32(this->playerId);
@@ -41,6 +42,7 @@ struct MyEvent : globed::ServerEvent<MyEvent, globed::EventServer::Game> {
 
     // This function decodes the binary event data into this event struct.
     // Return an error if the data is malformed, the event will be ignored and the error will be printed.
+    // This function may be omitted, but then `listen()` will be inaccessible
     static geode::Result<MyEvent> decode(std::span<const uint8_t> data) {
         dbuf::ByteReader reader{data};
         MyEvent out{};

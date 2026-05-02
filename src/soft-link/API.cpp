@@ -2,6 +2,7 @@
 
 #include <globed/soft-link/API.hpp>
 #include <globed/core/net/NetworkManager.hpp>
+#include <globed/core/RoomManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/preload/PreloadManager.hpp>
@@ -17,6 +18,7 @@ NetSubtable::NetSubtable() : VTable(sizeof(NetSubtable)) {}
 GameSubtable::GameSubtable() : VTable(sizeof(GameSubtable)) {}
 PlayerSubtable::PlayerSubtable() : VTable(sizeof(PlayerSubtable)) {}
 MiscSubtable::MiscSubtable() : VTable(sizeof(MiscSubtable)) {}
+RoomSubtable::RoomSubtable() : VTable(sizeof(RoomSubtable)) {}
 
 static RootApiTable* g_table = nullptr;
 
@@ -251,12 +253,80 @@ static MiscSubtable* makeMiscTable() {
     return table;
 }
 
+static RoomSubtable* makeRoomTable() {
+    auto table = new RoomSubtable;
+
+    GLOBED_VTABLE_INIT(table, isInRoom, () {
+        return RoomManager::get().isInRoom();
+    });
+
+    GLOBED_VTABLE_INIT(table, getId, () {
+        auto& rm = RoomManager::get();
+        return rm.getRoomId();
+    });
+
+    GLOBED_VTABLE_INIT(table, isOwner, () {
+        return RoomManager::get().isOwner();
+    });
+
+    GLOBED_VTABLE_INIT(table, getOwner, () {
+        return RoomManager::get().getRoomOwner();
+    });
+
+    GLOBED_VTABLE_INIT(table, pickServerId, () {
+        return RoomManager::get().pickServerId();
+    });
+
+    GLOBED_VTABLE_INIT(table, getSettings, () {
+        return &RoomManager::get().getSettings();
+    });
+
+    GLOBED_VTABLE_INIT(table, getPasscode, () {
+        return RoomManager::get().getPasscode();
+    });
+
+    GLOBED_VTABLE_INIT(table, getPinnedLevel, () {
+        return RoomManager::get().getPinnedLevel();
+    });
+
+    GLOBED_VTABLE_INIT(table, getCurrentWarpLevel, () {
+        return RoomManager::get().getCurrentWarpLevel();
+    });
+
+    // teams
+
+    GLOBED_VTABLE_INIT(table, getCurrentTeamId, () {
+        return RoomManager::get().getCurrentTeamId();
+    });
+
+    GLOBED_VTABLE_INIT(table, getCurrentTeam, () {
+        return RoomManager::get().getCurrentTeam();
+    });
+
+    GLOBED_VTABLE_INIT(table, getTeam, (uint16_t id) {
+        return RoomManager::get().getTeam(id);
+    });
+
+    GLOBED_VTABLE_INIT(table, getTeamIdForPlayer, (int playerId) {
+        return RoomManager::get().getTeamIdForPlayer(playerId);
+    });
+
+    // session id
+
+    GLOBED_VTABLE_INIT(table, makeSessionId, (int levelId) {
+        return RoomManager::get().makeSessionId(levelId);
+    });
+
+    return table;
+}
+
 $execute {
     g_table = new RootApiTable;
     g_table->net = makeNetTable();
     g_table->game = makeGameTable();
     g_table->player = makePlayerTable();
     g_table->misc = makeMiscTable();
+    g_table->room = makeRoomTable();
 }
 
 }
