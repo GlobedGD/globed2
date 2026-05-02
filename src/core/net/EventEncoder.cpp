@@ -158,7 +158,7 @@ EventDictionary EventEncoder::finalize(bool game) const {
 
     // sort all events, remove builtins
     auto events = asp::iter::consume(m_events).filter([&](auto& el) {
-        return std::ranges::find(builtins, el) != builtins.end();
+        return std::ranges::find(builtins, el) == builtins.end();
     }).collect();
     std::ranges::sort(events);
 
@@ -191,6 +191,7 @@ EventDictionary EventEncoder::finalize(bool game) const {
         for (const auto& event : events) {
             buf.writeStringU8(event);
             out.mapping.emplace_back(asp::BoxedString::format("{}/{}", modId, event));
+            log::trace("registered event '{}/{}' with ID {}", modId, event, out.mapping.size() - 1);
         }
     }
 

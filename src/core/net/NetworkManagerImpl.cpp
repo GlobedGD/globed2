@@ -229,7 +229,11 @@ static std::optional<kj::ArrayPtr<const uint8_t>> encodeEventsInto(std::deque<Ra
         events.pop_front();
     }
 
-    dict.writeMany(wr, eventVec);
+    if (!dict.writeMany(wr, eventVec)) {
+        log::warn("Failed to encode events, dropping {} events", toEncode);
+        return std::nullopt;
+    }
+
     auto eventData = wr.written();
     return kj::ArrayPtr{eventData.data(), eventData.size()};
 }

@@ -80,7 +80,10 @@ struct EventDictionary {
         const EventOptions& options
     ) {
         auto nid = this->lookupId(id);
-        if (!nid) return false;
+        if (!nid) {
+            geode::log::warn("cannot encode unknown event '{}'", id);
+            return false;
+        }
 
         size_t total = mapping.size();
 
@@ -131,16 +134,17 @@ struct EventDictionary {
 
     /// writes events, includes the length
     template <typename Wr>
-    void writeMany(
+    bool writeMany(
         dbuf::ByteWriter<Wr>& writer,
         auto& events
     ) {
         writer.writeVarUint(events.size()).unwrap();
         for (const auto& event : events) {
             if (!this->writeOne(writer, event.name, event.data, event.options)) {
-                geode::log::warn("Failed to encode event '{}', skipping", event.name);
+                return false;
             }
         }
+        return true;
     }
 
     EventIterator decode(std::span<const uint8_t> data) {
