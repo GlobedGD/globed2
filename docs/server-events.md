@@ -1,6 +1,6 @@
 # Server Events
 
-Server events are a feature of Globed that allows the client to send arbitrary data to the server, which may then be forwarded to other players. This guide will explain how to send events and listen to them.
+Server events are a feature of Globed that allows the client to send arbitrary data to the server, which may then be forwarded to other players. This guide will explain in-depth how to send events and listen to them. Alternatively, for a quick start you can check [this file](https://github.com/GlobedGD/globed-api-example/blob/main/src/Events.cpp) in the example mod.
 
 ## Limitations (please read)
 
