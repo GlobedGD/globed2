@@ -7,6 +7,7 @@
 namespace globed {
 
 enum class EventServer {
+    Auto = 0,
     Central = 1,
     Game = 2,
     Both = 3,
@@ -15,7 +16,7 @@ enum class EventServer {
 struct EventOptions final {
     EventOptions() = default;
 
-    EventServer server = EventServer::Central;
+    EventServer server = EventServer::Auto;
     int32_t sender = 0; // ONLY valid for server -> client; player id, 0 if server
     std::vector<int32_t> targetPlayers;
     bool reliable = true;

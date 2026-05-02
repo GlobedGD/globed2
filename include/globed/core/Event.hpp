@@ -40,21 +40,18 @@ struct ServerEvent {
         return Server;
     }
 
-    static EventServer defaultSendServer() {
-        // default to central server if enabled on both
-        if (Server == EventServer::Both) {
-            return EventServer::Central;
-        }
-        return Server;
-    }
-
     static std::string_view id() {
         return Derived::Id;
     }
 
     static void _register();
 
-    void send(this const Derived& self, const EventOptions& options) requires EncodableEvent<Derived> {
+    void send(this const Derived& self, EventOptions options) requires EncodableEvent<Derived> {
+        // if a server was not specified, set it to the supported one, or Central if both are enabled
+        if (options.server == EventServer::Auto) {
+            options.server = Server == EventServer::Both ? EventServer::Central : Server;
+        }
+
         globed::api::net::sendEvent(self.id(), self.encode(), options);
     }
 
@@ -69,7 +66,6 @@ struct ServerEvent {
     /// Sends this event to the default server, targetting a specific player.
     void send(this const Derived& self, int playerId) requires EncodableEvent<Derived> {
         EventOptions opts{};
-        opts.server = defaultSendServer();
         opts.targetPlayers.push_back(playerId);
         return self.send(opts);
     }
@@ -77,9 +73,7 @@ struct ServerEvent {
     /// Sends this event to the default server, which will be Central if both are enabled.
     /// All the send options are default, and the event is sent to everybody in the room/session.
     void send(this const Derived& self) requires EncodableEvent<Derived> {
-        EventOptions opts{};
-        opts.server = defaultSendServer();
-        self.send(opts);
+        self.send(EventOptions{});
     }
 
     template <typename F>

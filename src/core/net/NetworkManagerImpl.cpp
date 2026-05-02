@@ -2334,8 +2334,13 @@ void NetworkManagerImpl::sendQuickChat(uint32_t id) {
 // Messages for both servers
 
 void NetworkManagerImpl::sendEvent(std::string_view id, std::vector<uint8_t> data, const EventOptions& options) {
-    bool central = options.server == EventServer::Central || options.server == EventServer::Both;
-    bool game = options.server == EventServer::Game || options.server == EventServer::Both;
+    auto server = options.server;
+    if (server == EventServer::Auto) {
+        server = EventServer::Both;
+    }
+
+    bool central = server == EventServer::Central || server == EventServer::Both;
+    bool game = server == EventServer::Game || server == EventServer::Both;
 
     auto info = this->connInfo();
     if (!info) return;
