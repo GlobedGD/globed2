@@ -38,6 +38,8 @@ using enum std::memory_order;
 using namespace asp::time;
 using namespace arc;
 
+static constexpr auto CENTRAL_EVENT_FLUSH_INTERVAL = Duration::fromMillis(50);
+
 static arc::Semaphore& aresSemaphore() {
     static arc::Semaphore sema{0};
     return sema;
@@ -181,6 +183,59 @@ const char* getIosTeamId();
 
 static Future<Result<std::string>> startArgonAuth() {
     return argon::startAuth(g_argonData);
+}
+
+template <EventServer Server>
+static void decodeEventsInto(std::span<const uint8_t> events, EventDictionary& dict, std::vector<RawEvent>& out) {
+    for (auto result : EventIterator{events, dict}) {
+        if (!result) {
+            log::warn("Failed to decode event: {}", result.unwrapErr());
+            break;
+        }
+
+        auto& ev = result.unwrap();
+        ev.options.server = Server;
+
+        log::debug(
+            "Received event '{}' from {} server, sender: {}",
+            ev.name,
+            Server == EventServer::Central ? "central" : "game",
+            ev.options.sender
+        );
+
+        out.push_back({
+            .name = std::move(ev.name),
+            .data = std::vector<uint8_t>(ev.data.begin(), ev.data.end()),
+            .options = std::move(ev.options)
+        });
+    }
+}
+
+template <size_t Limit = 64>
+static std::optional<kj::ArrayPtr<const uint8_t>> encodeEventsInto(std::deque<RawEvent>& events, EventDictionary& dict, auto& wr, bool& reliable) {
+    size_t toEncode = std::min<size_t>(Limit, events.size());
+    if (toEncode == 0) {
+        return std::nullopt;
+    }
+
+    std::vector<RawEvent> eventVec;
+    for (size_t i = 0; i < toEncode; i++) {
+        auto& event = events.front();
+        if (event.options.reliable) {
+            reliable = true;
+        }
+
+        eventVec.emplace_back(std::move(event));
+        events.pop_front();
+    }
+
+    if (!dict.writeMany(wr, eventVec)) {
+        log::warn("Failed to encode events, dropping {} events", toEncode);
+        return std::nullopt;
+    }
+
+    auto eventData = wr.written();
+    return kj::ArrayPtr{eventData.data(), eventData.size()};
 }
 
 static void updateServers(ConnectionInfo& info, auto& newServers) {
@@ -441,7 +496,7 @@ Future<> NetworkManagerImpl::asyncInit() {
             m_centralLogger->sendPacketLog(bytes, false);
         }
 
-        qn::ByteReader breader{bytes};
+        dbuf::ByteReader<> breader{bytes};
         size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
 
         size_t remBytes = bytes.size() - breader.position();
@@ -480,7 +535,7 @@ Future<> NetworkManagerImpl::asyncInit() {
             m_gameLogger->sendPacketLog(bytes, false);
         }
 
-        qn::ByteReader breader{bytes};
+        dbuf::ByteReader<> breader{bytes};
         size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
 
         size_t remBytes = bytes.size() - breader.position();
@@ -582,6 +637,8 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
         auto& i = **info;
         i.m_centralUrl = m_connectingCentralUrl;
         i.m_icons = m_connectingIcons;
+        i.m_centralDict = m_centralEventEncoder.lock()->finalize(false);
+        i.m_gameDict = m_gameEventEncoder.lock()->finalize(true);
     }
 
     switch (connState) {
@@ -607,6 +664,9 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
 
                 // check if icons or friend list need to be resent
                 this->threadMaybeResendOwnData(info);
+
+                // send events
+                this->threadMaybeSendEvents(info);
 
                 // reset the timer to ping game servers if the server list was updated
                 if (info->m_gameServersUpdated) {
@@ -657,6 +717,14 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                     [&] {
                         auto info = this->connInfo();
                         this->threadPingGameServers(info);
+                    }
+                ),
+
+                arc::selectee(
+                    arc::sleepUntil(m_workerState.nextEventFlush),
+                    [&] {
+                        auto info = this->connInfo();
+                        this->threadMaybeSendEvents(info);
                     }
                 )
             );
@@ -959,6 +1027,20 @@ void NetworkManagerImpl::threadMaybeResendOwnData(LockedConnInfo& info) {
     info->m_sentFriendList = true;
 }
 
+void NetworkManagerImpl::threadMaybeSendEvents(LockedConnInfo& info) {
+    m_workerState.nextEventFlush = Instant::now() + CENTRAL_EVENT_FLUSH_INTERVAL;
+
+    dbuf::ByteWriter<> wr;
+    bool reliable = false;
+    auto eventData = encodeEventsInto(info->m_centralEventQueue, info->m_centralDict, wr, reliable);
+
+    if (eventData) {
+        this->sendToCentral([&](CentralMessage::Builder& msg) {
+            msg.setEvents(kj::arrayPtr(eventData->begin(), eventData->size()));
+        });
+    }
+}
+
 Future<> NetworkManagerImpl::threadSetupLogger(bool central) {
     if (!globed::setting<bool>("core.dev.net-stat-dump")) {
         m_centralLogger.reset();
@@ -1042,20 +1124,33 @@ void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         int accountId = g_argonData.accountId;
         int userId = g_argonData.userId;
-        auto icons = this->connInfo()->m_icons;
 
         auto login = msg.initLogin();
         login.setAccountId(accountId);
-        data::encode(icons, login.initIcons());
         if (kind != AuthKind::Plain) {
             auto uid = this->computeUident(accountId);
             login.setUident(kj::arrayPtr(uid.data(), uid.size()));
         }
         gatherUserSettings(login.initSettings());
 
+        {
+            auto info = this->connInfo();
+            data::encode(info->m_icons, login.initIcons());
+
+            auto& dict = info->m_centralDict.data;
+            login.setEventDictionary(kj::arrayPtr(dict.data(), dict.size()));
+        }
+
         switch (kind) {
             case AuthKind::Utoken: {
-                log::debug("attempting login with user token {}", token);
+                log::debug(
+                    "attempting login with user token {}",
+#ifdef GLOBED_DEBUG
+                    token
+#else
+                    "<redacted>"
+#endif
+                );
                 login.setUtoken(token);
             } break;
 
@@ -1093,7 +1188,7 @@ Result<> NetworkManagerImpl::sendMessageToConnection(
     }
 
     size_t unpackedSize = capnp::computeSerializedSizeInWords(msg) * 8;
-    qn::ArrayByteWriter<8> writer;
+    dbuf::ArrayByteWriter<8> writer;
     writer.writeVarUint(unpackedSize).unwrap();
     auto unpSizeBuf = writer.written();
 
@@ -2122,8 +2217,13 @@ void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, boo
         login.setAccountId(g_argonData.accountId);
         login.setToken(this->getUToken().value_or(""));
 
-        auto icons = this->connInfo()->m_icons;
-        data::encode(icons, login.initIcons());
+        {
+            auto info = this->connInfo();
+            data::encode(info->m_icons, login.initIcons());
+
+            auto& dict = info->m_gameDict.data;
+            login.setEventDictionary(kj::arrayPtr(dict.data(), dict.size()));
+        }
 
         gatherUserSettings(login.initSettings());
 
@@ -2153,6 +2253,10 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
         return;
     }
 
+    dbuf::ByteWriter<> wr;
+    bool reliable = false;
+    auto eventData = encodeEventsInto(info->m_gameEventQueue, info->m_gameDict, wr, reliable);
+
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto playerData = msg.initPlayerData();
         auto data = playerData.initData();
@@ -2167,23 +2271,12 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
             reqs.set(i, dataRequests[i]);
         }
 
-        qn::HeapByteWriter eventEncoder;
-        for (size_t i = 0; i < std::min<size_t>(64, info->m_gameEventQueue.size()); i++) {
-            auto& event = info->m_gameEventQueue.front();
-            if (auto err = event.encode(eventEncoder).err()) {
-                log::warn("Failed to encode event: {}", *err);
-            }
-
-            info->m_gameEventQueue.pop();
-        }
-
-        auto eventData = std::move(eventEncoder).intoVector();
-        playerData.setEventData(kj::ArrayPtr{eventData.data(), eventData.size()});
+        if (eventData) playerData.setEventData(*eventData);
 
         // allocate another message id
         uint16_t msgId = info->getNextMessageId();
         playerData.setMessageId(msgId);
-    }, !info->m_gameEventQueue.empty());
+    }, reliable);
 }
 
 void NetworkManagerImpl::sendPlayerUpdateMeta(const PlayerLevelMeta& meta, const std::vector<int>& requests) {
@@ -2212,13 +2305,6 @@ void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scri
     }, true, false);
 }
 
-void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
-    auto info = this->connInfo();
-    if (!info) return;
-
-    info->m_gameEventQueue.push(std::move(event));
-}
-
 void NetworkManagerImpl::sendVoiceData(const EncodedAudioFrame& frame) {
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto voice = msg.initVoiceData();
@@ -2239,6 +2325,50 @@ void NetworkManagerImpl::sendQuickChat(uint32_t id) {
 }
 
 // Messages for both servers
+
+void NetworkManagerImpl::sendEvent(std::string_view id, std::vector<uint8_t> data, const EventOptions& options) {
+    auto server = options.server;
+    if (server == EventServer::Auto) {
+        server = EventServer::Both;
+    }
+
+    bool central = server == EventServer::Central || server == EventServer::Both;
+    bool game = server == EventServer::Game || server == EventServer::Both;
+
+    auto info = this->connInfo();
+    if (!info) return;
+
+    log::debug("Enqueue event '{}' ({} bytes), central: {}, game: {}", id, data.size(), central, game);
+
+    if (central) {
+        info->m_centralEventQueue.emplace_back(id, data, options);
+        if (options.urgent) {
+            m_workerNotify.notifyOne();
+        }
+    }
+    if (game) {
+        info->m_gameEventQueue.emplace_back(id, std::move(data), options);
+    }
+}
+
+void NetworkManagerImpl::registerEvent(std::string_view id, EventServer server) {
+    bool central = server == EventServer::Central || server == EventServer::Both;
+    bool game = server == EventServer::Game || server == EventServer::Both;
+
+    if (central) {
+        this->registerEventWith(id, *m_centralEventEncoder.lock());
+    }
+    if (game) {
+        this->registerEventWith(id, *m_gameEventEncoder.lock());
+    }
+}
+
+void NetworkManagerImpl::registerEventWith(std::string_view id, EventEncoder& encoder) {
+    if (!encoder.registerEvent(std::string{id})) {
+        log::error("Failed to register event with ID '{}'", id);
+        log::error("The event ID is most likely invalid (too long or incorrectly formatted), event IDs must be in form 'mod.id/event-name'");
+    }
+}
 
 void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab) {
     auto info = this->connInfo();
@@ -2619,6 +2749,16 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             this->invokeListeners(std::move(m));
         } break;
 
+        case CentralMessage::EVENTS: {
+            // decode events
+            auto connInfo = this->connInfo();
+            msg::EventsMessage evmsg;
+            decodeEventsInto<EventServer::Central>(msg.getEvents(), connInfo->m_centralDict, evmsg.events);
+            connInfo.unlock();
+
+            this->invokeListeners(std::move(evmsg));
+        } break;
+
         default: {
             return Err("Received unknown message type: {}", std::to_underlying(msg.which()));
         } break;
@@ -2696,7 +2836,16 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
                 }
             }
 
-            this->invokeListeners(data::decodeUnchecked<msg::LevelDataMessage>(m));
+            auto msg = data::decodeUnchecked<msg::LevelDataMessage>(m);
+
+            // decode events
+            msg::EventsMessage evmsg;
+            decodeEventsInto<EventServer::Game>(m.getEventData(), connInfo.m_gameDict, evmsg.events);
+
+            lock.unlock();
+
+            this->invokeListeners(std::move(evmsg));
+            this->invokeListeners(std::move(msg));
         } break;
 
         case LEVEL_META: {
@@ -2721,6 +2870,16 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
 
         case KICKED: {
             // TODO
+        } break;
+
+        case EVENTS: {
+            // decode events
+            auto connInfo = this->connInfo();
+            msg::EventsMessage evmsg;
+            decodeEventsInto<EventServer::Game>(msg.getEvents(), connInfo->m_gameDict, evmsg.events);
+            connInfo.unlock();
+
+            this->invokeListeners(std::move(evmsg));
         } break;
 
         default: {

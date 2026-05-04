@@ -1,23 +1,21 @@
 #include <globed/core/data/MultiColor.hpp>
 #include <globed/util/assert.hpp>
 
-#include <qunet/buffers/ByteReader.hpp>
+#include <dbuf/ByteReader.hpp>
 
 using namespace geode::prelude;
 
-#define READER_UNWRAP(...) GEODE_UNWRAP((__VA_ARGS__).mapErr([&](auto&& err) { return err.message(); }));
-
 namespace globed {
 
-Result<Color3> readRgb(qn::ByteReader& reader) {
-    auto r = READER_UNWRAP(reader.readU8());
-    auto g = READER_UNWRAP(reader.readU8());
-    auto b = READER_UNWRAP(reader.readU8());
+Result<Color3> readRgb(dbuf::ByteReader<>& reader) {
+    auto r = GEODE_UNWRAP(reader.readU8());
+    auto g = GEODE_UNWRAP(reader.readU8());
+    auto b = GEODE_UNWRAP(reader.readU8());
 
     return Ok(Color3 { r, g, b });
 }
 
-Result<std::vector<Color3>> readColorList(qn::ByteReader& reader, size_t count) {
+Result<std::vector<Color3>> readColorList(dbuf::ByteReader<>& reader, size_t count) {
     std::vector<Color3> out;
 
     for (size_t i = 0; i < count; i++) {
@@ -85,8 +83,8 @@ void MultiColor::animateNode(CCRGBAProtocol* label) const {
 }
 
 Result<MultiColor> MultiColor::decode(std::span<const uint8_t> data) {
-    qn::ByteReader reader{data};
-    auto header = READER_UNWRAP(reader.readU8());
+    dbuf::ByteReader<> reader{data};
+    auto header = GEODE_UNWRAP(reader.readU8());
     size_t count = header & 0b00111111;
 
     Type type;

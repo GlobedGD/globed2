@@ -34,7 +34,7 @@ void GlobalTriggersModule::queueCounterChange(const CounterChange& change) {
         ev.rawValue = std::bit_cast<uint32_t>(change.value.asFloat());
     }
 
-    NetworkManagerImpl::get().queueGameEvent(std::move(ev));
+    ev.send();
 }
 
 void GlobalTriggersModule::onPlayerJoin(GlobedGJBGL* gjbgl, int accountId) {

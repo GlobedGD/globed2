@@ -7,8 +7,8 @@ namespace globed {
 
 ExtendedObjectBase::ExtendedObjectBase() {}
 
-void ExtendedObjectBase::encodePayload(geode::FunctionRef<bool(qn::HeapByteWriter&)>&& writefn) {
-    qn::HeapByteWriter writer;
+void ExtendedObjectBase::encodePayload(geode::FunctionRef<bool(dbuf::ByteWriter&)>&& writefn) {
+    dbuf::ByteWriter writer;
     writefn(writer);
 
     // compute the checksum
@@ -20,7 +20,7 @@ void ExtendedObjectBase::encodePayload(geode::FunctionRef<bool(qn::HeapByteWrite
 
     data = writer.written();
 
-    qn::ByteReader reader{data};
+    dbuf::ByteReader<> reader{data};
 
     log::debug("Encoding payload: {}", hexEncode(data.data(), data.size()));
 
@@ -54,7 +54,7 @@ void ExtendedObjectBase::encodePayload(geode::FunctionRef<bool(qn::HeapByteWrite
     }
 }
 
-qn::ByteReader ExtendedObjectBase::_decodePayloadPre(qn::ArrayByteWriter<64>& writer) {
+dbuf::ByteReader<> ExtendedObjectBase::_decodePayloadPre(qn::ArrayByteWriter<64>& writer) {
     // could add other props if not enough space :p
     (void) writer.writeU32(std::bit_cast<uint32_t>(m_item1Mode));
     (void) writer.writeU32(std::bit_cast<uint32_t>(m_item2Mode));
@@ -68,10 +68,10 @@ qn::ByteReader ExtendedObjectBase::_decodePayloadPre(qn::ArrayByteWriter<64>& wr
 
     log::debug("Decoding payload: {}", hexEncode(written.data(), written.size()));
 
-    return qn::ByteReader{written};
+    return dbuf::ByteReader<>{written};
 }
 
-Result<> ExtendedObjectBase::_decodePayloadPost(qn::ArrayByteWriter<64>& writer, qn::ByteReader& reader) {
+Result<> ExtendedObjectBase::_decodePayloadPost(qn::ArrayByteWriter<64>& writer, dbuf::ByteReader<>& reader) {
     // check the checksum (last byte)
     auto csumres = reader.readU8();
     if (!csumres) {

@@ -1,4 +1,5 @@
 #include "FireServerObject.hpp"
+#include "../Events.hpp"
 #include <globed/util/assert.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
@@ -40,10 +41,10 @@ void FireServerObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, gd::vector<
     }
 
     // send off the event
-    NetworkManagerImpl::get().queueGameEvent(std::move(ev));
+    ev.send();
 }
 
-static Result<FireServerPayload, qn::ByteReaderError> decodePayload(qn::ByteReader& reader) {
+static Result<FireServerPayload> decodePayload(dbuf::ByteReader<>& reader) {
     FireServerPayload out{};
     out.eventId = GEODE_UNWRAP(reader.readU16());
     out.argCount = GEODE_UNWRAP(reader.readU8());
@@ -68,7 +69,7 @@ static Result<FireServerPayload, qn::ByteReaderError> decodePayload(qn::ByteRead
     return Ok(out);
 }
 
-static void encodePayload(const FireServerPayload& payload, qn::HeapByteWriter& writer) {
+static void encodePayload(const FireServerPayload& payload, auto& writer) {
     writer.writeU16(payload.eventId);
     writer.writeU8(payload.argCount);
 
@@ -102,14 +103,10 @@ static void encodePayload(const FireServerPayload& payload, qn::HeapByteWriter& 
 }
 
 std::optional<FireServerPayload> FireServerObject::decodePayload() {
-    return ExtendedObjectBase::decodePayloadOpt<FireServerPayload>([&](qn::ByteReader& reader) -> Result<FireServerPayload> {
-        auto payload = READER_UNWRAP(::globed::decodePayload(reader));
+    return ExtendedObjectBase::decodePayloadOpt<FireServerPayload>([&](dbuf::ByteReader<>& reader) -> Result<FireServerPayload> {
+        auto payload = GEODE_UNWRAP(::globed::decodePayload(reader));
 
         // validate the payload
-        if (payload.eventId >= EVENT_GLOBED_BASE) {
-            return Err("FireServerObject has an invalid event ID: {}", payload.eventId);
-        }
-
         for (size_t i = 0; i < payload.argCount; i++) {
             auto& arg = payload.args[i];
 
@@ -123,7 +120,7 @@ std::optional<FireServerPayload> FireServerObject::decodePayload() {
 }
 
 void FireServerObject::encodePayload(const FireServerPayload& args) {
-    ExtendedObjectBase::encodePayload([&](qn::HeapByteWriter& writer) {
+    ExtendedObjectBase::encodePayload([&](auto& writer) {
         ::globed::encodePayload(args, writer);
         return true;
     });

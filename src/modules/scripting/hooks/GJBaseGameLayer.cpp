@@ -1,7 +1,7 @@
 #include "GJBaseGameLayer.hpp"
 
-#include <globed/core/RoomManager.hpp>
 #include <Geode/utils/random.hpp>
+#include <globed/core/RoomManager.hpp>
 #include <globed/util/algo.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
@@ -28,13 +28,13 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
     auto gjbgl = GlobedGJBGL::get(this);
     gjbgl->setDisallowThrottleUpdates();
 
-    fields.m_listener = nm.listen<msg::LevelDataMessage>([this](const auto& msg) {
-        auto& fields = *m_fields.self();
-
-        for (auto& event : msg.events) {
-            this->handleEvent(event);
-        }
-    });
+    this->listenEvent<SpawnGroupEvent>();
+    this->listenEvent<SetItemEvent>();
+    this->listenEvent<MoveGroupEvent>();
+    this->listenEvent<FollowPlayerEvent>();
+    this->listenEvent<FollowAbsoluteEvent>();
+    this->listenEvent<FollowRotationEvent>();
+    this->listenEvent<ScriptedEvent>();
 
     fields.m_logsListener = nm.listen<msg::ScriptLogsMessage>([this](const auto& msg) {
         auto& fields = *m_fields.self();
@@ -68,7 +68,7 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
 }
 
 void SCBaseGameLayer::sendLogRequest(float) {
-    NetworkManagerImpl::get().queueGameEvent(RequestScriptLogsEvent{});
+    RequestScriptLogsEvent{}.send();
 }
 
 void SCBaseGameLayer::customMoveBy(int group, double dx, double dy, float duration) {
@@ -375,62 +375,65 @@ std::deque<std::pair<asp::time::SystemTime, float>>& SCBaseGameLayer::getMemLimi
     return m_fields->m_memLimitBuffer;
 }
 
-void SCBaseGameLayer::handleEvent(const InEvent& event) {
-    auto& fields = *m_fields.self();
+void SCBaseGameLayer::handleEvent(const SpawnGroupEvent& event) {
+    auto& data = event.data;
 
-    if (event.is<SpawnGroupEvent>()) {
-        auto& data = event.as<SpawnGroupEvent>().data;
+    double delay = data.delay.value_or(0.f);
 
-        double delay = data.delay.value_or(0.f);
-
-        if (data.delayVariance > 0.f) {
-            double min = std::max(0.0, delay - data.delayVariance);
-            double max = delay + data.delayVariance;
-            delay = utils::random::generate(min, max);
-        }
-
-        log::debug("Spawning group {} with delay {} (ordered: {}), remaps {}", data.groupId, delay, data.ordered, data.remaps.size());
-
-        if (!data.remaps.empty()) {
-            int id = m_spawnRemapTriggers.size();
-            m_spawnRemapTriggers.push_back(std::unordered_map<int, int>{});
-
-            for (size_t i = 0; i < data.remaps.size(); i += 2) {
-                m_spawnRemapTriggers[id][data.remaps[i]] = data.remaps[i + 1];
-            }
-
-            this->spawnGroup(data.groupId, data.ordered, delay, {id, 0}, 0, 0);
-
-            m_spawnRemapTriggers.erase(m_spawnRemapTriggers.begin() + id);
-        } else {
-            this->spawnGroup(data.groupId, data.ordered, delay, {}, 0, 0);
-        }
-
-    } else if (event.is<SetItemEvent>()) {
-        auto& data = event.as<SetItemEvent>().data;
-
-        m_effectManager->updateCountForItem(data.itemId, data.value);
-        this->updateCounters(data.itemId, data.value);
-    } else if (event.is<MoveGroupEvent>()) {
-        auto& data = event.as<MoveGroupEvent>().data;
-        if (data.absolute) {
-            this->customMoveTo(data.group, data.center, data.x, data.y, data.duration);
-        } else {
-            this->customMoveBy(data.group, data.x, data.y, data.duration);
-        }
-    } else if (event.is<FollowPlayerEvent>()) {
-        auto& data = event.as<FollowPlayerEvent>().data;
-
-        this->customFollowPlayerMov(data.player, data.group, data.enable);
-    } else if (event.is<FollowAbsoluteEvent>()) {
-        auto& data = event.as<FollowAbsoluteEvent>().data;
-
-        this->customFollowPlayerAbs(data.player, data.group, data.center, data.enable);
-    } else if (event.is<FollowRotationEvent>()) {
-        auto& data = event.as<FollowRotationEvent>().data;
-
-        this->customFollowPlayerRot(data.player, data.group, data.center, data.enable);
+    if (data.delayVariance > 0.f) {
+        double min = std::max(0.0, delay - data.delayVariance);
+        double max = delay + data.delayVariance;
+        delay = utils::random::generate(min, max);
     }
+
+    log::debug("Spawning group {} with delay {} (ordered: {}), remaps {}", data.groupId, delay, data.ordered, data.remaps.size());
+
+    if (!data.remaps.empty()) {
+        int id = m_spawnRemapTriggers.size();
+        m_spawnRemapTriggers.push_back(std::unordered_map<int, int>{});
+
+        for (size_t i = 0; i < data.remaps.size(); i += 2) {
+            m_spawnRemapTriggers[id][data.remaps[i]] = data.remaps[i + 1];
+        }
+
+        this->spawnGroup(data.groupId, data.ordered, delay, {id, 0}, 0, 0);
+
+        m_spawnRemapTriggers.erase(m_spawnRemapTriggers.begin() + id);
+    } else {
+        this->spawnGroup(data.groupId, data.ordered, delay, {}, 0, 0);
+    }
+}
+
+void SCBaseGameLayer::handleEvent(const SetItemEvent& event) {
+    auto& data = event.data;
+
+    m_effectManager->updateCountForItem(data.itemId, data.value);
+    this->updateCounters(data.itemId, data.value);
+}
+
+void SCBaseGameLayer::handleEvent(const MoveGroupEvent& event) {
+    auto& data = event.data;
+
+    if (data.absolute) {
+        this->customMoveTo(data.group, data.center, data.x, data.y, data.duration);
+    } else {
+        this->customMoveBy(data.group, data.x, data.y, data.duration);
+    }
+}
+
+void SCBaseGameLayer::handleEvent(const FollowPlayerEvent& event) {
+    auto& data = event.data;
+    this->customFollowPlayerMov(data.player, data.group, data.enable);
+}
+
+void SCBaseGameLayer::handleEvent(const FollowAbsoluteEvent& event) {
+    auto& data = event.data;
+    this->customFollowPlayerAbs(data.player, data.group, data.center, data.enable);
+}
+
+void SCBaseGameLayer::handleEvent(const FollowRotationEvent& event) {
+    auto& data = event.data;
+    this->customFollowPlayerRot(data.player, data.group, data.center, data.enable);
 }
 
 void SCBaseGameLayer::addEventListener(const ListenEventPayload& obj) {

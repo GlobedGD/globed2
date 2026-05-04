@@ -118,10 +118,6 @@ void NetworkManager::setViewedFeaturedLevel() {
     m_impl->setViewedFeaturedLevel();
 }
 
-void NetworkManager::queueGameEvent(OutEvent&& event) {
-    m_impl->queueGameEvent(std::move(event));
-}
-
 void NetworkManager::sendQuickChat(uint32_t id) {
     m_impl->sendQuickChat(id);
 }

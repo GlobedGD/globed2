@@ -18,9 +18,9 @@ void ListenEventObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, gd::vector
 }
 
 std::optional<ListenEventPayload> ListenEventObject::decodePayload() {
-    return ExtendedObjectBase::decodePayloadOpt<ListenEventPayload>([&](qn::ByteReader& reader) -> Result<ListenEventPayload> {
-        auto eventId = READER_UNWRAP(reader.readU16());
-        auto groupId = READER_UNWRAP(reader.readI32());
+    return ExtendedObjectBase::decodePayloadOpt<ListenEventPayload>([&](dbuf::ByteReader<>& reader) -> Result<ListenEventPayload> {
+        auto eventId = GEODE_UNWRAP(reader.readU16());
+        auto groupId = GEODE_UNWRAP(reader.readI32());
 
         return Ok(ListenEventPayload{
             .eventId = eventId,
@@ -30,7 +30,7 @@ std::optional<ListenEventPayload> ListenEventObject::decodePayload() {
 }
 
 void ListenEventObject::encodePayload(const ListenEventPayload& payload) {
-    ExtendedObjectBase::encodePayload([&](qn::HeapByteWriter& writer) {
+    ExtendedObjectBase::encodePayload([&](dbuf::ByteWriter& writer) {
         writer.writeU16(payload.eventId);
         writer.writeI32(payload.groupId);
         return true;

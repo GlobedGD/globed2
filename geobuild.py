@@ -20,8 +20,8 @@ import sys
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v5.6.1"
 XTLS_VERSION = "e29f88a"
-QUNET_VERSION = "2ca8bfe"
-SERVER_SHARED_VERSION = "d731f27"
+QUNET_VERSION = "f98c7c1"
+SERVER_SHARED_VERSION = "0e8f10a"
 CUE_VERSION = "d1c7ad2"
 
 if sys.version_info < (3, 12):
@@ -429,6 +429,7 @@ def main(build: Build):
         "XTLS_ENABLE_SOCKET": "ON",
         "XTLS_ENABLE_ARC_SOCKET": "ON",
     })
+    build.add_cpm_dep("dankmeme01/dbuf", "v1.1.0")
     build.add_cpm_dep("dankmeme01/qunet-cpp", QUNET_VERSION, {
         "QUNET_QUIC_SUPPORT": "ON" if gc.ext_transports else "OFF",
         "QUNET_WS_SUPPORT": "ON" if gc.ext_transports else "OFF",

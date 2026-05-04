@@ -5,9 +5,10 @@
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/data/UserRole.hpp>
 #include <globed/util/assert.hpp>
+#include <globed/util/format.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
 
-#include <qunet/buffers/ByteReader.hpp>
+#include <dbuf/ByteReader.hpp>
 #include <capnp/compat/std-iterator.h>
 
 namespace globed::data {
@@ -566,17 +567,6 @@ $implDecode(msg::LevelDataMessage, game::LevelDataMessage::Reader& reader) {
         } else {
             // can happen as an optimization
             // geode::log::debug("Server sent invalid player display data, skipping");
-        }
-    }
-
-    qn::ByteReader evReader{eventData.begin(), eventData.size()};
-
-    while (evReader.remainingSize() > 0) {
-        if (auto res = InEvent::decode(evReader)) {
-            outMsg.events.push_back(std::move(*res));
-        } else {
-            geode::log::warn("failed to decode event: {}", res.unwrapErr());
-            break;
         }
     }
 

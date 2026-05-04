@@ -14,6 +14,7 @@
 #include <globed/util/FunctionQueue.hpp>
 #include <modules/scripting/data/EmbeddedScript.hpp>
 #include "ConnectionLogger.hpp"
+#include "EventEncoder.hpp"
 
 #include <arc/runtime/Runtime.hpp>
 #include <arc/sync/mpsc.hpp>
@@ -58,7 +59,8 @@ struct GameServerJoinRequest {
 
 struct WorkerState {
     /// Next time to ping game servers
-    asp::time::Instant nextGSPing = asp::time::Instant::farFuture();
+    asp::Instant nextGSPing = asp::Instant::farFuture();
+    asp::Instant nextEventFlush = asp::Instant::now();
     arc::mpsc::Sender<std::pair<std::string, qn::PingResult>> pingResultTx;
     arc::mpsc::Receiver<std::pair<std::string, qn::PingResult>> pingResultRx;
     qn::ConnectionState prevCentralState{qn::ConnectionState::Disconnected};
@@ -101,13 +103,16 @@ struct ConnectionInfo {
     bool m_gameServersUpdated = true;
     bool m_established = false;
     bool m_authenticating = false;
-    asp::time::Instant m_triedAuthAt;
+    asp::Instant m_triedAuthAt;
+    EventDictionary m_centralDict;
+    std::deque<RawEvent> m_centralEventQueue;
 
     // game server info
     std::string m_gameServerUrl;
     uint8_t m_gameServerId;
     bool m_gameEstablished = false;
-    std::queue<OutEvent> m_gameEventQueue;
+    EventDictionary m_gameDict;
+    std::deque<RawEvent> m_gameEventQueue;
     std::vector<EmbeddedScript> m_queuedScripts;
     std::deque<std::pair<uint16_t, asp::Instant>> m_gamePlayerDataReqs;
     std::deque<std::pair<bool, asp::Instant>> m_gameProcessedPackets;
@@ -335,6 +340,9 @@ public:
     void sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab = false);
     void sendLeaveSession();
 
+    void sendEvent(std::string_view id, std::vector<uint8_t> data, const EventOptions& options);
+    void registerEvent(std::string_view id, EventServer server);
+
     // Game server
     void sendPlayerState(
         const PlayerState& state,
@@ -345,7 +353,6 @@ public:
     void sendPlayerUpdateMeta(const PlayerLevelMeta& meta, const std::vector<int>& requests);
     void queueLevelScript(const std::vector<EmbeddedScript>& scripts);
     void sendLevelScript(const std::vector<EmbeddedScript>& scripts);
-    void queueGameEvent(OutEvent&& event);
     void sendVoiceData(const EncodedAudioFrame& frame);
     void sendQuickChat(uint32_t id);
 
@@ -387,6 +394,9 @@ private:
     asp::SpinLock<std::pair<std::string, bool>> m_abortCause;
     std::atomic<bool> m_manualDisconnect{false};
 
+    asp::Mutex<EventEncoder> m_gameEventEncoder;
+    asp::Mutex<EventEncoder> m_centralEventEncoder;
+
     arc::Future<> asyncInit();
 
     LockedConnInfo connInfo() const;
@@ -400,6 +410,7 @@ private:
     arc::Future<> threadGameWorkerLoop();
     void threadPingGameServers(LockedConnInfo& info);
     void threadMaybeResendOwnData(LockedConnInfo& info);
+    void threadMaybeSendEvents(LockedConnInfo& info);
     arc::Future<> threadTryAuth();
     arc::Future<> threadSetupLogger(bool central);
     void threadFlushLogger(bool central);
@@ -430,6 +441,8 @@ private:
     void joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, uint8_t serverId, SessionId id, bool platformer, bool editorCollab);
     void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false, bool editorCollab = false);
     void sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab);
+
+    void registerEventWith(std::string_view id, EventEncoder& encoder);
 
     template <typename Ft>
     void invokeListeners(Ft&& message) {

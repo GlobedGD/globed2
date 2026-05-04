@@ -12,7 +12,14 @@ static bool isValid(CCSprite* spr) {
 }
 
 static CCSprite* createAny(const char* name) {
-    auto sprite = CCSprite::createWithSpriteFrameName(name);
+    CCSprite* sprite = nullptr;
+
+    // do this to bypass the silly log from geode
+    auto frame = (CCSpriteFrame*) CCSpriteFrameCache::get()->m_pSpriteFrames->objectForKey(name);
+    if (frame) {
+        sprite = CCSprite::createWithSpriteFrame(frame);
+    }
+
     if (!isValid(sprite)) {
         sprite = CCSprite::create(name);
     }

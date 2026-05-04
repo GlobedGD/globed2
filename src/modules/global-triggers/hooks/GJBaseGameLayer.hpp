@@ -7,12 +7,14 @@
 #include <globed/core/net/MessageListener.hpp>
 #include "../GlobalTriggersModule.hpp"
 #include "../CounterChange.hpp"
+#include "../Events.hpp"
 
 namespace globed {
 
 struct GLOBED_MODIFY_ATTR GTriggersGJBGL : geode::Modify<GTriggersGJBGL, GJBaseGameLayer> {
     struct Fields {
         MessageListener<msg::LevelDataMessage> m_listener;
+        geode::ListenerHandle m_eventListener;
         std::unordered_map<int, bool> m_pausedPlayers;
 
         int m_totalJoins = 0, m_totalLeaves = 0;
@@ -47,7 +49,7 @@ struct GLOBED_MODIFY_ATTR GTriggersGJBGL : geode::Modify<GTriggersGJBGL, GJBaseG
 
     void updateItems(float dt);
 
-    void handleEvent(const InEvent& event);
+    void handleEvent(const CounterChangeEvent& event);
     void applyCounterChange(const CounterChange& change);
 
     void updateCustomItem(int itemId, int value);

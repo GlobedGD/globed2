@@ -1,10 +1,9 @@
 #pragma once
 
 #include "APSModule.hpp"
+#include "Events.hpp"
 #include <globed/prelude.hpp>
 #include <globed/core/game/RemotePlayer.hpp>
-#include <globed/core/net/MessageListener.hpp>
-#include <globed/core/data/Messages.hpp>
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PauseLayer.hpp>
@@ -42,13 +41,13 @@ struct APSController {
     bool m_gameActive = false;
 
     void restart();
-    void handleStateEvent(const SwitcherooFullStateEvent& event);
-    void handleSwitchEvent(const SwitcherooSwitchEvent& event);
+    void handleStateEvent(const APSFullStateEvent& event, int sender);
+    void handleSwitchEvent(const APSSwitchEvent& event, int sender);
     void rehidePlayers();
     void repushButtons();
     void rescheduleNextSwitch(float delayS);
 
-    std::optional<SwitcherooSwitchEvent> poll();
+    std::optional<APSSwitchEvent> poll();
 
 private:
     std::vector<int> m_pqueue;
@@ -63,7 +62,7 @@ private:
 
 struct GLOBED_MODIFY_ATTR APSPlayLayer : geode::Modify<APSPlayLayer, PlayLayer> {
     struct Fields {
-        MessageListener<msg::LevelDataMessage> m_listener;
+        geode::ListenerHandle m_fullStateListener, m_switchListener;
         int m_myAccountId = 0;
         geode::NineSlice* m_switchGlow = nullptr;
         geode::NineSlice* m_switchPreglow = nullptr;

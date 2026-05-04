@@ -26,7 +26,7 @@ static bool g_realP2Held = false;
 
 namespace globed {
 
-using SwitchType = SwitcherooSwitchEvent::Type;
+using SwitchType = APSSwitchEvent::SwitchType;
 
 static void buttonPress(GlobedGJBGL* gjbgl, bool held, bool p2) {
     auto& b = p2 ? g_p2Held : g_p1Held;
@@ -46,13 +46,13 @@ void APSController::restart() {
     this->calculateNextSwitch();
 }
 
-void APSController::handleStateEvent(const SwitcherooFullStateEvent& event) {
+void APSController::handleStateEvent(const APSFullStateEvent& event, int sender) {
     // is the settings popup currently open? if so, delay this till next frame to fix a nasty touch prio bug
     if (CCScene::get()->getChildByType<APSSettingsPopup>(0)) {
-        FunctionQueue::get().queue([sr = WeakRef(m_pl), event] {
+        FunctionQueue::get().queue([sr = WeakRef(m_pl), event, sender] {
             auto pl = sr.lock();
             if (!pl) return;
-            pl->m_fields->m_controller.handleStateEvent(event);
+            pl->m_fields->m_controller.handleStateEvent(event, sender);
         });
         return;
     }
@@ -74,7 +74,7 @@ void APSController::handleStateEvent(const SwitcherooFullStateEvent& event) {
     this->rehidePlayers();
 }
 
-void APSController::handleSwitchEvent(const SwitcherooSwitchEvent& event) {
+void APSController::handleSwitchEvent(const APSSwitchEvent& event, int sender) {
     if (event.type == event.Warning) {
         log::debug("(APS) Soon switching to {}", event.playerId);
         m_nextPlayer = event.playerId;
@@ -127,7 +127,7 @@ void APSController::rescheduleNextSwitch(float delayS) {
     m_nextSwitch = asp::Instant::now() + *asp::Duration::fromSecs(delayS);
 }
 
-std::optional<SwitcherooSwitchEvent> APSController::poll() {
+std::optional<APSSwitchEvent> APSController::poll() {
     if (!m_gameActive) return std::nullopt;
 
     auto untilSwitch = m_nextSwitch.until();
@@ -138,18 +138,16 @@ std::optional<SwitcherooSwitchEvent> APSController::poll() {
         int player = m_detNext ? m_detNext : this->pickNextPlayer();
         m_detNext = 0;
 
-        return SwitcherooSwitchEvent {
-            .playerId = player,
-            .type = SwitchType::Switch,
+        return APSSwitchEvent {
+            player, SwitchType::Switch,
         };
     } else if (!m_warned && untilSwitch < *asp::Duration::fromSecs(m_settings.m_warningDelay)) {
         // calculate player and show warning
         m_detNext = this->pickNextPlayer();
         m_warned = true;
 
-        return SwitcherooSwitchEvent {
-            .playerId = m_detNext,
-            .type = SwitchType::Warning,
+        return APSSwitchEvent {
+            m_detNext, SwitchType::Warning,
         };
     }
 
@@ -225,16 +223,13 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
     fields.m_controller.m_gjbgl = GlobedGJBGL::get(this);
     fields.m_controlling = RoomManager::get().isOwner();
 
-    fields.m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& msg) {
-        auto& controller = m_fields->m_controller;
-        for (auto& event : msg.events) {
-            if (event.is<SwitcherooFullStateEvent>()) {
-                controller.handleStateEvent(event.as<SwitcherooFullStateEvent>());
-            } else if (event.is<SwitcherooSwitchEvent>()) {
-                controller.handleSwitchEvent(event.as<SwitcherooSwitchEvent>());
-            }
-        }
-    }, -10);
+    fields.m_fullStateListener = APSFullStateEvent::listen([this](const auto& ev, const auto& opts) {
+        m_fields->m_controller.handleStateEvent(ev, opts.sender);
+    });
+
+    fields.m_switchListener = APSSwitchEvent::listen([this](const auto& ev, const auto& opts) {
+        m_fields->m_controller.handleSwitchEvent(ev, opts.sender);
+    });
 
     this->addEventListener(
         KeybindSettingPressedEventV3(Mod::get(), "keybind-force-switch"),
@@ -379,13 +374,17 @@ void APSPlayLayer::sendFullState(bool restarting) {
     auto& fields = *m_fields.self();
 
     // collect the game state and send to all users
-    SwitcherooFullStateEvent ev{};
-    ev.gameActive = fields.m_controller.m_gameActive;
-    ev.activePlayer = fields.m_controller.m_activePlayer;
-    ev.playerIndication = fields.m_controller.m_settings.m_showNextPlayer;
-    ev.restarting = restarting;
+    APSFullStateEvent ev{
+        fields.m_controller.m_activePlayer,
+        fields.m_controller.m_gameActive,
+        fields.m_controller.m_settings.m_showNextPlayer,
+        restarting
+    };
 
-    NetworkManagerImpl::get().queueGameEvent(ev);
+    EventOptions opts{};
+    opts.server = EventServer::Game;
+    opts.sendBack = true;
+    ev.send(opts);
 }
 
 void APSPlayLayer::updateSettings(const APSSettings& settings) {
@@ -412,7 +411,10 @@ void APSPlayLayer::handleUpdate(float dt) {
     if (fields.m_controlling) {
         auto ev = controller.poll();
         if (ev) {
-            NetworkManagerImpl::get().queueGameEvent(std::move(*ev));
+            EventOptions opts{};
+            opts.server = EventServer::Game;
+            opts.sendBack = true;
+            ev->send(opts);
         }
     }
 

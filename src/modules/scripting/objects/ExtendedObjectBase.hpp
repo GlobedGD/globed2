@@ -3,13 +3,10 @@
 #include <globed/prelude.hpp>
 #include <globed/util/format.hpp>
 
-#include <qunet/buffers/ArrayByteWriter.hpp>
-#include <qunet/buffers/HeapByteWriter.hpp>
-#include <qunet/buffers/ByteReader.hpp>
+#include <dbuf/ByteReader.hpp>
+#include <dbuf/ByteWriter.hpp>
 #include <Geode/Geode.hpp>
 #include <Geode/utils/function.hpp>
-
-#define READER_UNWRAP(...) GEODE_UNWRAP((__VA_ARGS__).mapErr([&](auto&& err) { return err.message(); }));
 
 namespace globed {
 
@@ -18,7 +15,7 @@ public:
     ExtendedObjectBase();
 
 protected:
-    void encodePayload(geode::FunctionRef<bool(qn::HeapByteWriter&)>&& writefn);
+    void encodePayload(geode::FunctionRef<bool(dbuf::ByteWriter<>&)>&& writefn);
 
     inline static uint8_t computeChecksum(std::span<const uint8_t> data) {
         uint32_t sum = 0;
@@ -29,13 +26,13 @@ protected:
         return ~sum & 0xff;
     }
 
-    qn::ByteReader _decodePayloadPre(qn::ArrayByteWriter<64>& writer);
-    Result<> _decodePayloadPost(qn::ArrayByteWriter<64>& writer, qn::ByteReader& reader);
+    dbuf::ByteReader<> _decodePayloadPre(dbuf::ArrayByteWriter<64>& writer);
+    Result<> _decodePayloadPost(dbuf::ArrayByteWriter<64>& writer, dbuf::ByteReader<>& reader);
 
-    template <typename T, typename F> requires (std::is_convertible_v<std::invoke_result_t<F, qn::ByteReader&>, Result<T>>)
+    template <typename T, typename F> requires (std::is_convertible_v<std::invoke_result_t<F, dbuf::ByteReader<>&>, Result<T>>)
     Result<T> decodePayload(F&& readfn) {
-        qn::ArrayByteWriter<64> writer;
-        qn::ByteReader reader = this->_decodePayloadPre(writer);
+        dbuf::ArrayByteWriter<64> writer;
+        dbuf::ByteReader<> reader = this->_decodePayloadPre(writer);
 
         auto res = readfn(reader);
         if (!res) {
@@ -47,7 +44,7 @@ protected:
         return Ok(std::move(res).unwrap());
     }
 
-    template <typename T, typename F> requires (std::is_convertible_v<std::invoke_result_t<F, qn::ByteReader&>, Result<T>>)
+    template <typename T, typename F> requires (std::is_convertible_v<std::invoke_result_t<F, dbuf::ByteReader<>&>, Result<T>>)
     std::optional<T> decodePayloadOpt(F&& readfn) {
         auto res = this->decodePayload<T>(std::forward<F>(readfn));
 

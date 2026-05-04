@@ -175,10 +175,6 @@ void GTriggersGJBGL::registerListener() {
     m_fields->m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const auto& msg) {
         auto& fields = *m_fields.self();
 
-        for (auto& event : msg.events) {
-            this->handleEvent(event);
-        }
-
         bool first = fields.m_firstPacket;
         fields.m_firstPacket = false;
 
@@ -196,6 +192,10 @@ void GTriggersGJBGL::registerListener() {
                 this->recordPlayerPause(player.accountId);
             }
         }
+    });
+
+    m_fields->m_eventListener = CounterChangeEvent::listen([this](const auto& event) {
+        this->handleEvent(event);
     });
 }
 
@@ -249,23 +249,17 @@ void GTriggersGJBGL::updateItems(float dt) {
     this->updateCustomItem(ITEM_LOCAL_PING, ping.millis());
 }
 
-void GTriggersGJBGL::handleEvent(const InEvent& event) {
-    if (!event.is<CounterChangeEvent>()) {
-        return;
-    }
-
-    auto& data = event.as<CounterChangeEvent>();
-
+void GTriggersGJBGL::handleEvent(const CounterChangeEvent& event) {
     CounterChange cc{};
 
-    if (data.rawType != (uint8_t) CounterChangeType::Set) {
-        log::warn("Received counter change with unexpected type {}", (int) data.rawType);
+    if (event.rawType != (uint8_t) CounterChangeType::Set) {
+        log::warn("Received counter change with unexpected type {}", (int) event.rawType);
         return;
     }
 
     cc.type = CounterChangeType::Set;
-    cc.itemId = data.itemId;
-    cc.value.asInt() = std::bit_cast<int32_t>(data.rawValue);
+    cc.itemId = event.itemId;
+    cc.value.asInt() = std::bit_cast<int32_t>(event.rawValue);
 
     log::debug("Got set event for item ID {}, value {}", cc.itemId, cc.value.asInt());
 

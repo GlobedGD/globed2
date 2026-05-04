@@ -186,7 +186,6 @@ struct LevelListMessage {
 struct LevelDataMessage {
     std::vector<PlayerState> players;
     std::vector<PlayerDisplayData> displayDatas;
-    std::vector<InEvent> events;
 };
 
 // Level meta
@@ -303,6 +302,12 @@ enum class ChatNotPermittedReason {
 struct ChatNotPermittedMessage {
     bool isVoice;
     ChatNotPermittedReason reason;
+};
+
+// Events
+
+struct EventsMessage {
+    std::vector<RawEvent> events;
 };
 
 // Admin

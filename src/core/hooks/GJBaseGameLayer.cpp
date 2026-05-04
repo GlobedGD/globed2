@@ -339,6 +339,10 @@ void GlobedGJBGL::setupListeners() {
             m_fields->m_knownNotLinked = false;
         }
     });
+
+    fields.m_displayDataListener = DisplayDataRefreshedEvent::listen([this](const auto& ev) {
+        this->onDisplayDataRefreshed(ev);
+    });
 }
 
 void GlobedGJBGL::maybeShowVCAlert(msg::ChatNotPermittedReason reason) {
@@ -1316,20 +1320,6 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
         fields.m_interpolator.updatePlayer(player, fields.m_lastServerUpdate);
     }
 
-    // check for refreshed events
-    for (auto& event : message.events) {
-        if (event.is<DisplayDataRefreshed>()) {
-            int player = event.as<DisplayDataRefreshed>().playerId;
-
-            // refresh this player's data
-            PlayerCacheManager::get().evictToLayer2(player);
-            fields.m_lastDataRequest = 0.f;
-            if (auto rp = this->getPlayer(player)) {
-                rp->markDataOutdated();
-            }
-        }
-    }
-
     for (auto& dd : message.displayDatas) {
         if (dd.accountId <= 0) continue; // should never happen?
 
@@ -1395,6 +1385,15 @@ void GlobedGJBGL::onJoinSessionFailed(const msg::JoinSessionFailedMessage& messa
 
     auto& fields = *m_fields.self();
     fields.m_active = false;
+}
+
+void GlobedGJBGL::onDisplayDataRefreshed(const DisplayDataRefreshedEvent& event) {
+    // refresh this player's data
+    PlayerCacheManager::get().evictToLayer2(event.playerId);
+    m_fields->m_lastDataRequest = 0.f;
+    if (auto rp = this->getPlayer(event.playerId)) {
+        rp->markDataOutdated();
+    }
 }
 
 void GlobedGJBGL::cleanupGlobedAdditions() {
