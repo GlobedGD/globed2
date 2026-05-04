@@ -157,9 +157,10 @@ EventDictionary EventEncoder::finalize(bool game) const {
         : std::span<const char* const>{CENTRAL_BUILTINS};
 
     // sort all events, remove builtins
-    auto events = asp::iter::consume(m_events).filter([&](auto& el) {
-        return std::ranges::find(builtins, el) == builtins.end();
-    }).collect();
+    auto events = asp::iter::from(m_events)
+        .copied()
+        .filter([&](auto& el) { return !std::ranges::contains(builtins, el); })
+        .collect();
     std::ranges::sort(events);
 
     // as an optimization we dont encode event names one by one, we group them by mod id
