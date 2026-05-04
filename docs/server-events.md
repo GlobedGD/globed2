@@ -85,7 +85,7 @@ You can specify extra options via the `EventOptions` struct:
 ```cpp
 globed::EventOptions opts{};
 opts.server = globed::EventServer::Both;
-opts.reliable = true; // if 'true', event must be re-delievered if lost due to packet loss
+opts.reliable = true; // if 'true' (default), event must be re-delievered if lost due to packet loss
 opts.urgent = true;   // if 'true', event is sent with minimal delay; otherwise it may be queued for a bit
 
 // if this vector is non-empty, event is only sent to players whose account IDs are in it
@@ -99,6 +99,11 @@ Listening is nearly the same as listening to a Geode event, with the exception t
 ```cpp
 auto handle = MyEvent::listen([](const MyEvent& event) {
     log::info("Received event with {}", event.playerId);
+});
+
+// alternate overload that allows you to check event options (e.g. ID of the player who sent it)
+auto handle = MyEvent::listen([](const MyEvent& event, const globed::EventOptions& opts) {
+    log::info("Received event with {} from player {}", event.playerId, opts.sender);
 });
 ```
 
