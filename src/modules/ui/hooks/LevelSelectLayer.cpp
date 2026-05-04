@@ -154,7 +154,13 @@ struct GLOBED_MODIFY_ATTR HookedLevelSelectLayer : geode::Modify<HookedLevelSele
             }
 
             if (!label) {
-                auto pos = (button->getContentSize() / 2) + ccp(0.f, -37.f);
+                CCPoint pos = button->getContentSize() / 2;
+                if (hasControllerGlyph(page)) {
+                    pos.y += 37.f; // top of the button
+                } else {
+                    pos.y -= 37.f; // bottom of the button
+                }
+
                 Build<PlayerCountLabel>::create(globed::setting<bool>("core.ui.compressed-player-count"))
                     .pos(pos)
                     .scale(0.4f)
@@ -172,6 +178,10 @@ struct GLOBED_MODIFY_ATTR HookedLevelSelectLayer : geode::Modify<HookedLevelSele
                 label->updateCount(0);
             }
         }
+    }
+
+    bool hasControllerGlyph(LevelPage* page) {
+        return page->getChildByIDRecursive("controller-start-sprite");
     }
 };
 
