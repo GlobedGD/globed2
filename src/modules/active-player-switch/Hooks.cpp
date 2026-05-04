@@ -46,13 +46,13 @@ void APSController::restart() {
     this->calculateNextSwitch();
 }
 
-void APSController::handleStateEvent(const APSFullStateEvent& event) {
+void APSController::handleStateEvent(const APSFullStateEvent& event, int sender) {
     // is the settings popup currently open? if so, delay this till next frame to fix a nasty touch prio bug
     if (CCScene::get()->getChildByType<APSSettingsPopup>(0)) {
-        FunctionQueue::get().queue([sr = WeakRef(m_pl), event] {
+        FunctionQueue::get().queue([sr = WeakRef(m_pl), event, sender] {
             auto pl = sr.lock();
             if (!pl) return;
-            pl->m_fields->m_controller.handleStateEvent(event);
+            pl->m_fields->m_controller.handleStateEvent(event, sender);
         });
         return;
     }
@@ -74,7 +74,7 @@ void APSController::handleStateEvent(const APSFullStateEvent& event) {
     this->rehidePlayers();
 }
 
-void APSController::handleSwitchEvent(const APSSwitchEvent& event) {
+void APSController::handleSwitchEvent(const APSSwitchEvent& event, int sender) {
     if (event.type == event.Warning) {
         log::debug("(APS) Soon switching to {}", event.playerId);
         m_nextPlayer = event.playerId;
@@ -223,12 +223,12 @@ bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
     fields.m_controller.m_gjbgl = GlobedGJBGL::get(this);
     fields.m_controlling = RoomManager::get().isOwner();
 
-    fields.m_fullStateListener = APSFullStateEvent::listen([this](const auto& ev) {
-        m_fields->m_controller.handleStateEvent(ev);
+    fields.m_fullStateListener = APSFullStateEvent::listen([this](const auto& ev, const auto& opts) {
+        m_fields->m_controller.handleStateEvent(ev, opts.sender);
     });
 
-    fields.m_switchListener = APSSwitchEvent::listen([this](const auto& ev) {
-        m_fields->m_controller.handleSwitchEvent(ev);
+    fields.m_switchListener = APSSwitchEvent::listen([this](const auto& ev, const auto& opts) {
+        m_fields->m_controller.handleSwitchEvent(ev, opts.sender);
     });
 
     this->addEventListener(

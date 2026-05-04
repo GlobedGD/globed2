@@ -41,8 +41,8 @@ struct APSController {
     bool m_gameActive = false;
 
     void restart();
-    void handleStateEvent(const APSFullStateEvent& event);
-    void handleSwitchEvent(const APSSwitchEvent& event);
+    void handleStateEvent(const APSFullStateEvent& event, int sender);
+    void handleSwitchEvent(const APSSwitchEvent& event, int sender);
     void rehidePlayers();
     void repushButtons();
     void rescheduleNextSwitch(float delayS);
