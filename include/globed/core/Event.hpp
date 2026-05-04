@@ -62,14 +62,14 @@ struct ServerEvent {
     void send(this const Derived& self, EventServer server) requires EncodableEvent<Derived> {
         EventOptions opts{};
         opts.server = server;
-        return self.send(opts);
+        return self.send(std::move(opts));
     }
 
     /// Sends this event to the default server, targetting a specific player.
     void send(this const Derived& self, int playerId) requires EncodableEvent<Derived> {
         EventOptions opts{};
         opts.targetPlayers.push_back(playerId);
-        return self.send(opts);
+        return self.send(std::move(opts));
     }
 
     /// Sends this event to the default server, which will be Central if both are enabled.
