@@ -146,12 +146,6 @@ auto* listener2 = nm.listenGlobal<CentralLoginOkMessage>([](const auto& msg) {
 
 // `removeListener` removes and deallocates the listener.
 nm.removeListener(typeid(CentralLoginOkMessage), listener2);
-
-// Send a game event with custom data
-nm.queueGameEvent(globed::UnknownEvent {
-    .type = 0x1234,
-    .rawData = globed::hexDecode("deadbeef").unwrap(),
-});
 ```
 
 ### Accessing settings and save values

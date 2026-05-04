@@ -36,6 +36,8 @@ bool invokeEventCallback(F&& cb, const E& e, const EventOptions& options);
 
 template <typename Derived, EventServer Server = EventServer::Both>
 struct ServerEvent {
+    ServerEvent() = default;
+
     static EventServer server() {
         return Server;
     }

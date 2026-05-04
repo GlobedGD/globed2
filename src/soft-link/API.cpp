@@ -97,10 +97,6 @@ static NetSubtable* makeNetTable() {
         return NetworkManagerImpl::get().getFeaturedLevel();
     });
 
-    GLOBED_VTABLE_INIT(table, queueGameEvent, (void* event) {
-        // NetworkManagerImpl::get().queueGameEvent(std::move(event));
-    });
-
     GLOBED_VTABLE_INIT(table, sendEvent, (std::string_view id, std::vector<uint8_t> data, const EventOptions& options) {
         NetworkManagerImpl::get().sendEvent(id, std::move(data), options);
     });

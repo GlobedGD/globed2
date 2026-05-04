@@ -175,11 +175,6 @@ inline std::optional<FeaturedLevelMeta> getFeaturedLevel() {
     return std::nullopt;
 }
 
-/// Queues an event, do not use this.
-// inline void queueGameEvent(OutEvent&& event) {
-//     if (auto t = table()) t->net->queueGameEvent(std::move(event));
-// }
-
 inline void sendEvent(std::string_view id, std::vector<uint8_t> data, const EventOptions& options) {
     if (auto t = table()) t->net->sendEvent(id, std::move(data), options);
 }

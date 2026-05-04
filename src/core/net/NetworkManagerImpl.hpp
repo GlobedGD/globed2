@@ -353,7 +353,6 @@ public:
     void sendPlayerUpdateMeta(const PlayerLevelMeta& meta, const std::vector<int>& requests);
     void queueLevelScript(const std::vector<EmbeddedScript>& scripts);
     void sendLevelScript(const std::vector<EmbeddedScript>& scripts);
-    // void queueGameEvent(OutEvent&& event);
     void sendVoiceData(const EncodedAudioFrame& frame);
     void sendQuickChat(uint32_t id);
 

@@ -2305,13 +2305,6 @@ void NetworkManagerImpl::sendLevelScript(const std::vector<EmbeddedScript>& scri
     }, true, false);
 }
 
-// void NetworkManagerImpl::queueGameEvent(OutEvent&& event) {
-//     auto info = this->connInfo();
-//     if (!info) return;
-
-//     info->m_gameEventQueue.push(std::move(event));
-// }
-
 void NetworkManagerImpl::sendVoiceData(const EncodedAudioFrame& frame) {
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto voice = msg.initVoiceData();

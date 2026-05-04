@@ -6,6 +6,7 @@ namespace globed {
 struct CounterChangeEvent : ServerEvent<CounterChangeEvent, EventServer::Game> {
     static constexpr auto Id = "globed/counter-change";
 
+    CounterChangeEvent() = default;
     CounterChangeEvent(uint8_t rawType, uint32_t itemId, uint32_t rawValue)
         : rawType(rawType), itemId(itemId), rawValue(rawValue) {}
 
