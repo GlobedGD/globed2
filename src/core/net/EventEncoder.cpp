@@ -196,8 +196,7 @@ EventDictionary EventEncoder::finalize(bool game) const {
         }
     }
 
-    auto written = buf.written();
-    out.data = std::vector<uint8_t>{written.begin(), written.end()};
+    out.data = std::move(buf).intoInner();
     return out;
 }
 
