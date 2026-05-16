@@ -33,6 +33,21 @@ using CentralMessage = globed::schema::main::Message;
 using GameMessage = globed::schema::game::Message;
 using globed::schema::main::RoomOwnerActionType;
 
+struct ExtraPingData {
+    uint32_t playerCount;
+    float load;
+
+    static ExtraPingData parse(std::span<const uint8_t> data) {
+        dbuf::ByteReader r{data};
+        ExtraPingData out{};
+
+        out.playerCount = r.readU32().unwrapOr(0);
+        out.load = r.readF32().unwrapOrDefault();
+
+        return out;
+    }
+};
+
 struct GameServer {
     uint8_t id;
     std::string stringId;
@@ -42,10 +57,12 @@ struct GameServer {
     uint32_t lastLatency = -1; // millis
     uint32_t avgLatency = -1; // millis
     uint32_t sentPings = 0;
+    float load = 0.f;
+    uint32_t playerCount = 0;
     asp::time::Instant lastPingTime = asp::time::Instant::now();
 
     /// updates latency, returns if the server latency is considered unstable
-    bool updateLatency(uint32_t latency);
+    bool updateLatency(uint32_t latency, ExtraPingData extraData);
 };
 
 struct GameServerJoinRequest {

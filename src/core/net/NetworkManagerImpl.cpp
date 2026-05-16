@@ -259,13 +259,15 @@ static void updateServers(ConnectionInfo& info, auto& newServers) {
     info.m_gameServersUpdated = true;
 }
 
-bool GameServer::updateLatency(uint32_t latency) {
+bool GameServer::updateLatency(uint32_t latency, ExtraPingData extraData) {
     if (avgLatency == (uint32_t)-1) {
         avgLatency = latency;
     } else {
         avgLatency = qn::exponentialMovingAverage(avgLatency, latency, 0.4);
     }
 
+    load = extraData.load;
+    playerCount = extraData.playerCount;
     lastLatency = latency;
 
     // consider unstable if the jitter is significant enough
@@ -686,18 +688,22 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                         // this should never fail
                         auto [srvkey, res] = std::move(result).unwrap();
 
-                        // update server latency
+                        // update server latency / load
                         auto info = this->connInfo();
                         if (!info) co_return;
 
                         auto& servers = info->m_gameServers;
                         auto it = servers.find(srvkey);
                         if (it != servers.end()) {
+                            auto edata = ExtraPingData::parse(res.extraData);
                             auto lat = (uint32_t)res.responseTime.millis();
-                            bool unstable = it->second.updateLatency(lat);
+
+                            bool unstable = it->second.updateLatency(lat, edata);
                             log::debug(
-                                "Ping to server {} arrived, latency: {}ms avg, {}ms last, stable: {}",
+                                "Ping to server {} arrived, players: {}, load: {:.1f}%, latency: {}ms avg, {}ms last, stable: {}",
                                 srvkey,
+                                edata.playerCount,
+                                edata.load * 100.f,
                                 it->second.avgLatency,
                                 it->second.lastLatency,
                                 unstable ? "no" : "yes"
