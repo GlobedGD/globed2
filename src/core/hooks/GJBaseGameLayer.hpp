@@ -92,6 +92,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         BoolExt m_didJustJump1, m_didJustJump2;
 
         CCNode* m_playerNode = nullptr;
+        CCNode* m_uiNode = nullptr;
         GlobedGJBGL* m_self = nullptr;
         Ref<CCNode> m_progressBarContainer;
         Ref<VoiceOverlay> m_voiceOverlay;

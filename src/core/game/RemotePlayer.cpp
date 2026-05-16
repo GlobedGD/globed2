@@ -25,6 +25,7 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
     m_localPlayer = playerId == 0;
     m_data = DEFAULT_PLAYER_DATA;
 
+    auto gjbgl = GlobedGJBGL::get(gameLayer);
     auto start = asp::Instant::now();
 
     Build<VisualPlayer>::create(gameLayer, this, m_parentNode, false, playerId == 0)
@@ -57,11 +58,9 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
             m_progArrow = Build<ProgressArrow>::create()
                 .zOrder(2)
                 .id(fmt::format("remote-player-progress-{}"_spr, playerId))
-                .parent(gameLayer);
+                .parent(gjbgl->m_fields->m_uiNode);
 
         } else if (!plat && globed::setting<bool>("core.level.progress-indicators")) {
-            auto gjbgl = GlobedGJBGL::get(gameLayer);
-
             m_progIcon = Build<ProgressIcon>::create()
                 .zOrder(2)
                 .id(fmt::format("remote-player-progress-{}"_spr, playerId))

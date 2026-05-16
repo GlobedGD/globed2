@@ -136,11 +136,18 @@ void GlobedGJBGL::setupPostInit() {
 void GlobedGJBGL::setupNecessary() {
     auto& fields = *m_fields.self();
 
+    Build<CCNode>::create()
+        .contentSize(CCDirector::get()->getWinSize())
+        .id("ui-node"_spr)
+        .parent(m_uiLayer)
+        .zOrder(100)
+        .store(fields.m_uiNode);
+
     fields.m_pingOverlay = Build<PingOverlay>::create()
         .scale(0.38f)
         .zOrder(11)
         .id("game-overlay"_spr);
-    fields.m_pingOverlay->addToLayer(this);
+    fields.m_pingOverlay->addToLayer(fields.m_uiNode);
 
     auto& nm = NetworkManagerImpl::get();
     int levelId = m_level->m_levelID;
