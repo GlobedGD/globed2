@@ -4,7 +4,7 @@
 #include <globed/core/net/NetworkManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
-#include <UIBuilder.hpp>
+#include <ui/Core.hpp>
 
 using namespace geode::prelude;
 
@@ -32,7 +32,6 @@ public:
         m_ping = server.avgLatency;
         m_nameLabel->setString(server.name.c_str());
         m_regionLabel->setString(fmt::format("Region: {}", server.region).c_str());
-        m_pingLabel->setPosition(m_nameLabel->getPosition() + m_nameLabel->getScaledContentSize() + CCPoint{2.f, -27.f});
 
         if (m_ping == (uint32_t)-1) {
             m_pingLabel->setString("? ms");
@@ -41,6 +40,16 @@ public:
             m_pingLabel->setString(fmt::format("{} ms", m_ping).c_str());
             m_pingLabel->setColor(NetworkManager::latencyToColor(m_ping));
         }
+
+        m_playerCountLabel->setString(fmt::format("{}", server.playerCount));
+
+        m_playerCountContainer->updateLayout();
+        m_regionContainer->updateLayout();
+        m_mainContainer->updateLayout();
+
+        // i love labels
+        m_playerCountLabel->setPositionY(m_playerCountLabel->getPositionY() + 1.f);
+        m_playerCountContainer->setPositionY(m_playerCountContainer->getPositionY() - 2.f);
     }
 
     uint32_t getPing() {
@@ -50,9 +59,13 @@ public:
 private:
     RegionSelectPopup* m_popup;
     std::string m_stringId;
-    CCLabelBMFont* m_nameLabel;
-    CCLabelBMFont* m_regionLabel;
-    CCLabelBMFont* m_pingLabel;
+    CCNode* m_mainContainer;
+    CCNode* m_regionContainer;
+    Label* m_nameLabel;
+    Label* m_regionLabel;
+    Label* m_pingLabel;
+    Label* m_playerCountLabel;
+    CCNode* m_playerCountContainer;
     CCNode* m_button = nullptr;
     CCMenu* m_menu;
     uint32_t m_ping;
@@ -63,22 +76,40 @@ private:
 
         this->setContentSize({LIST_SIZE.width, CELL_HEIGHT});
 
-        m_nameLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
-            .limitLabelWidth(LIST_SIZE.width * 0.75f, 0.65f, 0.1f)
+        m_mainContainer = Build<RowContainer>::create()
             .anchorPoint(0.f, 0.5f)
-            .pos(8.f, CELL_HEIGHT / 2.f + 4.f)
+            .pos(8.f, CELL_HEIGHT / 2.f + 5.f)
             .parent(this);
 
-        m_regionLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
-            .limitLabelWidth(LIST_SIZE.width * 0.5f, 0.3f, 0.1f)
+        m_nameLabel = Build<Label>::create("", "bigFont.fnt")
+            .parent(m_mainContainer);
+        m_nameLabel->limitLabelWidth(LIST_SIZE.width * 0.65f, 0.65f, 0.1f);
+
+        m_playerCountContainer = Build(RowContainer::create(2.f))
+            .parent(m_mainContainer);
+
+        Build<CCSprite>::create("icon-person.png"_spr)
+            .scale(0.36f)
+            .parent(m_playerCountContainer);
+
+        m_playerCountLabel = Build<Label>::create("", "goldFont.fnt")
+            .scale(0.52f)
+            .parent(m_playerCountContainer);
+
+        // region / ping
+
+        m_regionContainer = Build(RowContainer::create(4.f))
             .anchorPoint(0.f, 0.5f)
             .pos(10.f, CELL_HEIGHT / 2.f - 10.f)
             .parent(this);
 
-        m_pingLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
-            .scale(0.35f)
-            .anchorPoint(0.f, 0.f)
-            .parent(this);
+        m_regionLabel = Build<Label>::create("", "bigFont.fnt")
+            .parent(m_regionContainer);
+        m_regionLabel->limitLabelWidth(LIST_SIZE.width * 0.5f, 0.3f, 0.1f);
+
+        m_pingLabel = Build<Label>::create("", "bigFont.fnt")
+            .scale(0.3f)
+            .parent(m_regionContainer);
 
         m_menu = Build<CCMenu>::create()
             .layout(RowLayout::create()->setAxisAlignment(AxisAlignment::End)->setAutoScale(false))
