@@ -30,7 +30,6 @@ using namespace geode::prelude;
 using namespace asp::time;
 
 constexpr auto EMOTE_COOLDOWN = Duration::fromMillis(2500);
-static constexpr bool APPLY_PERCENTAGE_FIX = true;
 
 namespace globed {
 
@@ -666,7 +665,7 @@ void GlobedGJBGL::selPostUpdate(float dt) {
     g_profilerFrame.postPeriodicalUpdate = Instant::now();
 
     // fix progressbar
-    if constexpr (APPLY_PERCENTAGE_FIX) {
+    if (globed::setting<bool>("core.level.fix-progress-bar")) {
         this->fixProgressBar(state.progress());
     }
 
@@ -698,6 +697,10 @@ void GlobedGJBGL::selPostUpdate(float dt) {
 void GlobedGJBGL::fixProgressBar(float percent) {
     auto pl = this->asPlayLayer();
     if (!pl || !pl->m_progressFill) return;
+
+    // don't modify the progress bar if someone moved it - run info does that with the "show in progress bar" option
+    float xPos = pl->m_progressFill->getPositionX();
+    if (xPos != 2.0f) return;
 
     pl->m_progressFill->setTextureRect({
         0.f, 0.f,
@@ -819,7 +822,7 @@ PlayerState GlobedGJBGL::getPlayerState() {
         float percent;
 
         if (m_level->m_timestamp > 0) {
-            if constexpr (APPLY_PERCENTAGE_FIX) {
+            if (globed::setting<bool>("core.level.fix-progress-bar")) {
                 percent = static_cast<float>(m_gameState.m_levelTime * 240.f) / m_level->m_timestamp * 100.f;
             } else {
                 percent = static_cast<float>(m_gameState.m_currentProgress) / m_level->m_timestamp / 2.f * 100.f;

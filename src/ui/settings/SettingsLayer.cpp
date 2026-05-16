@@ -373,6 +373,9 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.level.force-progressbar", "Force Progress Bar",
         "Forces the <cg>progress bar</c> to be shown in classic levels when connected to Globed, even if the user has it disabled."
     );
+    this->addSetting<BoolSettingCell>("core.level.fix-progress-bar", "Percentage Fix",
+        "Fixes icon under progress bar (and progress bar itself) starting at 0% instead of the startpos position. May interfere with mods that modify the progress bar."
+    );
 
     // Voice overlay
     this->addHeader("core.level.voice", "Voice Chat Overlay", m_levelUiTab);

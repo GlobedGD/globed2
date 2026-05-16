@@ -85,6 +85,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.level.force-progressbar", false);
     this->registerSetting("core.level.self-status-icons", true);
     this->registerSetting("core.level.self-name", false);
+    this->registerSetting("core.level.fix-progress-bar", true);
     this->registerSetting("core.level.voice-overlay", true);
     this->registerSetting("core.level.voice-overlay-threshold", 0.05f);
     this->registerSetting("core.level.voice-overlay-position", 3);
