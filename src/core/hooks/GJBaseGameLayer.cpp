@@ -1106,6 +1106,11 @@ void GlobedGJBGL::pausedUpdate(float dt) {
             child->onEnter();
         }
     }
+
+    // ui stuff might not update while paused, so manually update voice overlay
+    if (auto vo = m_fields->m_voiceOverlay) {
+        vo->update(0.f);
+    }
 }
 
 PlayLayer* GlobedGJBGL::asPlayLayer() {
