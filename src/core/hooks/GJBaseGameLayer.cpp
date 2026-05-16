@@ -250,7 +250,7 @@ void GlobedGJBGL::setupAudio() {
         FunctionQueue::get().queue([self = Ref(this), winSize] {
             bool onTop = globed::setting<bool>("core.audio.overlaying-overlay");
             CCNode* scene = self->getParent();
-            CCNode* parent = onTop && scene ? scene : self->m_uiLayer;
+            CCNode* parent = onTop && scene ? scene : self->m_fields->m_uiNode;
 
             self->m_fields->m_voiceOverlay = Build<VoiceOverlay>::create()
                 .parent(parent)
@@ -293,7 +293,7 @@ void GlobedGJBGL::setupUi() {
             .anchorPoint(0.f, 0.f)
             .pos(0.f, 0.f)
             .zOrder(10)
-            .parent(m_uiLayer);
+            .parent(fields.m_uiNode);
     }
 }
 
