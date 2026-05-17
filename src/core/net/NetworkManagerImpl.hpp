@@ -62,7 +62,8 @@ struct GameServer {
     asp::time::Instant lastPingTime = asp::time::Instant::now();
 
     /// updates latency, returns if the server latency is considered unstable
-    bool updateLatency(uint32_t latency, ExtraPingData extraData);
+    void updateLatency(uint32_t latency, ExtraPingData extraData);
+    bool unstable() const;
 };
 
 struct GameServerJoinRequest {

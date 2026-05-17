@@ -156,7 +156,19 @@ static int rankError(const qsox::SocketAddress& addr, qn::ConnectionType type, c
     }
 
     return score;
-};
+}
+
+static float rankServer(const globed::GameServer& srv) {
+    float steepness = 4.0f;
+    float weight = 3.0f;
+
+    float loadPenalty = std::powf(srv.load, steepness) * weight;
+    float unstablePenalty = srv.unstable() ? 1.f : 0.f;
+
+    float finalScore = srv.avgLatency * (1.f + loadPenalty + unstablePenalty);
+
+    return finalScore;
+}
 
 struct CapnpExceptionHandler : public kj::ExceptionCallback {
     bool errored = false;
@@ -259,7 +271,7 @@ static void updateServers(ConnectionInfo& info, auto& newServers) {
     info.m_gameServersUpdated = true;
 }
 
-bool GameServer::updateLatency(uint32_t latency, ExtraPingData extraData) {
+void GameServer::updateLatency(uint32_t latency, ExtraPingData extraData) {
     if (avgLatency == (uint32_t)-1) {
         avgLatency = latency;
     } else {
@@ -269,7 +281,9 @@ bool GameServer::updateLatency(uint32_t latency, ExtraPingData extraData) {
     load = extraData.load;
     playerCount = extraData.playerCount;
     lastLatency = latency;
+}
 
+bool GameServer::unstable() const {
     // consider unstable if the jitter is significant enough
     auto jitter = std::abs((int32_t)lastLatency - (int32_t)avgLatency);
     return jitter > (int32_t)(avgLatency * 0.5f) && jitter > 30;
@@ -698,7 +712,8 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                             auto edata = ExtraPingData::parse(res.extraData);
                             auto lat = (uint32_t)res.responseTime.millis();
 
-                            bool unstable = it->second.updateLatency(lat, edata);
+                            it->second.updateLatency(lat, edata);
+                            bool unstable = it->second.unstable();
                             log::debug(
                                 "Ping to server {} arrived, players: {}, load: {:.1f}%, latency: {}ms avg, {}ms last, stable: {}",
                                 srvkey,
@@ -1383,7 +1398,7 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer(bool useLatencyFal
     if (!servers.empty() && useLatencyFallback) {
         auto it = std::min_element(servers.begin(), servers.end(),
             [](const auto& a, const auto& b) {
-                return a.second.lastLatency < b.second.lastLatency;
+                return rankServer(a.second) < rankServer(b.second);
             });
         return it->second.id;
     }
