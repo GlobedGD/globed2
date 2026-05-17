@@ -165,7 +165,8 @@ static float rankServer(const globed::GameServer& srv) {
     float loadPenalty = std::powf(srv.load, steepness) * weight;
     float unstablePenalty = srv.unstable() ? 1.f : 0.f;
 
-    float finalScore = srv.avgLatency * (1.f + loadPenalty + unstablePenalty);
+    auto lat = std::min<uint32_t>(srv.avgLatency, 1000);
+    float finalScore = lat * (1.f + loadPenalty + unstablePenalty);
 
     return finalScore;
 }
@@ -715,13 +716,14 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                             it->second.updateLatency(lat, edata);
                             bool unstable = it->second.unstable();
                             log::debug(
-                                "Ping to server {} arrived, players: {}, load: {:.1f}%, latency: {}ms avg, {}ms last, stable: {}",
+                                "Ping to {} arrived, players: {}, load: {:.1f}%, latency: {}ms avg, {}ms last, stable: {}; overall score: {:.1f}",
                                 srvkey,
                                 edata.playerCount,
                                 edata.load * 100.f,
                                 it->second.avgLatency,
                                 it->second.lastLatency,
-                                unstable ? "no" : "yes"
+                                unstable ? "no" : "yes",
+                                rankServer(it->second)
                             );
 
                             // if at least one server is unstable, ping all servers again soon
