@@ -33,7 +33,8 @@ bool UserSettingsPopup::init() {
     this->addButton("core.user.hide-in-levels", "privacy-ingame-off.png"_spr, "privacy-ingame-on.png"_spr);
     this->addButton("core.user.hide-in-menus", "privacy-lists-off.png"_spr, "privacy-lists-on.png"_spr);
 
-    if (NetworkManagerImpl::get().isModerator()) {
+    auto roles = NetworkManagerImpl::get().getUserRoles();
+    if (!roles.empty()) {
         this->addButton("core.user.hide-roles", "privacy-roles-off.png"_spr, "privacy-roles-on.png"_spr);
     }
 
