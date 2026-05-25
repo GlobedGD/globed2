@@ -656,6 +656,8 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
         i.m_icons = m_connectingIcons;
         i.m_centralDict = m_centralEventEncoder.lock()->finalize(false);
         i.m_gameDict = m_gameEventEncoder.lock()->finalize(true);
+
+        log::debug("Finalized event dictionaries: {} central, {} game events", i.m_centralDict.events(), i.m_gameDict.events());
     }
 
     switch (connState) {
@@ -2377,6 +2379,8 @@ void NetworkManagerImpl::sendEvent(std::string_view id, std::vector<uint8_t> dat
 void NetworkManagerImpl::registerEvent(std::string_view id, EventServer server) {
     bool central = server == EventServer::Central || server == EventServer::Both;
     bool game = server == EventServer::Game || server == EventServer::Both;
+
+    log::debug("registering event '{}', central: {}, game: {}", id, central, game);
 
     if (central) {
         this->registerEventWith(id, *m_centralEventEncoder.lock());

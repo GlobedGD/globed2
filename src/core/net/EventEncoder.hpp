@@ -69,6 +69,10 @@ struct EventDictionary {
     std::vector<uint8_t> data;
     std::vector<asp::BoxedString> mapping;
 
+    size_t events() const {
+        return mapping.size();
+    }
+
     std::optional<asp::BoxedString> lookup(uint32_t id) const;
     std::optional<uint32_t> lookupId(std::string_view name) const;
 
