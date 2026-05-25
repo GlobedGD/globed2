@@ -64,6 +64,7 @@ struct GameServer {
     /// updates latency, returns if the server latency is considered unstable
     void updateLatency(uint32_t latency, ExtraPingData extraData);
     bool unstable() const;
+    float getScore() const;
 };
 
 struct GameServerJoinRequest {

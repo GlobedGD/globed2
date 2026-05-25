@@ -158,14 +158,14 @@ static int rankError(const qsox::SocketAddress& addr, qn::ConnectionType type, c
     return score;
 }
 
-static float rankServer(const globed::GameServer& srv) {
+float GameServer::getScore() const {
     float steepness = 4.0f;
     float weight = 3.0f;
 
-    float loadPenalty = std::powf(srv.load, steepness) * weight;
-    float unstablePenalty = srv.unstable() ? 1.f : 0.f;
+    float loadPenalty = std::powf(this->load, steepness) * weight;
+    float unstablePenalty = this->unstable() ? 1.f : 0.f;
 
-    auto lat = std::min<uint32_t>(srv.avgLatency, 1000);
+    auto lat = std::min<uint32_t>(this->avgLatency, 1000);
     float finalScore = lat * (1.f + loadPenalty + unstablePenalty);
 
     return finalScore;
@@ -725,7 +725,7 @@ Future<> NetworkManagerImpl::threadWorkerLoop() {
                                 it->second.avgLatency,
                                 it->second.lastLatency,
                                 unstable ? "no" : "yes",
-                                rankServer(it->second)
+                                it->second.getScore()
                             );
 
                             // if at least one server is unstable, ping all servers again soon
@@ -1402,7 +1402,7 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer(bool useLatencyFal
     if (!servers.empty() && useLatencyFallback) {
         auto it = std::min_element(servers.begin(), servers.end(),
             [](const auto& a, const auto& b) {
-                return rankServer(a.second) < rankServer(b.second);
+                return a.second.getScore() < b.second.getScore();
             });
         return it->second.id;
     }

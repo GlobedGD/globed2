@@ -30,6 +30,7 @@ public:
 
     void softRefreshFrom(const GameServer& server) {
         m_ping = server.avgLatency;
+        m_score = server.getScore();
         m_nameLabel->setString(server.name.c_str());
         m_regionLabel->setString(fmt::format("Region: {}", server.region).c_str());
 
@@ -56,6 +57,10 @@ public:
         return m_ping;
     }
 
+    float getScore() {
+        return m_score;
+    }
+
 private:
     RegionSelectPopup* m_popup;
     std::string m_stringId;
@@ -69,6 +74,7 @@ private:
     CCNode* m_button = nullptr;
     CCMenu* m_menu;
     uint32_t m_ping;
+    float m_score = 0.f;
 
     void init(const GameServer& server, bool active) {
         m_stringId = server.stringId;
@@ -186,7 +192,7 @@ bool RegionSelectPopup::reloadList() {
     }
 
     m_list->sortAs<$unity::ListCell>([](auto a, auto b) {
-        return a->getPing() < b->getPing();
+        return a->getScore() < b->getScore();
     });
 
     return m_list->size() > 0;
