@@ -20,12 +20,6 @@ PlayerSubtable::PlayerSubtable() : VTable(sizeof(PlayerSubtable)) {}
 MiscSubtable::MiscSubtable() : VTable(sizeof(MiscSubtable)) {}
 RoomSubtable::RoomSubtable() : VTable(sizeof(RoomSubtable)) {}
 
-static RootApiTable* g_table = nullptr;
-
-Result<RootApiTable*> getRootTable() {
-    return Ok(g_table);
-}
-
 static NetSubtable* makeNetTable() {
     auto table = new NetSubtable;
 
@@ -316,13 +310,18 @@ static RoomSubtable* makeRoomTable() {
     return table;
 }
 
-$execute {
-    g_table = new RootApiTable;
-    g_table->net = makeNetTable();
-    g_table->game = makeGameTable();
-    g_table->player = makePlayerTable();
-    g_table->misc = makeMiscTable();
-    g_table->room = makeRoomTable();
+Result<RootApiTable*> getRootTable() {
+    static auto g_table = []{
+        RootApiTable table {};
+        table.net = makeNetTable();
+        table.game = makeGameTable();
+        table.player = makePlayerTable();
+        table.misc = makeMiscTable();
+        table.room = makeRoomTable();
+        return table;
+    }();
+
+    return Ok(&g_table);
 }
 
 }
