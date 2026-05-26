@@ -158,19 +158,6 @@ static int rankError(const qsox::SocketAddress& addr, qn::ConnectionType type, c
     return score;
 }
 
-float GameServer::getScore() const {
-    float steepness = 4.0f;
-    float weight = 3.0f;
-
-    float loadPenalty = std::powf(this->load, steepness) * weight;
-    float unstablePenalty = this->unstable() ? 1.f : 0.f;
-
-    auto lat = std::min<uint32_t>(this->avgLatency, 1000);
-    float finalScore = lat * (1.f + loadPenalty + unstablePenalty);
-
-    return finalScore;
-}
-
 struct CapnpExceptionHandler : public kj::ExceptionCallback {
     bool errored = false;
 
@@ -282,6 +269,19 @@ void GameServer::updateLatency(uint32_t latency, ExtraPingData extraData) {
     load = extraData.load;
     playerCount = extraData.playerCount;
     lastLatency = latency;
+}
+
+float GameServer::getScore() const {
+    float steepness = 4.0f;
+    float weight = 3.0f;
+
+    float loadPenalty = std::powf(this->load, steepness) * weight;
+    float unstablePenalty = this->unstable() ? 1.f : 0.f;
+
+    auto lat = std::min<uint32_t>(this->avgLatency, 1000);
+    float finalScore = lat * (1.f + loadPenalty + unstablePenalty);
+
+    return finalScore;
 }
 
 bool GameServer::unstable() const {
