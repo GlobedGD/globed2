@@ -43,6 +43,8 @@ We temporarily store server logs to keep <cj>Globed</c> running properly. These 
 
 We may also keep some anonymous data for statistics, such as which levels are played most often. This data cannot be used to identify you.
 
+We also permanently store certain data when you link your <cb>Discord</c> account, specifically your <cb>Discord</c> ID and username. You can unlink your discord account in-game, or by emailing <cy>help@globed.dev</c>.
+
 # Argon Authentication
 We use [Argon](https://github.com/GlobedGD/argon) for verifying accounts. Argon sends a one-time message to a <cy>bot account</c> on the behalf of your <cg>Geometry Dash account</c>, and after verification that message is deleted. By using Globed, you agree to allow Argon to send this message.
 
