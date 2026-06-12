@@ -41,7 +41,7 @@ static constexpr auto ARGON_TEXT = R"(
 # Privacy Policy
 We temporarily store server logs to keep <cj>Globed</c> running properly. These logs may include your <cy>account ID</c>, <cy>username</c>, <cy>platform</c>, <cy>IP address</c>, <cy>connection type</c>, the <cy>levels or rooms</c> you join, and other in-game behavior. All logs are used strictly for <cg>debugging</c> and <cg>statistical purposes</c>, and are never kept for more than 30 days.
 
-We may also keep some anonymous data for statistics, such as which levels are played most often. This data cannot be used to identify you.
+We may also keep some anonymous data for statistics, such as which levels are played most often. This data cannot be used to identify you. No data is ever shared with third parties.
 
 We also permanently store certain data when you link your <cb>Discord</c> account, specifically your <cb>Discord</c> ID and username. You can unlink your discord account in-game, or by emailing <cy>help@globed.dev</c>.
 
