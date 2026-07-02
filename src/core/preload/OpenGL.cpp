@@ -15,7 +15,9 @@ void OpenGLInfo::initialize() {
         version.first, version.second
     );
     auto v = (const char*)glGetString(GL_VERSION);
+    auto r = (const char*)glGetString(GL_RENDERER);
     log::info("OpenGL version: {}", v ? v : "<null>");
+    log::info("OpenGL renderer: {}", r ? r : "<null>");
 }
 
 void OpenGLInfo::initOpenGLVersion() {
