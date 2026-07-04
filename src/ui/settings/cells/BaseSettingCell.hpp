@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
+#include <Geode/ui/Button.hpp>
 #include <cocos2d.h>
 #include <globed/util/CStr.hpp>
 #include <globed/core/SettingsManager.hpp>
@@ -17,7 +17,7 @@ protected:
     CStr m_desc;
     cocos2d::CCSize m_size;
     cocos2d::CCMenu* m_rightMenu;
-    CCMenuItemSpriteExtra* m_infoButton = nullptr;
+    geode::Button* m_infoButton = nullptr;
 
     bool init(CStr key, CStr name, CStr desc, cocos2d::CCSize cellSize);
     bool initNoSetting(CStr name, CStr desc, cocos2d::CCSize cellSize);

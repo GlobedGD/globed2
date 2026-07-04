@@ -14,7 +14,7 @@ private:
     GJGameLevel* m_level;
     geode::TextInput* m_noteInput;
     CCMenu* m_menu;
-    CCMenuItemSpriteExtra* m_diffButton = nullptr;
+    geode::Button* m_diffButton = nullptr;
 
     FeatureTier m_chosenTier = FeatureTier::Featured;
 

@@ -17,8 +17,8 @@ private:
     cue::ListNode* m_list;
     MessageListener<msg::GlobalPlayersMessage> m_listener;
     CCMenu* m_rightSideMenu;
-    CCMenuItemSpriteExtra* m_searchBtn;
-    CCMenuItemSpriteExtra* m_clearSearchBtn;
+    geode::Button* m_searchBtn;
+    geode::Button* m_clearSearchBtn;
     std::string m_filter;
 
     bool init() override;

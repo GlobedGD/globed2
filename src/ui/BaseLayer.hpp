@@ -17,7 +17,7 @@ public:
 
 protected:
     cocos2d::CCMenu* m_backMenu = nullptr;
-    CCMenuItemSpriteExtra* m_backButton = nullptr;
+    geode::Button* m_backButton = nullptr;
     cocos2d::CCSprite* m_background = nullptr;
 
     bool init(bool background = true);

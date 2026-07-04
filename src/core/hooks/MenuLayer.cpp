@@ -102,8 +102,7 @@ void HookedMenuLayer::recreateButton() {
     };
 
     if (!fields.btn) {
-        fields.btn = Build<CCNode>(makeSprite())
-            .intoMenuItem(this, menu_selector(HookedMenuLayer::onGlobedButton))
+        fields.btn = Build(CCMenuItemSpriteExtra::create(makeSprite(), this, menu_selector(HookedMenuLayer::onGlobedButton)))
             .zOrder(5) // force it to be at the end of the layout for consistency
             .id("main-menu-button"_spr)
             .parent(parent)

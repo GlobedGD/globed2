@@ -30,7 +30,7 @@ protected:
         Menu, Ingame, Invites
     };
 
-    CCMenuItemSpriteExtra* m_usernameBtn;
+    geode::Button* m_usernameBtn;
     LazyPlayerIcon* m_cubeIcon;
     CCNode* m_leftContainer;
     CCMenu* m_rightMenu;

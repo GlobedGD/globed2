@@ -11,7 +11,7 @@ public:
 private:
     APSSettings m_settings;
     geode::ListenerHandle m_listener;
-    CCMenuItemSpriteExtra* m_btn;
+    geode::Button* m_btn;
     bool m_dirty = false;
 
     bool init();

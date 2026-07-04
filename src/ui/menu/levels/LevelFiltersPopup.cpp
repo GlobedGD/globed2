@@ -179,7 +179,7 @@ bool LevelFiltersPopup::init(LevelListLayer* layer) {
         .parent(difficultyRoot)
         .collect();
 
-    for (auto [name, diff] : std::initializer_list<std::tuple<const char*, Difficulty>>{
+    for (auto& [name, diff] : std::initializer_list<std::tuple<const char*, Difficulty>>{
         {"difficulty_00_btn_001.png", NA},
         {"difficulty_01_btn_001.png", Easy},
         {"difficulty_02_btn_001.png", Normal},
@@ -191,10 +191,10 @@ bool LevelFiltersPopup::init(LevelListLayer* layer) {
     }) {
         auto* btn = Build<CCSprite>::createSpriteName(name)
             .scale(0.8f)
-            .intoMenuItem([this, diff](CCMenuItemSpriteExtra* btn) {
+            .intoMenuItem([this, diff](geode::Button* btn) {
                 if (diff == HardDemon) {
                     auto popup = DemonFilterPopup::create(m_filters);
-                    popup->setCallback([this](bool active, auto&& demonDiffs) {
+                    popup->setCallback([this](bool active, auto demonDiffs) {
                         if (!active) {
                             m_filters.demonDifficulty.clear();
                             m_filters.difficulty.erase(HardDemon);
@@ -262,7 +262,7 @@ bool LevelFiltersPopup::init(LevelListLayer* layer) {
     Build<CCSprite>::createSpriteName("GJ_timeIcon_001.png")
         .parent(lengthMenu);
 
-    for (auto [name, len] : std::initializer_list<std::tuple<const char*, int>>{
+    for (auto& [name, len] : std::initializer_list<std::tuple<const char*, int>>{
         {"Tiny", 0},
         {"Short", 1},
         {"Medium", 2},
@@ -273,7 +273,7 @@ bool LevelFiltersPopup::init(LevelListLayer* layer) {
 
         Build<CCLabelBMFont>::create(name, "bigFont.fnt")
             .scale(0.5f)
-            .intoMenuItem([this, len](CCMenuItemSpriteExtra* btn) {
+            .intoMenuItem([this, len](geode::Button* btn) {
                 bool willEnable = btn->getColor().r != activeColor.r;
 
                 if (willEnable) {
@@ -291,7 +291,7 @@ bool LevelFiltersPopup::init(LevelListLayer* layer) {
 
     Build<CCSprite>::createSpriteName("GJ_sStarsIcon_001.png")
         .scale(1.2f)
-        .intoMenuItem([this](CCMenuItemSpriteExtra* btn) {
+        .intoMenuItem([this](geode::Button* btn) {
             bool willEnable = btn->getColor().r != activeColor.r;
 
             if (willEnable) {

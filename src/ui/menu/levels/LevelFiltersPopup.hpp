@@ -24,7 +24,7 @@ protected:
     Filters m_filters;
     CCMenuItemToggler* m_btnCompleted;
     CCMenuItemToggler* m_btnUncompleted;
-    std::map<globed::Difficulty, CCMenuItemSpriteExtra*> diffButtons;
+    std::map<globed::Difficulty, geode::Button*> diffButtons;
 
     bool init(LevelListLayer* layer);
     void onClose(cocos2d::CCObject*) override;

@@ -19,8 +19,8 @@ public:
     void setCallback(Callback&& cb);
 private:
     std::set<Difficulty> m_demonTypes;
-    std::map<Difficulty, CCMenuItemSpriteExtra*> m_demonButtons;
-    CCMenuItemSpriteExtra* m_generalDemonButton;
+    std::map<Difficulty, geode::Button*> m_demonButtons;
+    geode::Button* m_generalDemonButton;
     Callback m_callback;
     bool m_isFilteringGeneral = false;
 

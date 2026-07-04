@@ -23,7 +23,7 @@ public:
 protected:
     cue::ListNode* m_list = nullptr;
     Callback m_callback;
-    CCMenuItemSpriteExtra* m_safeModeBtn;
+    geode::Button* m_safeModeBtn;
     bool m_canModify = true;
 
     enum class RoomSettingKind {

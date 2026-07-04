@@ -26,7 +26,7 @@ private:
     friend class AudioDeviceSetupPopup;
     AudioRecordingDevice m_device;
     AudioDeviceSetupPopup* m_popup;
-    CCMenuItemSpriteExtra* m_btnSelect;
+    geode::Button* m_btnSelect;
     CCSprite* m_btnSelected;
     CCLabelBMFont* m_labelName;
     int m_activeId;

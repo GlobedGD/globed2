@@ -24,16 +24,16 @@ private:
     cocos2d::CCMenu* m_emoteMenu;
     cocos2d::CCMenu* m_favoriteEmotesMenu;
 
-    CCMenuItemSpriteExtra* m_clearFavoriteBtn;
+    geode::Button* m_clearFavoriteBtn;
 
     cue::ListNode* m_list;
     cue::ListNode* m_bottomList;
 
-    CCMenuItemSpriteExtra* m_submitBtn;
+    geode::Button* m_submitBtn;
     ButtonSprite* m_submitBtnSpr;
 
-    CCMenuItemSpriteExtra* m_leftPageBtn;
-    CCMenuItemSpriteExtra* m_rightPageBtn;
+    geode::Button* m_leftPageBtn;
+    geode::Button* m_rightPageBtn;
 
     cocos2d::CCLabelBMFont* m_pageLabel;
 

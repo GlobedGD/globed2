@@ -17,8 +17,8 @@ public:
 protected:
     cocos2d::CCNode* m_playerCard;
     geode::NineSlice* m_background;
-    CCMenuItemSpriteExtra* m_discordBtn = nullptr;
-    CCMenuItemSpriteExtra* m_activeBtn = nullptr;
+    geode::Button* m_discordBtn = nullptr;
+    geode::Button* m_activeBtn = nullptr;
     cocos2d::CCNode* m_statusContainer = nullptr;
     cocos2d::CCNode* m_dataContainer = nullptr;
     cocos2d::CCLabelBMFont* m_statusLabel = nullptr;

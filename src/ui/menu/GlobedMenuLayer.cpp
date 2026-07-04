@@ -103,8 +103,8 @@ public:
 
 protected:
     SessionId m_sessionId;
-    CCMenuItemSpriteExtra* m_joinBtn = nullptr;
-    CCMenuItemSpriteExtra* m_modBtn = nullptr;
+    geode::Button* m_joinBtn = nullptr;
+    geode::Button* m_modBtn = nullptr;
     static constexpr CCSize BTN_SIZE { 22.f, 22.f };
 
     bool customSetup() {
@@ -796,7 +796,7 @@ void GlobedMenuLayer::initSideButtons() {
 
     constexpr static CCSize buttonSize {30.f, 30.f};
 
-    auto makeButton = [](CCSprite* sprite, CCNode* parent, int zOrder, const char* id, auto cb) -> CCMenuItemSpriteExtra* {
+    auto makeButton = [](CCSprite* sprite, CCNode* parent, int zOrder, const char* id, auto cb) -> geode::Button* {
         if (!sprite) {
             log::error("Sprite is null for {}!", id);
             return nullptr;
@@ -1060,7 +1060,7 @@ void GlobedMenuLayer::initFarSideButtons() {
 
         auto fbutton = Build<CCSprite>::create("feature01.png"_spr)
             .with([&](auto btn) { cue::rescaleToMatch(btn, g_sideButtonSize); })
-            .intoMenuItem(+[](CCMenuItemSpriteExtra* self) {
+            .intoMenuItem(+[](geode::Button* self) {
                 FeaturedPopup::create()->show();
 
                 // make it not new
@@ -1099,10 +1099,10 @@ void GlobedMenuLayer::initFarSideButtons() {
     m_farRightMenu->updateLayout();
 }
 
-std::vector<Ref<CCMenuItemSpriteExtra>> GlobedMenuLayer::createCommonButtons(bool loggedIn) {
+std::vector<Ref<geode::Button>> GlobedMenuLayer::createCommonButtons(bool loggedIn) {
     using namespace $unity;
 
-    std::vector<Ref<CCMenuItemSpriteExtra>> out;
+    std::vector<Ref<geode::Button>> out;
 
     // credits
     out.push_back(Build<CCSprite>::create("support01.png"_spr)

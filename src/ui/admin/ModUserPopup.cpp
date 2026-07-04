@@ -131,30 +131,7 @@ void ModUserPopup::initUi() {
     this->createMuteAndBanButtons();
 
     // Whitelist button
-    m_whitelistButton = Build<CCSprite>::create(m_data->whitelisted ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr)
-        .scale(btnScale)
-        .intoMenuItem([this](CCMenuItemSpriteExtra* btn) {
-            globed::confirmPopup(
-                "Confirm",
-                m_data->whitelisted ?
-                    "Are you sure you want to remove this person from the whitelist?"
-                    : "Are you sure you want to whitelist this person?",
-                "Cancel",
-                "Yes",
-                [this](auto) {
-                    bool newv = !m_data->whitelisted;
-                    waitForAdminResult([this, newv](auto r) {
-                        if (r.isOk()) {
-                            this->resetWhitelisted(newv);
-                        }
-                    });
-
-                    NetworkManagerImpl::get().sendAdminSetWhitelisted(m_data->accountId, newv);
-                }
-            );
-        })
-        .zOrder(btnorder::Whitelist)
-        .parent(m_rootMenu);
+    this->resetWhitelisted(m_data->whitelisted);
 
     // History button
     Build<CCSprite>::create("button-admin-history.png"_spr)
@@ -279,10 +256,32 @@ void ModUserPopup::recreateRoleButton() {
 void ModUserPopup::resetWhitelisted(bool whitelisted) {
     m_data->whitelisted = whitelisted;
 
-    m_whitelistButton->setSprite(
-        Build<CCSprite>::create(whitelisted ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr)
-            .scale(btnScale)
-    );
+    cue::resetNode(m_whitelistButton);
+    m_whitelistButton = Build<CCSprite>::create(m_data->whitelisted ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr)
+        .scale(btnScale)
+        .intoMenuItem([this](auto btn) {
+            globed::confirmPopup(
+                "Confirm",
+                m_data->whitelisted ?
+                    "Are you sure you want to remove this person from the whitelist?"
+                    : "Are you sure you want to whitelist this person?",
+                "Cancel",
+                "Yes",
+                [this](auto) {
+                    bool newv = !m_data->whitelisted;
+                    waitForAdminResult([this, newv](auto r) {
+                        if (r.isOk()) {
+                            this->resetWhitelisted(newv);
+                        }
+                    });
+
+                    NetworkManagerImpl::get().sendAdminSetWhitelisted(m_data->accountId, newv);
+                }
+            );
+        })
+        .zOrder(btnorder::Whitelist)
+        .parent(m_rootMenu);
+
 }
 
 void ModUserPopup::createMuteAndBanButtons() {

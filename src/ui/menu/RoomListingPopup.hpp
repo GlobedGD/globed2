@@ -30,8 +30,8 @@ protected:
     bool m_loading = false;
     cocos2d::extension::CCScale9Sprite* m_background;
     cue::ListNode* m_list;
-    CCMenuItemSpriteExtra* m_searchBtn = nullptr;
-    CCMenuItemSpriteExtra* m_clearSearchBtn = nullptr;
+    geode::Button* m_searchBtn = nullptr;
+    geode::Button* m_clearSearchBtn = nullptr;
     std::vector<std::vector<RoomListingInfo>> m_allRooms;
     MessageListener<msg::RoomListMessage> m_roomListListener;
 

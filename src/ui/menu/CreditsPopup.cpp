@@ -53,7 +53,7 @@ private:
             .collect();
 
         // name
-        CCMenuItemSpriteExtra* nameLabel;
+        geode::Button* nameLabel;
         auto menu = Build<CCLabelBMFont>::create(user.displayName.c_str(), "goldFont.fnt")
             .scale(0.45f)
             .limitLabelWidth(52.f, 0.45f, 0.05f)

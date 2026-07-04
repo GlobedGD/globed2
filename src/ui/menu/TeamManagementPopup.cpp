@@ -60,7 +60,7 @@ public:
 private:
     TeamManagementPopup* m_popup;
     ColorChannelSprite* m_colorSprite;
-    CCMenuItemSpriteExtra* m_joinBtn = nullptr;
+    geode::Button* m_joinBtn = nullptr;
     CCNode* m_rightContainer;
     ccColor4B m_color;
     ccColor4B m_originalColor;

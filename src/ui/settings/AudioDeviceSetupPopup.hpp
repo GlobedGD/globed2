@@ -21,7 +21,7 @@ public:
     void applyAudioDevice(const FMOD_GUID& guid);
 
 private:
-    Ref<CCMenuItemSpriteExtra> m_recordButton, m_stopButton;
+    Ref<geode::Button> m_recordButton, m_stopButton;
     cue::ListNode* m_list;
     AudioVisualizer* m_visualizer;
     CCMenu* m_visualizerContainer;

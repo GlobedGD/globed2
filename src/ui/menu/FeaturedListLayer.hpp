@@ -19,9 +19,9 @@ private:
     uint32_t m_page = 0;
     uint32_t m_totalPages = 0;
     CCLabelBMFont* m_levelsLabel;
-    CCMenuItemSpriteExtra* m_prevButton;
-    CCMenuItemSpriteExtra* m_nextButton;
-    CCMenuItemSpriteExtra* m_refreshBtn;
+    geode::Button* m_prevButton;
+    geode::Button* m_nextButton;
+    geode::Button* m_refreshBtn;
     cue::ListNode* m_list;
     cue::LoadingCircle* m_circle = nullptr;
     bool m_loading = false;

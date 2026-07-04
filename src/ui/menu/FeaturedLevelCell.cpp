@@ -125,7 +125,7 @@ void FeaturedLevelCell::createCell() {
         cvoltonID->setVisible(false);
     }
 
-    auto playBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(levelcell->m_mainLayer->getChildByIDRecursive("view-button"));
+    auto playBtn = levelcell->m_mainLayer->getChildByIDRecursive("view-button");
     auto playBtnParent = levelcell->getChildByIDRecursive("main-menu") ?: menu;
 
     if (playBtnParent && playBtn) {

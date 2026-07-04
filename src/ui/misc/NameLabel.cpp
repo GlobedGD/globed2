@@ -119,7 +119,7 @@ void NameLabel::updateSelfWidth() {
     }
 }
 
-void NameLabel::onClick(CCMenuItemSpriteExtra* btn) {
+void NameLabel::onClick(geode::Button* btn) {
     if (m_callback) {
         m_callback(btn);
     }
@@ -291,7 +291,7 @@ void NameLabel::updateOpacity(unsigned char opacity) {
     }
 }
 
-void NameLabel::makeClickable(geode::Function<void(CCMenuItemSpriteExtra*)> callback) {
+void NameLabel::makeClickable(geode::Function<void(geode::Button*)> callback) {
     m_callback = std::move(callback);
     m_labelButton->setEnabled(true);
 }

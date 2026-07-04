@@ -45,7 +45,7 @@ private:
     friend class LevelFiltersPopup;
 
     cue::ListNode* m_list = nullptr;
-    geode::Ref<CCMenuItemSpriteExtra> m_btnPagePrev, m_btnPageNext, m_btnRefresh, m_btnFilters;
+    geode::Ref<geode::Button> m_btnPagePrev, m_btnPageNext, m_btnRefresh, m_btnFilters;
     geode::Ref<cue::LoadingCircle> m_loadingCircle;
     // GlobedFeaturedLevel currentFeaturedLevel;
 

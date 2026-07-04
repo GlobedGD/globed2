@@ -321,7 +321,7 @@ void EmoteListPopup::loadEmoteListPage(int page) {
             continue;
         }
 
-        CCMenuItemSpriteExtra* emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
+        auto* emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
             .contentSize(35.f, 35.f)
             .color(selected ? ccColor3B(0, 255, 0) : ccColor3B(0, 0, 0))
             .opacity(180)
@@ -330,7 +330,8 @@ void EmoteListPopup::loadEmoteListPage(int page) {
             })
             .id(fmt::format("emote-btn-{}", emoteId))
             .scaleMult(1.1f)
-            .parent(m_emoteMenu);
+            .parent(m_emoteMenu)
+            .collect();
 
         sprite->setPosition(emoteBtn->getContentSize() / 2.f);
         emoteBtn->addChild(sprite, 5);
@@ -442,7 +443,7 @@ void EmoteListPopup::loadFavoriteEmotesList() {
             sprite = EmoteManager::get().createEmote(0);
         }
 
-        CCMenuItemSpriteExtra* emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
+        auto emoteBtn = Build<CCScale9Sprite>::create("emote-btn-back.png"_spr)
             .contentSize(35.f, 35.f)
             .color(selected ? ccColor3B{255, 230, 0} : ccColor3B{0, 0, 0})
             .opacity(180)
@@ -451,7 +452,8 @@ void EmoteListPopup::loadFavoriteEmotesList() {
             })
             .id(fmt::format("emote-favorite-btn-{}", i))
             .scaleMult(1.1f)
-            .parent(m_favoriteEmotesMenu);
+            .parent(m_favoriteEmotesMenu)
+            .collect();
 
 
         sprite->setPosition(emoteBtn->getContentSize() / 2.f);

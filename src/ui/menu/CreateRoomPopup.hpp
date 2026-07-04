@@ -23,7 +23,7 @@ private:
     geode::TextInput* m_playerLimitInput;
     CCNode* m_inputsWrapper;
     RoomSettings m_settings{};
-    CCMenuItemSpriteExtra* m_safeModeBtn = nullptr;
+    geode::Button* m_safeModeBtn = nullptr;
     CCMenuItemToggler* m_twoPlayerBtn = nullptr;
     CCMenuItemToggler* m_deathlinkBtn = nullptr;
     CCMenuItemToggler* m_switcherooBtn = nullptr;

@@ -29,12 +29,12 @@ public:
 private:
     CCMenu* m_connectMenu;
     geode::NineSlice* m_connectMenuBg;
-    CCMenuItemSpriteExtra* m_editServerButton;
+    geode::Button* m_editServerButton;
     CCLabelBMFont* m_serverNameLabel;
-    CCMenuItemSpriteExtra* m_connectButton;
+    geode::Button* m_connectButton;
     CCLabelBMFont* m_connStateLabel;
     CCNode* m_connStateContainer;
-    CCMenuItemSpriteExtra* m_cancelConnButton;
+    geode::Button* m_cancelConnButton;
     MenuState m_state = MenuState::None;
     ConnectionState m_lastConnState;
 
@@ -42,14 +42,14 @@ private:
     cue::ListNode* m_playerList;
     Label* m_roomNameLabel;
     Label* m_preferredServerLabel;
-    CCMenuItemSpriteExtra* m_roomNameButton;
+    geode::Button* m_roomNameButton;
     CCMenu* m_roomButtonsMenu;
     CCMenu* m_rightSideMenu = nullptr;
     CCMenu* m_leftSideMenu = nullptr;
     CCMenu* m_farLeftMenu = nullptr;
     CCMenu* m_farRightMenu = nullptr;
-    CCMenuItemSpriteExtra* m_searchBtn = nullptr;
-    CCMenuItemSpriteExtra* m_clearSearchBtn = nullptr;
+    geode::Button* m_searchBtn = nullptr;
+    geode::Button* m_clearSearchBtn = nullptr;
     MessageListener<msg::RoomStateMessage> m_roomStateListener;
     MessageListener<msg::RoomPlayersMessage> m_roomPlayersListener;
     MessageListener<msg::PinnedLevelUpdatedMessage> m_pinnedListener;
@@ -90,7 +90,7 @@ private:
     void copyRoomIdToClipboard();
     void requestRoomState();
     bool shouldAutoRefresh(float dt);
-    std::vector<geode::Ref<CCMenuItemSpriteExtra>> createCommonButtons(bool loggedIn);
+    std::vector<geode::Ref<geode::Button>> createCommonButtons(bool loggedIn);
     void reloadWithFilter(const std::string& filter);
 
     void addPinnedLevelCell();

@@ -29,11 +29,11 @@ protected:
     CCMenu* m_nameLayout = nullptr;
     CCMenu* m_rootMenu = nullptr;
     CCNode* m_rootLayout = nullptr;
-    CCMenuItemSpriteExtra* m_roleModifyButton = nullptr;
-    CCMenuItemSpriteExtra* m_banButton = nullptr;
-    CCMenuItemSpriteExtra* m_whitelistButton = nullptr;
-    CCMenuItemSpriteExtra* m_muteButton = nullptr;
-    CCMenuItemSpriteExtra* m_roomBanButton = nullptr;
+    geode::Button* m_roleModifyButton = nullptr;
+    geode::Button* m_banButton = nullptr;
+    geode::Button* m_whitelistButton = nullptr;
+    geode::Button* m_muteButton = nullptr;
+    geode::Button* m_roomBanButton = nullptr;
 
     struct Data {
         int accountId = 0;

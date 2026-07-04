@@ -30,7 +30,7 @@ public:
 
 protected:
     geode::Ref<geode::TextInput> m_input;
-    CCMenuItemSpriteExtra* m_submitBtn;
+    geode::Button* m_submitBtn;
     geode::Function<void(InputPopupOutcome)> m_callback;
     cocos2d::CCSize m_mySize{};
     std::string m_defaultText;

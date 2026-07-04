@@ -65,7 +65,7 @@ private:
     ConsentCallback m_callback;
     CCMenuItemToggler* m_vcButton = nullptr;
     CCMenuItemToggler* m_qcButton = nullptr;
-    CCMenuItemSpriteExtra* m_acceptBtn;
+    geode::Button* m_acceptBtn;
     bool m_rulesAccepted = false;
     bool m_privacyAccepted = false;
 

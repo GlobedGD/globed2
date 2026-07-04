@@ -55,7 +55,7 @@ bool DemonFilterPopup::init(const LevelListLayer::Filters& filters) {
     // Demon button - different from the rest
     Build<CCSprite>::createSpriteName("difficulty_06_btn_001.png")
         .scale(btnScale)
-        .intoMenuItem([this](CCMenuItemSpriteExtra* btn) {
+        .intoMenuItem([this](geode::Button* btn) {
             bool willEnable = btn->getColor().r != activeColor.r;
 
             if (willEnable) {
@@ -85,7 +85,7 @@ bool DemonFilterPopup::init(const LevelListLayer::Filters& filters) {
     }) {
         auto btn = Build<CCSprite>::createSpriteName(name)
             .scale(btnScale)
-            .intoMenuItem([this, type](CCMenuItemSpriteExtra* btn) {
+            .intoMenuItem([this, type](geode::Button* btn) {
                 bool willEnable = btn->getColor().r != activeColor.r;
 
                 if (willEnable) {

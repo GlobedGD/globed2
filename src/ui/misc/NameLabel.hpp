@@ -12,7 +12,7 @@ class NameLabel : public cocos2d::CCMenu {
 public:
     static NameLabel* create(const std::string& name, const char* font = "chatFont.fnt");
 
-    void makeClickable(geode::Function<void(CCMenuItemSpriteExtra*)> callback);
+    void makeClickable(geode::Function<void(geode::Button*)> callback);
     void updateName(const std::string& name);
     void updateName(const char* name);
     void updateTeam(size_t idx, cocos2d::ccColor4B color);
@@ -34,9 +34,9 @@ private:
     Label* m_labelShadow = nullptr;
     Label* m_teamLabel = nullptr;
     geode::Ref<cocos2d::CCNode> m_labelContainer = nullptr;
-    CCMenuItemSpriteExtra* m_labelButton = nullptr;
+    geode::Button* m_labelButton = nullptr;
     cocos2d::CCNode* m_badgeContainer = nullptr;
-    geode::Function<void(CCMenuItemSpriteExtra*)> m_callback;
+    geode::Function<void(geode::Button*)> m_callback;
     const char* m_font = nullptr;
     bool m_multipleBadges = false;
     bool m_shadow = true;
@@ -46,7 +46,7 @@ private:
 
     bool init(const std::string& name, const char* font);
     void resizeBadgeContainer();
-    void onClick(CCMenuItemSpriteExtra* btn);
+    void onClick(geode::Button* btn);
     void updateLabelColors();
 };
 

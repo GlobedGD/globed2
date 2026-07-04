@@ -20,8 +20,8 @@ private:
     RoomListingPopup* m_popup;
     RoomListingInfo m_info;
     cocos2d::CCMenu* m_rightMenu;
-    CCMenuItemSpriteExtra* m_rightButton = nullptr;
-    CCMenuItemSpriteExtra* m_extInfoButton = nullptr;
+    geode::Button* m_rightButton = nullptr;
+    geode::Button* m_extInfoButton = nullptr;
     bool m_modActions = false;
 
     bool init(const RoomListingInfo& info, RoomListingPopup* popup);
