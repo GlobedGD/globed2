@@ -21,8 +21,8 @@ import sys
 REQUIRED_GEODE_VERSION = "v5.6.1"
 XTLS_VERSION = "e29f88a"
 QUNET_VERSION = "cf6c2b5"
-SERVER_SHARED_VERSION = "7a05e43"
-CUE_VERSION = "d1c7ad2"
+SERVER_SHARED_VERSION = "5bf8563"
+CUE_VERSION = "ba0c024"
 
 if sys.version_info < (3, 12):
     raise RuntimeError("Globed's build system requires Python 3.12 or higher")
@@ -439,9 +439,9 @@ def main(build: Build):
         "QUNET_ENABLE_WOLFSSL": "ON",
         "QUNET_ENABLE_OPENSSL": "OFF",
     }, link_name="qunet")
-    build.add_cpm_dep("dankmeme01/uibuilder", "618ec98", link_name="UIBuilder")
+    build.add_cpm_dep("dankmeme01/uibuilder", "1f492e7", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
-    build.add_cpm_dep("zeux/pugixml", "v1.15", link_name="pugixml-static", options = {
+    build.add_cpm_dep("zeux/pugixml", "v1.16", link_name="pugixml-static", options = {
         "PUGIXML_NO_EXCEPTIONS": "ON",
     })
     build.add_cpm_dep("GlobedGD/argon", "v1.4.9")
