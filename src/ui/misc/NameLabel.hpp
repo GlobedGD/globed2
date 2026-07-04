@@ -5,6 +5,7 @@
 #include <ui/misc/GradientLabel.hpp>
 
 #include <Geode/utils/function.hpp>
+#include <Geode/ui/Button.hpp>
 
 namespace globed {
 
