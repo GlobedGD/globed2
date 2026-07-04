@@ -304,6 +304,7 @@ bool GlobedMenuLayer::init() {
                 })
                 .store(m_editServerButton)
         )
+        .zOrder(1)
         .contentSize(CONNECT_MENU_WIDTH, 40.f)
         .updateLayout()
         .parent(m_connectMenu);
@@ -334,6 +335,7 @@ bool GlobedMenuLayer::init() {
                 return;
             }
         })
+        .zOrder(3)
         .scaleMult(1.1f)
         .parent(m_connectMenu);
 
@@ -343,6 +345,7 @@ bool GlobedMenuLayer::init() {
         .layout(cscLayout)
         .contentSize(240.f, 28.f)
         .parent(m_connectMenu)
+        .zOrder(5)
         .id("conn-state-container")
         .collect();
 
@@ -367,6 +370,7 @@ bool GlobedMenuLayer::init() {
     auto buttonMenu = Build<CCMenu>::create()
         .contentSize(CONNECT_MENU_WIDTH, 40.f)
         .layout(RowLayout::create()->setAutoScale(false))
+        .zOrder(10)
         .parent(m_connectMenu)
         .collect();
 
