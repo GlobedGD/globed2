@@ -3,6 +3,7 @@
 #include "BaseSettingCell.hpp"
 
 #include <Geode/utils/function.hpp>
+#include <Geode/ui/Button.hpp>
 
 namespace globed {
 

@@ -4,6 +4,7 @@
 #include <ui/misc/CellGradients.hpp>
 #include <ui/misc/LazyPlayerIcon.hpp>
 
+#include <Geode/ui/Button.hpp>
 #include <Geode/Geode.hpp>
 
 namespace globed {
