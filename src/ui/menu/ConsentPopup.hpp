@@ -3,6 +3,7 @@
 #include <globed/util/CStr.hpp>
 #include <ui/BasePopup.hpp>
 #include <Geode/utils/function.hpp>
+#include <Geode/ui/Button.hpp>
 
 namespace globed {
 
