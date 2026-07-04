@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/ui/Popup.hpp>
+#include <Geode/ui/Button.hpp>
 #include <Geode/binding/GameManager.hpp>
 #include <globed/util/singleton.hpp>
 
