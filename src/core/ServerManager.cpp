@@ -1,6 +1,7 @@
 #include <globed/core/ServerManager.hpp>
 #include <globed/core/ValueManager.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <Geode/Geode.hpp>
 
 #include <asp/fs.hpp>
 
