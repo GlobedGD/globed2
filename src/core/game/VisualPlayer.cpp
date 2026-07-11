@@ -223,7 +223,7 @@ void VisualPlayer::updateFromData(
     bool shouldIconVisible = !forceHideIcon && !forceHideEverything;
 
     bool hiddenForAfk = false;
-    if (g_settings.hideAfk && state.isPaused) {
+    if (!m_isLocalPlayer && g_settings.hideAfk && state.isPaused) {
         auto now = std::chrono::steady_clock::now();
         if (!m_prevPaused) {
             m_pausedSince = now;
