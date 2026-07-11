@@ -69,7 +69,7 @@ SettingsManager::SettingsManager() {
     this->registerSetting("core.player.hide-nearby-plat", false);
     this->registerSetting("core.player.hide-practicing", false);
     this->registerSetting("core.player.hide-afk", false);
-    this->registerSetting("core.player.hide-afk-delay", 5.0f);
+    this->registerSetting("core.player.hide-afk-delay", 10.0f);
     this->registerLimits("core.player.hide-afk-delay", 0.f, 60.f);
     this->registerSetting("core.player.status-icons", true);
     this->registerSetting("core.player.rotate-names", true);
