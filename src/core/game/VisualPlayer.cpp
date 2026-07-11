@@ -222,7 +222,19 @@ void VisualPlayer::updateFromData(
     bool shouldMiscVisible = !forceHideEverything;
     bool shouldIconVisible = !forceHideIcon && !forceHideEverything;
 
+    bool hiddenForAfk = false;
+    if (g_settings.hideAfk && state.isPaused) {
+        auto now = std::chrono::steady_clock::now();
+        if (!m_prevPaused) {
+            m_pausedSince = now;
+        }
+        float pausedSecs = std::chrono::duration<float>(now - m_pausedSince).count();
+        hiddenForAfk = pausedSecs >= g_settings.hideAfkDelay;
+    }
+
     if (state.isPracticing && g_settings.hidePracticing) {
+        shouldIconVisible = shouldMiscVisible = false;
+    } else if (hiddenForAfk) {
         shouldIconVisible = shouldMiscVisible = false;
     } else if (!forceHideEverything) {
         shouldMiscVisible = ((data.isVisible && !m_playingDeathEffect) || g_settings.forceVisibility) && isNearby;

@@ -5,6 +5,7 @@
 #include "../../core/data/PlayerDisplayData.hpp"
 #include "../../core/game/PlayerStatusIcons.hpp"
 #include <Geode/Geode.hpp>
+#include <chrono>
 
 namespace globed {
 
@@ -102,6 +103,9 @@ private:
 
     // used to call onEnter, onExit
     bool m_prevPaused = false;
+
+    // used to track how long a player has been paused, for hide-afk
+    std::chrono::steady_clock::time_point m_pausedSince{};
 
     bool m_prevRotating = false;
     bool m_prevMini = false;
