@@ -15,104 +15,6 @@ using namespace asp::data;
 
 namespace globed {
 
-static const std::string FIELDS_ID = "popupref-fields"_spr;
-static constexpr int MANAGED_ALERT_TAG = 93583452;
-
-struct PopupRef::Data {
-    std::optional<asp::time::SystemTime> shownAt;
-    size_t shownAtFrame;
-    asp::time::Duration blockClosingFor;
-    bool persist = false;
-    bool priority = false;
-};
-
-PopupRef::PopupRef(FLAlertLayer* layer) : inner(layer) {}
-PopupRef::PopupRef() : inner(nullptr) {}
-
-PopupRef::operator FLAlertLayer*() const {
-    return inner;
-}
-
-FLAlertLayer* PopupRef::operator->() const {
-    return inner;
-}
-
-FLAlertLayer* PopupRef::getInner() const {
-    return inner;
-}
-
-void PopupRef::setPersistent(bool state) {
-    this->getFields().persist = state;
-}
-
-void PopupRef::setPriority(bool state) {
-    this->getFields().priority = state;
-}
-
-void PopupRef::blockClosingFor(const asp::time::Duration& dur) {
-    this->getFields().blockClosingFor = dur;
-}
-
-void PopupRef::blockClosingFor(int durMillis) {
-    return this->blockClosingFor(Duration::fromMillis(durMillis));
-}
-
-void PopupRef::showInstant() {
-    this->doShow(false);
-}
-
-void PopupRef::showQueue() {
-    bool back = !this->getFields().priority;
-    PopupManager::get().queuePopup(*this, back);
-}
-
-bool PopupRef::isShown() {
-    return this->inner->getParent();
-}
-
-bool PopupRef::shouldPreventClosing() {
-    auto& fields = this->getFields();
-
-    if (!fields.shownAt || fields.blockClosingFor.isZero()) {
-        return false;
-    }
-
-    auto expiry = fields.shownAt.value() + fields.blockClosingFor;
-    return expiry.isFuture();
-}
-
-void PopupRef::doShow(bool reshowing) {
-    if (!reshowing && inner->getParent()) {
-        return;
-    }
-
-    inner->setTag(MANAGED_ALERT_TAG);
-    inner->show();
-
-    auto& fields = this->getFields();
-    fields.shownAt = SystemTime::now();
-    fields.shownAtFrame = PopupManager::get().m_frameCounter;
-}
-
-PopupRef::Data& PopupRef::getFields() {
-    using DataT = CCData<PopupRef::Data>;
-
-    auto obj = typeinfo_cast<DataT*>(inner->getUserObject(FIELDS_ID));
-
-    if (!obj) {
-        obj = DataT::create(Data {});
-        inner->setUserObject(FIELDS_ID, obj);
-    }
-
-    return obj->data();
-}
-
-bool PopupRef::hasFields() const {
-    using DataT = CCData<PopupRef::Data>;
-
-    return typeinfo_cast<DataT*>(inner->getUserObject(FIELDS_ID));
-}
-
 // CustomFLAlert
 
 class CustomFLAlert : public BasePopup {
@@ -217,9 +119,6 @@ CustomFLAlert* CustomFLAlert::create(
 
 // PopupManager
 
-
-PopupManager::PopupManager() {}
-
 PopupRef PopupManager::alert(
     CStr title,
     const std::string& content,
@@ -248,154 +147,15 @@ PopupRef PopupManager::quickPopup(
 }
 
 PopupRef PopupManager::manage(FLAlertLayer* alert) {
-    PopupRef ref(alert);
-
-    return ref;
+    return geode::PopupManager::get().manage(alert);
 }
 
 bool PopupManager::isManaged(FLAlertLayer* alert) {
-    return this->manage(alert).hasFields();
-}
-
-void PopupManager::queuePopup(const PopupRef& popup, bool back) {
-    if (back) {
-        m_queuedPopups.push_back(popup);
-    } else {
-        m_queuedPopups.push_front(popup);
-    }
+    return geode::PopupManager::get().isManaged(alert);
 }
 
 bool PopupManager::hasPendingPopups() const {
-    return !m_queuedPopups.empty();
-}
-
-void PopupManager::update(float dt) {
-    m_frameCounter++;
-
-    auto scene = globed::singleton<CCDirector>()->m_pRunningScene;
-    if (!scene) return;
-
-    if (scene != m_prevScene) {
-        this->changedScene(scene);
-    }
-
-    // check if we are eligible to show a queued popup
-
-    // if there aren't any in the queue, there is nothing to show
-    if (m_queuedPopups.empty()) {
-        return;
-    }
-
-    // check if we are transitioning 🏳️‍⚧️
-    if (m_isTransitioning) {
-        return;
-    }
-
-    // if there's no current layer, don't show anything
-    auto children = scene->getChildren();
-    if (!children) return;
-    auto layer = children->firstObject();
-    if (!layer) return;
-
-    // if we are in loadinglayer, don't show anything
-    if (typeinfo_cast<LoadingLayer*>(layer)) {
-        return;
-    }
-
-    // if we are playing and are unpaused, only show priority popups
-    bool playing = false;
-    auto gjbgl = GlobedGJBGL::get();
-    if (gjbgl && !gjbgl->isPaused()) {
-        playing = true;
-    }
-
-    bool didPause = false;
-    while (!m_queuedPopups.empty()) {
-        auto popup = m_queuedPopups.front();
-        bool isPrio = popup.getFields().priority;
-
-        if (playing && !isPrio) {
-            // we are currently playing a level, so we don't want to show non-prio popups
-            // since prio popups are always put to the front of the queue, we know there's no more prio popups left
-            break;
-        }
-
-        if (playing && isPrio && !didPause) {
-            // pause the level
-            if (auto pl = gjbgl->asPlayLayer()) {
-                pl->pauseGame(false);
-            }
-            didPause = true;
-        }
-
-        // show the popup
-        popup.doShow();
-        m_queuedPopups.pop_front();
-    }
-}
-
-void PopupManager::changedScene(CCScene* newScene) {
-    m_prevScene = newScene;
-
-    auto trans = typeinfo_cast<CCTransitionScene*>(newScene);
-
-    // if we are transitioning, let's save all our popups and bring them to the other scene if needed
-    if (trans) {
-        m_isTransitioning = true;
-
-        std::array<Ref<FLAlertLayer>, 16> alerts;
-        size_t alertCount = 0;
-
-        auto oldScene = trans->m_pOutScene;
-
-        for (auto child : CCArrayExt<CCNode>(oldScene->getChildren())) {
-            if (child->m_nTag == MANAGED_ALERT_TAG) {
-                if (auto alert = typeinfo_cast<FLAlertLayer*>(child)) {
-                    alerts[alertCount++] = alert;
-
-                    if (alertCount == alerts.size()) break;
-                }
-            }
-        }
-
-        for (size_t i = 0; i < alertCount; i++) {
-            auto& alert = alerts[i];
-            alert->removeFromParentAndCleanup(false);
-        }
-
-        m_savedAlerts = std::move(alerts);
-        m_savedAlertCount = alertCount;
-    } else if (m_isTransitioning) {
-        m_isTransitioning = false;
-
-        // if we were transitioning but now switched to the actual scene, restore the popups
-        for (size_t i = 0; i < m_savedAlertCount; i++) {
-            auto alert = this->manage(m_savedAlerts[i]);
-            if (!alert || !alert.hasFields()) continue;
-
-            // only show alert if persistent it enabled or if it has been visible for a small amount of time
-            auto& fields = alert.getFields();
-            auto sinceShown = fields.shownAt.value_or(SystemTime::UNIX_EPOCH).elapsed();
-            if (sinceShown < Duration::fromSecsF32(1.5f) || fields.persist) {
-                alert.doShow(true);
-                // remove from the list
-                m_savedAlerts[i] = nullptr;
-            }
-        }
-
-
-        for (size_t i = 0; i < m_savedAlertCount; i++) {
-            // cleanup those that we won't be adding back
-            if (m_savedAlerts[i]) {
-                m_savedAlerts[i]->cleanup();
-            }
-
-            // reset all to null
-            m_savedAlerts[i] = nullptr;
-        }
-
-        m_savedAlertCount = 0;
-    }
+    return geode::PopupManager::get().hasPendingPopups();
 }
 
 void toast(geode::NotificationIcon icon, float duration, const std::string& message) {

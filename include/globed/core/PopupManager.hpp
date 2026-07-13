@@ -6,74 +6,20 @@
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/utils/cocos.hpp>
 #include <Geode/ui/Notification.hpp>
+#include <Geode/ui/PopupManager.hpp>
 
 #include <deque>
 
 class Label;
 
-namespace asp::inline time {
-    class Duration; // to prevent leaking asp headers into the public interface
-}
 
 namespace globed {
 
-class [[nodiscard]] GLOBED_DLL PopupRef {
-    friend class PopupManager;
-    struct Data;
-
-public:
-    PopupRef(FLAlertLayer* layer);
-    PopupRef();
-
-    PopupRef(const PopupRef& other) = default;
-    PopupRef& operator=(const PopupRef& other) = default;
-    PopupRef(PopupRef&& other) noexcept = default;
-    PopupRef& operator=(PopupRef&& other) noexcept = default;
-
-    operator FLAlertLayer*() const;
-    FLAlertLayer* operator->() const;
-    FLAlertLayer* getInner() const;
-
-    // Set whether the popup should follow the user if they transition to another scene,
-    // instead of disappearing. By default is disabled.
-    void setPersistent(bool state = true);
-
-    // Makes the popup prioritized, ensuring that it will be put in front of the queue,
-    // and shown even if the user is playing a level (the level will be paused).
-    // Only effective if `showQueue()` is used, if `showInstant()` is used the popup already shows immediately.
-    void setPriority(bool state = true);
-
-    // Makes it impossible to accidentally close the popup (via esc or back button)
-    // for a given period of time after it is shown.
-    void blockClosingFor(const asp::time::Duration& dur);
-
-    // Makes it impossible to accidentally close the popup (via esc or back button)
-    // for a given period of time (in ms) after it is shown.
-    void blockClosingFor(int durMillis);
-
-    // Shows the popup to the user immediately, does nothing if already shown.
-    void showInstant();
-
-    // Queues the popup to be shown to the user when it's appropriate,
-    // e.g. not while they're in a level and unpaused or in the middle of a transition
-    void showQueue();
-
-    bool isShown();
-
-    bool shouldPreventClosing();
-
-private:
-    geode::Ref<FLAlertLayer> inner;
-
-    Data& getFields();
-    bool hasFields() const;
-    void doShow(bool reshowing = false);
-};
+using PopupRef = geode::ManagedPopup;
 
 class GLOBED_DLL PopupManager : public SingletonNodeBase<PopupManager, true> {
     friend class SingletonNodeBase;
-    friend class PopupRef;
-    PopupManager();
+    PopupManager() = default;
 
 public:
     constexpr static float DEFAULT_WIDTH = 370.f;
@@ -117,18 +63,6 @@ public:
     // Returns whether there are currently any queued popups that can't be shown,
     // either because the player is transitioning or in a level and unpaused.
     bool hasPendingPopups() const;
-
-private:
-    cocos2d::CCScene* m_prevScene = nullptr;
-    bool m_isTransitioning = false;
-    std::array<geode::Ref<FLAlertLayer>, 16> m_savedAlerts;
-    size_t m_frameCounter = 0;
-    size_t m_savedAlertCount;
-    std::deque<PopupRef> m_queuedPopups;
-
-    void changedScene(cocos2d::CCScene* newScene);
-    void queuePopup(const PopupRef& popup, bool back = true);
-    void update(float dt);
 };
 
 /// Creates a popup with the given title and content (optionally button 1, 2 and width) and shows it to the user.
