@@ -251,7 +251,7 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
 
 void DiscordLinkPopup::addLinkingText() {
     m_waitingContainer = Build(ColumnContainer::create(6.f))
-        .pos(this->fromCenter(0.f, -26.f))
+        .pos(this->fromCenter(0.f, -30.f))
         .id("waiting-container")
         .parent(m_mainLayer)
         .collect();
