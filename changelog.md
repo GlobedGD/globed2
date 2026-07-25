@@ -1,3 +1,19 @@
+## v2.2.0
+
+While a small update on the outside, this update brought a lot of internal reworks, as well as a server event system that allows mod developers to send custom data to other players through the Globed API!
+
+* Disable user settings by default - if you want to hide yourself, you must first re-enable them in settings
+* Allow unlinking a Discord account in-game
+* Add a button to copy the link for Discord link process, in case opening a browser fails
+* The game server list now shows the player count on each server
+* Update Argon to v1.5.0 to fix authentication failures if the user is comment/message banned
+* Automatic game server selection no longer uses ping alone, now also factoring in server load
+* Make it possible to opt out of the progress bar fix, due to it breaking certain mods
+
+For mod developers using the API:
+* New Server Events API, see [documentation](https://github.com/GlobedGD/globed2/blob/main/docs/server-events.md)
+* New `globed::api::room` namespace with room-related functions
+
 ## v2.1.4
 
 * Fix tiny player textures when using High Graphics on Mobile mod (and other mods that may use absolute paths for icons)
