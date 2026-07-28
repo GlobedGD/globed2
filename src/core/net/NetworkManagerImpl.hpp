@@ -440,6 +440,7 @@ private:
     void sendToGame(geode::FunctionRef<void(GameMessage::Builder&)>&& func, bool reliable = true, bool uncompressed = false);
 
     // Returns the user token for the current central server
+    std::string getUTokenKey();
     std::optional<std::string> getUToken();
     void setUToken(std::string token);
     void clearUToken();

@@ -1646,16 +1646,21 @@ void NetworkManagerImpl::setViewedFeaturedLevel() {
     this->setLastFeaturedLevelId(this->getFeaturedLevel().value_or(FeaturedLevelMeta{}).levelId);
 }
 
+std::string NetworkManagerImpl::getUTokenKey() {
+    auto gjam = singleton<GJAccountManager>();
+    return fmt::format("auth.last-utoken.{}.{}-{}", this->getCentralIdent(), gjam->m_accountID, gjam->m_username);
+}
+
 std::optional<std::string> NetworkManagerImpl::getUToken() {
-    return globed::value<std::string>(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
+    return globed::value<std::string>(this->getUTokenKey());
 }
 
 void NetworkManagerImpl::setUToken(std::string token) {
-    ValueManager::get().set(fmt::format("auth.last-utoken.{}", this->getCentralIdent()), std::move(token));
+    ValueManager::get().set(this->getUTokenKey(), std::move(token));
 }
 
 void NetworkManagerImpl::clearUToken() {
-    ValueManager::get().erase(fmt::format("auth.last-utoken.{}", this->getCentralIdent()));
+    ValueManager::get().erase(this->getUTokenKey());
 }
 
 std::vector<uint8_t> NetworkManagerImpl::computeUident(int accountId) {
