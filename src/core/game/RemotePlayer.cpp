@@ -267,6 +267,14 @@ bool RemotePlayer::isTeammate(bool whatWhenNoTeams) {
     return m_teamId.has_value() && *m_teamId == rm.getCurrentTeamId();
 }
 
+void RemotePlayer::updateLevelMeta(const PlayerLevelMeta& meta) {
+    m_levelMeta = meta;
+}
+
+std::optional<PlayerLevelMeta> RemotePlayer::getLevelMeta() const {
+    return m_levelMeta;
+}
+
 void RemotePlayer::setForceHide(bool hide) {
     m_forceHide = hide;
 }

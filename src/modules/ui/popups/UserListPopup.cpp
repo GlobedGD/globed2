@@ -28,6 +28,22 @@ constexpr static size_t countBools(auto&&... bools) {
     return (static_cast<size_t>(bools) + ... + 0);
 }
 
+static std::string formatPlatformerTime(uint32_t ms) {
+    auto dur = Duration::fromMillis(ms);
+    auto hours = dur.hours() % 24;
+    auto minutes = dur.minutes() % 60;
+    auto seconds = dur.seconds() % 60;
+    auto millis = dur.subsecMillis();
+
+    if (hours > 0) {
+        return fmt::format("{}:{:02}:{:02}.{:03}", hours, minutes, seconds, millis);
+    } else if (minutes > 0) {
+        return fmt::format("{}:{:02}.{:03}", minutes, seconds, millis);
+    } else {
+        return fmt::format("{}.{:03}", seconds, millis);
+    }
+}
+
 class PlayerCell : public PlayerListCell {
 public:
     using PlayerListCell::m_accountId;
@@ -76,6 +92,11 @@ protected:
         auto gjbgl = GlobedGJBGL::get();
 
         m_player = gjbgl->getPlayer(m_accountId);
+
+        // add the uhh ummm percentage and stuff !
+        if (auto meta = gjbgl->getPlayerLevelMeta(m_accountId)) {
+            this->updateMeta(*meta);
+        }
 
         // add buttons
         bool self = m_accountId == singleton<GJAccountManager>()->m_accountID;
@@ -314,6 +335,25 @@ protected:
         this->schedule(schedule_selector(PlayerCell::updateVisualizer), 1.f / 60.f);
 
         return true;
+    }
+
+    void updateMeta(const PlayerLevelMeta& meta) {
+        auto gjbgl = GlobedGJBGL::get();
+        bool platformer = gjbgl && gjbgl->m_level->isPlatformer();
+
+        std::string text;
+        if (platformer) {
+            text = formatPlatformerTime(meta.progress);
+        } else {
+            text = fmt::format("{}%", meta.progress);
+        }
+
+        auto lbl = Build<Label>::create(text.c_str(), "goldFont.fnt")
+            .parent(m_leftContainer)
+            .collect();
+        lbl->limitLabelWidth(50.f, 0.5f, 0.1f);
+
+        m_leftContainer->updateLayout();
     }
 
     void updateVisualizer(float dt) {

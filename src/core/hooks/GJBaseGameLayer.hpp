@@ -57,6 +57,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         Interval m_sendInterval;
         Interval m_sendThrottledInterval;
         Interval m_audioInterval;
+        Interval m_metaMissingInterval;
+        Interval m_metaFullInterval;
         uint32_t m_totalSentPackets = 0;
         Interpolator m_interpolator;
         VectorSpeedTracker m_cameraTracker;
@@ -151,6 +153,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void setDisallowThrottleUpdates();
     void setSpectating(bool spectate);
     void sendPlayerData(const PlayerState& state);
+    void sendPlayerLevelMeta(bool fullCheck = false);
+    PlayerLevelMeta getMyLevelMeta();
     /// Kills the local player, by default the death will not be counted as 'real'.
     /// If this is unwanted, pass `false`
     void killLocalPlayer(bool fake = true);
@@ -174,6 +178,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     CameraDirection getCameraDirection();
     GameCameraState getCameraState();
     std::shared_ptr<RemotePlayer> getPlayer(int playerId);
+    std::optional<PlayerLevelMeta> getPlayerLevelMeta(int playerId);
     void recordPlayerJump(bool p1);
     bool shouldLetMessageThrough(int playerId);
     bool isSpeaking(int playerId);

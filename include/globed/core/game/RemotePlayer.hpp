@@ -29,6 +29,9 @@ public:
     void updateTeam(uint16_t teamId);
     bool isTeammate(bool whatWhenNoTeams = true);
 
+    void updateLevelMeta(const PlayerLevelMeta& meta);
+    std::optional<PlayerLevelMeta> getLevelMeta() const;
+
     void setForceHide(bool hide);
 
     VisualPlayer* player1();
@@ -51,6 +54,7 @@ private:
     PlayerState m_state;
     PlayerDisplayData m_data;
     std::optional<PlayerIconData> m_pendingIcons;
+    std::optional<PlayerLevelMeta> m_levelMeta;
     bool m_dataInitialized = false;
     bool m_dataOutdated = false;
     bool m_forceHide = false;

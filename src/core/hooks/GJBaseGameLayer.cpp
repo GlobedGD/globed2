@@ -129,6 +129,10 @@ void GlobedGJBGL::setupPostInit() {
         fields.m_noGlobalCulling = true;
     }
 
+    // reload full information about meta stuff once a minute, reload missing information every 2 seconds
+    fields.m_metaFullInterval.setInterval(Duration::fromSecs(60));
+    fields.m_metaMissingInterval.setInterval(Duration::fromSecs(2));
+
     CoreImpl::get().onJoinLevelPostInit(this);
 }
 
@@ -649,6 +653,11 @@ void GlobedGJBGL::selPostUpdate(float dt) {
         this->sendPlayerData(state);
     }
 
+    bool fullMeta = fields.m_metaFullInterval.tick();
+    if (fields.m_metaMissingInterval.tick() || fullMeta) {
+        this->sendPlayerLevelMeta(fullMeta);
+    }
+
     g_profilerFrame.postSendPlayerData = Instant::now();
 
     // update ghost player
@@ -744,9 +753,6 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
     if (prevThrottle != fields.m_throttleUpdates) {
         log::debug("updating data send interval to {}", fields.m_throttleUpdates ? "throttled" : "normal");
     }
-
-    // TODO
-    // NetworkManagerImpl::get().sendPlayerUpdateMeta({1234,}, {myAccountId(),});
 }
 
 void GlobedGJBGL::sendPlayerData(const PlayerState& state) {
@@ -806,6 +812,43 @@ void GlobedGJBGL::sendPlayerData(const PlayerState& state) {
     // );
 
     nm.sendPlayerState(state, toRequest, camCenter, camRadius);
+}
+
+PlayerLevelMeta GlobedGJBGL::getMyLevelMeta() {
+    PlayerLevelMeta meta;
+
+    if (m_level->isPlatformer()) {
+        // platformer - send milliseconds as the progress, representing best completion time
+        meta.progress = static_cast<uint32_t>(m_level->m_bestTime);
+    } else {
+        // otherwise, capture our best percentage
+        meta.progress = static_cast<uint32_t>(m_level->m_normalPercent);
+    }
+
+    return meta;
+}
+
+void GlobedGJBGL::sendPlayerLevelMeta(bool fullCheck) {
+    auto meta = this->getMyLevelMeta();
+
+    std::vector<int> toCheck;
+    if (fullCheck) {
+        // full check, include all players
+        toCheck = asp::iter::keys(m_fields->m_players).collect();
+    } else {
+        toCheck = asp::iter::from(m_fields->m_players).filterMap([](const auto& rw) -> std::optional<int> {
+            auto& [id, player] = rw.get();
+            if (!player->getLevelMeta()) {
+                // this player has no meta initialized, we shall request it
+                return id;
+            }
+            return std::nullopt;
+        }).collect();
+    }
+
+    log::debug("Requesting player metas: {}", toCheck);
+
+    NetworkManagerImpl::get().sendPlayerUpdateMeta(meta, toCheck);
 }
 
 PlayerState GlobedGJBGL::getPlayerState() {
@@ -1168,6 +1211,21 @@ std::shared_ptr<RemotePlayer> GlobedGJBGL::getPlayer(int playerId) {
     return it == players.end() ? nullptr : it->second;
 }
 
+std::optional<PlayerLevelMeta> GlobedGJBGL::getPlayerLevelMeta(int playerId) {
+    bool myself = playerId == myAccountId();
+    if (myself) {
+        return this->getMyLevelMeta();
+    }
+
+    auto& players = m_fields->m_players;
+    auto it = players.find(playerId);
+    if (it == players.end()) {
+        return std::nullopt;
+    }
+
+    return it->second->getLevelMeta();
+}
+
 void GlobedGJBGL::recordPlayerJump(bool p1) {
     auto& fields = *m_fields.self();
     (p1 ? fields.m_didJustJump1 : fields.m_didJustJump2) = true;
@@ -1348,7 +1406,10 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
 
 void GlobedGJBGL::onLevelMetaReceived(const msg::LevelMetaMessage& message) {
     for (auto& [id, meta] : message.metas) {
-        log::info("player {} progress {}", id, meta.progress);
+        auto pl = this->getPlayer(id);
+        if (!pl) continue;
+
+        pl->updateLevelMeta(meta);
     }
 }
 
