@@ -39,6 +39,7 @@ constexpr static auto ACTION_TYPES = std::to_array<ActionType>({
     ActionType{ "editroomban", "button-admin-room-ban.png"_spr, "Edit room ban" },
     ActionType{ "roomunban", "button-admin-room-unban.png"_spr, "Room unban" },
     ActionType{ "editroles", "role-mod.png"_spr, "Edit roles" },
+    ActionType{ "setroles", "role-admin.png"_spr, "Set roles" },
     ActionType{ "editpassword", "button-admin-password.png"_spr, "Edit password" },
 });
 
@@ -196,7 +197,8 @@ private:
             targetStr = target.username;
         }
 
-        Build<CCLabelBMFont>::create(fmt::format("{} by {} for {}", action->name, issuer.username, targetStr).c_str(), "goldFont.fnt")
+        auto issuerName = issuer.accountId == 0 ? "System" : issuer.username;
+        Build<CCLabelBMFont>::create(fmt::format("{} by {} for {}", action->name, issuerName, targetStr).c_str(), "goldFont.fnt")
             .limitLabelWidth(280.f, 0.55f, 0.1f)
             .anchorPoint(0.f, 0.5f)
             .pos(40.f, HEIGHT * 0.75f + 1.f)
@@ -204,7 +206,7 @@ private:
 
         std::string msgStr;
 
-            bool isPunishment =
+        bool isPunishment =
             log.type == "kick"
             || log.type == "mute"
             || log.type == "editmute"
@@ -236,6 +238,8 @@ private:
                 if (!added.empty()) msgStr += "; ";
                 msgStr += fmt::format("Removed: {}", fmt::join(removed, ", "));
             }
+        } else if (log.type == "setroles") {
+            msgStr += fmt::format("Roles: {}", asp::iter::split(log.message, ',').join(", "));
         } else if (log.type == "notice") {
             msgStr = log.message;
         }
