@@ -45,6 +45,9 @@ jobs:
 
       - name: Build the mod
         uses: geode-sdk/build-geode-mod@main
+        env:
+          GLOBED_SENTRY_URL: ${{ vars.GLOBED_SENTRY_URL }}
+          GLOBED_SENTRY_KEY: ${{ vars.GLOBED_SENTRY_KEY }}
         with:
           sdk: 'latest'
           build-config: ${{ matrix.config.build-config || 'Release' }}

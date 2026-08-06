@@ -9,6 +9,7 @@
 #include <globed/core/PopupManager.hpp>
 #include <globed/util/gd.hpp>
 #include <globed/util/scary.hpp>
+#include <util/SentryClient.hpp>
 #include <core/CoreImpl.hpp>
 #include "data/helpers.hpp"
 #include <bb_public.hpp>
@@ -872,12 +873,16 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
             }
         } else {
             // already tried connecting to this server and failed, so give it up
+            auto url = cur->url;
+
             this->connInfo()->m_gameServerUrl.clear();
             cur.reset();
             lastReq.reset();
 
             auto err = m_gameConn->lastError();
             if (err != qn::ConnectionError::Success) {
+                arc::spawn(SentryClient::get().reportGameConnectionError(url, err.message()));
+
                 geode::queueInMainThread([err = std::move(err)] {
                     log::warn("Connection to game server failed: {}", err.message());
                     globed::toastError("[Globed] Connection to the game server failed,\nsee game logs for more detailed information");
@@ -1103,20 +1108,23 @@ Future<> NetworkManagerImpl::threadTryAuth() {
 
     if (!info->m_knownArgonUrl.empty()) {
         (void) argon::setServerUrl(info->m_knownArgonUrl);
+        log::debug("acquiring argon token with url {}", info->m_knownArgonUrl);
+
+        info->startedAuth();
+        info.unlock();
 
         // wait to acquire an argon token
-        info.unlock();
-        log::debug("acquiring argon token with url {}", info->m_knownArgonUrl);
         auto res = co_await startArgonAuth();
 
         if (!res) {
+            arc::spawn(SentryClient::get().reportArgonIssue(
+                g_argonData.accountId,
+                res.unwrapErr()
+            ));
+
             this->abortConnection(fmt::format("failed to complete Argon auth: {}", res.unwrapErr()));
             co_return;
         }
-
-        info.relock();
-        info->startedAuth();
-        info.unlock();
 
         this->sendCentralAuth(AuthKind::Argon, *res);
     } else {
@@ -1732,6 +1740,8 @@ void NetworkManagerImpl::onGameStateChanged(qn::ConnectionState state) {
 
 void NetworkManagerImpl::abortConnection(std::string reason, bool silent) {
     log::warn("aborting connection to central server: {}", reason);
+    arc::spawn(SentryClient::get().reportCentralConnectionError(reason));
+
     *m_abortCause.lock() = std::make_pair(std::move(reason), silent);
     m_centralConn->disconnect();
     m_gameConn->disconnect();
