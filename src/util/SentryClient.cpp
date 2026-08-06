@@ -115,7 +115,7 @@ Future<> SentryClient::reportGameConnectionError(std::string url, std::string er
 
     co_await this->reportIssue(SentryIssueReport {
         .level = SentryIssueLevel::Error,
-        .tags = {{"component", "game"}, {"kind", "connection"}},
+        .tags = {{"component", "game"}, {"kind", "connection"}, {"url", url}},
         .message = fmt::format("failed connection to {}: {}", url, error),
         .userId = std::nullopt
     });
