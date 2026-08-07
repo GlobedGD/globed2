@@ -1,7 +1,7 @@
 #include "SentryClient.hpp"
 #include <globed/core/Constants.hpp>
 #include <globed/core/ServerManager.hpp>
-#include <matjson/reflect.hpp>
+#include <glaze/json.hpp>
 
 using namespace geode::prelude;
 using namespace arc;
@@ -71,7 +71,7 @@ Future<> SentryClient::reportIssue(SentryIssueReport report) {
             "Sentry sentry_version=7, sentry_client=globed/{}, sentry_key={}",
             Mod::get()->getVersion().toNonVString(), m_key
         ))
-        .bodyJSON(payload)
+        .bodyJSON(glz::write_json(payload).value_or(""))
         .post(m_url);
 
     if (!resp.ok()) {

@@ -454,6 +454,7 @@ def main(build: Build):
     build.add_cpm_dep("GlobedGD/argon", "v1.5.1")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
     build.add_cpm_dep("Prevter/AdvancedLabel", "17ed1c1", link_name="advanced_label")
+    build.add_cpm_dep("stephenberry/glaze", "v8.0.0", link_name="glaze::glaze")
 
     if gc.voice:
         build.add_cpm_dep("xiph/opus", "v1.6.1", {
