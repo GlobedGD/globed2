@@ -783,7 +783,7 @@ void GlobedMenuLayer::initRoomButtons() {
             .scaleMult(1.1f)
             .parent(m_roomButtonsMenu);
     } else {
-        Build(ButtonSprite::create("Leave Room", "bigFont.fnt", "GJ_button_01.png", BtnScale))
+        Build(ButtonSprite::create("Leave Room", "bigFont.fnt", "GJ_button_06.png", BtnScale))
             .intoMenuItem(+[] {
                 NetworkManagerImpl::get().sendLeaveRoom();
             })
