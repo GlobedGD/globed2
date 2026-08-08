@@ -30,26 +30,34 @@ bool PlayerListCell::init(
     m_username = username;
 
     m_leftContainer = Build<CCNode>::create()
-        .layout(RowLayout::create()
-            ->setAutoScale(false)
-            ->setAxisAlignment(AxisAlignment::Start)
+        .layout(SimpleRowLayout::create()
+            ->setMainAxisScaling(AxisScaling::ScaleDown)
+            ->setMainAxisAlignment(MainAxisAlignment::Start)
             ->setGap(3.f)
         )
-        .contentSize(cellSize.width - 20.f, cellSize.height)
-        .pos(10.f, cellSize.height / 2.f)
+        .contentSize(cellSize.width * 0.62f, cellSize.height)
+        .pos(8.f, cellSize.height / 2.f)
         .anchorPoint(0.f, 0.5f)
+        .id("left-container")
         .parent(this);
 
     m_cubeIcon = Build(LazyPlayerIcon::create(icons))
         .id("icon")
         .parent(m_leftContainer);
-    m_cubeIcon->setLayoutOptions(AxisLayoutOptions::create()->setNextGap(5.f));
+    m_cubeIcon->setLayoutOptions(SimpleAxisLayoutOptions::create()->setScalingPriority(ScalingPriority::Never));
+
+    Build<AxisGap>::create(4.f)
+        .parent(m_leftContainer);
 
     cue::rescaleToMatch(m_cubeIcon, cellSize.height * 0.7f);
 
     m_nameLabel = Build(NameLabel::create(username, "bigFont.fnt"))
         .with([&](auto lbl) {
-            lbl->setScale(cellSize.height * 0.65f / lbl->getContentHeight());
+            // reimpl limitLabelWidth because NameLabel shenanigans, we want name to be max 130.0 units wide
+            float targetScale = cellSize.height * 0.65f / lbl->getContentHeight();
+            float scale = std::clamp(targetScale, 0.6f, 130.f / lbl->getContentWidth());
+            lbl->setScale(scale);
+
             lbl->makeClickable(
                 [this, username = username](auto) {
                    globed::openUserProfile(m_accountId, m_userId, username);
@@ -72,8 +80,12 @@ bool PlayerListCell::init(
     m_rightMenu = Build<CCMenu>::create()
         .anchorPoint(1.f, 0.5f)
         .pos(cellSize.width - 5.f, cellSize.height / 2.f)
-        .contentSize(cellSize.width - 10.f - 10.f, cellSize.height - 4.f)
-        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true)->setAutoScale(false))
+        .contentSize(cellSize.width * 0.34f, cellSize.height - 4.f)
+        .layout(SimpleRowLayout::create()->setGap(5.f)
+            ->setMainAxisAlignment(MainAxisAlignment::Start)
+            ->setMainAxisDirection(AxisDirection::RightToLeft)
+            ->setMainAxisScaling(AxisScaling::ScaleDown)
+        )
         .parent(this);
 
     this->schedule(schedule_selector(PlayerListCell::updateStuff), 1.0f);

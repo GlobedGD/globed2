@@ -349,9 +349,13 @@ protected:
         }
 
         auto lbl = Build<Label>::create(text.c_str(), "goldFont.fnt")
+            .layoutOptions(SimpleAxisLayoutOptions::create()
+                ->setScalingPriority(ScalingPriority::Early)
+                ->setMinRelativeScale(0.75f)
+            )
+            .scale(0.5f)
             .parent(m_leftContainer)
             .collect();
-        lbl->limitLabelWidth(50.f, 0.5f, 0.1f);
 
         m_leftContainer->updateLayout();
     }
