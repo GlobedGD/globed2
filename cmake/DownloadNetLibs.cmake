@@ -50,7 +50,7 @@ set(lib_vars  "net_libs_cares" "net_libs_libcrypto" "net_libs_libssl" "net_libs_
 
 if (GLOBED_USE_WOLFSSL)
     CPMAddPackage(
-        URI "gh:wolfSSL/wolfssl@5.8.4-stable"
+        URI "gh:wolfSSL/wolfssl@5.9.2-stable"
         OPTIONS "WOLFSSL_QUIC ON"
                 "WOLFSSL_HARDEN OFF"
                 "WOLFSSL_OLD_TLS OFF"
@@ -59,6 +59,8 @@ if (GLOBED_USE_WOLFSSL)
                 "WOLFSSL_INSTALL OFF"
                 "WOLFSSL_CRYPT_TESTS OFF"
                 "WOLFSSL_EXAMPLES OFF"
+                "WOLFSSL_OPENSSLEXTRA ON"
+                "WOLFSSL_AESECB ON"
                 "WOLFSSL_ALT_CERT_CHAINS ON" # needed for tls, not sure why /shrug
                 "BUILD_SHARED_LIBS OFF"
     )
