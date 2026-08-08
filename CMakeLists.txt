@@ -31,5 +31,5 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 ## Download net libs (ngtcp2, c-ares, openssl, zstd)
 include(cmake/DownloadNetLibs.cmake)
 
-CPMAddPackage("gh:dankmeme01/geobuild#4b84908")
+CPMAddPackage("gh:dankmeme01/geobuild#e23beaf")
 include("${CMAKE_CURRENT_BINARY_DIR}/geobuild-gen.cmake")
