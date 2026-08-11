@@ -1,4 +1,5 @@
 #include "FileUtils.hpp"
+#include <Geode/loader/Loader.hpp>
 
 #ifdef GEODE_IS_ANDROID
 # include <android/asset_manager.h>
@@ -215,6 +216,8 @@ bool initializeAAssetManager() {
 }
 
 bool isFileExistImpl(geode::ZStringView path) {
+    initializeAAssetManager();
+
     auto v = path.view();
     if (!v.empty() && v[0] == '/') {
         // absolute path
@@ -224,7 +227,10 @@ bool isFileExistImpl(geode::ZStringView path) {
 }
 
 $on_mod(Loaded) {
-    GLOBED_ASSERT(initializeAAssetManager());
+    // we might be in an early-load context if another mod depends on globed, so postpone JNI until it's safe
+    geode::queueInMainThread([] {
+        GLOBED_ASSERT(initializeAAssetManager());
+    });
 }
 
 #endif
