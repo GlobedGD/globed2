@@ -10,6 +10,7 @@ While a small update on the outside, this update brought a lot of internal rewor
 * Update Argon to v1.5.0 to fix authentication failures if the user is comment/message banned
 * Automatic game server selection no longer uses ping alone, now also factoring in server load
 * Make it possible to opt out of the progress bar fix, due to it breaking certain mods
+* Fix a bug causing IPv6 connections to sometimes be deprioritized unintentionally
 * Many internal improvements
 
 For mod developers using the API:
