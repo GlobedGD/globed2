@@ -1,5 +1,6 @@
 #pragma once
 
+#include <globed/aliases.hpp>
 #include <ui/Core.hpp>
 #include <ui/BasePopup.hpp>
 #include <cue/ListNode.hpp>
@@ -35,10 +36,10 @@ private:
     geode::Button* m_leftPageBtn;
     geode::Button* m_rightPageBtn;
 
-    cocos2d::CCLabelBMFont* m_pageLabel;
+    Label* m_pageLabel;
 
     cocos2d::extension::CCScale9Sprite* m_favoriteHighlight;
-    cocos2d::CCLabelBMFont* m_favoriteInfoLabel;
+    Label* m_favoriteInfoLabel;
 
     cue::Slider* m_volumeSlider;
 

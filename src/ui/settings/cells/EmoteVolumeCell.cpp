@@ -48,7 +48,7 @@ void EmoteVolumeCell::playEmote() {
     am.updatePlayback({}, false);
 }
 
-EmoteVolumeCell* EmoteVolumeCell::create(CStr key, CStr name, CStr desc, CCSize cellSize) {
+EmoteVolumeCell* EmoteVolumeCell::create(ZStringView key, ZStringView name, ZStringView desc, CCSize cellSize) {
     auto ret = new EmoteVolumeCell;
     if (ret->init(key, name, desc, cellSize)) {
         ret->autorelease();

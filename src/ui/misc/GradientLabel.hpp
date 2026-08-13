@@ -4,7 +4,6 @@
 
 #include <asp/time/Instant.hpp>
 #include <Geode/Geode.hpp>
-#include <AdvancedLabel.hpp>
 
 namespace globed {
 
@@ -18,7 +17,7 @@ public:
 
     static GradientLabel* create(std::string_view text, const std::string& font);
 
-    void limitLabelWidth(float maxw, float defaults, float mins);
+    void setLimitLabelWidth(float maxw, float defaults, float mins);
     void setGradientColors(const MultiColor& color);
     void setGradientColors(const std::vector<Color3>& colors);
     void setGradientSpeed(float mod);
@@ -32,7 +31,7 @@ private:
     void initShader();
     void draw() override;
 
-    Label* m_label;
+    geode::Label* m_label;
     geode::Ref<cocos2d::CCGLProgram> m_shader;
     std::array<Color3F, MAX_COLORS + 1> m_colors;
     size_t m_colorCount;

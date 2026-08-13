@@ -8,16 +8,16 @@ using namespace geode::prelude;
 namespace globed {
 
 bool BaseSettingCellBase::init(
-    CStr key,
-    CStr name,
-    CStr desc,
-    cocos2d::CCSize size
+    ZStringView key,
+    ZStringView name,
+    ZStringView desc,
+    CCSize size
 ) {
     m_key = key;
     return this->initNoSetting(name, desc, size);
 }
 
-bool BaseSettingCellBase::initNoSetting(CStr name, CStr desc, cocos2d::CCSize size) {
+bool BaseSettingCellBase::initNoSetting(ZStringView name, ZStringView desc, CCSize size) {
     CCMenu::init();
 
     this->ignoreAnchorPointForPosition(false);
@@ -42,7 +42,7 @@ bool BaseSettingCellBase::initNoSetting(CStr name, CStr desc, cocos2d::CCSize si
         .posY(m_size.height / 2.f);
     m_rightMenu->setPositionX(m_size.width - 8.f);
 
-    auto label = Build<CCLabelBMFont>::create(name, "bigFont.fnt")
+    auto label = Build<Label>::create(name.c_str(), "bigFont.fnt")
         .limitLabelWidth(size.width * 0.65f, 0.5f, 0.25f)
         .anchorPoint(0.f, 0.5f)
         .pos(8.f, size.height / 2.f)

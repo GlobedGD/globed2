@@ -4,7 +4,7 @@
 
 #include <cue/ListNode.hpp>
 #include <UIBuilder.hpp>
-#include <AdvancedLabel.hpp>
+#include <Geode/ui/Label.hpp>
 
 using namespace geode::prelude;
 
@@ -28,8 +28,7 @@ public:
 
     void updateText(const std::string& text) {
         m_reason = text;
-        m_label->setString(text);
-        m_label->limitLabelWidth(LIST_SIZE.width - 84.f, 0.55f, 0.1f);
+        m_label->setText(text);
     }
 
 private:
@@ -64,6 +63,7 @@ private:
             .anchorPoint(0.f, 0.5f)
             .pos(5.f, CELL_HEIGHT / 2.f)
             .parent(this);
+        m_label->setLimitLabelWidth(LIST_SIZE.width - 84.f, 0.55f, 0.1f);
 
         this->updateText(reason);
 

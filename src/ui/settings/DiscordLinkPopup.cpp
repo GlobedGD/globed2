@@ -86,7 +86,7 @@ bool DiscordLinkPopup::init() {
         .contentSize(0.f, 52.f)
         .collect();
 
-    m_nameLabel = Build<CCLabelBMFont>::create(uname.c_str(), "goldFont.fnt")
+    m_nameLabel = Build<Label>::create(uname.c_str(), "goldFont.fnt")
         .limitLabelWidth(m_size.width * 0.85f, 0.6f, 0.1f)
         .id("name-label")
         .parent(m_dataContainer);
@@ -102,11 +102,11 @@ bool DiscordLinkPopup::init() {
         .id("status-container")
         .parent(m_dataContainer);
 
-    Build<CCLabelBMFont>::create("Status:", "bigFont.fnt")
+    Build<Label>::create("Status:", "bigFont.fnt")
         .scale(0.5f)
         .parent(m_statusContainer);
 
-    m_statusLabel = Build<CCLabelBMFont>::create("Loading...", "bigFont.fnt")
+    m_statusLabel = Build<Label>::create("Loading...", "bigFont.fnt")
         .scale(0.5f)
         .parent(m_statusContainer);
 
@@ -195,7 +195,6 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
     }
 
     m_statusContainer->updateLayout();
-    m_nameLabel->limitLabelWidth(m_size.width * 0.85f, 0.6f, 0.1f);
 
     cue::resetNode(m_idLabel);
     cue::resetNode(m_background);
@@ -256,13 +255,14 @@ void DiscordLinkPopup::addLinkingText() {
         .parent(m_mainLayer)
         .collect();
 
-    m_waitingLabel1 = Build<CCLabelBMFont>::create("Requesting URL...", "bigFont.fnt")
+    m_waitingLabel1 = Build<Label>::create("Requesting URL...", "bigFont.fnt")
         .scale(0.5f)
         .id("waiting-label1")
         .parent(m_waitingContainer);
 
-    m_waitingLabel2 = Build<CCLabelBMFont>::create("", "bigFont.fnt")
+    m_waitingLabel2 = Build<Label>::create("", "bigFont.fnt")
         .id("waiting-label2")
+        .limitLabelWidth(m_size.width * 0.8f, 0.4f, 0.1f)
         .parent(m_waitingContainer);
 
     m_waitingContainer->updateLayout();
@@ -286,9 +286,8 @@ void DiscordLinkPopup::onOauthUrlReceived(ZStringView url) {
 
     if (!m_waitingLabel1 || !m_waitingLabel2) return;
 
-    m_waitingLabel1->setString("Open your browser!");
-    m_waitingLabel2->setString("Waiting for confirmation...");
-    m_waitingLabel2->limitLabelWidth(m_size.width * 0.8f, 0.4f, 0.1f);
+    m_waitingLabel1->setText("Open your browser!");
+    m_waitingLabel2->setText("Waiting for confirmation...");
 
     cue::resetNode(m_activeBtn);
     m_activeBtn = Build<ButtonSprite>::create("Copy Link", "bigFont.fnt", "GJ_button_01.png", 0.7f)

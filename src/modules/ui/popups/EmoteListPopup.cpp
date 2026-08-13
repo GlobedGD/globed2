@@ -48,7 +48,7 @@ bool EmoteListPopup::init() {
         m_favoriteEmoteIds.push_back(emote);
     }
 
-    m_pageLabel = Build<CCLabelBMFont>::create(fmt::format("Page {} of {}", m_selectedPage + 1, m_maxPages).c_str(), "bigFont.fnt")
+    m_pageLabel = Build<Label>::create(fmt::format("Page {} of {}", m_selectedPage + 1, m_maxPages), "bigFont.fnt")
         .anchorPoint(0.5f, 0.5f)
         .pos(this->fromTop(30.f))
         .scale(0.3f)
@@ -152,7 +152,7 @@ bool EmoteListPopup::init() {
         .parent(m_mainLayer)
         .collect();
 
-    auto favoriteLabel = Build<CCLabelBMFont>::create("Favorites", "goldFont.fnt")
+    auto favoriteLabel = Build<Label>::create("Favorites", "goldFont.fnt")
         .scale(0.4f)
         .parent(favoriteLabelMenu)
         .collect();
@@ -219,7 +219,7 @@ bool EmoteListPopup::init() {
         )
     );
 
-    m_favoriteInfoLabel = Build<CCLabelBMFont>::create(fmt::format("Choose an emote to add to favorites (Slot X)").c_str(), "bigFont.fnt")
+    m_favoriteInfoLabel = Build<Label>::create(fmt::format("Choose an emote to add to favorites (Slot X)"), "bigFont.fnt")
         .scale(0.3f)
         .color(255, 230, 0)
         .pos(m_list->getPosition() + ccp(0, -LIST_SIZE.height - 2.f))
@@ -256,7 +256,7 @@ bool EmoteListPopup::init() {
         globed::setting<float>("core.player.quick-chat-sfx-volume") = value;
     });
 
-    Build<CCLabelBMFont>::create("Emote Volume", "bigFont.fnt")
+    Build<Label>::create("Emote Volume", "bigFont.fnt")
         .scale(0.45f * 0.7f)
         .intoNewParent(CCNode::create())
         .id("volume-wrapper")
@@ -460,7 +460,7 @@ void EmoteListPopup::loadFavoriteEmotesList() {
         emoteBtn->addChild(sprite, 1);
         cue::rescaleToMatch(sprite, 25.f);
 
-        CCLabelBMFont* slotLabel = Build<CCLabelBMFont>::create(fmt::format("{}", i + 1).c_str(), "goldFont.fnt")
+        auto slotLabel = Build<Label>::create(fmt::format("{}", i + 1), "goldFont.fnt")
             .scale(0.66f)
             .pos(emoteBtn->getContentSize().width / 2.f, -1.f);
         emoteBtn->addChild(slotLabel);

@@ -446,14 +446,13 @@ def main(build: Build):
         "QUNET_ENABLE_WOLFSSL": "ON",
         "QUNET_ENABLE_OPENSSL": "OFF",
     }, link_name="qunet")
-    build.add_cpm_dep("dankmeme01/uibuilder", "1f492e7", link_name="UIBuilder")
+    build.add_cpm_dep("dankmeme01/uibuilder", "856a3b3", link_name="UIBuilder")
     build.add_cpm_dep("dankmeme01/cue", CUE_VERSION)
     build.add_cpm_dep("zeux/pugixml", "v1.16", link_name="pugixml-static", options = {
         "PUGIXML_NO_EXCEPTIONS": "ON",
     })
     build.add_cpm_dep("GlobedGD/argon", "v1.5.1")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
-    build.add_cpm_dep("Prevter/AdvancedLabel", "17ed1c1", link_name="advanced_label")
     build.add_cpm_dep("stephenberry/glaze", "v8.0.0", link_name="glaze::glaze")
 
     if gc.voice:

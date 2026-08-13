@@ -28,7 +28,7 @@ private:
     AudioDeviceSetupPopup* m_popup;
     geode::Button* m_btnSelect;
     CCSprite* m_btnSelected;
-    CCLabelBMFont* m_labelName;
+    Label* m_labelName;
     int m_activeId;
 
     bool init() {
@@ -61,7 +61,7 @@ private:
             .parent(this);
 
         // device name
-        m_labelName = Build<CCLabelBMFont>::create(m_device.name.c_str(), "goldFont.fnt")
+        m_labelName = Build<Label>::create(m_device.name.c_str(), "goldFont.fnt")
             .limitLabelWidth(280.f, 0.7f, 0.1f)
             .anchorPoint(0.f, 0.5f)
             .pos(5.f, CELL_HEIGHT / 2)

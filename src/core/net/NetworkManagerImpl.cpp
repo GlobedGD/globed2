@@ -1935,10 +1935,10 @@ void NetworkManagerImpl::sendLeaveRoom() {
 }
 
 
-void NetworkManagerImpl::sendRequestRoomList(CStr nameFilter, uint32_t page) {
+void NetworkManagerImpl::sendRequestRoomList(std::string_view nameFilter, uint32_t page) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto requestRoomList = msg.initRequestRoomList();
-        requestRoomList.setNameFilter(nameFilter.get());
+        requestRoomList.setNameFilter(std::string{nameFilter});
         requestRoomList.setPage(page);
     });
 }

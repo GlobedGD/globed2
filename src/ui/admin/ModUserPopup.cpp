@@ -82,7 +82,7 @@ void ModUserPopup::initUi() {
         .parent(m_mainLayer);
 
     // name label
-    Build<CCLabelBMFont>::create(m_score->m_userName.c_str(), "bigFont.fnt")
+    Build<Label>::create(m_score->m_userName.c_str(), "bigFont.fnt")
         .limitLabelWidth(160.f, 0.8f, 0.1f)
         .intoMenuItem([this] {
             globed::openUserProfile(m_score->m_accountID, m_score->m_userID, m_score->m_userName);

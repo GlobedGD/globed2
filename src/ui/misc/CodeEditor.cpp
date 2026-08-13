@@ -12,11 +12,11 @@ constexpr static float LINE_NUMBER_WIDTH = 30.f;
 namespace globed {
 
 static CCSize getEstimateLetterSize(float scale) {
-    auto label = CCLabelBMFont::create("Among us? Impostor sus sus sus", "Consolas.fnt"_spr);
+    auto label = Label::create("Among us? Impostor sus sus sus", "Consolas.fnt"_spr);
     label->setScale(scale);
     auto size = label->getScaledContentSize();
 
-    return {size.width / strlen(label->getString()), size.height};
+    return {size.width / label->getText().size(), size.height};
 }
 
 bool CodeEditor::init(CCSize size) {
@@ -66,10 +66,10 @@ bool CodeEditor::init(CCSize size) {
     return true;
 }
 
-void CodeEditor::setContent(CStr content) {
+void CodeEditor::setContent(ZStringView content) {
     m_textBuffer.clear();
 
-    for (char c : std::string_view{content}) {
+    for (char c : content.view()) {
         if (c == '\t') {
             for (size_t i = 0; i < 4; i++) m_textBuffer.push_back(' ');
         } else {
@@ -100,19 +100,21 @@ void CodeEditor::setFontSize(float scale) {
     this->updateState(true);
 }
 
-void CodeEditor::splitStringInto(std::string_view str, std::vector<Label*>& labels, CCNode* container, BMFontAlignment alignment, uint8_t opacity) {
+void CodeEditor::splitStringInto(std::string_view str, std::vector<Label*>& labels, CCNode* container, Label::Alignment alignment, uint8_t opacity) {
     size_t curIdx = 0;
 
     auto addOne = [&](std::string_view s) {
         if (curIdx >= labels.size()) {
-            auto label = Label::create("", "Consolas.fnt"_spr, alignment, m_textScale);
+            auto label = Label::create("", "Consolas.fnt"_spr);
+            label->setAlignment(alignment);
+            label->setScale(m_textScale);
             label->setOpacity(opacity);
             labels.push_back(label);
             container->addChild(label);
         }
 
         auto label = labels[curIdx++];
-        label->setString(s);
+        label->setText(std::string{s});
     };
 
     size_t contentBegin = 0;
@@ -177,8 +179,8 @@ void CodeEditor::updateState(bool recreate) {
         // }
     }
 
-    splitStringInto(outStr, m_lineNumLabels, m_lineNumContainer, BMFontAlignment::Right, 160);
-    splitStringInto(m_textBuffer, m_textLabels, m_textContainer, BMFontAlignment::Left, 255);
+    splitStringInto(outStr, m_lineNumLabels, m_lineNumContainer, Label::Alignment::Right, 160);
+    splitStringInto(m_textBuffer, m_textLabels, m_textContainer, Label::Alignment::Left, 255);
 
     auto csize = m_textContainer->getScaledContentSize();
     if (csize.height < m_scrollLayer->getContentHeight()) {
@@ -220,7 +222,7 @@ bool CodeEditor::ccTouchBegan(cocos2d::CCTouch *pTouch, cocos2d::CCEvent *pEvent
 
     auto [bpos, curpos] = this->touchPosToBufferPos(pos);
 
-    if (bpos == -1) {
+    if (bpos == (size_t)-1) {
         // no code was touched
         return true;
     }

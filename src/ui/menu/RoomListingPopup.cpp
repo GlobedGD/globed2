@@ -114,7 +114,7 @@ bool RoomListingPopup::init() {
             )
             .contentSize(60.f, 0.f)
             .parent(bottomMenu)
-            .child(Build<CCLabelBMFont>::create("Mod", "bigFont.fnt").scale(0.4f))
+            .child(Build<Label>::create("Mod", "bigFont.fnt").scale(0.4f))
             .child(
                 Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f, [this](auto btn) {
                     bool enabled = !btn->isToggled();

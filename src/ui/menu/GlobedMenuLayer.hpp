@@ -9,7 +9,6 @@
 #include <Geode/Geode.hpp>
 #include <cue/ListNode.hpp>
 #include <asp/time/Instant.hpp>
-#include <AdvancedLabel.hpp>
 
 namespace globed {
 
@@ -29,12 +28,12 @@ public:
 private:
     CCMenu* m_connectMenu;
     geode::NineSlice* m_connectMenuBg;
-    geode::Button* m_editServerButton;
-    CCLabelBMFont* m_serverNameLabel;
-    geode::Button* m_connectButton;
-    CCLabelBMFont* m_connStateLabel;
+    Button* m_editServerButton;
+    Label* m_serverNameLabel;
+    Button* m_connectButton;
+    Label* m_connStateLabel;
     CCNode* m_connStateContainer;
-    geode::Button* m_cancelConnButton;
+    Button* m_cancelConnButton;
     MenuState m_state = MenuState::None;
     ConnectionState m_lastConnState;
 
@@ -42,7 +41,7 @@ private:
     cue::ListNode* m_playerList;
     Label* m_roomNameLabel;
     Label* m_preferredServerLabel;
-    geode::Button* m_roomNameButton;
+    Button* m_roomNameButton;
     CCMenu* m_roomButtonsMenu;
     CCMenu* m_rightSideMenu = nullptr;
     CCMenu* m_leftSideMenu = nullptr;

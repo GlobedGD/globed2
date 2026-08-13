@@ -138,10 +138,10 @@ void ProfilerOverlay::addNewEntryToLegend(std::string_view name, cocos2d::ccColo
         .contentSize({5.f, 5.f})
         .parent(container);
 
-    auto label = Build<Label>::create(name, "bigFont.fnt")
+    auto label = Build<Label>::create(std::string{name}, "bigFont.fnt")
         .parent(container)
         .collect();
-    label->limitLabelWidth(70.f, 0.5f, 0.1f);
+    label->setLimitLabelWidth(70.f, 0.5f, 0.1f);
 
     cue::resetNode(m_legendBg);
 

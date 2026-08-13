@@ -2,6 +2,7 @@
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/LazyPlayerIcon.hpp>
 
+#include <Geode/ui/Label.hpp>
 #include <UIBuilder.hpp>
 #include <asp/time/SystemTime.hpp>
 #include <asp/iter.hpp>
@@ -73,7 +74,7 @@ private:
             .pos(12.f, TYPE_HEIGHT / 2.f)
             .parent(this);
 
-        Build<CCLabelBMFont>::create(type.name, "bigFont.fnt")
+        Build<Label>::create(type.name, "bigFont.fnt")
             .limitLabelWidth(TYPE_WIDTH * 0.7f, 0.45f, 0.1f)
             .anchorPoint(0.f, 0.5f)
             .pos(24.f, TYPE_HEIGHT / 2.f)
@@ -110,7 +111,7 @@ private:
         this->setContentSize({USER_WIDTH, USER_HEIGHT});
 
         if (mod.accountId == 0) {
-            Build<CCLabelBMFont>::create("Everyone", "bigFont.fnt")
+            Build<Label>::create("Everyone", "bigFont.fnt")
                 .limitLabelWidth(TYPE_WIDTH * 0.7f, 0.45f, 0.1f)
                 .anchorPoint(0.f, 0.5f)
                 .pos(4.f, TYPE_HEIGHT / 2.f)
@@ -128,7 +129,7 @@ private:
                 .pos(12.f, USER_HEIGHT / 2.f)
                 .parent(this);
 
-            Build<CCLabelBMFont>::create(mod.username.c_str(), "bigFont.fnt")
+            Build<Label>::create(mod.username.c_str(), "bigFont.fnt")
                 .limitLabelWidth(TYPE_WIDTH * 0.7f, 0.45f, 0.1f)
                 .anchorPoint(0.f, 0.5f)
                 .pos(24.f, TYPE_HEIGHT / 2.f)
@@ -174,7 +175,7 @@ private:
 
         auto action = findActionType(log.type);
         if (!action) {
-            Build<CCLabelBMFont>::create(fmt::format("Unknown action: {}", log.type).c_str(), "bigFont.fnt")
+            Build<Label>::create(fmt::format("Unknown action: {}", log.type).c_str(), "bigFont.fnt")
                 .scale(0.5f)
                 .anchorPoint(0.f, 0.5f)
                 .pos(8.f, HEIGHT / 2.f)
@@ -198,7 +199,7 @@ private:
         }
 
         auto issuerName = issuer.accountId == 0 ? "System" : issuer.username;
-        Build<CCLabelBMFont>::create(fmt::format("{} by {} for {}", action->name, issuerName, targetStr).c_str(), "goldFont.fnt")
+        Build<Label>::create(fmt::format("{} by {} for {}", action->name, issuerName, targetStr).c_str(), "goldFont.fnt")
             .limitLabelWidth(280.f, 0.55f, 0.1f)
             .anchorPoint(0.f, 0.5f)
             .pos(40.f, HEIGHT * 0.75f + 1.f)
@@ -245,7 +246,7 @@ private:
         }
 
         if (!msgStr.empty()) {
-            Build<CCLabelBMFont>::create(msgStr.c_str(), "bigFont.fnt")
+            Build<Label>::create(msgStr.c_str(), "bigFont.fnt")
                 .limitLabelWidth(WIDTH * 0.84f, 0.4f, 0.05f)
                 .anchorPoint(0.f, 0.5f)
                 .pos(40.f, HEIGHT * 0.5f - 2.f)
@@ -275,7 +276,7 @@ private:
 
             std::string footer;
 
-            Build<CCLabelBMFont>::create(footer.c_str(), "bigFont.fnt")
+            Build<Label>::create(footer.c_str(), "bigFont.fnt")
                 .limitLabelWidth(WIDTH * 0.84f, 0.4f, 0.05f)
                 .anchorPoint(0.f, 0.5f)
                 .pos(40.f, HEIGHT * 0.2f)

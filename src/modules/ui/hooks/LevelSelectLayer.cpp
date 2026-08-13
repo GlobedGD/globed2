@@ -26,7 +26,7 @@ public:
             this->setLayout(RowLayout::create()->setGap(3.f));
             this->setContentWidth(100.f);
 
-            Build<CCLabelBMFont>::create("", "bigFont.fnt")
+            Build<Label>::create("", "bigFont.fnt")
                 .parent(this)
                 .store(label);
 
@@ -34,7 +34,7 @@ public:
                 .parent(this)
                 .store(icon);
         } else {
-            Build<CCLabelBMFont>::create("", "bigFont.fnt")
+            Build<Label>::create("", "bigFont.fnt")
                 .parent(this)
                 .store(label);
         }
@@ -51,13 +51,13 @@ public:
         this->setVisible(true);
 
         if (compressed) {
-            label->setString(players == (size_t)-1 ? "?" : fmt::to_string(players).c_str());
+            label->setText(players == (size_t)-1 ? "?" : fmt::to_string(players).c_str());
             this->updateLayout();
         } else {
-            label->setString(
+            label->setText(
                 players == (size_t)-1 ?
                     "? players" :
-                    fmt::format("{} {}", players, players == 1 ? "player" : "players").c_str()
+                    fmt::format("{} {}", players, players == 1 ? "player" : "players")
             );
         }
     }
@@ -75,7 +75,7 @@ public:
 
 private:
     CCSprite* icon = nullptr;
-    CCLabelBMFont* label = nullptr;
+    Label* label = nullptr;
     bool compressed;
 };
 

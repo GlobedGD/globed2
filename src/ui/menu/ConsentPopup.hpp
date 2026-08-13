@@ -1,6 +1,6 @@
 #pragma once
 
-#include <globed/util/CStr.hpp>
+#include <globed/prelude.hpp>
 #include <ui/BasePopup.hpp>
 #include <Geode/utils/function.hpp>
 #include <Geode/ui/Button.hpp>
@@ -71,7 +71,7 @@ private:
     bool m_privacyAccepted = false;
 
     void onButton(bool accept);
-    CCNode* createClause(CStr description, CStr popupTitle, std::string_view content, bool* accepted);
+    CCNode* createClause(ZStringView description, ZStringView popupTitle, std::string_view content, bool* accepted);
     void updateAcceptButton();
 };
 

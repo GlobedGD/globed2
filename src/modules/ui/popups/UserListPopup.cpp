@@ -464,7 +464,7 @@ bool UserListPopup::init() {
         this->onVolumeChanged(value);
     });
 
-    Build<CCLabelBMFont>::create("Voice Volume", "bigFont.fnt")
+    Build<Label>::create("Voice Volume", "bigFont.fnt")
         .scale(0.45f * 0.7f)
         .intoNewParent(CCNode::create())
         .id("volume-wrapper")

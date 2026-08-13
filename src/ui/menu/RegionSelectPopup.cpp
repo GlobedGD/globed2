@@ -31,18 +31,18 @@ public:
     void softRefreshFrom(const GameServer& server) {
         m_ping = server.avgLatency;
         m_score = server.getScore();
-        m_nameLabel->setString(server.name.c_str());
-        m_regionLabel->setString(fmt::format("Region: {}", server.region).c_str());
+        m_nameLabel->setText(server.name);
+        m_regionLabel->setText(fmt::format("Region: {}", server.region));
 
         if (m_ping == (uint32_t)-1) {
-            m_pingLabel->setString("? ms");
+            m_pingLabel->setText("? ms");
             m_pingLabel->setColor(ccColor3B{150, 150, 150});
         } else {
-            m_pingLabel->setString(fmt::format("{} ms", m_ping).c_str());
+            m_pingLabel->setText(fmt::format("{} ms", m_ping));
             m_pingLabel->setColor(NetworkManager::latencyToColor(m_ping));
         }
 
-        m_playerCountLabel->setString(fmt::format("{}", server.playerCount));
+        m_playerCountLabel->setText(fmt::format("{}", server.playerCount));
 
         m_playerCountContainer->updateLayout();
         m_regionContainer->updateLayout();
@@ -89,7 +89,7 @@ private:
 
         m_nameLabel = Build<Label>::create("", "bigFont.fnt")
             .parent(m_mainContainer);
-        m_nameLabel->limitLabelWidth(LIST_SIZE.width * 0.65f, 0.65f, 0.1f);
+        m_nameLabel->setLimitLabelWidth(LIST_SIZE.width * 0.65f, 0.65f, 0.1f);
 
         m_playerCountContainer = Build(RowContainer::create(2.f))
             .parent(m_mainContainer);
@@ -111,7 +111,7 @@ private:
 
         m_regionLabel = Build<Label>::create("", "bigFont.fnt")
             .parent(m_regionContainer);
-        m_regionLabel->limitLabelWidth(LIST_SIZE.width * 0.5f, 0.3f, 0.1f);
+        m_regionLabel->setLimitLabelWidth(LIST_SIZE.width * 0.5f, 0.3f, 0.1f);
 
         m_pingLabel = Build<Label>::create("", "bigFont.fnt")
             .scale(0.3f)

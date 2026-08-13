@@ -71,7 +71,7 @@ bool ModPunishPopup::init(int accountId, UserPunishmentType type, std::optional<
 
     reasonLayout->updateLayout();
 
-    Build<CCLabelBMFont>::create(type != UserPunishmentType::Mute ? "Ban Duration" : "Mute Duration", "bigFont.fnt")
+    Build<Label>::create(type != UserPunishmentType::Mute ? "Ban Duration" : "Mute Duration", "bigFont.fnt")
         .scale(0.5f)
         .parent(rootLayout)
         ;
@@ -171,7 +171,7 @@ bool ModPunishPopup::init(int accountId, UserPunishmentType type, std::optional<
 
         // Days
         .child(
-            Build<CCLabelBMFont>::create("Days", "bigFont.fnt")
+            Build<Label>::create("Days", "bigFont.fnt")
                 .scale(0.4f)
         )
         .child(
@@ -211,7 +211,7 @@ bool ModPunishPopup::init(int accountId, UserPunishmentType type, std::optional<
 
         // Hours
         .child(
-            Build<CCLabelBMFont>::create("Hours", "bigFont.fnt")
+            Build<Label>::create("Hours", "bigFont.fnt")
                 .scale(0.4f)
         )
         .child(

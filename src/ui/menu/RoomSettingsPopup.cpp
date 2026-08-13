@@ -21,7 +21,7 @@ class Cell : public CCMenu {
 public:
     using Callback = geode::Function<void(bool)>;
 
-    static Cell* create(CStr name, CStr desc, bool RoomSettings::* ptr, bool invert, RoomSettingsPopup* popup) {
+    static Cell* create(ZStringView name, ZStringView desc, bool RoomSettings::* ptr, bool invert, RoomSettingsPopup* popup) {
         auto ret = new Cell;
         if (ret->init(name, desc, ptr, invert, popup)) {
             ret->autorelease();
@@ -39,12 +39,12 @@ public:
 protected:
     friend class ::globed::RoomSettingsPopup;
     RoomSettingsPopup* m_popup;
-    CStr m_name;
+    ZStringView m_name;
     CCMenuItemToggler* m_toggler;
     bool RoomSettings::* m_ptr;
     bool m_invert;
 
-    bool init(CStr name, CStr desc, bool RoomSettings::* ptr, bool invert, RoomSettingsPopup* popup) {
+    bool init(ZStringView name, ZStringView desc, bool RoomSettings::* ptr, bool invert, RoomSettingsPopup* popup) {
         if (!CCMenu::init()) return false;
 
         m_popup = popup;
@@ -54,7 +54,7 @@ protected:
 
         this->setContentSize({LIST_SIZE.width, CELL_HEIGHT});
 
-        auto label = Build<CCLabelBMFont>::create(name, "bigFont.fnt")
+        auto label = Build<Label>::create(name.c_str(), "bigFont.fnt")
             .scale(0.5f)
             .anchorPoint(0.f, 0.5f)
             .pos(8.f, CELL_HEIGHT / 2.f + 1.f)
@@ -259,7 +259,7 @@ bool RoomSettingsPopup::init(RoomSettings s) {
                 .parent(cell)
                 .store(setup.m_toggler);
 
-            Build<Label>::create(setup.m_name, "bigFont.fnt")
+            Build<Label>::create(setup.m_name.c_str(), "bigFont.fnt")
                 .scale(0.37f)
                 .anchorPoint(0.f, 0.5f)
                 .pos(8.f, 0.f)

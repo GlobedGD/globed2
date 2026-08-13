@@ -1,17 +1,12 @@
 #pragma once
 
-#include "../prelude.hpp"
+#include "../aliases.hpp"
 #include "../util/singleton.hpp"
-#include "../util/CStr.hpp"
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/utils/cocos.hpp>
 #include <Geode/ui/Notification.hpp>
 #include <Geode/ui/PopupManager.hpp>
-
-#include <deque>
-
-class Label;
-
+#include <Geode/ui/Label.hpp>
 
 namespace globed {
 
@@ -26,28 +21,28 @@ public:
 
     // Creates a popup with the given title and content (optionally button 1, 2 and width). Does not show the popup to the user.
     PopupRef alert(
-        CStr title,
+        ZStringView title,
         const std::string& content,
-        CStr btn1 = "Ok",
-        CStr btn2 = nullptr,
+        ZStringView btn1 = "Ok",
+        ZStringView btn2 = nullptr,
         float width = DEFAULT_WIDTH
     );
 
     // Creates a popup with the given title and content (optionally button 1, 2 and width). Does not show the popup to the user.
     // The callback is involved when the user presses either of the buttons in the popup.
     PopupRef quickPopup(
-        CStr title,
+        ZStringView title,
         const std::string& content,
-        CStr btn1 = "Ok",
-        CStr btn2 = nullptr,
-        geode::Function<void (FLAlertLayer*, bool)> callback = {},
+        ZStringView btn1 = "Ok",
+        ZStringView btn2 = nullptr,
+        Function<void (FLAlertLayer*, bool)> callback = {},
         float width = DEFAULT_WIDTH
     );
 
     // Creates a popup with the given title and content as a formatted string. Does not show the popup to the user
     template <class... Args>
     PopupRef alertFormat(
-        CStr title,
+        ZStringView title,
         fmt::format_string<Args...> fmt,
         Args&&... args
     ) {
@@ -68,10 +63,10 @@ public:
 /// Creates a popup with the given title and content (optionally button 1, 2 and width) and shows it to the user.
 /// Shorthand for PopupManager::get().alert(args).showInstant()
 inline void alert(
-    CStr title,
+    ZStringView title,
     const std::string& content,
-    CStr btn1 = "Ok",
-    CStr btn2 = nullptr,
+    ZStringView btn1 = "Ok",
+    ZStringView btn2 = nullptr,
     float width = PopupManager::DEFAULT_WIDTH
 ) {
     PopupManager::get().alert(title, content, btn1, btn2, width).showInstant();
@@ -81,10 +76,10 @@ inline void alert(
 /// The callback is involved when the user presses either of the buttons in the popup.
 /// Shorthand for PopupManager::get().quickPopup(args).showInstant()
 inline void quickPopup(
-    CStr title,
+    ZStringView title,
     const std::string& content,
-    CStr btn1 = "Ok",
-    CStr btn2 = nullptr,
+    ZStringView btn1 = "Ok",
+    ZStringView btn2 = nullptr,
     geode::Function<void (FLAlertLayer*, bool)> callback = {},
     float width = PopupManager::DEFAULT_WIDTH
 ) {
@@ -96,10 +91,10 @@ inline void quickPopup(
 /// Creates a confirmation popup and shows it to the user.
 /// Shorthand for quickPopup(...), but with the callback having 1 argument and only being invoked when the user presses the second button.
 inline void confirmPopup(
-    CStr title,
+    ZStringView title,
     const std::string& content,
-    CStr btn1 = "Cancel",
-    CStr btn2 = "Ok",
+    ZStringView btn1 = "Cancel",
+    ZStringView btn2 = "Ok",
     geode::Function<void (FLAlertLayer*)> callback = {},
     float width = PopupManager::DEFAULT_WIDTH
 ) {
@@ -114,7 +109,7 @@ inline void confirmPopup(
 /// Shorthand for PopupManager::get().alertFormat(args).showInstant()
 template <class... Args>
 void alertFormat(
-    CStr title,
+    ZStringView title,
     fmt::format_string<Args...> fmt,
     Args&&... args
 ) {
@@ -151,7 +146,5 @@ template <class... Args>
 void toastSuccess(fmt::format_string<Args...> fmt, Args&&... args) {
     return toast(geode::NotificationIcon::Success, fmt, std::forward<Args>(args)...);
 }
-
-void colorizeLabel(Label* label, std::string_view text);
 
 }

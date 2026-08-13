@@ -42,7 +42,7 @@ bool DiscordLinkAttemptPopup::init(uint64_t userId, const std::string& username,
         .contentSize(0.f, 40.f)
         .collect();
 
-    auto nameLabel = Build<CCLabelBMFont>::create(username.c_str(), "goldFont.fnt")
+    auto nameLabel = Build<Label>::create(username.c_str(), "goldFont.fnt")
         .limitLabelWidth(m_size.width * 0.45f, 0.7f, 0.1f)
         .parent(dataContainer);
 
@@ -76,7 +76,7 @@ bool DiscordLinkAttemptPopup::init(uint64_t userId, const std::string& username,
         )
         .updateLayout();
 
-    Build<CCLabelBMFont>::create("Only accept if this is your account!", "bigFont.fnt")
+    Build<Label>::create("Only accept if this is your account!", "bigFont.fnt")
         .scale(0.42f)
         .color({ 255, 127, 41 })
         .pos(this->fromBottom(56.f))

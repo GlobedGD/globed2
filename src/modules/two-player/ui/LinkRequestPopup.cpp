@@ -26,7 +26,7 @@ bool LinkRequestPopup::init(int accountId, UserListPopup* popup) {
 
     m_username = rp && rp->isDataInitialized() ? rp->displayData().username : "Unknown";
 
-    Build<CCLabelBMFont>::create(m_username.c_str(), "bigFont.fnt")
+    Build<Label>::create(m_username, "bigFont.fnt")
         .scale(0.6f)
         .pos(this->fromTop(35.f))
         .parent(m_mainLayer);
@@ -46,7 +46,7 @@ bool LinkRequestPopup::init(int accountId, UserListPopup* popup) {
         .pos(this->fromBottom(23.f))
         .parent(m_mainLayer);
 
-    m_loadText = Build<CCLabelBMFont>::create("Waiting for confirmation..", "bigFont.fnt")
+    m_loadText = Build<Label>::create("Waiting for confirmation..", "bigFont.fnt")
         .scale(0.4f)
         .pos(this->fromBottom(50.f))
         .visible(false)

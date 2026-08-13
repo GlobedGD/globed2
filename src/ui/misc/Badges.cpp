@@ -27,8 +27,8 @@ static CCSprite* createAny(const char* name) {
     return isValid(sprite) ? sprite : nullptr;
 }
 
-CCSprite* createBadge(CStr spriteName) {
-    auto name = fmt::format("{}"_spr, spriteName.get());
+CCSprite* createBadge(ZStringView spriteName) {
+    auto name = fmt::format("{}"_spr, spriteName.view());
 
     auto sprite = createAny(name.c_str());
 

@@ -100,7 +100,7 @@ bool SetupEmbeddedScriptPopup::init(TextGameObject* obj) {
     toggler->m_onButton->m_scaleMultiplier = 1.1f;
     toggler->toggle(m_script.main);
 
-    Build<CCLabelBMFont>::create("Main", "bigFont.fnt")
+    Build<Label>::create("Main", "bigFont.fnt")
         .scale(0.45f)
         .pos(60.f, 24.f)
         .parent(m_mainLayer);

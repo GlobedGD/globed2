@@ -112,11 +112,11 @@ void PingOverlay::updatePing() {
     auto loss = nm.getGameLoss();
 
     if (!connected) {
-        m_pingLabel->setString("? ms");
+        m_pingLabel->setText("? ms");
     } else if (loss <= 0.01f) {
-        m_pingLabel->setString(fmt::format("{} ms", ping));
+        m_pingLabel->setText(fmt::format("{} ms", ping));
     } else {
-        m_pingLabel->setString(fmt::format("{} ms ({:.1f}% loss)", ping, loss * 100.f));
+        m_pingLabel->setText(fmt::format("{} ms ({:.1f}% loss)", ping, loss * 100.f));
     }
 
     m_pingLabel->setColor(colorForPingAndLoss(ping, loss));

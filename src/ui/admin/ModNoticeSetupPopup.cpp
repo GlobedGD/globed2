@@ -3,6 +3,7 @@
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/admin/Common.hpp>
 
+#include <Geode/ui/Label.hpp>
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
 
@@ -56,7 +57,7 @@ bool ModNoticeSetupPopup::init() {
             default: text = "Unknown";
         }
 
-        Build<CCLabelBMFont>::create(text, "bigFont.fnt")
+        Build<Label>::create(text, "bigFont.fnt")
             .limitLabelWidth(50.f, 0.4f, 0.2f)
             .parent(checkboxMenu);
     };
@@ -111,7 +112,7 @@ bool ModNoticeSetupPopup::init() {
         .parent(m_inputsContainer)
         .store(m_canReplyCheckbox);
 
-    Build<CCLabelBMFont>::create("Can reply", "bigFont.fnt")
+    Build<Label>::create("Can reply", "bigFont.fnt")
         .scale(0.4f)
         .parent(m_inputsContainer)
         .store(m_canReplyLabel);
@@ -133,7 +134,7 @@ bool ModNoticeSetupPopup::init() {
         .store(m_showSenderCheckbox);
     m_showSenderCheckbox->setCascadeColorEnabled(true);
 
-    Build<CCLabelBMFont>::create("Show\nsender", "bigFont.fnt")
+    Build<Label>::create("Show\nsender", "bigFont.fnt")
         .scale(0.35f)
         .parent(m_buttonMenu)
         .pos(this->fromBottom({96.f, 27.f}));

@@ -4,6 +4,7 @@
 #include <globed/core/SettingsManager.hpp>
 #include <ui/misc/InputPopup.hpp>
 
+#include <Geode/ui/Label.hpp>
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
@@ -40,7 +41,7 @@ private:
 
         this->setContentSize({LIST_SIZE.width, CELL_HEIGHT});
 
-        Build<CCLabelBMFont>::create(m_meta.name.c_str(), "bigFont.fnt")
+        Build<Label>::create(m_meta.name.c_str(), "bigFont.fnt")
             .anchorPoint(0.f, 0.5f)
             .limitLabelWidth(220.f, 0.6f, 0.01f)
             .pos(8.f, CELL_HEIGHT / 2.f)

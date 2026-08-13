@@ -22,7 +22,7 @@ bool WarpLoadPopup::init(int levelId, bool openLevel, bool replaceScene) {
     m_openLevel = openLevel;
     m_replaceScene = replaceScene;
 
-    m_statusLabel = Build<CCLabelBMFont>::create("Fetching level data..", "bigFont.fnt")
+    m_statusLabel = Build<Label>::create("Fetching level data..", "bigFont.fnt")
         .pos(this->fromTop(50.f))
         .scale(0.35f)
         .parent(m_mainLayer);

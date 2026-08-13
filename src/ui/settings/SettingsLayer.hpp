@@ -35,13 +35,13 @@ private:
     void selectTab(cue::ListNode* tab);
 
     template <typename T, typename... Args>
-    T* addSetting(CStr key, CStr name, CStr desc, Args&&... args) {
+    T* addSetting(ZStringView key, ZStringView name, ZStringView desc, Args&&... args) {
         auto cell = T::create(key, name, desc, std::forward<Args>(args)..., CELL_SIZE);
         this->addSetting(cell);
         return cell;
     }
 
-    void addHeader(CStr key, CStr text, cue::ListNode* curTab);
+    void addHeader(ZStringView key, ZStringView text, cue::ListNode* curTab);
     void addSetting(BaseSettingCellBase* cell);
 
     void refreshAll();

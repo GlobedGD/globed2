@@ -41,7 +41,7 @@ bool InviteNotification::init(const msg::InvitedMessage& msg) {
         .pos(width - cc9sw + 2.f, cc9sh + 8.f)
         .parent(this);
 
-    Build<CCLabelBMFont>::create(msg.invitedBy.username.c_str(), "goldFont.fnt")
+    Build<Label>::create(msg.invitedBy.username.c_str(), "goldFont.fnt")
         .id("name-label")
         .limitLabelWidth(targetWidth, 0.76f, 0.3f)
         .intoMenuItem([player = msg.invitedBy] {
@@ -57,7 +57,7 @@ bool InviteNotification::init(const msg::InvitedMessage& msg) {
         .pos(0.f, 0.f)
         .parent(this);
 
-    Build<CCLabelBMFont>::create("invited you to a room", "bigFont.fnt")
+    Build<Label>::create("invited you to a room", "bigFont.fnt")
         .id("hint")
         .scale(0.45f)
         .pos(width / 2.f + 10.f, height / 2.f + 6.f)

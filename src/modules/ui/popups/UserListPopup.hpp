@@ -5,7 +5,7 @@
 #include <cue/ListNode.hpp>
 #include <cue/Slider.hpp>
 #include <asp/time/Instant.hpp>
-#include <AdvancedLabel.hpp>
+#include <Geode/ui/Label.hpp>
 
 namespace globed {
 
@@ -20,8 +20,8 @@ private:
     cue::Slider* m_volumeSlider;
     std::string m_searchFilter;
     CCNode* m_serverContainer = nullptr;
-    Label* m_serverNameLabel = nullptr;
-    Label* m_serverPingLabel = nullptr;
+    geode::Label* m_serverNameLabel = nullptr;
+    geode::Label* m_serverPingLabel = nullptr;
     asp::time::Instant m_lastKeystroke;
     bool m_needsFilterUpdate = false;
 

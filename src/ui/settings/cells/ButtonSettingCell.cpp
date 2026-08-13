@@ -11,10 +11,10 @@ void ButtonSettingCell::setup() {
     this->createButton(m_btnText);
 }
 
-void ButtonSettingCell::createButton(CStr text) {
+void ButtonSettingCell::createButton(ZStringView text) {
     cue::resetNode(m_button);
 
-    m_button = Build<ButtonSprite>::create(m_btnText, "goldFont.fnt", "GJ_button_04.png", 0.8f)
+    m_button = Build<ButtonSprite>::create(m_btnText.c_str(), "goldFont.fnt", "GJ_button_04.png", 0.8f)
         .scale(0.7f)
         .intoMenuItem([this] {
             m_callback();
@@ -27,11 +27,11 @@ void ButtonSettingCell::createButton(CStr text) {
 }
 
 ButtonSettingCell* ButtonSettingCell::create(
-    CStr name,
-    CStr desc,
-    CStr btnText,
+    ZStringView name,
+    ZStringView desc,
+    ZStringView btnText,
     Callback&& cb,
-    cocos2d::CCSize cellSize
+    CCSize cellSize
 ) {
     auto ret = new ButtonSettingCell;
     ret->m_callback = std::move(cb);

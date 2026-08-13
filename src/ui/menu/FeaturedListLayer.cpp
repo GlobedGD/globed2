@@ -48,7 +48,7 @@ bool FeaturedListLayer::init() {
         .parent(this);
 
     // levels label
-    m_levelsLabel = Build<CCLabelBMFont>::create("", "goldFont.fnt")
+    m_levelsLabel = Build<Label>::create("", "goldFont.fnt")
         .id("level-count-label")
         .pos(winSize.width - 7, winSize.height - 2)
         .scale(0.45f)

@@ -3,7 +3,6 @@
 #include <globed/prelude.hpp>
 
 #include <Geode/Geode.hpp>
-#include <AdvancedLabel.hpp>
 
 namespace globed {
 

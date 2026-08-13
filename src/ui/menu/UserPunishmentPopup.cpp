@@ -44,7 +44,7 @@ bool UserPunishmentPopup::init(const std::string& reason, int64_t expiresAt, boo
 
     layout->addChild(m_textArea);
 
-    Build<CCLabelBMFont>::create(fmt::format("Expires: {}", timeUntil).c_str(), "goldFont.fnt")
+    Build<Label>::create(fmt::format("Expires: {}", timeUntil), "goldFont.fnt")
         .scale(0.65f)
         .parent(layout);
 

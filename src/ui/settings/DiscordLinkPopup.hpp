@@ -2,6 +2,7 @@
 
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
+#include <globed/prelude.hpp>
 #include <ui/BasePopup.hpp>
 #include <ui/misc/LazyPlayerIcon.hpp>
 
@@ -15,18 +16,18 @@ public:
     static DiscordLinkPopup* create();
 
 protected:
-    cocos2d::CCNode* m_playerCard;
+    CCNode* m_playerCard;
     geode::NineSlice* m_background;
-    geode::Button* m_discordBtn = nullptr;
-    geode::Button* m_activeBtn = nullptr;
-    cocos2d::CCNode* m_statusContainer = nullptr;
-    cocos2d::CCNode* m_dataContainer = nullptr;
-    cocos2d::CCLabelBMFont* m_statusLabel = nullptr;
-    cocos2d::CCLabelBMFont* m_nameLabel = nullptr;
-    cocos2d::CCLabelBMFont* m_idLabel = nullptr;
-    cocos2d::CCLabelBMFont* m_waitingLabel1 = nullptr;
-    cocos2d::CCLabelBMFont* m_waitingLabel2 = nullptr;
-    cocos2d::CCNode* m_waitingContainer = nullptr;
+    Button* m_discordBtn = nullptr;
+    Button* m_activeBtn = nullptr;
+    CCNode* m_statusContainer = nullptr;
+    CCNode* m_dataContainer = nullptr;
+    Label* m_statusLabel = nullptr;
+    Label* m_nameLabel = nullptr;
+    Label* m_idLabel = nullptr;
+    Label* m_waitingLabel1 = nullptr;
+    Label* m_waitingLabel2 = nullptr;
+    CCNode* m_waitingContainer = nullptr;
     LazyPlayerIcon* m_playerIcon;
     geode::LazySprite* m_avatar = nullptr;
     bool m_activelyWaiting = false;
@@ -41,7 +42,7 @@ protected:
 
     void onStateLoaded(uint64_t id, const std::string& username, const std::string& avatarUrl);
     // void onAttemptReceived(uint64_t id, const std::string& username, const std::string& avatarUrl);
-    void onOauthUrlReceived(geode::ZStringView url);
+    void onOauthUrlReceived(ZStringView url);
 
     void addLinkingText();
 

@@ -1,8 +1,7 @@
 #pragma once
 
 #include <Geode/ui/Button.hpp>
-#include <cocos2d.h>
-#include <globed/util/CStr.hpp>
+#include <globed/prelude.hpp>
 #include <globed/core/SettingsManager.hpp>
 
 namespace globed {
@@ -12,15 +11,15 @@ public:
     virtual void reload() {}
 
 protected:
-    CStr m_key;
-    CStr m_name;
-    CStr m_desc;
-    cocos2d::CCSize m_size;
-    cocos2d::CCMenu* m_rightMenu;
-    geode::Button* m_infoButton = nullptr;
+    ZStringView m_key;
+    ZStringView m_name;
+    ZStringView m_desc;
+    CCSize m_size;
+    CCMenu* m_rightMenu;
+    Button* m_infoButton = nullptr;
 
-    bool init(CStr key, CStr name, CStr desc, cocos2d::CCSize cellSize);
-    bool initNoSetting(CStr name, CStr desc, cocos2d::CCSize cellSize);
+    bool init(ZStringView key, ZStringView name, ZStringView desc, CCSize cellSize);
+    bool initNoSetting(ZStringView name, ZStringView desc, CCSize cellSize);
 
     virtual void setup() = 0;
 };
@@ -29,10 +28,10 @@ template <typename Derived>
 class BaseSettingCell : public BaseSettingCellBase {
 public:
     static Derived* create(
-        CStr key,
-        CStr name,
-        CStr desc,
-        cocos2d::CCSize cellSize
+        ZStringView key,
+        ZStringView name,
+        ZStringView desc,
+        CCSize cellSize
     ) {
         auto ret = new Derived;
         if (ret->init(key, name, desc, cellSize)) {

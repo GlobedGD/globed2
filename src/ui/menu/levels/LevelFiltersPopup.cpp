@@ -59,7 +59,7 @@ bool LevelFiltersPopup::init(LevelListLayer* layer) {
                     ->setAxisAlignment(AxisAlignment::Start)
             )
             .parent(togglesMenu)
-            .child(Build<CCLabelBMFont>::create(label, "bigFont.fnt").scale(0.3f).collect())
+            .child(Build<Label>::create(label, "bigFont.fnt").scale(0.3f).collect())
             .intoNewChild(CCMenuItemExt::createTogglerWithStandardSprites(0.65f, [callback = std::move(callback)](auto btn) {
                 callback(!btn->isToggled());
             }))
@@ -271,7 +271,7 @@ bool LevelFiltersPopup::init(LevelListLayer* layer) {
         {"Plat.", 5}
     }) {
 
-        Build<CCLabelBMFont>::create(name, "bigFont.fnt")
+        Build<Label>::create(name, "bigFont.fnt")
             .scale(0.5f)
             .intoMenuItem([this, len](geode::Button* btn) {
                 bool willEnable = btn->getColor().r != activeColor.r;

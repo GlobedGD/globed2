@@ -306,7 +306,7 @@ public:
     void sendJoinRoom(uint32_t id, uint32_t passcode = 0);
     void sendJoinRoomByToken(uint64_t token);
     void sendLeaveRoom();
-    void sendRequestRoomList(CStr nameFilter, uint32_t page);
+    void sendRequestRoomList(std::string_view nameFilter, uint32_t page);
     void sendAssignTeam(int accountId, uint16_t teamId);
     void sendCreateTeam(cocos2d::ccColor4B color);
     void sendDeleteTeam(uint16_t teamId);

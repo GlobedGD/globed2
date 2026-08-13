@@ -30,7 +30,7 @@ void FloatSettingCell::setup() {
         this->reload();
     });
 
-    m_label = Build<CCLabelBMFont>::create("", "bigFont.fnt")
+    m_label = Build<Label>::create("", "bigFont.fnt")
         .scale(0.3f)
         .parent(container);
 

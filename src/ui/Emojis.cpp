@@ -1,5 +1,7 @@
 #include "Emojis.hpp"
 
+using namespace geode::prelude;
+
 namespace globed {
 
 std::optional<std::string_view> translateEmoji(std::string_view name) {
@@ -123,8 +125,8 @@ constexpr std::pair<std::u32string_view, const char*> operator""_emoji() {
     return { std::u32string_view(S.value, S.length), S.filename };
 }
 
-const Label::EmojiMap* getEmojiMap() {
-    static const Label::EmojiMap map = {
+EmojiRegistry& getEmojiMap() {
+    static const std::unordered_map<std::u32string_view, const char*> map = {
 // ## BEGIN CODEGEN 1
         U"\U0001f1e8\U0001f1e6"_emoji,
         U"\U0001f1ec\U0001f1e7"_emoji,
@@ -418,7 +420,15 @@ const Label::EmojiMap* getEmojiMap() {
 // ## END CODEGEN 1
     };
 
-    return &map;
+    static auto registry = [] {
+        EmojiRegistry registry;
+        for (auto [k, v] : map) {
+            registry.insert(k, v);
+        }
+        return registry;
+    }();
+
+    return registry;
 }
 
 const std::unordered_map<std::string_view, std::u8string_view>& getEmojiTranslationMap() {

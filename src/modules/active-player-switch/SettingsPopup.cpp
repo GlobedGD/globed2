@@ -2,7 +2,7 @@
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/Core.hpp>
 
-#include <AdvancedLabel.hpp>
+#include <Geode/ui/Label.hpp>
 #include <cue/LoadingCircle.hpp>
 #include <cue/Util.hpp>
 #include <cue/RadioLogic.hpp>
@@ -160,13 +160,13 @@ bool APSSettingsPopup::init() {
                 slider->setCallback([this, field, lbl](cue::Slider*, double value) {
                     *field = value;
                     m_dirty = true;
-                    lbl->setString(fmt::format("{:.1f}s", value));
+                    lbl->setText(fmt::format("{:.1f}s", value));
                 });
                 slider->setRange(min, max);
                 slider->setValue(*field);
                 slider->setStep(0.1);
                 slider->setContentWidth(80.f);
-                lbl->setString(fmt::format("{:.1f}s", *field));
+                lbl->setText(fmt::format("{:.1f}s", *field));
             })
             .parent(sliderCont);
 

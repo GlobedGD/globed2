@@ -24,9 +24,9 @@ void IntSliderSettingCell::reload() {
 }
 
 IntSliderSettingCell* IntSliderSettingCell::create(
-    CStr key,
-    CStr name,
-    CStr desc,
+    ZStringView key,
+    ZStringView name,
+    ZStringView desc,
     CCSize cellSize
 ) {
     auto ret = new IntSliderSettingCell;

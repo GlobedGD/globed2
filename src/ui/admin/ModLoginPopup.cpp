@@ -73,7 +73,7 @@ bool ModLoginPopup::init(geode::Function<void()> callback) {
     rememberPwd->toggle(globed::setting<bool>("core.mod.remember-password"));
     btnLayout->addChild(rememberPwd);
 
-    Build<CCLabelBMFont>::create("Remember", "bigFont.fnt")
+    Build<Label>::create("Remember", "bigFont.fnt")
         .scale(0.5f)
         .parent(btnLayout);
 

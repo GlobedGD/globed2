@@ -11,7 +11,7 @@ public:
     void setStep(float step);
 
 protected:
-    cocos2d::CCLabelBMFont* m_label;
+    Label* m_label;
     cue::Slider* m_slider;
     bool m_isPercentage = true;
 

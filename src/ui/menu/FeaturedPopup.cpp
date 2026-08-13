@@ -66,7 +66,7 @@ bool FeaturedPopup::init() {
         .pos(20.f, viewAllBtnSpr->getScaledContentHeight() / 2 + 1.25f)
         .scale(0.4);
 
-    auto viewAllLabel = Build<CCLabelBMFont>::create("Featured List", "bigFont.fnt")
+    auto viewAllLabel = Build<Label>::create("Featured List", "bigFont.fnt")
         .parent(viewAllBtnSpr)
         .pos({36.f, viewAllBtnSpr->getScaledContentHeight() / 2 + 2.f})
         .anchorPoint({0, 0.5})

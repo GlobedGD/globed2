@@ -22,7 +22,7 @@ bool UnreadBadge::init(int count) {
         })
         .parent(this);
 
-    Build<CCLabelBMFont>::create(std::to_string(count).c_str(), "bigFont.fnt")
+    Build<Label>::create(fmt::to_string(count), "bigFont.fnt")
         .scale(0.7f)
         .pos(targetSize / 2)
         .parent(this);

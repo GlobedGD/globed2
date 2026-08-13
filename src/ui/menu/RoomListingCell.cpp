@@ -228,7 +228,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
         : fmt::format("{}/{}", info.playerCount, info.settings.playerLimit);
 
     auto playerCountLabel = Build<Label>::create(playerCountText, "bigFont.fnt")
-        .with([&](auto lbl) { lbl->limitLabelWidth(35.f, 0.35f, 0.1f); })
+        .with([&](auto lbl) { lbl->setLimitLabelWidth(35.f, 0.35f, 0.1f); })
         .parent(playerCountWrapper)
         .collect();
 
@@ -245,7 +245,7 @@ bool RoomListingCell::init(const RoomListingInfo& info, RoomListingPopup* popup)
     m_rightMenu->updateLayout();
 
     // update width of the room name accordingly, so it fits
-    roomNameLabel->limitLabelWidth(195.f - playerCountWrapper->getContentWidth(), 0.48f, 0.1f);
+    roomNameLabel->setLimitLabelWidth(195.f - playerCountWrapper->getContentWidth(), 0.48f, 0.1f);
     roomNameLayout->updateLayout();
 
     // add a background

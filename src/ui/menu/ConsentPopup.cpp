@@ -1,9 +1,9 @@
 #include "ConsentPopup.hpp"
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/PopupManager.hpp>
+#include <Geode/ui/Label.hpp>
 #include <ui/Core.hpp>
 #include <UIBuilder.hpp>
-#include <AdvancedLabel.hpp>
 #include <cue/Util.hpp>
 
 using namespace geode::prelude;
@@ -135,7 +135,7 @@ bool ConsentPopup::init() {
     return true;
 }
 
-CCNode* ConsentPopup::createClause(CStr description, CStr popupTitle, std::string_view content, bool* accepted) {
+CCNode* ConsentPopup::createClause(ZStringView description, ZStringView popupTitle, std::string_view content, bool* accepted) {
     float width = m_size.width * 0.9f;
     float textWidth = width - 64.f;
 
@@ -148,13 +148,12 @@ CCNode* ConsentPopup::createClause(CStr description, CStr popupTitle, std::strin
         )
         .collect();
 
-    auto descLabel = Build(Label::createWrapped("", "chatFont.fnt", textWidth))
+    auto descLabel = Build(Label::createRich("", "chatFont.fnt"))
         .scale(0.65f)
         .id("clause-desc-label")
         .parent(container)
         .collect();
-    colorizeLabel(descLabel, description);
-    descLabel->updateChars();
+    descLabel->setMaxWidth(textWidth);
 
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .scale(1.f)

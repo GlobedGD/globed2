@@ -2,7 +2,6 @@
 
 #include <ui/BasePopup.hpp>
 #include <globed/core/RoomManager.hpp>
-#include <globed/util/CStr.hpp>
 
 #include <Geode/Geode.hpp>
 #include <cue/ListNode.hpp>
@@ -32,8 +31,8 @@ protected:
     };
 
     struct RoomSetting {
-        CStr m_name;
-        CStr m_desc;
+        geode::ZStringView m_name;
+        geode::ZStringView m_desc;
         bool RoomSettings::* m_ptr;
         RoomSettingKind m_kind;
         asp::SmallVec<bool RoomSettings::*, 8> m_incompats;

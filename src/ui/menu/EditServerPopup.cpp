@@ -12,7 +12,7 @@ bool EditServerPopup::init(bool adding, const std::string& name, const std::stri
 
     this->setTitle(adding ? "Add a new server" : "Edit server");
 
-    Build<CCLabelBMFont>::create("Server Name", "bigFont.fnt")
+    Build<Label>::create("Server Name", "bigFont.fnt")
         .scale(0.3f)
         .pos(this->fromTop(60.f))
         .parent(m_mainLayer);
@@ -23,7 +23,7 @@ bool EditServerPopup::init(bool adding, const std::string& name, const std::stri
 
     m_nameInput->setString(name);
 
-    Build<CCLabelBMFont>::create("Server URL", "bigFont.fnt")
+    Build<Label>::create("Server URL", "bigFont.fnt")
         .scale(0.3f)
         .pos(this->fromTop(120.f))
         .parent(m_mainLayer);

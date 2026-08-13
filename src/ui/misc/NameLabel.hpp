@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+#include <globed/aliases.hpp>
 #include <globed/core/data/SpecialUserData.hpp>
 #include <ui/misc/GradientLabel.hpp>
 
@@ -34,15 +35,15 @@ private:
     GradientLabel* m_label = nullptr;
     Label* m_labelShadow = nullptr;
     Label* m_teamLabel = nullptr;
-    geode::Ref<cocos2d::CCNode> m_labelContainer = nullptr;
-    geode::Button* m_labelButton = nullptr;
-    cocos2d::CCNode* m_badgeContainer = nullptr;
-    geode::Function<void(geode::Button*)> m_callback;
+    Ref<CCNode> m_labelContainer = nullptr;
+    Button* m_labelButton = nullptr;
+    CCNode* m_badgeContainer = nullptr;
+    geode::Function<void(Button*)> m_callback;
     const char* m_font = nullptr;
     bool m_multipleBadges = false;
     bool m_shadow = true;
     MultiColor m_color;
-    std::optional<cocos2d::ccColor4B> m_teamColor;
+    std::optional<ccColor4B> m_teamColor;
     size_t m_teamIdx = 0;
 
     bool init(const std::string& name, const char* font);

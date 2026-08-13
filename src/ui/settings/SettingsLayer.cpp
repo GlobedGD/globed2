@@ -202,7 +202,7 @@ void SettingsLayer::addSettings() {
     );
     this->addSetting<EnumSettingCell>("core.invites-from", "Allow Invites From",
         "Controls who is allowed to invite you into rooms.",
-        std::vector<std::pair<CStr, InvitesFrom>>{
+        std::vector<std::pair<ZStringView, InvitesFrom>>{
         {"Everyone", InvitesFrom::Everyone},
         {"Friends", InvitesFrom::Friends},
         {"Nobody", InvitesFrom::Nobody},
@@ -250,7 +250,7 @@ void SettingsLayer::addSettings() {
         );
         this->addSetting<EnumSettingCell>("core.dev.net-prefer-proto", "Preferred Protocol",
             "Prefer a specific network protocol when connecting to servers (both central and game). If the requested protocol isn't supported by the server, other options will be attempted.",
-            std::vector<std::pair<CStr, PreferConnection>>{
+            std::vector<std::pair<ZStringView, PreferConnection>>{
             {"Auto", PreferConnection::Auto},
             {"TCP", PreferConnection::Tcp},
             {"UDP", PreferConnection::Udp},
@@ -501,7 +501,7 @@ void SettingsLayer::selectTab(cue::ListNode* tab) {
     cocos::handleTouchPriority(this, true);
 }
 
-void SettingsLayer::addHeader(CStr key, CStr text, cue::ListNode* curTab) {
+void SettingsLayer::addHeader(ZStringView key, ZStringView text, cue::ListNode* curTab) {
     _m_curTab = curTab;
     this->addSetting<TitleSettingCell>(key, text, "");
 }

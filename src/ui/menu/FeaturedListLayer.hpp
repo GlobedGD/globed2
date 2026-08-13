@@ -18,7 +18,7 @@ public:
 private:
     uint32_t m_page = 0;
     uint32_t m_totalPages = 0;
-    CCLabelBMFont* m_levelsLabel;
+    Label* m_levelsLabel;
     geode::Button* m_prevButton;
     geode::Button* m_nextButton;
     geode::Button* m_refreshBtn;

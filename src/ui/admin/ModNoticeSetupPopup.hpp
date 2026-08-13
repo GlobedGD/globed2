@@ -1,5 +1,6 @@
 #pragma once
 
+#include <globed/aliases.hpp>
 #include <ui/BasePopup.hpp>
 
 namespace globed {
@@ -22,7 +23,7 @@ protected:
     CCNode* m_inputsContainer;
     CCMenuItemToggler* m_canReplyCheckbox;
     CCMenuItemToggler* m_showSenderCheckbox;
-    cocos2d::CCLabelBMFont* m_canReplyLabel;
+    Label* m_canReplyLabel;
 
     bool init();
     void onSelectMode(int mode, bool on);

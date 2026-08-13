@@ -1,11 +1,11 @@
 #pragma once
 
-#include <AdvancedLabel.hpp>
+#include <Geode/ui/Label.hpp>
 #include <unordered_map>
 
 namespace globed {
 
-const Label::EmojiMap* getEmojiMap();
+geode::EmojiRegistry& getEmojiMap();
 const std::unordered_map<std::string_view, std::u8string_view>& getEmojiTranslationMap();
 
 std::optional<std::string_view> translateEmoji(std::string_view name);

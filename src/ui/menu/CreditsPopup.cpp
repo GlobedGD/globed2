@@ -54,7 +54,7 @@ private:
 
         // name
         geode::Button* nameLabel;
-        auto menu = Build<CCLabelBMFont>::create(user.displayName.c_str(), "goldFont.fnt")
+        auto menu = Build<Label>::create(user.displayName.c_str(), "goldFont.fnt")
             .scale(0.45f)
             .limitLabelWidth(52.f, 0.45f, 0.05f)
             .intoMenuItem([accountId = user.accountId, userId = user.userId, name = user.username] {
@@ -103,7 +103,7 @@ private:
 
         size_t rows = (cat.users.size() + PLAYERS_IN_ROW - 1) / PLAYERS_IN_ROW;
 
-        auto* title = Build<CCLabelBMFont>::create(cat.name.c_str(), "bigFont.fnt")
+        auto* title = Build<Label>::create(cat.name.c_str(), "bigFont.fnt")
             .scale(0.68f)
             .pos(LIST_SIZE.width / 2, 3.f)
             .parent(this)

@@ -53,7 +53,7 @@ bool CreateRoomPopup::init() {
         .contentSize(100.f, 20.f)
         .layout(RowLayout::create()->setGap(3.f)->setAutoScale(false))
         .child(
-            Build<CCLabelBMFont>::create("Room Name", "bigFont.fnt")
+            Build<Label>::create("Room Name", "bigFont.fnt")
                 .scale(0.5f)
         )
         .child(
@@ -91,7 +91,7 @@ bool CreateRoomPopup::init() {
         .id("pw-wrapper")
         .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
         .contentSize(0.f, 50.f)
-        .intoNewChild(CCLabelBMFont::create("Passcode", "bigFont.fnt"))
+        .intoNewChild(Label::create("Passcode", "bigFont.fnt"))
         .scale(0.35f)
         .intoParent()
         .parent(smallInputsWrapper)
@@ -111,7 +111,7 @@ bool CreateRoomPopup::init() {
         .id("limit-wrapper")
         .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
         .contentSize(0.f, 50.f)
-        .intoNewChild(CCLabelBMFont::create("Player limit", "bigFont.fnt"))
+        .intoNewChild(Label::create("Player limit", "bigFont.fnt"))
         .scale(0.35f)
         .intoParent()
         .parent(smallInputsWrapper)

@@ -293,7 +293,8 @@ bool GlobedMenuLayer::init() {
         .id("server-field")
         .layout(serverFieldLayout)
         .child(
-            Build<CCLabelBMFont>::create("Server Name", "goldFont.fnt")
+            Build<Label>::create("Server Name", "goldFont.fnt")
+                .limitLabelWidth(180.f, 0.7f, 0.1f)
                 .store(m_serverNameLabel)
         )
         .child(
@@ -350,8 +351,8 @@ bool GlobedMenuLayer::init() {
         .collect();
 
     // connection state label
-    m_connStateLabel = Build<CCLabelBMFont>::create("", "bigFont.fnt")
-        .scale(0.6f)
+    m_connStateLabel = Build<Label>::create("", "bigFont.fnt")
+        .limitLabelWidth(210.f, 0.7f, 0.2f)
         .id("conn-state-label")
         .parent(m_connStateContainer);
 
@@ -415,6 +416,7 @@ bool GlobedMenuLayer::init() {
         .pos(g_listMenuSize.width / 2.f, g_listMenuSize.height - 16.f)
         .id("room-name-btn")
         .parent(m_playerListMenu);
+    m_roomNameLabel->setLimitLabelWidth(320.f, 0.7f, 0.35f);
 
     m_playerList = Build<cue::ListNode>::create(g_listSize, ccColor4B{0x33, 0x44, 0x99, 255}, cue::ListBorderStyle::CommentsBlue)
         .anchorPoint(0.5f, 1.f)
@@ -542,9 +544,8 @@ void GlobedMenuLayer::updateRoom(uint32_t id, const std::string& name, const std
         labelText = fmt::format("{} ({})", name, id);
     }
 
-    if (m_roomNameLabel->getString() != labelText) {
-        m_roomNameLabel->setString(labelText);
-        m_roomNameLabel->limitLabelWidth(320.f, 0.7f, 0.35f);
+    if (m_roomNameLabel->getText() != labelText) {
+        m_roomNameLabel->setText(labelText);
         m_roomNameLabel->setAnchorPoint({0.f, 0.f});
         m_roomNameButton->setContentSize(m_roomNameLabel->getScaledContentSize());
     }
@@ -1251,8 +1252,6 @@ void GlobedMenuLayer::onServerModified() {
     // set the name of the server
     const auto& serverName = ServerManager::get().getActiveServer().name;
     m_serverNameLabel->setString(serverName.c_str());
-    m_serverNameLabel->limitLabelWidth(180.f, 0.7f, 0.1f);
-
     m_serverNameLabel->getParent()->updateLayout();
 
     this->setMenuState(m_state, true);
@@ -1309,8 +1308,6 @@ void GlobedMenuLayer::update(float dt) {
         } break;
     }
 
-    m_connStateLabel->limitLabelWidth(210.f, 0.7f, 0.2f);
-
     if (m_lastConnState != connState) {
         m_lastConnState = connState;
         m_connStateContainer->updateLayout();
@@ -1341,7 +1338,7 @@ void GlobedMenuLayer::update(float dt) {
 void GlobedMenuLayer::updatePreferredServerLabel(bool connected) {
     auto& nm = NetworkManagerImpl::get();
     if (!connected) {
-        m_preferredServerLabel->setString("");
+        m_preferredServerLabel->setText("");
         return;
     }
 
@@ -1349,9 +1346,9 @@ void GlobedMenuLayer::updatePreferredServerLabel(bool connected) {
     auto preferredId = rm.pickServerId().value_or(0);
     auto preferredServer = nm.getGameServer(preferredId);
     if (preferredServer) {
-        m_preferredServerLabel->setString(preferredServer->name);
+        m_preferredServerLabel->setText(preferredServer->name);
     } else {
-        m_preferredServerLabel->setString("");
+        m_preferredServerLabel->setText("");
     }
     m_preferredServerLabel->getParent()->updateLayout();
 }

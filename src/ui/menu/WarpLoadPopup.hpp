@@ -2,6 +2,7 @@
 
 #include <ui/BasePopup.hpp>
 #include <Geode/Bindings.hpp>
+#include <globed/aliases.hpp>
 
 namespace globed {
 
@@ -11,7 +12,7 @@ public:
     ~WarpLoadPopup();
 
 private:
-    cocos2d::CCLabelBMFont* m_statusLabel;
+    Label* m_statusLabel;
     int m_levelId;
     bool m_openLevel, m_replaceScene;
     bool m_finished = false;

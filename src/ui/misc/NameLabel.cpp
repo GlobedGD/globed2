@@ -255,7 +255,7 @@ void NameLabel::updateLabelColors() {
                     .parent(m_badgeContainer);
             }
 
-            m_teamLabel->setString(fmt::to_string(m_teamIdx + 1));
+            m_teamLabel->setText(fmt::to_string(m_teamIdx + 1));
             m_teamLabel->setColor(color);
 
             this->resizeBadgeContainer();

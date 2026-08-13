@@ -44,7 +44,7 @@ bool SetupFireServerPopup::init(FireServerObject* obj) {
         .pos(this->fromTopRight(66.f, 80.f))
         .parent(m_mainLayer);
 
-    Build<CCLabelBMFont>::create("Event ID", "chatFont.fnt")
+    Build<Label>::create("Event ID", "chatFont.fnt")
         .scale(0.8f)
         .pos(this->fromTopRight(66.f, 50.f))
         .parent(m_mainLayer);
@@ -131,7 +131,7 @@ CCNode* SetupFireServerPopup::createParam(size_t idx, int value) {
             .layout(ColumnLayout::create()->setAutoScale(false))
             .contentSize(36.f, 48.f)
             .child(toggler)
-            .child(Build<CCLabelBMFont>::create(name, "bigFont.fnt").limitLabelWidth(36.f, 0.45f, 0.1f))
+            .child(Build<Label>::create(name, "bigFont.fnt").limitLabelWidth(36.f, 0.45f, 0.1f))
             .parent(radioMenu)
             .updateLayout();
     };
@@ -143,7 +143,7 @@ CCNode* SetupFireServerPopup::createParam(size_t idx, int value) {
 
     return Build(this->createInputBox(idx, value))
         .child(
-            Build<CCLabelBMFont>::create(fmt::format("Param {}", idx + 1).c_str(), "chatFont.fnt")
+            Build<Label>::create(fmt::format("Param {}", idx + 1), "chatFont.fnt")
                 .scale(0.6f)
         )
         .child(radioMenu)
@@ -224,7 +224,7 @@ CCNode* SetupFireServerPopup::addBaseCheckbox(const char* label, CCMenuItemToggl
         .layout(RowLayout::create()->setAutoScale(false)->setGap(6.f))
         .contentSize(80.f, 24.f)
         .child(toggler)
-        .child(Build<CCLabelBMFont>::create(label, "bigFont.fnt").scale(0.35f))
+        .child(Build<Label>::create(label, "bigFont.fnt").scale(0.35f))
         .updateLayout();
 }
 

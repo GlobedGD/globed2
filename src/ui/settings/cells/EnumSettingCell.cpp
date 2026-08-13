@@ -47,7 +47,7 @@ void EnumSettingCell::pickNext() {
     this->reload();
 }
 
-EnumSettingCell* EnumSettingCell::create(CStr key, CStr name, CStr desc, std::vector<std::pair<CStr, int>> options, CCSize cellSize) {
+EnumSettingCell* EnumSettingCell::create(ZStringView key, ZStringView name, ZStringView desc, std::vector<std::pair<ZStringView, int>> options, CCSize cellSize) {
     GLOBED_ASSERT(!options.empty());
 
     auto ret = new EnumSettingCell;

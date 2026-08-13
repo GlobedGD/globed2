@@ -103,9 +103,9 @@ static CCGLProgram* getShader() {
 }
 
 bool GradientLabel::init(std::string_view text, const std::string& font) {
-    CCNode::init();
+    CCNodeRGBA::init();
 
-    m_label = Build<Label>::create(text, font)
+    m_label = Build<Label>::create(std::string{text}, font)
         .anchorPoint(0.f, 0.f)
         .parent(this);
 
@@ -113,8 +113,12 @@ bool GradientLabel::init(std::string_view text, const std::string& font) {
 
     this->setCascadeColorEnabled(false);
     this->setCascadeOpacityEnabled(false);
-    this->setContentSize(m_label->getContentSize());
     this->initShader();
+    this->setLayout(SimpleRowLayout::create()
+        ->setMainAxisScaling(AxisScaling::Fit)
+        ->setCrossAxisScaling(AxisScaling::Fit)
+    );
+    this->updateLayout();
 
     return true;
 }
@@ -124,13 +128,12 @@ void GradientLabel::initShader() {
     m_shaderEnabled = false;
 
     if (m_shader) {
-        m_label->getChildrenExt()[0]->setShaderProgram(m_shader);
+        m_label->setShaderProgram(m_shader);
     }
 }
 
-void GradientLabel::limitLabelWidth(float maxw, float defaults, float mins) {
-    m_label->limitLabelWidth(maxw, defaults, mins);
-    this->setContentSize(m_label->getContentSize());
+void GradientLabel::setLimitLabelWidth(float maxw, float defaults, float mins) {
+    m_label->setLimitLabelWidth(maxw, defaults, mins);
 }
 
 void GradientLabel::setColor(const Color3& color) {
@@ -145,8 +148,8 @@ void GradientLabel::setOpacity(uint8_t op) {
 }
 
 void GradientLabel::setString(std::string_view text) {
-    m_label->setString(text);
-    this->setContentSize(m_label->getContentSize());
+    m_label->setText(std::string{text});
+    this->updateLayout();
 }
 
 void GradientLabel::setGradientColors(const MultiColor& color) {

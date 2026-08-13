@@ -110,7 +110,7 @@ private:
         }
 #endif
 
-        Build<CCLabelBMFont>::create(text.c_str(), "bigFont.fnt")
+        Build<Label>::create(text.c_str(), "bigFont.fnt")
             .scale(0.6f)
             .parent(leftContainer);
 
@@ -226,7 +226,7 @@ bool TeamManagementPopup::init(int assigningFor) {
 
         toggler->toggle(RoomManager::get().getSettings().lockedTeams);
 
-        Build<CCLabelBMFont>::create("Locked teams", "bigFont.fnt")
+        Build<Label>::create("Locked teams", "bigFont.fnt")
             .scale(0.4f)
             .parent(m_bottomContainer);
     }

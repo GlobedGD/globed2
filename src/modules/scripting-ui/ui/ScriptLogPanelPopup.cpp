@@ -55,7 +55,7 @@ bool ScriptLogPanelPopup::init() {
         .collect();
     toggler->toggle(m_autoRefresh);
 
-    Build<CCLabelBMFont>::create("Auto refresh", "bigFont.fnt")
+    Build<Label>::create("Auto refresh", "bigFont.fnt")
         .scale(0.4f)
         .parent(m_mainLayer)
         .pos(this->fromBottomLeft(42.f, 21.f))
@@ -71,7 +71,7 @@ bool ScriptLogPanelPopup::init() {
         .pos(this->fromBottomRight(76.f, 21.f))
         .collect();
 
-    Build<CCLabelBMFont>::create("Memory", "bigFont.fnt")
+    Build<Label>::create("Memory", "bigFont.fnt")
         .scale(0.4f)
         .parent(m_mainLayer)
         .pos(this->fromBottomRight(30.f, 21.f));
@@ -139,7 +139,7 @@ void ScriptLogPanelPopup::refreshGraph(const std::deque<std::pair<asp::time::Sys
 
         if (addLabels && i > 0) {
             // add labels
-            Build<CCLabelBMFont>::create(fmt::format("{}%", i * 10).c_str(), "bigFont.fnt")
+            Build<Label>::create(fmt::format("{}%", i * 10).c_str(), "bigFont.fnt")
                 .scale(0.3f)
                 .anchorPoint(1.f, 0.5f)
                 .pos(chartBase.x - 4.f, y)
@@ -200,7 +200,7 @@ void ScriptLogPanelPopup::refreshGraph(const std::deque<std::pair<asp::time::Sys
         auto mins = dur.minutes();
         auto secs = dur.seconds() % 60;
 
-        Build<CCLabelBMFont>::create(fmt::format("-{:02}:{:02}", mins, secs).c_str(), "chatFont.fnt")
+        Build<Label>::create(fmt::format("-{:02}:{:02}", mins, secs).c_str(), "chatFont.fnt")
             .scale(0.7f)
             .pos(x, 0.f)
             .parent(m_graphBottomLabels);

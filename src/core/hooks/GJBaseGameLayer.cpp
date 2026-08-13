@@ -182,7 +182,7 @@ static std::pair<CCNode*, Label*> createLoadingOverlay() {
         .pos(winSize.width / 2, winSize.height / 2 - 50.f)
         .anchorPoint(0.5f, 0.5f)
         .collect();
-    lbl->setAlignment(BMFontAlignment::Center);
+    lbl->setAlignment(Label::Alignment::Center);
 
     return {layer, progLabel};
 }
@@ -204,7 +204,7 @@ void GlobedGJBGL::setupAssetLoading() {
             .callback = [&](const PreloadProgress& prog) {
                 StringBuffer<> buf;
                 buf.append("Loading... ({} / {})", prog.totalLoaded, prog.totalCount);
-                label->setString(buf.view());
+                label->setText(buf.str());
                 return true;
             }
         });

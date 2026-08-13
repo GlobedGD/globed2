@@ -6,22 +6,22 @@ namespace globed {
 class EnumSettingCell : public ButtonSettingCell {
 public:
     static EnumSettingCell* create(
-        CStr key,
-        CStr name,
-        CStr desc,
-        std::vector<std::pair<CStr, int>> options,
+        ZStringView key,
+        ZStringView name,
+        ZStringView desc,
+        std::vector<std::pair<ZStringView, int>> options,
         cocos2d::CCSize cellSize
     );
 
     template <typename E>
     static EnumSettingCell* create(
-        CStr key,
-        CStr name,
-        CStr desc,
-        std::vector<std::pair<CStr, E>> options,
+        ZStringView key,
+        ZStringView name,
+        ZStringView desc,
+        std::vector<std::pair<ZStringView, E>> options,
         cocos2d::CCSize cellSize
     ) {
-        std::vector<std::pair<CStr, int>> intOptions;
+        std::vector<std::pair<ZStringView, int>> intOptions;
         intOptions.reserve(options.size());
         for (auto& option : options) {
             intOptions.emplace_back(option.first, static_cast<int>(option.second));
@@ -30,7 +30,7 @@ public:
     }
 
 protected:
-    std::vector<std::pair<CStr, int>> m_options;
+    std::vector<std::pair<ZStringView, int>> m_options;
     int m_current = -1;
     size_t m_currentIdx = 0;
 
