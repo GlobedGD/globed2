@@ -171,7 +171,7 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
             .scale(0.95f)
             .intoMenuItem([this](auto btn) {
                 NetworkManagerImpl::get().sendRequestDiscordOauth();
-                btn->removeFromParent();
+                cue::resetNode(m_activeBtn);
                 this->addLinkingText();
             })
             .scaleMult(1.1f)
