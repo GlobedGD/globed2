@@ -36,6 +36,7 @@ private:
 
         Build<Label>::create(server.name.c_str(), "bigFont.fnt")
             .limitLabelWidth(LIST_SIZE.width * 0.6f, 0.6f, 0.1f)
+            .with([&](auto lbl) { lbl->validate(); }) // TODO: temp fix for label bug
             .anchorPoint(0.f, 0.5f)
             .pos(8.f, CELL_HEIGHT / 2.f)
             .parent(this);

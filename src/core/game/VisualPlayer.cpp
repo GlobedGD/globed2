@@ -260,8 +260,10 @@ void VisualPlayer::updateFromData(
         // rotate the name label together with the camera
         bool rotateNames = g_settings.rotateNames;
         CameraDirection dir{};
+        float mirrorTransition = 0.f;
 
         if (rotateNames && *gjbgl) {
+            mirrorTransition = gjbgl->m_gameState.m_levelFlipping;
             dir = gjbgl->getCameraDirection();
         } else {
             dir.vector = CCPoint{0.f, 1.f};
@@ -270,6 +272,10 @@ void VisualPlayer::updateFromData(
 
         m_nameLabel->setPosition(data.position + dir.vector * NAME_OFFSET);
         m_nameLabel->setRotation(dir.angle);
+
+        // depending on the mirror transition, we want scaleX to be 1.0 if normal (0) and -1.0 when fully flipped (1)
+        float nameScaleX = 1.f - mirrorTransition * 2.f;
+        m_nameLabel->setScaleX(nameScaleX);
 
         if (m_emoteBubble && m_emoteBubble->isPlaying()) {
             float yoffUp = (m_nameLabel->isVisible() ? STATUS_ICONS_OFFSET : NAME_OFFSET) - 4.f;

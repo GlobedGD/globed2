@@ -343,8 +343,8 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.player.status-icons", "Show Status Icons",
         "Show icons indicating player states, such as paused, practicing, voice chatting, editor."
     );
-    this->addSetting<BoolSettingCell>("core.player.rotate-names", "Rotate Names",
-        "Rotates player names together with the camera to keep them aligned."
+    this->addSetting<BoolSettingCell>("core.player.rotate-names", "Rotate & Mirror Names",
+        "Rotates player names together with the camera to keep them aligned. This also makes names mirror together with the level when hitting a mirror portal."
     );
     this->addSetting<BoolSettingCell>("core.player.death-effects", "Death Effects",
         "Plays other players' death effects when they die in levels."
