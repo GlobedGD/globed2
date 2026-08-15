@@ -420,6 +420,10 @@ void GlobedGJBGL::updateLocalIcons(std::optional<PlayerIconData> icons) {
     }
 }
 
+bool GlobedGJBGL::hasLevelTag(std::string_view tag) {
+    return m_fields->m_levelTags.contains(tag);
+}
+
 // temporary solution until we at geode come up with a non temporary solution
 static bool ignoreKeybind() {
     return CCIMEDispatcher::sharedDispatcher()->hasDelegate();
@@ -462,6 +466,35 @@ void GlobedGJBGL::setupKeybinds() {
                 this->playSelfFavoriteEmote(i);
             }
         );
+    }
+}
+
+static StringSet findGlobedTags(GJBaseGameLayer* layer) {
+    StringSet out;
+
+    for (auto obj : layer->m_objects->asExt<GameObject*>()) {
+        // Label object ID
+        if (obj->m_objectID != 914) continue;
+
+        auto label = static_cast<TextGameObject*>(obj);
+        auto text = std::string_view{label->m_text};
+        if (!text.starts_with("GLOBED:")) continue;
+
+        text.remove_prefix(7);
+        out.emplace(utils::string::trim(std::string{text}));
+    }
+
+    return out;
+}
+
+void GlobedGJBGL::setupPostLevelLoad() {
+    m_fields->m_levelTags = findGlobedTags(this);
+
+    log::debug("Loaded level tags: {}", m_fields->m_levelTags);
+
+    // based on level tags, enable some things
+    if (this->hasLevelTag("all-visible")) {
+        m_fields->m_forceAllPlayerVisibility = true;
     }
 }
 
@@ -552,9 +585,14 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
             continue;
         }
 
-        OutFlags flags{};
-        auto& vstate = fields.m_interpolator.getPlayerState(playerId, flags);
-        player->update(vstate, camState, flags, fields.m_playersHidden, fields.m_noGlobalCulling);
+        RemotePlayerUpdate rpupdate{
+            .camState = camState,
+            .forceHide = fields.m_playersHidden,
+            .forceVisibility = fields.m_forceAllPlayerVisibility,
+            .noCulling = fields.m_noGlobalCulling,
+        };
+        rpupdate.state = fields.m_interpolator.getPlayerState(playerId, rpupdate.flags);
+        player->update(rpupdate);
 
         // if we don't know player's data yet (username, icons, etc.), request it
         bool dataInit = player->isDataInitialized();
@@ -661,9 +699,12 @@ void GlobedGJBGL::selPostUpdate(float dt) {
     g_profilerFrame.postSendPlayerData = Instant::now();
 
     // update ghost player
-    OutFlags ghostFlags{};
-    state.accountId = 0;
-    fields.m_ghost->update(state, camState, ghostFlags, false);
+    RemotePlayerUpdate rpupdate{
+        .state = state,
+        .camState = camState,
+    };
+    rpupdate.state.accountId = 0;
+    fields.m_ghost->update(rpupdate);
 
     fields.m_periodicalDelta += dt;
     if (fields.m_periodicalDelta >= 0.25f) {

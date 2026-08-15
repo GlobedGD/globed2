@@ -7,12 +7,6 @@
 
 namespace globed {
 
-struct OutFlags {
-    std::optional<PlayerDeath> death;
-    std::optional<SpiderTeleportData> spiderP1, spiderP2;
-    bool jumpP1, jumpP2;
-};
-
 class Interpolator {
 public:
     Interpolator() = default;
@@ -25,7 +19,7 @@ public:
     void updateNoop(int accountId, float curTimestamp);
     void tick(float dt, cocos2d::CCPoint cameraDelta, cocos2d::CCPoint cameraVector);
 
-    PlayerState& getPlayerState(int playerId, OutFlags& outFlags);
+    PlayerState& getPlayerState(int playerId, PlayerStateFlags& outFlags);
     PlayerState& getNewerState(int playerId);
     bool isPlayerStale(int playerId, float curTimestamp);
 

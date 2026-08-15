@@ -1,9 +1,10 @@
 #pragma once
 
 #include "../../prelude.hpp"
-#include "../../core/data/PlayerState.hpp"
-#include "../../core/data/PlayerDisplayData.hpp"
-#include "../../core/game/PlayerStatusIcons.hpp"
+#include "../data/PlayerState.hpp"
+#include "../data/PlayerDisplayData.hpp"
+#include "PlayerStatusIcons.hpp"
+#include "GameCameraState.hpp"
 #include <Geode/Geode.hpp>
 
 namespace globed {
@@ -22,6 +23,16 @@ class NameLabel;
 class EmoteBubble;
 struct GameCameraState;
 
+struct VisualPlayerUpdate {
+    PlayerObjectData data;
+    const PlayerState& state;
+    GameCameraState camState;
+    bool forceHideIcon = false;
+    bool forceHideEverything = false;
+    bool forceVisibility = false;
+    bool noCulling = false;
+};
+
 class GLOBED_DLL VisualPlayer : public PlayerObject {
 public:
     VisualPlayer();
@@ -29,14 +40,7 @@ public:
     GLOBED_NOMOVE(VisualPlayer);
 
     static VisualPlayer* create(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer);
-    void updateFromData(
-        const PlayerObjectData& data,
-        const PlayerState& state,
-        const GameCameraState& camState,
-        bool forceHideIcon,
-        bool forceHideEverything,
-        bool noCulling
-    );
+    void updateFromData(const VisualPlayerUpdate& data);
     void cleanupObjectLayer();
 
     PlayerIconData& icons();

@@ -4,6 +4,7 @@
 #include <globed/config.hpp>
 #include <globed/core/game/RemotePlayer.hpp>
 #include <globed/core/game/GameEvents.hpp>
+#include <globed/core/game/GameCameraState.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/util/BoolExt.hpp>
@@ -17,26 +18,6 @@
 #include <core/game/SpeedTracker.hpp>
 
 namespace globed {
-
-struct CameraDirection {
-    cocos2d::CCPoint vector;
-    float angle;
-};
-
-struct GameCameraState {
-    cocos2d::CCPoint cameraOrigin;
-    cocos2d::CCPoint visibleOrigin;
-    cocos2d::CCSize visibleCoverage;
-    float zoom;
-
-    inline cocos2d::CCSize cameraCoverage() const {
-        return visibleCoverage / std::abs(zoom);
-    }
-
-    inline cocos2d::CCPoint cameraCenter() const {
-        return cameraOrigin + this->cameraCoverage() / 2.f;
-    }
-};
 
 struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     struct Fields {
@@ -82,6 +63,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         bool m_safeMode = false;
         bool m_permanentSafeMode = false;
         bool m_playersHidden = false;
+        bool m_forceAllPlayerVisibility = false;
         bool m_isVoiceProximity = false;
         bool m_noGlobalCulling = false;
         bool m_sendExtData = false;
@@ -102,6 +84,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         Ref<PingOverlay> m_pingOverlay;
         Ref<CCSprite> m_noticeAlert;
         geode::WeakRef<PlayerObject> m_cameraFollows;
+
+        geode::utils::StringSet m_levelTags;
     };
 
     // Setup functions
@@ -120,6 +104,8 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     void setupListeners();
     /// Setup keybinds
     void setupKeybinds();
+    /// Setup things that happen after all objects are loaded
+    void setupPostLevelLoad();
 
     // Hooks
     $override
@@ -186,6 +172,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
     bool isUnableToSpeak();
     void maybeShowVCAlert(msg::ChatNotPermittedReason reason);
     void updateLocalIcons(std::optional<PlayerIconData> data);
+    bool hasLevelTag(std::string_view tag);
 
     void toggleCullingEnabled(bool culling);
     void toggleExtendedData(bool extended);

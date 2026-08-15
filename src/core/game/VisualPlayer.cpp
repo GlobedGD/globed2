@@ -152,15 +152,14 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
     return true;
 }
 
-void VisualPlayer::updateFromData(
-    const PlayerObjectData& data,
-    const PlayerState& state,
-    const GameCameraState& camState,
-    bool forceHideIcon,
-    bool forceHideEverything,
-    bool noCulling
-) {
+void VisualPlayer::updateFromData(const VisualPlayerUpdate& vpu) {
     using namespace $unity;
+
+    auto& data = vpu.data;
+    auto& state = vpu.state;
+    auto& camState = vpu.camState;
+    auto forceHideIcon = vpu.forceHideIcon;
+    auto forceHideEverything = vpu.forceHideEverything;
 
     if (lerpDebug()) {
         this->updateLerpTrajectory(data);
@@ -213,7 +212,7 @@ void VisualPlayer::updateFromData(
         m_playingDeathEffect = false;
     }
 
-    bool isNearby = noCulling ? true : this->isPlayerNearby(data, camState);
+    bool isNearby = vpu.noCulling ? true : this->isPlayerNearby(data, camState);
 
     bool cameNearby = isNearby && !m_prevNearby;
     m_prevNearby = isNearby;
@@ -225,7 +224,7 @@ void VisualPlayer::updateFromData(
     if (state.isPracticing && g_settings.hidePracticing) {
         shouldIconVisible = shouldMiscVisible = false;
     } else if (!forceHideEverything) {
-        shouldMiscVisible = ((data.isVisible && !m_playingDeathEffect) || g_settings.forceVisibility) && isNearby;
+        shouldMiscVisible = ((data.isVisible && !m_playingDeathEffect) || g_settings.forceVisibility || vpu.forceVisibility) && isNearby;
         if (!forceHideIcon) {
             shouldIconVisible = shouldMiscVisible;
         }
@@ -239,7 +238,7 @@ void VisualPlayer::updateFromData(
         if (m_shipStreak) m_shipStreak->setVisible(false);
     }
 
-    bool extraProcessing = anyVisible || m_isLocalPlayer || noCulling;
+    bool extraProcessing = anyVisible || m_isLocalPlayer || vpu.noCulling;
 
     // XXX: sticky is pretty broken so not handled
 

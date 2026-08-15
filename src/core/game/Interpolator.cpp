@@ -451,7 +451,7 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
     }
 }
 
-PlayerState& Interpolator::getPlayerState(int playerId, OutFlags& flags) {
+PlayerState& Interpolator::getPlayerState(int playerId, PlayerStateFlags& flags) {
     auto& player = m_players.at(playerId);
 
     flags.death = player.takeDeath();

@@ -101,6 +101,13 @@ struct SpiderTeleportData {
     cocos2d::CCPoint from, to;
 };
 
+struct PlayerStateFlags {
+    std::optional<PlayerDeath> death;
+    std::optional<SpiderTeleportData> spiderP1, spiderP2;
+    bool jumpP1 = false;
+    bool jumpP2 = false;
+};
+
 struct PlayerLevelMeta {
     uint32_t progress;
 };

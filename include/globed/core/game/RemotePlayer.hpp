@@ -9,7 +9,17 @@
 namespace globed {
 
 struct GameCameraState;
-struct OutFlags;
+struct PlayerStateFlags;
+
+struct RemotePlayerUpdate {
+    PlayerState state;
+    GameCameraState camState;
+    PlayerStateFlags flags;
+
+    bool forceHide = false;
+    bool forceVisibility = false;
+    bool noCulling = false;
+};
 
 class GLOBED_DLL RemotePlayer : public std::enable_shared_from_this<RemotePlayer> {
 public:
@@ -18,7 +28,7 @@ public:
     GLOBED_NOCOPY(RemotePlayer);
     GLOBED_NOMOVE(RemotePlayer);
 
-    void update(const PlayerState& state, const GameCameraState& camState, const OutFlags& flags, bool forceHide = false, bool noCulling = false);
+    void update(const RemotePlayerUpdate& update);
     void handleDeath(const PlayerDeath& death);
     void handleSpiderTp(const SpiderTeleportData& tp, bool p1);
     bool isDataInitialized() const;

@@ -131,8 +131,8 @@ RemotePlayer::~RemotePlayer() {
     m_player2->removeFromParent();
 }
 
-void RemotePlayer::update(const PlayerState& state, const GameCameraState& camState, const OutFlags& flags, bool forceHide, bool noCulling) {
-    forceHide = forceHide || m_forceHide;
+void RemotePlayer::update(const RemotePlayerUpdate& update) {
+    bool forceHide = update.forceHide || m_forceHide;
 
     bool hideIcon = forceHide;
     bool hideEverything = forceHide;
@@ -142,19 +142,30 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
         hideIcon = !CachedSettings::get().ghostFollower;
     }
 
-    m_state = state;
+    m_state = update.state;
 
     m_player1Culled = !m_state.player1;
     m_player2Culled = !m_state.player2;
 
+    VisualPlayerUpdate vpupdate {
+        .state = m_state,
+        .camState = update.camState,
+        .forceHideIcon = hideIcon,
+        .forceHideEverything = hideEverything,
+        .forceVisibility = update.forceVisibility,
+        .noCulling = update.noCulling,
+    };
+
     if (m_state.player1) {
-        m_player1->updateFromData(*m_state.player1, m_state, camState, hideIcon, hideEverything, noCulling);
+        vpupdate.data = *m_state.player1;
+        m_player1->updateFromData(vpupdate);
     } else {
         m_player1->setVisible(false);
     }
 
     if (m_state.player2) {
-        m_player2->updateFromData(*m_state.player2, m_state, camState, hideIcon, hideEverything, noCulling);
+        vpupdate.data = *m_state.player2;
+        m_player2->updateFromData(vpupdate);
     } else {
         m_player2->setVisible(false);
     }
@@ -172,14 +183,15 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
     };
 
     shownOrHide(m_progIcon, true, [&] {
-        m_progIcon->updatePosition(state.progress(), state.isPracticing);
+        m_progIcon->updatePosition(m_state.progress(), m_state.isPracticing);
     });
 
     shownOrHide(m_progArrow, !m_localPlayer, [&] {
-        m_progArrow->updatePosition(camState, m_player1->getLastPosition(), state.progress());
+        m_progArrow->updatePosition(update.camState, m_player1->getLastPosition(), m_state.progress());
     });
 
     // if the player just died, handle death
+    auto& flags = update.flags;
     if (flags.death) {
         if (!hideIcon) {
             this->handleDeath(*flags.death);
@@ -189,7 +201,7 @@ void RemotePlayer::update(const PlayerState& state, const GameCameraState& camSt
     }
 
     // if the player just respawned, call respawn handlers
-    if (m_wasDead && !state.isDead) {
+    if (m_wasDead && !m_state.isDead) {
         CoreImpl::get().onPlayerRespawn(GlobedGJBGL::get(), this);
         m_wasDead = false;
     }

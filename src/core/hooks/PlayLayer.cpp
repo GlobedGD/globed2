@@ -81,14 +81,16 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
 
         m_fields->m_setupWasCompleted = true;
 
-        // progress bar indicators
         auto gjbgl = GlobedGJBGL::get(this);
         if (gjbgl->active()) {
             auto& fields = *gjbgl->m_fields.self();
 
+            // progress bar indicators
             if (fields.m_progressBarContainer && !fields.m_progressBarContainer->getParent() && m_progressBar) {
                 m_progressBar->addChild(fields.m_progressBarContainer);
             }
+
+            gjbgl->setupPostLevelLoad();
         }
     }
 
