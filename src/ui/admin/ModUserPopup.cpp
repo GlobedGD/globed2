@@ -282,6 +282,7 @@ void ModUserPopup::resetWhitelisted(bool whitelisted) {
         .zOrder(btnorder::Whitelist)
         .parent(m_rootMenu);
 
+    m_rootMenu->updateLayout();
 }
 
 void ModUserPopup::createMuteAndBanButtons() {
