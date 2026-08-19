@@ -30,7 +30,7 @@ std::optional<ListenEventPayload> ListenEventObject::decodePayload() {
 }
 
 void ListenEventObject::encodePayload(const ListenEventPayload& payload) {
-    ExtendedObjectBase::encodePayload([&](dbuf::ByteWriter& writer) {
+    ExtendedObjectBase::encodePayload([&](dbuf::ByteWriter<>& writer) {
         writer.writeU16(payload.eventId);
         writer.writeI32(payload.groupId);
         return true;

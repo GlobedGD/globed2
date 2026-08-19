@@ -4,6 +4,8 @@
 
 #include <UIBuilder.hpp>
 
+static constexpr uint32_t MAX_EVENT_ID = 61440;
+
 using namespace geode::prelude;
 
 namespace globed {
@@ -254,7 +256,7 @@ void SetupFireServerPopup::onClose(CCObject*) {
 
     // detect invalid event ID
     if (m_invalidEventId) {
-        globed::alertFormat("Error", "Please set a valid event ID. It must range from 0 to {}", EVENT_GLOBED_BASE - 1);
+        globed::alertFormat("Error", "Please set a valid event ID. It must range from 0 to {}", MAX_EVENT_ID - 1);
         return;
     }
 
@@ -267,7 +269,7 @@ void SetupFireServerPopup::onClose(CCObject*) {
 void SetupFireServerPopup::onPropChange(size_t idx, int value) {
     if (idx == 5) {
         // event id
-        if (value < 0 || value >= EVENT_GLOBED_BASE) {
+        if (value < 0 || (uint32_t)value >= MAX_EVENT_ID) {
             log::warn("Invalid event ID {} for FireServerObject", value);
             m_invalidEventId = true;
             return;

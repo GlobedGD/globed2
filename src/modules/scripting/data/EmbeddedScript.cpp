@@ -38,10 +38,10 @@ Result<EmbeddedScript> EmbeddedScript::decode(std::span<const uint8_t> data) {
     data = data.subspan(offset);
 
     dbuf::ByteReader<> reader{data};
-    size_t decompressedLen = MAP_UNWRAP(reader.readU32());
+    size_t decompressedLen = GEODE_UNWRAP(reader.readU32());
     data = data.subspan(4);
 
-    if (decompressedLen > 512 * 1024) {
+    if (decompressedLen > 512ull * 1024) {
         return Err("not decoding a script over 512kib: {} bytes", decompressedLen);
     }
 
@@ -49,14 +49,14 @@ Result<EmbeddedScript> EmbeddedScript::decode(std::span<const uint8_t> data) {
     MAP_UNWRAP(qn::decompressZstd(data.data(), data.size(), decompressedBuf.get(), decompressedLen));
     log::debug("Decompressed: {}", hexEncode(decompressedBuf.get(), decompressedLen));
 
-    reader = dbuf::ByteReader<>{decompressedBuf.get(), decompressedLen};
-    script.main = MAP_UNWRAP(reader.readBool());
-    script.filename = MAP_UNWRAP(reader.readStringU16());
-    script.content = MAP_UNWRAP(reader.readStringU32());
+    reader = dbuf::ByteReader<>{{decompressedBuf.get(), decompressedLen}};
+    script.main = GEODE_UNWRAP(reader.readBool());
+    script.filename = GEODE_UNWRAP(reader.readStringU16());
+    script.content = GEODE_UNWRAP(reader.readStringU32());
 
-    if (MAP_UNWRAP(reader.readBool())) {
+    if (GEODE_UNWRAP(reader.readBool())) {
         script.signature = std::array<uint8_t, 32>{};
-        MAP_UNWRAP(reader.readBytes(script.signature->data(), 32));
+        GEODE_UNWRAP(reader.readBytes(script.signature->data(), 32));
     }
 
     return Ok(std::move(script));
@@ -97,8 +97,8 @@ std::optional<size_t> EmbeddedScript::decodeHeader(std::span<const uint8_t> data
 Result<std::vector<uint8_t>> EmbeddedScript::encode(bool includePrefix, std::string_view prefixStr) const {
     dbuf::ByteWriter writer;
     writer.writeBool(this->main);
-    MAP_UNWRAP(writer.writeStringU16(this->filename));
-    MAP_UNWRAP(writer.writeStringU32(this->content));
+    writer.writeStringU16(this->filename);
+    writer.writeStringU32(this->content);
     writer.writeBool(this->signature.has_value());
 
     if (this->signature) {
@@ -132,7 +132,7 @@ Result<std::vector<uint8_t>> EmbeddedScript::encode(bool includePrefix, std::str
         8
     ));
 
-    auto outVector = std::move(outWriter).intoVector();
+    auto outVector = std::move(outWriter).intoInner();
 
     // truncate extra data
     outVector.resize(lastPos + bound);

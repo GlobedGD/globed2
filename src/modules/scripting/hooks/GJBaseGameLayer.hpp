@@ -68,7 +68,7 @@ struct GLOBED_MODIFY_ATTR SCBaseGameLayer : geode::Modify<SCBaseGameLayer, GJBas
     template <typename T>
     void listenEvent() {
         m_fields->m_eventListeners.push_back(
-            T::listen([this](const auto& msg) { this->handleEvent(msg); })
+            T::listen([this](auto msg) { this->handleEvent(msg); })
         );
     }
 

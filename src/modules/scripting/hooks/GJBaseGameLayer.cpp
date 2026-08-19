@@ -34,7 +34,6 @@ void SCBaseGameLayer::postInit(const std::vector<EmbeddedScript>& scripts) {
     this->listenEvent<FollowPlayerEvent>();
     this->listenEvent<FollowAbsoluteEvent>();
     this->listenEvent<FollowRotationEvent>();
-    this->listenEvent<ScriptedEvent>();
 
     fields.m_logsListener = nm.listen<msg::ScriptLogsMessage>([this](const auto& msg) {
         auto& fields = *m_fields.self();

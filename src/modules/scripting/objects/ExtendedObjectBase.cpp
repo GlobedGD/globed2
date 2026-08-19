@@ -7,7 +7,7 @@ namespace globed {
 
 ExtendedObjectBase::ExtendedObjectBase() {}
 
-void ExtendedObjectBase::encodePayload(geode::FunctionRef<bool(dbuf::ByteWriter&)>&& writefn) {
+void ExtendedObjectBase::encodePayload(geode::FunctionRef<bool(dbuf::ByteWriter<>&)>&& writefn) {
     dbuf::ByteWriter writer;
     writefn(writer);
 
@@ -54,7 +54,7 @@ void ExtendedObjectBase::encodePayload(geode::FunctionRef<bool(dbuf::ByteWriter&
     }
 }
 
-dbuf::ByteReader<> ExtendedObjectBase::_decodePayloadPre(qn::ArrayByteWriter<64>& writer) {
+dbuf::ByteReader<> ExtendedObjectBase::_decodePayloadPre(dbuf::ArrayByteWriter<64>& writer) {
     // could add other props if not enough space :p
     (void) writer.writeU32(std::bit_cast<uint32_t>(m_item1Mode));
     (void) writer.writeU32(std::bit_cast<uint32_t>(m_item2Mode));
@@ -71,11 +71,11 @@ dbuf::ByteReader<> ExtendedObjectBase::_decodePayloadPre(qn::ArrayByteWriter<64>
     return dbuf::ByteReader<>{written};
 }
 
-Result<> ExtendedObjectBase::_decodePayloadPost(qn::ArrayByteWriter<64>& writer, dbuf::ByteReader<>& reader) {
+Result<> ExtendedObjectBase::_decodePayloadPost(dbuf::ArrayByteWriter<64>& writer, dbuf::ByteReader<>& reader) {
     // check the checksum (last byte)
     auto csumres = reader.readU8();
     if (!csumres) {
-        return Err("Failed to read checksum from script object data (for {}): {}", typeid(*this).name(), csumres.unwrapErr().message());
+        return Err("Failed to read checksum from script object data (for {}): {}", typeid(*this).name(), csumres.unwrapErr());
     }
 
     auto csum = csumres.unwrap();

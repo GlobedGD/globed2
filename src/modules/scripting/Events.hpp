@@ -71,6 +71,7 @@ struct ScriptedEvent : ServerEvent<ScriptedEvent, EventServer::Game> {
     std::vector<std::variant<int, float>> args;
 
     std::vector<uint8_t> encode() const;
+    static Result<ScriptedEvent> decode(std::span<const uint8_t> data);
 };
 
 struct RequestScriptLogsEvent : ServerEvent<RequestScriptLogsEvent, EventServer::Game> {
