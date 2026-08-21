@@ -18,6 +18,8 @@ struct CachedSettings {
     bool ghostFollower = globed::setting<bool>("core.dev.ghost-follower");
     bool forceVisibility = globed::setting<bool>("core.player.force-visibility");
     bool hidePracticing = globed::setting<bool>("core.player.hide-practicing");
+    bool hideAfk = globed::setting<bool>("core.player.hide-afk");
+    float hideAfkDelay = globed::setting<float>("core.player.hide-afk-delay");
     bool hideNearbyClassic = globed::setting<bool>("core.player.hide-nearby-classic");
     bool hideNearbyPlat = globed::setting<bool>("core.player.hide-nearby-plat");
     bool showNames = globed::setting<bool>("core.player.show-names");
