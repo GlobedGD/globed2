@@ -133,6 +133,10 @@ void GlobedGJBGL::setupPostInit() {
     fields.m_metaFullInterval.setInterval(Duration::fromSecs(60));
     fields.m_metaMissingInterval.setInterval(Duration::fromSecs(2));
 
+    // some mod (silicate? megahack?) calls ccscheduler->update manually inside PlayLayer::init,
+    // which fucks up some of our updates, so we have this flag that is set only after init actually completes.
+    fields.m_initCompleted = true;
+
     CoreImpl::get().onJoinLevelPostInit(this);
 }
 
@@ -677,7 +681,7 @@ void GlobedGJBGL::selPostUpdate(float dt) {
     g_profilerFrame.postGameUpdate = Instant::now();
 
     auto& fields = *m_fields.self();
-    if (!fields.m_active) return;
+    if (!fields.m_active || !fields.m_initCompleted) return;
 
     auto camState = this->getCameraState();
 

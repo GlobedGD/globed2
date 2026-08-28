@@ -25,6 +25,7 @@ struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLay
         void cleanup();
 
         bool m_active = false;
+        bool m_initCompleted = false;
         bool m_cleanedUp = false;
         bool m_editor = false;
         bool m_quitting = false;
