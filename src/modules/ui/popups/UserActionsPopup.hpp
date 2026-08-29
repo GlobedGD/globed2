@@ -7,13 +7,13 @@ namespace globed {
 
 class UserActionsPopup : public BasePopup {
 public:
-    static UserActionsPopup* create(int accountId, CCArray* buttons);
+    static UserActionsPopup* create(int accountId, std::vector<CCNode*> buttons);
 
 private:
     Ref<CCMenu> m_buttons;
     int m_accountId;
 
-    bool init(int accountId, CCArray* buttons);
+    bool init(int accountId, std::vector<CCNode*> buttons);
 };
 
 }

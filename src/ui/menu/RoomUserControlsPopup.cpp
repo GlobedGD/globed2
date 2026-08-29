@@ -12,9 +12,10 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool RoomUserControlsPopup::init(int id, std::string_view username) {
+bool RoomUserControlsPopup::init(int id, std::string_view username, bool showMod) {
     if (!BasePopup::init(185.f, 90.f)) return false;
 
+    m_showMod = showMod && NetworkManagerImpl::get().isAuthorizedModerator();
     m_username = username;
     m_accountId = id;
     this->setTitle("User room actions");
@@ -86,9 +87,8 @@ void RoomUserControlsPopup::remakeButtons() {
             .parent(m_menu);
     }
 
-
     // TODO change icon?
-    if (NetworkManagerImpl::get().isAuthorizedModerator()) {
+    if (m_showMod) {
         Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
             .with([&](auto spr) { cue::rescaleToMatch(spr, btnSize); })
             .intoMenuItem([this] {
@@ -101,9 +101,9 @@ void RoomUserControlsPopup::remakeButtons() {
     m_menu->updateLayout();
 }
 
-RoomUserControlsPopup* RoomUserControlsPopup::create(int accountId, std::string_view username) {
+RoomUserControlsPopup* RoomUserControlsPopup::create(int accountId, std::string_view username, bool showMod) {
     auto ret = new RoomUserControlsPopup;
-    if (ret->init(accountId, username)) {
+    if (ret->init(accountId, username, showMod)) {
         ret->autorelease();
         return ret;
     }

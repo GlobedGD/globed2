@@ -5,12 +5,14 @@
 #include <globed/core/PlayerCacheManager.hpp>
 #include <globed/audio/AudioManager.hpp>
 #include <globed/core/net/NetworkManager.hpp>
+#include <globed/core/RoomManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/CoreImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/misc/AudioVisualizer.hpp>
 #include <ui/menu/UserSettingsPopup.hpp>
+#include <ui/menu/RoomUserControlsPopup.hpp>
 #include <ui/Core.hpp>
 
 using namespace geode::prelude;
@@ -86,10 +88,12 @@ public:
 protected:
     AudioVisualizer* m_visualizer = nullptr;
     std::weak_ptr<RemotePlayer> m_player;
-    Ref<CCArray> m_popupButtons = nullptr;
+    std::vector<Ref<CCNode>> m_popupButtons;
 
     bool customSetup() override {
         auto gjbgl = GlobedGJBGL::get();
+        auto& rm = RoomManager::get();
+        auto& nm = NetworkManagerImpl::get();
 
         m_player = gjbgl->getPlayer(m_accountId);
 
@@ -103,11 +107,12 @@ protected:
 
         bool createBtnHide = !self;
         bool createBtnMute = !self;
-        bool createBtnAdmin = NetworkManagerImpl::get().isAuthorizedModerator();
+        bool createBtnAdmin = nm.isAuthorizedModerator();
         bool createBtnTp = createBtnAdmin && !self;
         bool createVisualizer = !self && globed::setting<bool>("core.audio.voice-chat-enabled");
         bool createBtnVCFocus = createVisualizer && createBtnAdmin;
-        size_t buttonCount = countBools(createBtnHide, createBtnMute, createBtnAdmin, createBtnTp, createVisualizer);
+        bool createBtnUserActions = !self && (nm.isAuthorizedModerator() || rm.isOwner());
+        size_t buttonCount = countBools(createBtnHide, createBtnMute, createBtnAdmin, createBtnTp, createVisualizer, createBtnVCFocus, createBtnUserActions);
 
         // if no visualizer, max button count is 4, otherwise 2
         size_t maxButtonCount = createVisualizer ? 2 : 4;
@@ -115,17 +120,17 @@ protected:
         // if the buttons don't fit, create a settings button which shows a popup with the rest of the buttons
         bool createSettingsBtn = buttonCount > maxButtonCount;
 
-        auto mainButtons = CCArray::create();
-        auto popupButtons = CCArray::create();
+        std::vector<CCNode*> mainButtons;
+        std::vector<Ref<CCNode>> popupButtons;
         CCSize btnSizeSmall = {20.f, 20.f};
         CCSize btnSizeBig = {28.f, 28.f};
         CCSize btnSize = createSettingsBtn ? btnSizeBig : btnSizeSmall;
 
         auto addButton = [&](auto btn) {
             if (createSettingsBtn) {
-                popupButtons->addObject(btn);
+                popupButtons.push_back(btn);
             } else {
-                mainButtons->addObject(btn);
+                mainButtons.push_back(btn);
             }
         };
 
@@ -212,7 +217,7 @@ protected:
                 .id("admin-button"_spr)
                 .collect();
 
-            mainButtons->addObject(btn);
+            mainButtons.push_back(btn);
         }
 
         if (createBtnTp) {
@@ -253,7 +258,7 @@ protected:
                 .store(m_visualizer);
 
             m_visualizer->setLayoutOptions(AxisLayoutOptions::create()->setAutoScale(false));
-            mainButtons->addObject(m_visualizer);
+            mainButtons.push_back(m_visualizer);
         }
 
         if (createBtnVCFocus) {
@@ -285,12 +290,27 @@ protected:
             addButton(button);
         }
 
-        for (auto btn : CCArrayExt<CCNode>(mainButtons)) {
+        if (createBtnUserActions) {
+            // TODO: idk other icon?
+            auto btn = Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+                .with([&](CCSprite* spr) {
+                    cue::rescaleToMatch(spr, btnSizeBig);
+                })
+                .intoMenuItem([accountId = m_accountId, username = m_username](auto) {
+                    RoomUserControlsPopup::create(accountId, username, false)->show();
+                })
+                .id("open-user-actions-button"_spr)
+                .collect();
+
+            addButton(btn);
+        }
+
+        for (auto btn : mainButtons) {
             m_rightMenu->addChild(btn);
         }
 
-        if (createSettingsBtn && popupButtons->count() > 0) {
-            m_popupButtons = popupButtons;
+        if (createSettingsBtn && !popupButtons.empty()) {
+            m_popupButtons = std::move(popupButtons);
 
             // settings button
             auto settingsBtn = Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
@@ -302,7 +322,8 @@ protected:
                     if (!pl || !pl->getPlayer(m_accountId)) return;
 
                     // open popup yay
-                    UserActionsPopup::create(m_accountId, m_popupButtons)->show();
+                    auto btns = asp::iter::from(m_popupButtons).copied().mapCast<CCNode*>().collect();
+                    UserActionsPopup::create(m_accountId, std::move(btns))->show();
                 })
                 .zOrder(-999999) // force to be on the right
                 .scaleMult(1.2f)

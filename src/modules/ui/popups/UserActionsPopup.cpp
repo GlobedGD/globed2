@@ -7,7 +7,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-bool UserActionsPopup::init(int accountId, CCArray* buttons) {
+bool UserActionsPopup::init(int accountId, std::vector<CCNode*> buttons) {
     if (!BasePopup::init(200.f, 90.f)) return false;
 
     m_accountId = accountId;
@@ -22,7 +22,7 @@ bool UserActionsPopup::init(int accountId, CCArray* buttons) {
         .pos(this->fromCenter(0.f, -10.f))
         .parent(m_mainLayer);
 
-    for (auto btn : CCArrayExt<CCNode>(buttons)) {
+    for (auto btn : buttons) {
         m_buttons->addChild(btn);
     }
 
@@ -31,9 +31,9 @@ bool UserActionsPopup::init(int accountId, CCArray* buttons) {
     return true;
 }
 
-UserActionsPopup* UserActionsPopup::create(int accountId, CCArray* buttons) {
+UserActionsPopup* UserActionsPopup::create(int accountId, std::vector<CCNode*> buttons) {
     auto ret = new UserActionsPopup();
-    if (ret->init(accountId, buttons)) {
+    if (ret->init(accountId, std::move(buttons))) {
         ret->autorelease();
         return ret;
     }
