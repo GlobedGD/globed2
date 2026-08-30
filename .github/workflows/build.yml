@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Build the mod
-        uses: geode-sdk/build-geode-mod@main
+        uses: geode-sdk/build-geode-mod@zstd-and-optimize-pngs
         env:
           GLOBED_SENTRY_URL: ${{ vars.GLOBED_SENTRY_URL }}
           GLOBED_SENTRY_KEY: ${{ vars.GLOBED_SENTRY_KEY }}

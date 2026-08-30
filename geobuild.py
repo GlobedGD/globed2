@@ -333,7 +333,7 @@ def main(build: Build):
         if config.platform.is_android():
             build.add_raw_statement(f'set(CMAKE_SHARED_LINKER_FLAGS "${{CMAKE_SHARED_LINKER_FLAGS}} -Wl,--version-script={config.project_dir / "exports.map"}")')
 
-    build.set_cache_variable("GEODE_PACKAGE_ZSTD", "OFF", force=True)
+    build.set_cache_variable("GEODE_PACKAGE_ZSTD", "ON", force=True)
 
     # if gc.asan and build.platform.is_android():
     #     print("Enabling UBSan flags")
