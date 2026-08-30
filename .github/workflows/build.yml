@@ -55,6 +55,8 @@ jobs:
           export-pdb: true
           export-symbols: true
           combine: true
+          zstd: true
+          optimize-pngs: true
           target: ${{ matrix.config.target }}
           # sccache is broken on macos, so use no cache there :(
           ccache-variant: ${{ matrix.config.os != 'macos-latest' && 'sccache' || '' }}
