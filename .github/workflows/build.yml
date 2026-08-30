@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Build the mod
-        uses: geode-sdk/build-geode-mod@zstd-and-optimize-pngs
+        uses: geode-sdk/build-geode-mod@main
         env:
           GLOBED_SENTRY_URL: ${{ vars.GLOBED_SENTRY_URL }}
           GLOBED_SENTRY_KEY: ${{ vars.GLOBED_SENTRY_KEY }}
@@ -55,8 +55,6 @@ jobs:
           export-pdb: true
           export-symbols: true
           combine: true
-          zstd: true
-          optimize-pngs: true
           target: ${{ matrix.config.target }}
           # sccache is broken on macos, so use no cache there :(
           ccache-variant: ${{ matrix.config.os != 'macos-latest' && 'sccache' || '' }}
@@ -69,7 +67,10 @@ jobs:
 
     steps:
       - name: Combine builds
-        uses: geode-sdk/build-geode-mod/combine@main
+        uses: geode-sdk/build-geode-mod/combine@zstd-and-optimize-pngs
+        with:
+          zstd: true
+          optimize-pngs: true
         id: build
 
       - name: Upload build artifact
