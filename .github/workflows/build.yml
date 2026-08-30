@@ -67,7 +67,7 @@ jobs:
 
     steps:
       - name: Combine builds
-        uses: geode-sdk/build-geode-mod/combine@zstd-and-optimize-pngs
+        uses: geode-sdk/build-geode-mod/combine@main
         with:
           zstd: true
           optimize-pngs: true
