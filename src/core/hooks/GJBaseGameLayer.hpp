@@ -197,6 +197,8 @@ private:
 
     void cleanupGlobedAdditions();
     void fixProgressBar(float percent);
+
+    void updateRemotePlayers(float dt);
 };
 
 void setPlayerHidden(PlayerObject* obj, bool hidden);

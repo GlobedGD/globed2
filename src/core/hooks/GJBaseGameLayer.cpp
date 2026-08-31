@@ -38,12 +38,12 @@ static auto& g_settings = CachedSettings::get();
 static std::optional<Instant> g_lastEmoteTime;
 static struct {
     Instant start;
-    Instant postLerp;
-    Instant postRPUpdate;
     Instant postAudioUpdate;
     Instant postPreUpdateEnd;
 
     Instant postGameUpdate;
+    Instant postLerp;
+    Instant postRPUpdate;
     Instant postSendPlayerData;
     Instant postPeriodicalUpdate;
     Instant postPostUpdateEnd;
@@ -548,30 +548,65 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
         return;
     }
 
-
-    auto& pcm = PlayerCacheManager::get();
     auto& rm = RoomManager::get();
 
     float dt = tsdt / CCScheduler::get()->getTimeScale();
     fields.m_timeCounter += dt;
 
-    auto camPos = m_gameState.m_cameraPosition;
-    auto cameraDelta = fields.m_cameraTracker.pushMeasurement(fields.m_timeCounter, camPos.x, camPos.y);
-    auto cameraVector = fields.m_cameraTracker.getVector();
+    auto camState = this->getCameraState();
+    // update audio
+    if (fields.m_audioInterval.tick()) {
+        AudioManager::get().updatePlayback(camState.cameraCenter(), fields.m_isVoiceProximity);
+    }
 
-    // process stuff
-    fields.m_interpolator.tick(
-        dt,
-        CCPoint{(float) cameraDelta.first, (float) cameraVector.second},
-        CCPoint{(float) cameraVector.first, (float) cameraVector.second}
-    );
+    g_profilerFrame.postAudioUpdate = Instant::now();
 
-    g_profilerFrame.postLerp = Instant::now();
+    // -- commented chunk below is from globed v2, we no longer do this optimization for now --
+    // // the server might not send any updates if there are no players on the level,
+    // // if we receive no response for a while, assume all players have left
+    // if (fields.m_timeCounter - fields.m_lastServerUpdate > 1.5f && fields.m_players.size() <= 2) {
+    //     for (auto it = fields.m_players.begin(); it != fields.m_players.end(); ) {
+    //         int playerId = it->first;
+    //         this->handlePlayerLeave(playerId, false);
+    //         it = fields.m_players.erase(it);
+    //     }
+    // }
 
-    fields.m_unknownPlayers.clear();
+    // refresh teams if needed
+    if (rm.getSettings().teams) {
+        if (fields.m_timeCounter - fields.m_lastTeamRefresh > 10.f) {
+            NetworkManagerImpl::get().sendGetTeamMembers();
+            fields.m_lastTeamRefresh = fields.m_timeCounter;
+        }
+    }
 
+    // readjust send interval if needed
+    if (fields.m_sendInterval.interval().isZero()) {
+        auto& nm = NetworkManagerImpl::get();
+        auto tr = nm.getGameTickrate();
+
+        if (tr != 0) {
+            float val = 1.f / std::min<float>(240.f, tr);
+            auto interval = Duration::fromSecsF32(val).value();
+            fields.m_sendInterval.setInterval(interval);
+            fields.m_sendThrottledInterval.setInterval(interval * 8.f);
+
+            log::debug("Data send interval: {:.3}s (tickrate: {})", val, tr);
+        }
+    }
+
+    CoreImpl::get().onPreUpdate(this, dt);
+
+    g_profilerFrame.postPreUpdateEnd = Instant::now();
+}
+
+void GlobedGJBGL::updateRemotePlayers(float dt) {
+    auto& fields = *m_fields.self();
+    auto& pcm = PlayerCacheManager::get();
+    auto& rm = RoomManager::get();
     auto camState = this->getCameraState();
 
+    fields.m_unknownPlayers.clear();
     for (auto it = fields.m_players.begin(); it != fields.m_players.end();) {
         int playerId = it->first;
         auto& player = it->second;
@@ -628,53 +663,6 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
 
         ++it;
     }
-
-    g_profilerFrame.postRPUpdate = Instant::now();
-
-    // update audio
-    if (fields.m_audioInterval.tick()) {
-        AudioManager::get().updatePlayback(camState.cameraCenter(), fields.m_isVoiceProximity);
-    }
-
-    g_profilerFrame.postAudioUpdate = Instant::now();
-
-    // -- commented chunk below is from globed v2, we no longer do this optimization for now --
-    // // the server might not send any updates if there are no players on the level,
-    // // if we receive no response for a while, assume all players have left
-    // if (fields.m_timeCounter - fields.m_lastServerUpdate > 1.5f && fields.m_players.size() <= 2) {
-    //     for (auto it = fields.m_players.begin(); it != fields.m_players.end(); ) {
-    //         int playerId = it->first;
-    //         this->handlePlayerLeave(playerId, false);
-    //         it = fields.m_players.erase(it);
-    //     }
-    // }
-
-    // refresh teams if needed
-    if (rm.getSettings().teams) {
-        if (fields.m_timeCounter - fields.m_lastTeamRefresh > 10.f) {
-            NetworkManagerImpl::get().sendGetTeamMembers();
-            fields.m_lastTeamRefresh = fields.m_timeCounter;
-        }
-    }
-
-    // readjust send interval if needed
-    if (fields.m_sendInterval.interval().isZero()) {
-        auto& nm = NetworkManagerImpl::get();
-        auto tr = nm.getGameTickrate();
-
-        if (tr != 0) {
-            float val = 1.f / std::min<float>(240.f, tr);
-            auto interval = Duration::fromSecsF32(val).value();
-            fields.m_sendInterval.setInterval(interval);
-            fields.m_sendThrottledInterval.setInterval(interval * 8.f);
-
-            log::debug("Data send interval: {:.3}s (tickrate: {})", val, tr);
-        }
-    }
-
-    CoreImpl::get().onPreUpdate(this, dt);
-
-    g_profilerFrame.postPreUpdateEnd = Instant::now();
 }
 
 void GlobedGJBGL::selPostUpdate(float dt) {
@@ -683,7 +671,24 @@ void GlobedGJBGL::selPostUpdate(float dt) {
     auto& fields = *m_fields.self();
     if (!fields.m_active || !fields.m_initCompleted) return;
 
+    // update interpolator
+    auto camPos = m_gameState.m_cameraPosition;
+    auto cameraDelta = fields.m_cameraTracker.pushMeasurement(fields.m_timeCounter, camPos.x, camPos.y);
+    auto cameraVector = fields.m_cameraTracker.getVector();
+
+    fields.m_interpolator.tick(
+        dt,
+        CCPoint{(float) cameraDelta.first, (float) cameraDelta.second},
+        CCPoint{(float) cameraVector.first, (float) cameraVector.second}
+    );
+
+    g_profilerFrame.postLerp = Instant::now();
+
+    // update other players
     auto camState = this->getCameraState();
+    this->updateRemotePlayers(dt);
+
+    g_profilerFrame.postRPUpdate = Instant::now();
 
     // send player data to the server
     auto state = this->getPlayerState();
@@ -734,12 +739,12 @@ void GlobedGJBGL::selPostUpdate(float dt) {
         fields.m_profilerOverlay->updateWithFrame(ProfilerFrame {
             .totalTime = totalTime,
             .samples = {
-                ProfilerSample { "Interpolation", fr.start, fr.postLerp, "#23e8fa" },
-                ProfilerSample { "Player Upd", fr.postLerp, fr.postRPUpdate, "#4caf50" },
-                ProfilerSample { "Audio Upd", fr.postRPUpdate, fr.postAudioUpdate, "#0707f2" },
+                ProfilerSample { "Audio Upd", fr.start, fr.postAudioUpdate, "#0707f2" },
                 ProfilerSample { "Pre Misc", fr.postAudioUpdate, fr.postPreUpdateEnd, "#757575" },
                 ProfilerSample { "Game Update", fr.postPreUpdateEnd, fr.postGameUpdate, "#ffeb3b" },
-                ProfilerSample { "Send Data", fr.postGameUpdate, fr.postSendPlayerData, "#fb8c00" },
+                ProfilerSample { "Interpolation", fr.postGameUpdate, fr.postLerp, "#23e8fa" },
+                ProfilerSample { "Player Upd", fr.postLerp, fr.postRPUpdate, "#4caf50" },
+                ProfilerSample { "Send Data", fr.postRPUpdate, fr.postSendPlayerData, "#fb8c00" },
                 ProfilerSample { "Periodical Upd", fr.postSendPlayerData, fr.postPeriodicalUpdate, "#e91e63" },
                 ProfilerSample { "Post Misc", fr.postPeriodicalUpdate, fr.postPostUpdateEnd, "#455a64" },
             }

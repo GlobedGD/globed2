@@ -126,10 +126,10 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
 
     if (!culled) {
         // track the speed of the players
-        state.p1speedTracker.pushMeasurement(curTimestamp, player.player1->position.x, player.player1->position.y);
+        state.p1speedTracker.pushMeasurement(player.timestamp, player.player1->position.x, player.player1->position.y);
 
         if (player.player2) {
-            state.p2speedTracker.pushMeasurement(curTimestamp, player.player2->position.x, player.player2->position.y);
+            state.p2speedTracker.pushMeasurement(player.timestamp, player.player2->position.x, player.player2->position.y);
         }
     }
 
@@ -174,6 +174,7 @@ struct LerpContext {
     CCPoint cameraDelta;
     CCPoint cameraVector;
     float t;
+    float gameFrameDelta;
     bool camStationary;
     bool platformer;
     bool cameraCorrections;
@@ -185,10 +186,14 @@ static bool detectRespawnOrTeleport(const PlayerObjectData& older, const PlayerO
     }
 
     float dx = std::abs(newer.position.x - older.position.x);
-    float dt = ctx.newer.timestamp - ctx.older.timestamp;
-    float rate = dx / (dt > 0 ? dt : 0.001f);
+    // this is stupid
+    // float dt = ctx.newer.timestamp - ctx.older.timestamp;
+    // float rate = dx / (dt > 0 ? dt : 0.001f);
 
-    return rate > 1000.f;
+    // return rate > 1000.f;
+
+    // this might not be stupid
+    return dx > 100.f;
 }
 
 static inline void lerpSpecific(
@@ -243,8 +248,9 @@ static inline void lerpSpecific(
         bool similarSpeedX = std::fabs(speedVec.first - ctx.cameraVector.x) < closeAllowance;
         bool similarSpeedY = std::fabs(speedVec.second - ctx.cameraVector.y) < closeAllowance;
 
-        float guessAllowanceX = std::fabs(ctx.cameraVector.x) / 50.f;
-        float guessAllowanceY = std::fabs(ctx.cameraVector.y) / 50.f;
+        float estimateFps = std::clamp(1.f / ctx.gameFrameDelta, 30.f, 240.f);
+        float guessAllowanceX = std::fabs(ctx.cameraVector.x) * 4.f / estimateFps;
+        float guessAllowanceY = std::fabs(ctx.cameraVector.y) * 4.f / estimateFps;
 
         LERP_LOG(
             "speedX: {:.3f}, camX: {:.3f}, allowanceX: {:.2f}, guessedX: {:.4f}, curX: {:.4f} (delta {:.4f})",
@@ -431,6 +437,7 @@ void Interpolator::tick(float dt, CCPoint cameraDelta, CCPoint cameraVector) {
             cameraDelta,
             cameraVector,
             t,
+            dt,
             camStationary,
             m_platformer,
             m_cameraCorrections,

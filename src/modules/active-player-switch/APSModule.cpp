@@ -35,7 +35,7 @@ void APSModule::onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const Pl
     }
 }
 
-void APSModule::onPreUpdate(GlobedGJBGL* gjbgl, float dt) {
+void APSModule::onUpdate(GlobedGJBGL* gjbgl, float dt) {
     if (auto pl = APSPlayLayer::get(gjbgl)) {
         pl->handleUpdate(dt);
     }

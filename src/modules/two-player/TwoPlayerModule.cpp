@@ -122,7 +122,7 @@ void TwoPlayerModule::onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) {
     }
 }
 
-void TwoPlayerModule::onPreUpdate(GlobedGJBGL* gjbgl, float dt) {
+void TwoPlayerModule::onUpdate(GlobedGJBGL* gjbgl, float dt) {
     auto ghost = gjbgl->m_fields->m_ghost.get();
     PlayerObject* noclipFor = this->isPlayer2() ? gjbgl->m_player1 : gjbgl->m_player2;
     PlayerObject* noclipForVP = this->isPlayer2() ? ghost->player1() : ghost->player2();
