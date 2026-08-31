@@ -1,7 +1,15 @@
 from pathlib import Path
 import json
 
-data = json.loads((Path(__file__).parent / "emoji-data").read_text())
+emoji_data_path = Path(__file__).parent / "emoji-data.json"
+if not emoji_data_path.exists():
+    import requests
+    r = requests.get("https://raw.githubusercontent.com/Paillat-dev/discord-emojis/master/build/emojis.json")
+    r.raise_for_status()
+    emoji_data_path.write_text(r.text)
+
+
+data = json.loads((Path(__file__).parent / "emoji-data.json").read_text())
 names = {}
 
 def utf32_to_c(s: str) -> str:
