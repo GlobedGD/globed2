@@ -2,6 +2,8 @@
   # export just the globed symbols
   global:
     *globed*;
+    geodeImplicitEntry;
+    geodeCustomEntry;
 
   local:
     *;
