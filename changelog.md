@@ -6,11 +6,15 @@ While a small update on the outside, this update brought a lot of internal rewor
 * Disable user settings by default - if you want to hide yourself, you must first re-enable them in settings
 * Allow unlinking a Discord account in-game
 * Add a button to copy the link for Discord link process, in case opening a browser fails
+* Add buttons to ban/kick players from the room without exiting the level
+* Improve player interpolation, reduce jitter and random teleports
 * The game server list now shows the player count on each server
 * Update Argon to v1.5.0 to fix authentication failures if the user is comment/message banned
 * Automatic game server selection no longer uses ping alone, now also factoring in server load
 * Make it possible to opt out of the progress bar fix, due to it breaking certain mods
+* Fix player names being mirrored when entering mirror portal
 * Fix a bug causing IPv6 connections to sometimes be deprioritized unintentionally
+* Fix a bug leading to IPv6 system DNS servers never being used
 * Many internal improvements
 
 For mod developers using the API:
