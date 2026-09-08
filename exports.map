@@ -3,7 +3,6 @@
   global:
     *globed*;
     geodeImplicitEntry;
-    geodeCustomEntry;
 
   local:
     *;
