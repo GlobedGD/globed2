@@ -71,7 +71,7 @@ Future<> SentryClient::reportIssue(SentryIssueReport report) {
             "Sentry sentry_version=7, sentry_client=globed/{}, sentry_key={}",
             Mod::get()->getVersion().toNonVString(), m_key
         ))
-        .bodyJSON(glz::write_json(payload).value_or(""))
+        .bodyString(glz::write_json(payload).value_or(""))
         .post(m_url);
 
     if (!resp.ok()) {
