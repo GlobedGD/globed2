@@ -904,12 +904,14 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
 }
 
 void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnected) {
-    bool showPopup = !m_manualDisconnect.load(::acquire);
+    bool manual = m_manualDisconnect.load(::acquire);
+    bool showPopup = !manual;
 
     std::string_view messageStart = wasConnected ? "Connection lost" : "Failed to connect to the server";
     std::string message = fmt::format("{}: <cy>client initiated disconnect</c>", messageStart);
+    std::string technicalError;
 
-    if (!showPopup) {
+    if (manual) {
         // only save the was-connected value if the user manually disconnected
         if (!m_destructing) {
             globed::setValue<bool>("core.was-connected", false);
@@ -919,12 +921,14 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnecte
 
         if (!abortCause->first.empty()) {
             message = fmt::format("Connection aborted: <cy>{}</c>", abortCause->first);
+            technicalError = abortCause->first;
         } else {
             auto err = m_centralConn->lastError();
             if (err == qn::ConnectionError::Success) {
                 message = "Connection failed due to unknown error";
             } else if (!err.isAllAddressesFailed()) {
                 message = fmt::format("{}: <cy>{}</c>", messageStart, err.message());
+                technicalError = err.message();
             } else {
                 // if this is the AllAddressesFailed error, try to get more info to show
                 // sort all errors and pick the clearest one to show to the user
@@ -942,6 +946,17 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnecte
                     connTypeToString(type),
                     cause.message()
                 );
+
+                utils::StringBuffer sbuf;
+                for (auto& [addr, type, cause] : addrs) {
+                    sbuf.append(
+                        "- {} ({}): {}\n",
+                        addr.toString(),
+                        connTypeToString(type),
+                        cause.message()
+                    );
+                }
+                technicalError = sbuf.str();
             }
         }
 
@@ -952,6 +967,8 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnecte
     }
 
     log::info("connection to central server lost: {}", message);
+
+    arc::spawn(SentryClient::get().reportCentralConnectionError(technicalError));
 
     FunctionQueue::get().queue([reconnecting, showPopup, message = std::move(message)] {
         CoreImpl::get().onServerDisconnected();
@@ -1740,7 +1757,6 @@ void NetworkManagerImpl::onGameStateChanged(qn::ConnectionState state) {
 
 void NetworkManagerImpl::abortConnection(std::string reason, bool silent) {
     log::warn("aborting connection to central server: {}", reason);
-    arc::spawn(SentryClient::get().reportCentralConnectionError(reason));
 
     *m_abortCause.lock() = std::make_pair(std::move(reason), silent);
     m_centralConn->disconnect();
