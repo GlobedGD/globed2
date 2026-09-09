@@ -159,6 +159,51 @@ static int rankError(const qsox::SocketAddress& addr, qn::ConnectionType type, c
     return score;
 }
 
+struct DoubleErrorDesc {
+    std::string brief;
+    std::string technical;
+};
+
+static DoubleErrorDesc describeAddressesFailedError(const qn::AllAddressesFailed& err) {
+    // sort all errors and pick the clearest one to show to the user
+    auto addrs = err.addresses;
+    std::sort(addrs.begin(), addrs.end(), [&](auto& a, auto& b) {
+        auto aRank = rankError(std::get<0>(a), std::get<1>(a), std::get<2>(a));
+        auto bRank = rankError(std::get<0>(b), std::get<1>(b), std::get<2>(b));
+        return aRank < bRank;
+    });
+
+    auto& [addr, type, cause] = addrs.back();
+    std::string brief = fmt::format(
+        "Error connecting to <cg>{} ({})</c>: <cy>{}</c>.",
+        addr.toString(),
+        connTypeToString(type),
+        cause.message()
+    );
+
+    utils::StringBuffer sbuf;
+    sbuf.append("Connection to all addresses failed:\n");
+    for (auto& [addr, type, cause] : addrs) {
+        sbuf.append(
+            "- {} ({}): {}\n",
+            addr.toString(),
+            connTypeToString(type),
+            cause.message()
+        );
+    }
+    std::string technical = sbuf.str();
+    return {std::move(brief), std::move(technical)};
+}
+
+static DoubleErrorDesc describeError(const qn::ConnectionError& err) {
+    if (err.isAllAddressesFailed()) {
+        return describeAddressesFailedError(err.asAllAddressesFailed());
+    } else {
+        std::string msg = err.message();
+        return {msg, msg};
+    }
+}
+
 struct CapnpExceptionHandler : public kj::ExceptionCallback {
     bool errored = false;
 
@@ -881,10 +926,12 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
 
             auto err = m_gameConn->lastError();
             if (err != qn::ConnectionError::Success) {
-                arc::spawn(SentryClient::get().reportGameConnectionError(url, err.message()));
+                auto desc = describeError(err);
 
-                geode::queueInMainThread([err = std::move(err)] {
-                    log::warn("Connection to game server failed: {}", err.message());
+                arc::spawn(SentryClient::get().reportGameConnectionError(url, desc.technical));
+
+                geode::queueInMainThread([desc = std::move(desc)] {
+                    log::warn("Connection to game server failed: {}", desc.technical);
                     globed::toastError("[Globed] Connection to the game server failed,\nsee game logs for more detailed information");
                 });
             }
@@ -931,32 +978,9 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnecte
                 technicalError = err.message();
             } else {
                 // if this is the AllAddressesFailed error, try to get more info to show
-                // sort all errors and pick the clearest one to show to the user
-                auto addrs = err.asAllAddressesFailed().addresses;
-                std::sort(addrs.begin(), addrs.end(), [&](auto& a, auto& b) {
-                    auto aRank = rankError(std::get<0>(a), std::get<1>(a), std::get<2>(a));
-                    auto bRank = rankError(std::get<0>(b), std::get<1>(b), std::get<2>(b));
-                    return aRank < bRank;
-                });
-
-                auto& [addr, type, cause] = addrs.back();
-                message = fmt::format(
-                    "Error connecting to <cg>{} ({})</c>: <cy>{}</c>.",
-                    addr.toString(),
-                    connTypeToString(type),
-                    cause.message()
-                );
-
-                utils::StringBuffer sbuf;
-                for (auto& [addr, type, cause] : addrs) {
-                    sbuf.append(
-                        "- {} ({}): {}\n",
-                        addr.toString(),
-                        connTypeToString(type),
-                        cause.message()
-                    );
-                }
-                technicalError = sbuf.str();
+                auto desc = describeAddressesFailedError(err.asAllAddressesFailed());
+                message = desc.brief;
+                technicalError = desc.technical;
             }
         }
 
