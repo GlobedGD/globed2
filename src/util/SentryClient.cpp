@@ -1,6 +1,7 @@
 #include "SentryClient.hpp"
 #include <globed/core/Constants.hpp>
 #include <globed/core/ServerManager.hpp>
+#include <globed/core/ValueManager.hpp>
 #include <glaze/json.hpp>
 
 using namespace geode::prelude;
@@ -39,6 +40,11 @@ SentryClient::SentryClient() {
     m_url = globed::constant<"sentry-url">();
     m_key = globed::constant<"sentry-key">();
     m_env = globed::constant<"sentry-env">();
+
+    if (globed::value<bool>("disable-sentry")) {
+        m_enabled = false;
+        return;
+    }
 
     if (m_url.empty() || m_key.empty()) {
         m_enabled = false;
