@@ -67,6 +67,11 @@ Future<> SentryClient::reportIssue(SentryIssueReport report) {
         payload.user = EnvelopeUser{fmt::to_string(*report.userId)};
     }
 
+    // add some metadata tags about the current environment
+    payload.tags.emplace("platform", GEODE_PLATFORM_NAME);
+    payload.tags.emplace("version", Mod::get()->getVersion().toNonVString());
+    payload.tags.emplace("geode", Loader::get()->getVersion().toNonVString());
+
     auto resp = co_await web::WebRequest{}
         .header("Content-Type", "application/json")
         .header("X-Sentry-Auth", fmt::format(
