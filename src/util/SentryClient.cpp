@@ -18,6 +18,7 @@ struct EnvelopePayload {
     std::unordered_map<std::string, std::string> tags;
     std::string event_id;
     std::string timestamp;
+    std::string environment;
     std::string level;
     std::string message;
     std::optional<EnvelopeUser> user;
@@ -60,6 +61,7 @@ Future<> SentryClient::reportIssue(SentryIssueReport report) {
     payload.timestamp = asp::SystemTime::now().format("{:%Y-%m-%dT%H:%M:%S}.{:03}Z");
     payload.level = fmt::to_string(report.level);
     payload.message = std::move(report.message);
+    payload.environment = m_env;
 
     if (report.userId) {
         payload.user = EnvelopeUser{fmt::to_string(*report.userId)};
@@ -91,7 +93,7 @@ Future<> SentryClient::reportArgonIssue(int accountId, std::string error) {
     });
 }
 
-Future<> SentryClient::reportCentralConnectionError(std::string error) {
+Future<> SentryClient::reportCentralConnectionError(std::string error, bool initialConnection) {
     bool isMainServer = ServerManager::get().isOfficialServerActive();
     if (!isMainServer) {
         // ignore custom servers
@@ -100,7 +102,7 @@ Future<> SentryClient::reportCentralConnectionError(std::string error) {
 
     co_await this->reportIssue(SentryIssueReport {
         .level = SentryIssueLevel::Error,
-        .tags = {{"component", "central"}, {"kind", "connection"}},
+        .tags = {{"component", "central"}, {"kind", "connection"}, {"connection state", initialConnection ? "initial" : "established"}},
         .message = std::move(error),
         .userId = std::nullopt
     });

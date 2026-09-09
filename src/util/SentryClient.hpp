@@ -29,7 +29,7 @@ public:
     // Specialized functions for specific issues
 
     arc::Future<> reportArgonIssue(int accountId, std::string error);
-    arc::Future<> reportCentralConnectionError(std::string error);
+    arc::Future<> reportCentralConnectionError(std::string error, bool initialConnection);
     arc::Future<> reportGameConnectionError(std::string url, std::string error);
 
 private:

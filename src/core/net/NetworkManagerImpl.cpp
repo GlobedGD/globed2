@@ -968,7 +968,9 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnecte
 
     log::info("connection to central server lost: {}", message);
 
-    arc::spawn(SentryClient::get().reportCentralConnectionError(technicalError));
+    if (!manual) {
+        arc::spawn(SentryClient::get().reportCentralConnectionError(technicalError, !wasConnected));
+    }
 
     FunctionQueue::get().queue([reconnecting, showPopup, message = std::move(message)] {
         CoreImpl::get().onServerDisconnected();
