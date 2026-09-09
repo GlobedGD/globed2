@@ -30,7 +30,7 @@ public:
 
     arc::Future<> reportArgonIssue(int accountId, std::string error);
     arc::Future<> reportCentralConnectionError(std::string error, bool initialConnection);
-    arc::Future<> reportGameConnectionError(std::string url, std::string error);
+    arc::Future<> reportGameConnectionError(std::string url, std::string error, bool initialConnection);
 
 private:
     std::string m_url, m_key, m_env;

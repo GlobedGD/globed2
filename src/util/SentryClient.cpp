@@ -119,7 +119,7 @@ Future<> SentryClient::reportCentralConnectionError(std::string error, bool init
     });
 }
 
-Future<> SentryClient::reportGameConnectionError(std::string url, std::string error) {
+Future<> SentryClient::reportGameConnectionError(std::string url, std::string error, bool initialConnection) {
     bool isMainServer = ServerManager::get().isOfficialServerActive();
     if (!isMainServer) {
         // ignore custom servers
@@ -128,7 +128,7 @@ Future<> SentryClient::reportGameConnectionError(std::string url, std::string er
 
     co_await this->reportIssue(SentryIssueReport {
         .level = SentryIssueLevel::Error,
-        .tags = {{"component", "game"}, {"kind", "connection"}, {"url", url}},
+        .tags = {{"component", "game"}, {"kind", "connection"}, {"url", url}, {"connection state", initialConnection ? "initial" : "established"}},
         .message = std::move(error),
         .userId = std::nullopt
     });

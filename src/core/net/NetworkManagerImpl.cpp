@@ -882,6 +882,7 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
             gameEstablished = info->m_gameEstablished;
         }
 
+        std::optional<qn::ConnectionError> connectError;
         if (connState == Connected) {
             if (!sameUrl) {
                 // connected to a different server, disconnect and then connect to the needed one
@@ -899,7 +900,7 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
                 cur.reset();
             }
         } else if (connState != Disconnected) {
-            // connecting or closing, wait
+            // connecting, reconnecting or closing, wait
         } else if (!cur->triedConnecting) {
             // disconnected, connect to the requested server
             m_gameConn->setDebugOptions(getConnOpts());
@@ -907,10 +908,7 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
             auto info = this->connInfo();
 
             if (!res) {
-                log::error("Failed to connect to game server {}: {}", cur->url, res.unwrapErr().message());
-                info->m_gameServerUrl.clear();
-                cur.reset();
-                lastReq.reset();
+                connectError = res.unwrapErr();
             } else {
                 info->m_gameServerUrl = cur->url;
                 info->m_gameServerId = cur->serverId;
@@ -918,23 +916,30 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
             }
         } else {
             // already tried connecting to this server and failed, so give it up
-            auto url = cur->url;
+            connectError = m_gameConn->lastError();
+        }
 
+        if (connectError) {
+            // either initial connection failed or we got disconnected, report the error
+            auto url = cur->url;
             this->connInfo()->m_gameServerUrl.clear();
             cur.reset();
             lastReq.reset();
 
-            auto err = m_gameConn->lastError();
-            if (err != qn::ConnectionError::Success) {
-                auto desc = describeError(err);
-
-                arc::spawn(SentryClient::get().reportGameConnectionError(url, desc.technical));
-
-                geode::queueInMainThread([desc = std::move(desc)] {
-                    log::warn("Connection to game server failed: {}", desc.technical);
-                    globed::toastError("[Globed] Connection to the game server failed,\nsee game logs for more detailed information");
-                });
+            std::string message;
+            if (connectError == qn::ConnectionError::Success) {
+                message = "unknown error";
+            } else {
+                message = describeError(*connectError).technical;
             }
+
+            bool wasEstablished = this->connInfo()->m_gameEstablished;
+            arc::spawn(SentryClient::get().reportGameConnectionError(url, message, !wasEstablished));
+
+            geode::queueInMainThread([message = std::move(message)] {
+                log::warn("Connection to game server failed: {}", message);
+                globed::toastError("[Globed] Connection to the game server failed,\nsee game logs for more detailed information");
+            });
         }
     }
 
