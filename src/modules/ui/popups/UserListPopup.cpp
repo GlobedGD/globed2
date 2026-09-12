@@ -532,6 +532,26 @@ bool UserListPopup::init() {
     return true;
 }
 
+// Copied from Geode due to Clang MSVC ABI bug
+// it sounds crazy but it's too long to explain https://discord.com/channels/911701438269386882/1248524007859290205/1548408254235939059
+static std::strong_ordering caseInsensitiveCompare(std::string_view str1, std::string_view str2) {
+    for (size_t i = 0; i < str1.size() && i < str2.size(); i++) {
+        auto const a = std::tolower(str1[i]);
+        auto const b = std::tolower(str2[i]);
+        if (a < b) {
+            return std::strong_ordering::less;
+        } else if (a > b) {
+            return std::strong_ordering::greater;
+        }
+    }
+    if (str1.size() < str2.size())
+        return std::strong_ordering::less;
+    else if (str1.size() > str2.size())
+        return std::strong_ordering::greater;
+    return std::strong_ordering::equal;
+}
+
+
 void UserListPopup::hardRefresh() {
     m_list->clear();
 
@@ -589,7 +609,7 @@ void UserListPopup::hardRefresh() {
             return aFriend;
         }
 
-        return utils::string::caseInsensitiveCompare(a->m_username,  b->m_username) < 0;
+        return caseInsensitiveCompare(a->m_username,  b->m_username) < 0;
     });
 
     m_list->updateLayout();

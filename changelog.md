@@ -1,3 +1,7 @@
+## v2.2.1
+
+* Fix crash when opening player list on Windows
+
 ## v2.2.0
 
 While a small update on the outside, this update brought a lot of internal reworks, as well as a server event system that allows mod developers to send custom data to other players through the Globed API!
