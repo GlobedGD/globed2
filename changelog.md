@@ -5,9 +5,10 @@ While a small update on the outside, this update brought a lot of internal rewor
 * Add back level percentage & best platformer time of other players in the pause menu
 * Disable user settings by default - if you want to hide yourself, you must first re-enable them in settings
 * Allow unlinking a Discord account in-game
-* Add a button to copy the link for Discord link process, in case opening a browser fails
+* Remove error popup when Separate Dual Icons is loaded, since the recent update fixed the incompatibility
 * Add buttons to ban/kick players from the room without exiting the level
 * Improve player interpolation, reduce jitter and random teleports
+* Add a button to copy the link for Discord link process, in case opening a browser fails
 * The game server list now shows the player count on each server
 * Update Argon to v1.5.0 to fix authentication failures if the user is comment/message banned
 * Automatic game server selection no longer uses ping alone, now also factoring in server load
