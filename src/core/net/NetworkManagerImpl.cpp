@@ -893,7 +893,7 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
                 lastReq = std::move(cur);
                 cur.reset();
             } else {
-                log::debug("Sending login request to game server ({}, session {}) ..", cur->url, cur->id.asU64());
+                log::info("Sending login request to game server ({}, session {}) ..", cur->url, cur->id.asU64());
                 // connected but not yet logged in, send a login request
                 this->sendGameLoginRequest(cur->id, cur->platformer, cur->editorCollab);
                 lastReq = std::move(cur);
@@ -2299,6 +2299,8 @@ void NetworkManagerImpl::sendAdminUpdateUser(int32_t accountId, const std::strin
 // Game server messages
 
 void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, bool editorCollab) {
+    log::debug("sendGameLoginRequest(id = {}, platformer = {}, editorCollab = {}) ..", id.asU64(), platformer, editorCollab);
+
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto login = msg.initLogin();
         login.setAccountId(g_argonData.accountId);
@@ -2324,6 +2326,8 @@ void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, boo
 }
 
 void NetworkManagerImpl::sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab) {
+    log::debug("sendGameJoinRequest(id = {}, platformer = {}, editorCollab = {}) ..", id.asU64(), platformer, editorCollab);
+
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto join = msg.initJoinSession();
         join.setSessionId(id);
