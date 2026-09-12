@@ -340,6 +340,14 @@ void SettingsLayer::addSettings() {
     this->addSetting<BoolSettingCell>("core.player.hide-practicing", "Hide Practicing Players",
         "Hide players that are in practice mode."
     );
+    this->addSetting<BoolSettingCell>("core.player.hide-afk", "Hide AFK Players",
+        "Hide players whose game has been paused for at least the duration set below."
+    );
+    auto afkDelaySetting = this->addSetting<FloatSettingCell>("core.player.hide-afk-delay", "AFK Countdown (sec)",
+        "How long a player must stay paused before being hidden. 0 = hide instantly on pause."
+    );
+    afkDelaySetting->setPercentageBased(false);
+    afkDelaySetting->setStep(1.f);
     this->addSetting<BoolSettingCell>("core.player.status-icons", "Show Status Icons",
         "Show icons indicating player states, such as paused, practicing, voice chatting, editor."
     );
