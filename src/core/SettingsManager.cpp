@@ -17,128 +17,128 @@ SettingsManager::SettingsManager() {
     this->loadSaveSlots();
 
     // Preload
-    this->registerSetting("core.preload.enabled", true);
-    this->registerSetting("core.preload.defer", false);
-    this->registerSetting("core.preload.force-preload", false);
+    this->registerSetting(Setting::Preload::Enabled, true);
+    this->registerSetting(Setting::Preload::Defer, false);
+    this->registerSetting(Setting::Preload::ForcePreload, false);
     // hidden preload settings
-    this->registerSetting("core.preload.batch-size", 0);
-    this->registerSetting("core.preload.use-pbos", true);
-    this->registerSetting("core.preload.use-direct-decode", true);
+    this->registerSetting(Setting::Preload::BatchSize, 0);
+    this->registerSetting(Setting::Preload::UsePbos, true);
+    this->registerSetting(Setting::Preload::UseDirectDecode, true);
 
     // Various
-    this->registerSetting("core.autoconnect", true);
-    this->registerSetting("core.streamer-mode", false);
-    this->registerSetting("core.invites-from", (int)InvitesFrom::Friends);
+    this->registerSetting(Setting::General::Autoconnect, true);
+    this->registerSetting(Setting::General::StreamerMode, false);
+    this->registerSetting(Setting::General::InvitesFrom, (int)InvitesFrom::Friends);
 
     // Editor related
-    this->registerSetting("core.editor.enabled", true);
+    this->registerSetting(Setting::Editor::Enabled, true);
 
     // Keybinds
-    this->registerSetting("core.keybinds.voice-chat", (int)KEY_V);
-    this->registerSetting("core.keybinds.deafen", (int)KEY_B);
-    this->registerSetting("core.keybinds.hide-players", (int)KEY_None);
-    this->registerSetting("core.keybinds.emote-0", (int)KEY_None);
-    this->registerSetting("core.keybinds.emote-1", (int)KEY_None);
-    this->registerSetting("core.keybinds.emote-2", (int)KEY_None);
-    this->registerSetting("core.keybinds.emote-3", (int)KEY_None);
-    this->registerSetting("core.keybinds.emote-4", (int)KEY_None);
-    this->registerSetting("core.keybinds.emote-5", (int)KEY_None);
-    this->registerSetting("core.keybinds.emote-6", (int)KEY_None);
-    this->registerSetting("core.keybinds.emote-7", (int)KEY_None);
+    this->registerSetting(Setting::Keybinds::VoiceChat, (int)KEY_V);
+    this->registerSetting(Setting::Keybinds::Deafen, (int)KEY_B);
+    this->registerSetting(Setting::Keybinds::HidePlayers, (int)KEY_None);
+    this->registerSetting(Setting::Keybinds::Emote0, (int)KEY_None);
+    this->registerSetting(Setting::Keybinds::Emote1, (int)KEY_None);
+    this->registerSetting(Setting::Keybinds::Emote2, (int)KEY_None);
+    this->registerSetting(Setting::Keybinds::Emote3, (int)KEY_None);
+    this->registerSetting(Setting::Keybinds::Emote4, (int)KEY_None);
+    this->registerSetting(Setting::Keybinds::Emote5, (int)KEY_None);
+    this->registerSetting(Setting::Keybinds::Emote6, (int)KEY_None);
+    this->registerSetting(Setting::Keybinds::Emote7, (int)KEY_None);
 
     // UI settings
-    this->registerSetting("core.ui.allow-custom-servers", false);
-    this->registerSetting("core.ui.increase-level-list", false);
-    this->registerSetting("core.ui.compressed-player-count", true);
-    this->registerSetting("core.ui.colorblind-mode", false);
-    this->registerSetting("core.ui.disable-notices", false);
+    this->registerSetting(Setting::Ui::AllowCustomServers, false);
+    this->registerSetting(Setting::Ui::IncreaseLevelList, false);
+    this->registerSetting(Setting::Ui::CompressedPlayerCount, true);
+    this->registerSetting(Setting::Ui::ColorblindMode, false);
+    this->registerSetting(Setting::Ui::DisableNotices, false);
 
     // Player settings
-    this->registerSetting("core.player.opacity", 1.0f);
-    this->registerLimits("core.player.opacity", 0.f, 1.f);
-    this->registerSetting("core.player.quick-chat-enabled", true);
-    this->registerSetting("core.player.quick-chat-sfx", true);
-    this->registerSetting("core.player.quick-chat-sfx-volume", 0.5f);
-    this->registerSetting("core.player.emote-opacity", 1.0f);
-    this->registerLimits("core.player.emote-opacity", 0.f, 1.f);
-    this->registerSetting("core.player.show-names", true);
-    this->registerSetting("core.player.dual-name", true);
-    this->registerSetting("core.player.name-opacity", 1.0f);
-    this->registerSetting("core.player.force-visibility", false);
-    this->registerSetting("core.player.hide-nearby-classic", false);
-    this->registerSetting("core.player.hide-nearby-plat", false);
-    this->registerSetting("core.player.hide-practicing", false);
-    this->registerSetting("core.player.status-icons", true);
-    this->registerSetting("core.player.rotate-names", true);
-    this->registerSetting("core.player.death-effects", true);
-    this->registerSetting("core.player.default-death-effects", false);
+    this->registerSetting(Setting::Player::Opacity, 1.0f);
+    this->registerLimits(Setting::Player::Opacity, 0.f, 1.f);
+    this->registerSetting(Setting::Player::QuickChatEnabled, true);
+    this->registerSetting(Setting::Player::QuickChatSfx, true);
+    this->registerSetting(Setting::Player::QuickChatSfxVolume, 0.5f);
+    this->registerSetting(Setting::Player::EmoteOpacity, 1.0f);
+    this->registerLimits(Setting::Player::EmoteOpacity, 0.f, 1.f);
+    this->registerSetting(Setting::Player::ShowNames, true);
+    this->registerSetting(Setting::Player::DualName, true);
+    this->registerSetting(Setting::Player::NameOpacity, 1.0f);
+    this->registerSetting(Setting::Player::ForceVisibility, false);
+    this->registerSetting(Setting::Player::HideNearbyClassic, false);
+    this->registerSetting(Setting::Player::HideNearbyPlat, false);
+    this->registerSetting(Setting::Player::HidePracticing, false);
+    this->registerSetting(Setting::Player::StatusIcons, true);
+    this->registerSetting(Setting::Player::RotateNames, true);
+    this->registerSetting(Setting::Player::DeathEffects, true);
+    this->registerSetting(Setting::Player::DefaultDeathEffects, false);
     // invisible settings
-    this->registerSetting("core.player.blacklisted-players", matjson::Value::array());
-    this->registerSetting("core.player.whitelisted-players", matjson::Value::array());
-    this->registerSetting("core.player.hidden-players", matjson::Value::array());
+    this->registerSetting(Setting::Player::BlacklistedPlayers, matjson::Value::array());
+    this->registerSetting(Setting::Player::WhitelistedPlayers, matjson::Value::array());
+    this->registerSetting(Setting::Player::HiddenPlayers, matjson::Value::array());
     this->refreshPlayerLists();
 
     // Level UI
-    this->registerSetting("core.level.progress-indicators", true);
-    this->registerSetting("core.level.progress-indicators-plat", true);
-    this->registerSetting("core.level.progress-opacity", 1.0f);
-    this->registerSetting("core.level.force-progressbar", false);
-    this->registerSetting("core.level.self-status-icons", true);
-    this->registerSetting("core.level.self-name", false);
-    this->registerSetting("core.level.fix-progress-bar", true);
-    this->registerSetting("core.level.voice-overlay", true);
-    this->registerSetting("core.level.voice-overlay-threshold", 0.05f);
-    this->registerSetting("core.level.voice-overlay-position", 3);
-    this->registerLimits("core.level.voice-overlay-position", 0, 3); // 0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right
-    this->registerSetting("core.level.voice-overlay-pad-y", 26.f);
-    this->registerLimits("core.level.voice-overlay-pad-y", 0.f, 100.f);
+    this->registerSetting(Setting::Level::ProgressIndicators, true);
+    this->registerSetting(Setting::Level::ProgressIndicatorsPlat, true);
+    this->registerSetting(Setting::Level::ProgressOpacity, 1.0f);
+    this->registerSetting(Setting::Level::ForceProgressbar, false);
+    this->registerSetting(Setting::Level::SelfStatusIcons, true);
+    this->registerSetting(Setting::Level::SelfName, false);
+    this->registerSetting(Setting::Level::FixProgressBar, true);
+    this->registerSetting(Setting::Level::VoiceOverlay, true);
+    this->registerSetting(Setting::Level::VoiceOverlayThreshold, 0.05f);
+    this->registerSetting(Setting::Level::VoiceOverlayPosition, 3);
+    this->registerLimits(Setting::Level::VoiceOverlayPosition, 0, 3); // 0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right
+    this->registerSetting(Setting::Level::VoiceOverlayPadY, 26.f);
+    this->registerLimits(Setting::Level::VoiceOverlayPadY, 0.f, 100.f);
 
     // Overlay
-    this->registerSetting("core.overlay.enabled", true);
-    this->registerSetting("core.overlay.opacity", 0.35f);
-    this->registerLimits("core.overlay.opacity", 0.f, 1.f);
-    this->registerSetting("core.overlay.always-show", false);
-    this->registerSetting("core.overlay.position", 3);
-    this->registerLimits("core.overlay.position", 0, 3); // 0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right
+    this->registerSetting(Setting::Overlay::Enabled, true);
+    this->registerSetting(Setting::Overlay::Opacity, 0.35f);
+    this->registerLimits(Setting::Overlay::Opacity, 0.f, 1.f);
+    this->registerSetting(Setting::Overlay::AlwaysShow, false);
+    this->registerSetting(Setting::Overlay::Position, 3);
+    this->registerLimits(Setting::Overlay::Position, 0, 3); // 0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right
 
     // Audio
-    this->registerSetting("core.audio.voice-chat-enabled", true);
-    this->registerSetting("core.audio.input-device", -1); // deprecated
-    this->registerSetting("core.audio.input-device-guid", "");
-    this->registerSetting("core.audio.voice-loopback", false);
-    this->registerSetting("core.audio.overlaying-overlay", false);
+    this->registerSetting(Setting::Audio::VoiceChatEnabled, true);
+    this->registerSetting(Setting::Audio::InputDevice, -1); // deprecated
+    this->registerSetting(Setting::Audio::InputDeviceGuid, "");
+    this->registerSetting(Setting::Audio::VoiceLoopback, false);
+    this->registerSetting(Setting::Audio::OverlayingOverlay, false);
 
-    this->registerSetting("core.audio.buffer-size", 4);
-    this->registerLimits("core.audio.buffer-size", 1, 10);
+    this->registerSetting(Setting::Audio::BufferSize, 4);
+    this->registerLimits(Setting::Audio::BufferSize, 1, 10);
 
-    this->registerSetting("core.audio.playback-volume", 1.f);
-    this->registerLimits("core.audio.playback-volume", 0.f, 2.f);
+    this->registerSetting(Setting::Audio::PlaybackVolume, 1.f);
+    this->registerLimits(Setting::Audio::PlaybackVolume, 0.f, 2.f);
 
-    this->registerSetting("core.audio.voice-proximity", true);
-    this->registerSetting("core.audio.classic-proximity", false);
-    this->registerSetting("core.audio.deafen-notification", false);
-    this->registerSetting("core.audio.only-friends", false); // TODO make this work server side?
+    this->registerSetting(Setting::Audio::VoiceProximity, true);
+    this->registerSetting(Setting::Audio::ClassicProximity, false);
+    this->registerSetting(Setting::Audio::DeafenNotification, false);
+    this->registerSetting(Setting::Audio::OnlyFriends, false); // TODO make this work server side?
 
     // Mod settings
-    this->registerSetting("core.mod.remember-password", false);
+    this->registerSetting(Setting::ModSettings::RememberPassword, false);
 
     // User settings (custom UI)
-    this->registerSetting("core.user.allow-user-settings", false);
-    this->registerSetting("core.user.hide-in-levels", false);
-    this->registerSetting("core.user.hide-in-menus", false);
-    this->registerSetting("core.user.hide-roles", false);
+    this->registerSetting(Setting::User::AllowUserSettings, false);
+    this->registerSetting(Setting::User::HideInLevels, false);
+    this->registerSetting(Setting::User::HideInMenus, false);
+    this->registerSetting(Setting::User::HideRoles, false);
 
     // Developer settings
-    this->registerSetting("core.dev.packet-loss-sim", 0.0f);
-    this->registerSetting("core.dev.net-debug-logs", false);
-    this->registerSetting("core.dev.net-stat-dump", false);
-    this->registerSetting("core.dev.net-prefer-proto", (int)PreferConnection::Auto);
-    this->registerSetting("core.dev.net-use-ipv4", false);
-    this->registerSetting("core.dev.net-dont-override-dns", false);
-    this->registerSetting("core.dev.fake-data", false);
-    this->registerSetting("core.dev.cert-verification", true);
-    this->registerSetting("core.dev.ghost-follower", false);
-    this->registerSetting("core.dev.profile-frame-time", false);
+    this->registerSetting(Setting::Dev::PacketLossSim, 0.0f);
+    this->registerSetting(Setting::Dev::NetDebugLogs, false);
+    this->registerSetting(Setting::Dev::NetStatDump, false);
+    this->registerSetting(Setting::Dev::NetPreferProto, (int)PreferConnection::Auto);
+    this->registerSetting(Setting::Dev::NetUseIpv4, false);
+    this->registerSetting(Setting::Dev::NetDontOverrideDns, false);
+    this->registerSetting(Setting::Dev::FakeData, false);
+    this->registerSetting(Setting::Dev::CertVerification, true);
+    this->registerSetting(Setting::Dev::GhostFollower, false);
+    this->registerSetting(Setting::Dev::ProfileFrameTime, false);
 }
 
 void SettingsManager::loadSaveSlots() {

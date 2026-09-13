@@ -281,4 +281,132 @@ SettingAccessor<T>& SettingAccessor<T>::operator=(T value) {
     return *this;
 }
 
+
+// Setting keys
+
+namespace Setting {
+
+namespace Preload {
+    inline constexpr auto Enabled = "core.preload.enabled";
+    inline constexpr auto Defer = "core.preload.defer";
+    inline constexpr auto ForcePreload = "core.preload.force-preload";
+    inline constexpr auto BatchSize = "core.preload.batch-size";
+    inline constexpr auto UsePbos = "core.preload.use-pbos";
+    inline constexpr auto UseDirectDecode = "core.preload.use-direct-decode";
+}
+
+namespace General {
+    inline constexpr auto Autoconnect = "core.autoconnect";
+    inline constexpr auto StreamerMode = "core.streamer-mode";
+    inline constexpr auto InvitesFrom = "core.invites-from";
+}
+
+namespace Editor {
+    inline constexpr auto Enabled = "core.editor.enabled";
+}
+
+namespace Keybinds {
+    inline constexpr auto VoiceChat = "core.keybinds.voice-chat";
+    inline constexpr auto Deafen = "core.keybinds.deafen";
+    inline constexpr auto HidePlayers = "core.keybinds.hide-players";
+    inline constexpr auto Emote0 = "core.keybinds.emote-0";
+    inline constexpr auto Emote1 = "core.keybinds.emote-1";
+    inline constexpr auto Emote2 = "core.keybinds.emote-2";
+    inline constexpr auto Emote3 = "core.keybinds.emote-3";
+    inline constexpr auto Emote4 = "core.keybinds.emote-4";
+    inline constexpr auto Emote5 = "core.keybinds.emote-5";
+    inline constexpr auto Emote6 = "core.keybinds.emote-6";
+    inline constexpr auto Emote7 = "core.keybinds.emote-7";
+}
+
+namespace Ui {
+    inline constexpr auto AllowCustomServers = "core.ui.allow-custom-servers";
+    inline constexpr auto IncreaseLevelList = "core.ui.increase-level-list";
+    inline constexpr auto CompressedPlayerCount = "core.ui.compressed-player-count";
+    inline constexpr auto ColorblindMode = "core.ui.colorblind-mode";
+    inline constexpr auto DisableNotices = "core.ui.disable-notices";
+}
+
+namespace Player {
+    inline constexpr auto Opacity = "core.player.opacity";
+    inline constexpr auto QuickChatEnabled = "core.player.quick-chat-enabled";
+    inline constexpr auto QuickChatSfx = "core.player.quick-chat-sfx";
+    inline constexpr auto QuickChatSfxVolume = "core.player.quick-chat-sfx-volume";
+    inline constexpr auto EmoteOpacity = "core.player.emote-opacity";
+    inline constexpr auto ShowNames = "core.player.show-names";
+    inline constexpr auto DualName = "core.player.dual-name";
+    inline constexpr auto NameOpacity = "core.player.name-opacity";
+    inline constexpr auto ForceVisibility = "core.player.force-visibility";
+    inline constexpr auto HideNearbyClassic = "core.player.hide-nearby-classic";
+    inline constexpr auto HideNearbyPlat = "core.player.hide-nearby-plat";
+    inline constexpr auto HidePracticing = "core.player.hide-practicing";
+    inline constexpr auto StatusIcons = "core.player.status-icons";
+    inline constexpr auto RotateNames = "core.player.rotate-names";
+    inline constexpr auto DeathEffects = "core.player.death-effects";
+    inline constexpr auto DefaultDeathEffects = "core.player.default-death-effects";
+    inline constexpr auto BlacklistedPlayers = "core.player.blacklisted-players";
+    inline constexpr auto WhitelistedPlayers = "core.player.whitelisted-players";
+    inline constexpr auto HiddenPlayers = "core.player.hidden-players";
+}
+
+namespace Level {
+    inline constexpr auto ProgressIndicators = "core.level.progress-indicators";
+    inline constexpr auto ProgressIndicatorsPlat = "core.level.progress-indicators-plat";
+    inline constexpr auto ProgressOpacity = "core.level.progress-opacity";
+    inline constexpr auto ForceProgressbar = "core.level.force-progressbar";
+    inline constexpr auto SelfStatusIcons = "core.level.self-status-icons";
+    inline constexpr auto SelfName = "core.level.self-name";
+    inline constexpr auto FixProgressBar = "core.level.fix-progress-bar";
+    inline constexpr auto VoiceOverlay = "core.level.voice-overlay";
+    inline constexpr auto VoiceOverlayThreshold = "core.level.voice-overlay-threshold";
+    inline constexpr auto VoiceOverlayPosition = "core.level.voice-overlay-position";
+    inline constexpr auto VoiceOverlayPadY = "core.level.voice-overlay-pad-y";
+}
+
+namespace Overlay {
+    inline constexpr auto Enabled = "core.overlay.enabled";
+    inline constexpr auto Opacity = "core.overlay.opacity";
+    inline constexpr auto AlwaysShow = "core.overlay.always-show";
+    inline constexpr auto Position = "core.overlay.position";
+}
+
+namespace Audio {
+    inline constexpr auto VoiceChatEnabled = "core.audio.voice-chat-enabled";
+    inline constexpr auto InputDevice = "core.audio.input-device";
+    inline constexpr auto InputDeviceGuid = "core.audio.input-device-guid";
+    inline constexpr auto VoiceLoopback = "core.audio.voice-loopback";
+    inline constexpr auto OverlayingOverlay = "core.audio.overlaying-overlay";
+    inline constexpr auto BufferSize = "core.audio.buffer-size";
+    inline constexpr auto PlaybackVolume = "core.audio.playback-volume";
+    inline constexpr auto VoiceProximity = "core.audio.voice-proximity";
+    inline constexpr auto ClassicProximity = "core.audio.classic-proximity";
+    inline constexpr auto DeafenNotification = "core.audio.deafen-notification";
+    inline constexpr auto OnlyFriends = "core.audio.only-friends";
+}
+
+namespace ModSettings {
+    inline constexpr auto RememberPassword = "core.mod.remember-password";
+}
+
+namespace User {
+    inline constexpr auto AllowUserSettings = "core.user.allow-user-settings";
+    inline constexpr auto HideInLevels = "core.user.hide-in-levels";
+    inline constexpr auto HideInMenus = "core.user.hide-in-menus";
+    inline constexpr auto HideRoles = "core.user.hide-roles";
+}
+
+namespace Dev {
+    inline constexpr auto PacketLossSim = "core.dev.packet-loss-sim";
+    inline constexpr auto NetDebugLogs = "core.dev.net-debug-logs";
+    inline constexpr auto NetStatDump = "core.dev.net-stat-dump";
+    inline constexpr auto NetPreferProto = "core.dev.net-prefer-proto";
+    inline constexpr auto NetUseIpv4 = "core.dev.net-use-ipv4";
+    inline constexpr auto NetDontOverrideDns = "core.dev.net-dont-override-dns";
+    inline constexpr auto FakeData = "core.dev.fake-data";
+    inline constexpr auto CertVerification = "core.dev.cert-verification";
+    inline constexpr auto GhostFollower = "core.dev.ghost-follower";
+    inline constexpr auto ProfileFrameTime = "core.dev.profile-frame-time";
+}
+}
+
 }
