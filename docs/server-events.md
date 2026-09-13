@@ -47,7 +47,7 @@ struct MyEvent : globed::ServerEvent<MyEvent, globed::EventServer::Game> {
         dbuf::ByteReader reader{data};
         MyEvent out{};
 
-        GEODE_UNWRAP_INTO(out.id, reader.readI32());
+        GEODE_UNWRAP_INTO(out.playerId, reader.readI32());
 
         return Ok(std::move(out));
     }
