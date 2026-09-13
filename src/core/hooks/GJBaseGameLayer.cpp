@@ -1507,6 +1507,7 @@ void GlobedGJBGL::onJoinSessionFailed(const msg::JoinSessionFailedMessage& messa
         default: msg = "unknown error"; break;
     }
 
+    log::warn("Failed to join session: {}", msg);
     globed::toastError("Failed to join session: {}", msg);
 
     auto& fields = *m_fields.self();
