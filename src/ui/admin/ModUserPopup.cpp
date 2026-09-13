@@ -363,6 +363,7 @@ void ModUserPopup::startLoadingProfile() {
     cue::resetNode(m_roomBanButton);
     cue::resetNode(m_loadCircle);
     cue::resetNode(m_nameLayout);
+    cue::resetNode(m_whitelistButton);
     cue::resetNode(m_rootMenu);
 
     m_data.reset();
