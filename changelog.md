@@ -1,6 +1,7 @@
 ## v2.2.2
 
 * Fix missing text in consent popup
+* Fix crash after issuing moderation actions
 
 ## v2.2.1
 
