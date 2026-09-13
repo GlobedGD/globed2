@@ -1,3 +1,7 @@
+## v2.2.2
+
+* Fix missing text in consent popup
+
 ## v2.2.1
 
 * Fix crash when opening player list on Windows

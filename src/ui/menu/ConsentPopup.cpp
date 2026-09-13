@@ -153,6 +153,7 @@ CCNode* ConsentPopup::createClause(ZStringView description, ZStringView popupTit
         .id("clause-desc-label")
         .parent(container)
         .collect();
+    descLabel->setRichText(description);
     descLabel->setMaxWidth(textWidth);
 
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
