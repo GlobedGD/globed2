@@ -44,7 +44,7 @@ bool DiscordLinkPopup::init() {
                     "Discord Link",
                     "In this menu you can link your <cb>Discord</c> account to your <cg>Geometry Dash</c> account.\n\n"
                     "This unlocks some benefits, such as the ability to use <cj>voice chat</c> and sync your <cb>Discord</c> roles (for <cp>Supporters</c> or <cl>Moderators</c>).\n\n"
-                    "<cy>Note: it is not possible to unlink your account manually. You must contact the staff team to do so.</c>"
+                    "To unlink, click the <cr>Unlink</c> button below."
                 );
             } else {
                 globed::alert(
