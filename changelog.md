@@ -1,3 +1,7 @@
+## v2.2.3
+
+* Fix API functions not being available
+
 ## v2.2.2
 
 * Fix missing text in consent popup
