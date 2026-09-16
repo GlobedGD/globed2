@@ -8,6 +8,10 @@
 #include <core/preload/PreloadManager.hpp>
 #include <asp/format.hpp>
 
+#ifndef GLOBED_SOFTLINK_API_EVENT_EXPORTED
+# error "Did not successfully export the getRootTable function, likely PCH interference"
+#endif
+
 using namespace geode::prelude;
 
 namespace globed {
