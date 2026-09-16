@@ -227,6 +227,10 @@ def setup_unity(build: Build, gc: GlobedConfig):
             "src/ui/settings/*.cpp",
             "src/ui/settings/cells/*.cpp",
         ],
+        # has to be separate from all due to headers
+        "soft-link": [
+            "src/soft-link/API.cpp"
+        ],
         "modules": []
     }
 
