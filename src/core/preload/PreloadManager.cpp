@@ -45,6 +45,8 @@ static PreloadItem makeDeathEffectItem(int id) {
     };
 }
 
+GLOBED_EXPORT_SINGLETON(PreloadManager, SingletonBase<PreloadManager>);
+
 PreloadManager::PreloadManager() {
     // spawn ncpus+4 threads, since some amount of time is spent on blocking (mutexes, file io)
     size_t workers = std::thread::hardware_concurrency() + 4;

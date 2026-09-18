@@ -36,6 +36,8 @@ inline auto format_as(SentryIssueLevel level) -> std::string {
     return "unknown";
 }
 
+GLOBED_EXPORT_SINGLETON(SentryClient, SingletonBase<SentryClient>);
+
 SentryClient::SentryClient() {
     m_url = globed::constant<"sentry-url">();
     m_key = globed::constant<"sentry-key">();

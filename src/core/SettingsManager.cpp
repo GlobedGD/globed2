@@ -11,6 +11,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+GLOBED_EXPORT_SINGLETON(SettingsManager, SingletonBase<SettingsManager>);
+
 // Note for future self: launch arg overides are in this format:
 // core.xxx -> --geode:globed/setting.core.xxx
 SettingsManager::SettingsManager() {

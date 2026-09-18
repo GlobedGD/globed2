@@ -10,6 +10,8 @@ using namespace asp::time;
 
 namespace globed {
 
+GLOBED_EXPORT_SINGLETON(EmoteManager, SingletonBase<EmoteManager>);
+
 static bool isValid(CCSprite* spr) {
     return spr && !spr->getUserObject("geode.texture-loader/fallback");
 }

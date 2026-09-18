@@ -9,6 +9,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+GLOBED_EXPORT_SINGLETON(Core, SingletonBase<Core>);
+
 Core::Core() : m_impl(std::make_unique<CoreImpl>()) {}
 
 Core::~Core() {}

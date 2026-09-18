@@ -5,6 +5,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+GLOBED_EXPORT_SINGLETON(FriendListManager, SingletonNodeBase<FriendListManager>);
+
 FriendListManager::FriendListManager() {}
 
 void FriendListManager::refresh(bool force) {

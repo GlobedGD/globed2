@@ -14,6 +14,9 @@ namespace globed {
 [[noreturn]] void destructedSingleton(std::string_view name);
 GLOBED_DLL void scheduleUpdateFor(cocos2d::CCObject* obj);
 
+template <typename D>
+void singletonExportCheck();
+
 template <typename T>
 constexpr std::string_view getTypenameConstexpr() {
     auto [p, size] = arc::getTypename<T>();
@@ -33,6 +36,8 @@ public:
 #ifdef GLOBED_BUILD
     GLOBED_DLL static Derived& get() {
         static Derived instance;
+
+        singletonExportCheck<Derived>();
 
         if (destructed) {
             globed::destructedSingleton(globed::getTypenameConstexpr<Derived>());
@@ -68,6 +73,7 @@ public:
 #ifdef GLOBED_BUILD
     GLOBED_DLL static Derived& get() {
         static Derived* instance = new Derived();
+        singletonExportCheck<Derived>();
         return *instance;
     }
 #else
@@ -108,6 +114,7 @@ public:
 
             return obj;
         }();
+        singletonExportCheck<Derived>();
 
         return *obj;
     }
@@ -140,3 +147,11 @@ T* singleton() {
 
 
 }
+
+// _checkExport is a dummy function that MUST be defined for Globed to compile at all.
+// This is to ensure that when someone makes a new singleton, they don't forget about this macro or Globed will show a linker error.
+#ifdef GLOBED_BUILD
+#  define GLOBED_EXPORT_SINGLETON(Derived, ...) \
+    template <> void singletonExportCheck<Derived>() {} \
+    template GLOBED_DLL Derived& __VA_ARGS__::get();
+#endif

@@ -9,6 +9,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+GLOBED_EXPORT_SINGLETON(ServerManager, SingletonBase<ServerManager>);
+
 ServerManager::ServerManager() {
     this->reload();
 }

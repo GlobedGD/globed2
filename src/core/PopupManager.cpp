@@ -117,6 +117,8 @@ CustomFLAlert* CustomFLAlert::create(
 
 // PopupManager
 
+GLOBED_EXPORT_SINGLETON(PopupManager, SingletonNodeBase<PopupManager, true>);
+
 PopupRef PopupManager::alert(
     ZStringView title,
     const std::string& content,

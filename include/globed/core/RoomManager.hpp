@@ -41,15 +41,15 @@ public:
     std::optional<uint16_t> getTeamIdForPlayer(int player);
 
 private:
-    friend class SingletonLeakBase;
+    friend class SingletonLeakBase<RoomManager>;
     RoomManager();
     ~RoomManager() = default;
 
     uint32_t m_roomId = 0;
     uint32_t m_passcode = 0;
     int m_roomOwner = 0;
-    SessionId m_pinnedLevel{};
-    SessionId m_currentWarpLevel{};
+    SessionId m_pinnedLevel;
+    SessionId m_currentWarpLevel;
     std::string m_roomName;
     RoomSettings m_settings{};
 

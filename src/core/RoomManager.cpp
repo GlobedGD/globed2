@@ -10,6 +10,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+GLOBED_EXPORT_SINGLETON(RoomManager, SingletonLeakBase<RoomManager>);
+
 void RoomManager::joinLevel(int levelId, int author, bool platformer, bool editorCollab) {
     auto& nm = NetworkManagerImpl::get();
 

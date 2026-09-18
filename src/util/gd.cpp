@@ -308,6 +308,7 @@ private:
         this->processNext();
     }
 };
+GLOBED_EXPORT_SINGLETON(Downloader, SingletonNodeBase<Downloader>);
 
 void getOnlineLevel(int id, Downloader::Callback cb) {
     auto glm = singleton<GameLevelManager>();

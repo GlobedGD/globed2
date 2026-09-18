@@ -6,6 +6,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+GLOBED_EXPORT_SINGLETON(NetworkManager, SingletonBase<NetworkManager>);
+
 NetworkManager::NetworkManager() : m_impl(std::make_unique<NetworkManagerImpl>()) {}
 
 NetworkManager::~NetworkManager() {

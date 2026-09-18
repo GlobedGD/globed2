@@ -7,9 +7,6 @@
 #include "Item.hpp"
 #include <Geode/utils/function.hpp>
 
-// TODO (very low): it's time consuming so postponing for later, but we should add background preloading,
-// which allows the assets to be loaded when the game is running, rather than blocking during loading
-
 namespace globed {
 
 enum class TextureQuality {

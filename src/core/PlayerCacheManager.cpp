@@ -4,6 +4,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+GLOBED_EXPORT_SINGLETON(PlayerCacheManager, SingletonBase<PlayerCacheManager>);
+
 void PlayerCacheManager::insert(int accountId, const PlayerDisplayData& data) {
     m_layer1[accountId] = Entry{data};
 

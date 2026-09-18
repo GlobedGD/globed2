@@ -5,6 +5,8 @@ using namespace asp::time;
 
 namespace globed {
 
+GLOBED_EXPORT_SINGLETON(FunctionQueue, SingletonNodeBase<FunctionQueue, true>);
+
 void FunctionQueue::queue(Func&& func, size_t frames) {
     auto guard = m_queue.lock();
     guard->push(Queued{

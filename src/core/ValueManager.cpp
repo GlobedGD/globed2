@@ -5,6 +5,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
+GLOBED_EXPORT_SINGLETON(ValueManager, SingletonBase<ValueManager>);
+
 std::optional<matjson::Value> ValueManager::getValueRaw(std::string_view key) {
     if (Mod::get()->hasSavedValue(key)) {
         return Mod::get()->getSavedValue<matjson::Value>(key);

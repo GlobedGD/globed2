@@ -37,6 +37,8 @@ static float proximityVolumeMult(float distance) {
     return 1.0f - t * t;
 }
 
+GLOBED_EXPORT_SINGLETON(AudioManager, SingletonBase<AudioManager>);
+
 AudioManager::AudioManager()
     : m_encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
 
