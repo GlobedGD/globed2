@@ -151,7 +151,13 @@ T* singleton() {
 // _checkExport is a dummy function that MUST be defined for Globed to compile at all.
 // This is to ensure that when someone makes a new singleton, they don't forget about this macro or Globed will show a linker error.
 #ifdef GLOBED_BUILD
-#  define GLOBED_EXPORT_SINGLETON(Derived, ...) \
-    template <> void singletonExportCheck<Derived>() {} \
-    template GLOBED_DLL Derived& __VA_ARGS__::get();
+#  ifdef _WIN32
+#    define GLOBED_EXPORT_SINGLETON(Derived, ...) \
+        template <> void singletonExportCheck<Derived>() {} \
+        template GLOBED_DLL Derived& __VA_ARGS__::get();
+#  else
+#    define GLOBED_EXPORT_SINGLETON(Derived, ...) \
+        template <> void singletonExportCheck<Derived>() {} \
+        template class GLOBED_DLL __VA_ARGS__;
+#  endif
 #endif
