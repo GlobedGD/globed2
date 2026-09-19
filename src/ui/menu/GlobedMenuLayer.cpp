@@ -317,7 +317,8 @@ bool GlobedMenuLayer::init() {
             if (!argon::signedIn()) {
                 globed::confirmPopup(
                     "Globed Error",
-                    "You must be logged into a <cg>Geometry Dash account</c> in order to play online. Want to visit the <cy>account page</c>?",
+                    "You must be logged into a <cg>Geometry Dash account</c> in order to play online. Want to visit the <cy>account page</c>?\n\n"
+                    "<cy>Note: Globed staff</c> <cr>cannot</c> <cy>help you with Geometry Dash account issues.</c>",
                     "Cancel", "Ok",
                     [](auto) {
                         auto layer = AccountLayer::create();
