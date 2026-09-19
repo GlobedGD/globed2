@@ -8,10 +8,10 @@ using namespace geode::prelude;
 namespace globed {
 
 static bool isValid(CCSprite* spr) {
-    return spr && !spr->getUserObject("geode.texture-loader/fallback");
+    return spr && !spr->isUsingFallback();
 }
 
-static CCSprite* createAny(const char* name) {
+static CCSprite* createAny(ZStringView name) {
     CCSprite* sprite = nullptr;
 
     // do this to bypass the silly log from geode
@@ -21,29 +21,30 @@ static CCSprite* createAny(const char* name) {
     }
 
     if (!isValid(sprite)) {
-        sprite = CCSprite::create(name);
+        sprite = CCSprite::create(name.c_str());
     }
 
     return isValid(sprite) ? sprite : nullptr;
 }
 
 CCSprite* createBadge(ZStringView spriteName) {
-    auto name = fmt::format("{}"_spr, spriteName.view());
+    // first try mod-prefixed sprites
+    auto sprite = createAny(fmt::format("{}"_spr, spriteName));
 
-    auto sprite = createAny(name.c_str());
-
+    // then try general gd sprites
     if (!sprite) {
-        log::warn("Invalid badge icon used: {}", name);
+        sprite = createAny(spriteName);
+    }
+
+    // then fallback to unknown role icon
+    if (!sprite) {
         sprite = createAny("role-unknown.png"_spr);
     }
 
+    // still nothing, user has no resources for the mod?
     if (!sprite) {
-        // still nothing??
-        sprite = createAny("GJ_likesIcon_001.png");
-    }
-
-    if (!sprite) {
-        return nullptr;
+        log::warn("Invalid badge icon used: '{}'", spriteName);
+        sprite = CCSprite::createWithSpriteFrameName("GJ_likesIcon_001.png");
     }
 
     cue::rescaleToMatch(sprite, BADGE_SIZE);
