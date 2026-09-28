@@ -85,6 +85,9 @@ public:
     /// Returns available system memory in bytes
     uint64_t getAvailableMemory();
 
+    /// Releases all GL textures held by the manager. This must be called when recreating GL context.
+    void releaseTextures();
+
 private:
     friend class SingletonBase;
     friend struct PreloadItemState;

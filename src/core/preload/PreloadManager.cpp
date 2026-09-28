@@ -512,10 +512,7 @@ void PreloadManager::enterContext(PreloadContext context) {
     // if we are reloading textures, everything must be reset
     if (context == PreloadContext::Reloading) {
         log::info("PreloadManager: resetting state due to texture reload");
-        m_iconsLoaded = false;
-        m_deathEffectsLoaded = false;
-        m_loadedFrames.lock()->clear();
-        m_loadedIcons.clear();
+        this->releaseTextures();
     }
 
     if (context == PreloadContext::Loading || context == PreloadContext::Reloading) {
@@ -735,6 +732,13 @@ uint64_t PreloadManager::getAvailableMemory() {
     }
 #endif
     return 0;
+}
+
+void PreloadManager::releaseTextures() {
+    m_loadedIcons.clear();
+    m_loadedFrames.lock()->clear();
+    m_iconsLoaded = false;
+    m_deathEffectsLoaded = false;
 }
 
 TextureQuality getTextureQuality() {

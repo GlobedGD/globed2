@@ -44,6 +44,12 @@ void HookedGameManager::returnToLastScene(GJGameLevel* level) {
     }
 }
 
+void HookedGameManager::reloadAllStep2() {
+    // release all GL textures held during step 2, this is before the actual GL context is recreated (step 3)
+    PreloadManager::get().releaseTextures();
+    GameManager::reloadAllStep2();
+}
+
 HookedGameManager& HookedGameManager::get() {
     return static_cast<HookedGameManager&>(*singleton<GameManager>());
 }

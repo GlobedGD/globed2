@@ -18,6 +18,9 @@ struct GLOBED_MODIFY_ATTR HookedGameManager : geode::Modify<HookedGameManager, G
     $override
     void returnToLastScene(GJGameLevel* level);
 
+    $override
+    void reloadAllStep2();
+
     static HookedGameManager& get();
 
     void setPopSceneEnum();
