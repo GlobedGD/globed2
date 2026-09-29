@@ -151,7 +151,6 @@ bool DiscordLinkPopup::init() {
 
 void DiscordLinkPopup::onClose(CCObject*) {
     Popup::onClose(nullptr);
-    NetworkManagerImpl::get().sendSetDiscordPairingState(false);
 }
 
 void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, const std::string& avatarUrl) {
