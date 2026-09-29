@@ -177,6 +177,9 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
             .pos(this->fromBottom(26.f))
             .parent(m_buttonMenu);
 
+        // without btp the Start button is unclickable :D
+        cocos::handleTouchPriority(this);
+
         return;
     }
 
@@ -245,6 +248,9 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
         .scaleMult(1.1f)
         .pos(this->fromBottom(26.f))
         .parent(m_buttonMenu);
+
+    // without btp the button is unclickable :D
+    cocos::handleTouchPriority(this);
 }
 
 void DiscordLinkPopup::addLinkingText() {
@@ -298,6 +304,9 @@ void DiscordLinkPopup::onOauthUrlReceived(ZStringView url) {
         .scaleMult(1.1f)
         .pos(this->fromBottom(22.f))
         .parent(m_buttonMenu);
+
+    // without btp the button is unclickable :D
+    cocos::handleTouchPriority(this);
 }
 
 void DiscordLinkPopup::startWaitingForRefresh() {
