@@ -477,6 +477,14 @@ inline SessionId makeSessionId(int levelId) {
     return SessionId{};
 }
 
+/// Returns the name of the room the user is in. If not in a room, currently returns "Global Room", though this is not guaranteed forever.
+/// If the version is outdated or Globed is unavailble, returns an empty string.
+/// Added in Globed v2.3.0.
+inline std::string getName() {
+    if (auto t = roomTable()) return t->getName();
+    return "";
+}
+
 } // namespace api::room
 
 }

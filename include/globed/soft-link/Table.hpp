@@ -118,6 +118,9 @@ struct RoomSubtable : VTable {
     GLOBED_VTABLE_FUNC(getTeamIdForPlayer, std::optional<uint16_t>, int playerId);
 
     GLOBED_VTABLE_FUNC(makeSessionId, SessionId, int levelId);
+
+    // Since v2.3.0
+    GLOBED_VTABLE_FUNC(getName, std::string);
 };
 
 struct RootApiTable {
