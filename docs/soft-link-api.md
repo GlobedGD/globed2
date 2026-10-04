@@ -41,11 +41,12 @@ if (globed::api::available()) {
 bool connected = globed::NetworkManager::get().isConnected();
 ```
 
-You can take a look at other available functions in your intellisense. There are currently four namespaces with functions:
+You can take a look at other available functions in your intellisense. These are the currently available namespaces:
 * `api::net` - network related functions
 * `api::game` - functions related to the game state (when in a level)
 * `api::player` - functions that deal with specific players
 * `api::misc` - misc functions that might be useful for mods
+* `api::room` - room related functions
 
 This API is currently not very complete, and a fairly small subset of functions are available. If you want to use something not exposed here, use the Link API or make a PR or an issue telling us what should be added.
 
