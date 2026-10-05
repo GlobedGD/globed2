@@ -15,6 +15,8 @@ using namespace geode::prelude;
 namespace globed {
 
 TwoPlayerModule::TwoPlayerModule() {
+    this->setAutoEnableMode(AutoEnableMode::Level);
+
     TwoPlayerLinkEvent::listen([this](const auto& msg, const auto& opts) {
         this->handleLinkEvent(msg, opts.sender);
     }).leak();
@@ -24,17 +26,12 @@ TwoPlayerModule::TwoPlayerModule() {
     }).leak();
 }
 
-void TwoPlayerModule::onModuleInit() {
-    this->setAutoEnableMode(AutoEnableMode::Level);
-}
-
-Result<> TwoPlayerModule::onDisabled() {
+void TwoPlayerModule::onDisabled() {
     m_linkedPlayer.reset();
     m_ignoreNoclip = false;
     m_isPlayer2 = false;
     m_linkAttempt.reset();
     m_linkedRp = nullptr;
-    return Ok();
 }
 
 void TwoPlayerModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
@@ -77,37 +74,38 @@ void TwoPlayerModule::onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) 
     }
 }
 
-void TwoPlayerModule::onUserlistSetup(CCNode* container, int accountId, bool myself, UserListPopup* popup) {
-    if (myself) return;
+// TODO
+// void TwoPlayerModule::onUserlistSetup(CCNode* container, int accountId, bool myself, UserListPopup* popup) {
+//     if (myself) return;
 
-    // if we are already linked, show only an unlink button on the linked player
-    if (m_linkedPlayer) {
-        if (accountId != *m_linkedPlayer) {
-            return;
-        }
+//     // if we are already linked, show only an unlink button on the linked player
+//     if (m_linkedPlayer) {
+//         if (accountId != *m_linkedPlayer) {
+//             return;
+//         }
 
-        Build<CCSprite>::createSpriteName("gj_linkBtnOff_001.png")
-            .scale(0.8f)
-            .intoMenuItem([this, popup] {
-                this->unlink();
-                popup->hardRefresh();
-            })
-            .id("2p-unlink")
-            .parent(container);
+//         Build<CCSprite>::createSpriteName("gj_linkBtnOff_001.png")
+//             .scale(0.8f)
+//             .intoMenuItem([this, popup] {
+//                 this->unlink();
+//                 popup->hardRefresh();
+//             })
+//             .id("2p-unlink")
+//             .parent(container);
 
-        return;
-    }
+//         return;
+//     }
 
-    // otherwise, show a link button on all players
+//     // otherwise, show a link button on all players
 
-    Build<CCSprite>::createSpriteName("gj_linkBtn_001.png")
-        .scale(0.8f)
-        .intoMenuItem([accountId, popup] {
-            LinkRequestPopup::create(accountId, popup)->show();
-        })
-        .id("2p-unlink")
-        .parent(container);
-}
+//     Build<CCSprite>::createSpriteName("gj_linkBtn_001.png")
+//         .scale(0.8f)
+//         .intoMenuItem([accountId, popup] {
+//             LinkRequestPopup::create(accountId, popup)->show();
+//         })
+//         .id("2p-unlink")
+//         .parent(container);
+// }
 
 void TwoPlayerModule::onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {
     if (accountId == m_linkedPlayer) {

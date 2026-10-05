@@ -15,11 +15,7 @@ struct GLOBED_MODIFY_ATTR HookedGJEffectManager : geode::Modify<HookedGJEffectMa
     static void onModify(auto& self) {
         (void) self.setHookPriority("GJEffectManager::countForItem", 999999);
 
-        GLOBED_CLAIM_HOOKS(GlobalTriggersModule::get(), self,
-            "GJEffectManager::countForItem",
-            "GJEffectManager::updateCountForItem",
-            "GJEffectManager::reset",
-        );
+        GlobalTriggersModule::get().claimHooks(self);
     }
 
     $override

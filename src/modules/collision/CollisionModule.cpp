@@ -9,9 +9,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-CollisionModule::CollisionModule() {}
-
-void CollisionModule::onModuleInit() {
+CollisionModule::CollisionModule() {
     this->setAutoEnableMode(AutoEnableMode::Level);
 }
 
@@ -112,9 +110,7 @@ void CollisionModule::checkCollisions(GlobedGJBGL* gjbgl, PlayerObject* player, 
 
 struct GLOBED_MODIFY_ATTR CollisionGJBGL : Modify<CollisionGJBGL, GJBaseGameLayer> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(CollisionModule::get(), self,
-            "GJBaseGameLayer::checkCollisions"
-        );
+        (void) CollisionModule::get().claimHooks(self);
     }
 
     int checkCollisions(PlayerObject* player, float dt, bool p2) {

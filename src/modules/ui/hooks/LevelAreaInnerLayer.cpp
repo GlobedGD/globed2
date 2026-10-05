@@ -22,9 +22,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelAreaInnerLayer : geode::Modify<HookedLevelA
     };
 
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "LevelAreaInnerLayer::init",
-        );
+        UIModule::get().claimHooks(self);
     }
 
     $override

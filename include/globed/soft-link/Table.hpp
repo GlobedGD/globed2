@@ -9,7 +9,7 @@
 #include "../core/data/RoomSettings.hpp"
 #include "../core/data/RoomTeam.hpp"
 #include "../core/SessionId.hpp"
-#include "../util/vtable.hpp"
+#include "ModuleDecl.hpp"
 
 #include <Geode/utils/function.hpp>
 #include <Geode/loader/Dispatch.hpp>
@@ -18,6 +18,8 @@ namespace globed {
 
 class RemotePlayer;
 class VisualPlayer;
+
+// API tables
 
 struct NetSubtable : VTable {
     NetSubtable();
@@ -42,7 +44,7 @@ struct NetSubtable : VTable {
     GLOBED_VTABLE_FUNC(invalidateFriendList, void);
 
     GLOBED_VTABLE_FUNC(getFeaturedLevel, std::optional<FeaturedLevelMeta>);
-    void* _m_queueGameEvent = nullptr;
+    void* _m_queueGameEvent = nullptr; // TODO (2.209): ABI
 
     // since v2.2.0
     GLOBED_VTABLE_FUNC(sendEvent, void, std::string_view id, std::vector<uint8_t> data, const EventOptions& options);
@@ -123,6 +125,20 @@ struct RoomSubtable : VTable {
     GLOBED_VTABLE_FUNC(getName, std::string);
 };
 
+/// Entire table since v2.3.0
+struct ModuleSubtable : VTable {
+    ModuleSubtable();
+
+    GLOBED_VTABLE_FUNC(register_, bool, ModuleVTable*);
+    GLOBED_VTABLE_FUNC(isRegistered, bool, std::string_view id);
+    GLOBED_VTABLE_FUNC(isEnabled, bool, std::string_view id);
+    GLOBED_VTABLE_FUNC(setEnabled, geode::Result<>, std::string_view id, bool enabled);
+    GLOBED_VTABLE_FUNC(setAutoEnableMode, void, std::string_view id, AutoEnableMode mode);
+
+    GLOBED_VTABLE_FUNC(claimHooks, void, std::string_view id, std::span<geode::Hook* const> hooks);
+    GLOBED_VTABLE_FUNC(claimPatches, void, std::string_view id, std::span<geode::Patch* const> patches);
+};
+
 struct RootApiTable {
     RootApiTable(); // intentionally not dllexported
 
@@ -131,7 +147,8 @@ struct RootApiTable {
     PlayerSubtable* player = nullptr;
     MiscSubtable* misc = nullptr;
     RoomSubtable* room = nullptr;
-    void* _reserved[64 - 5] = {nullptr};
+    ModuleSubtable* module = nullptr;
+    void* _reserved[64 - 6] = {nullptr};
 };
 
 static_assert(sizeof(RootApiTable) == sizeof(void*) * 64);

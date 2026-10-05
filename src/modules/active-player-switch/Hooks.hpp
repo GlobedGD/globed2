@@ -71,10 +71,7 @@ struct GLOBED_MODIFY_ATTR APSPlayLayer : geode::Modify<APSPlayLayer, PlayLayer> 
     };
 
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(APSModule::get(), self,
-            "PlayLayer::init",
-            "PlayLayer::destroyPlayer"
-        );
+        APSModule::get().claimHooks(self);
     }
 
     static APSPlayLayer* get(GJBaseGameLayer* gjbgl = nullptr);
@@ -104,9 +101,7 @@ struct GLOBED_MODIFY_ATTR APSPlayLayer : geode::Modify<APSPlayLayer, PlayLayer> 
 
 struct GLOBED_MODIFY_ATTR APSGJBGL : geode::Modify<APSGJBGL, GJBaseGameLayer> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(APSModule::get(), self,
-            "GJBaseGameLayer::handleButton",
-        );
+        APSModule::get().claimHooks(self);
     }
 
     // TODO: it's better to hook queueButton but it's inlined
@@ -120,9 +115,7 @@ struct GLOBED_MODIFY_ATTR APSGJBGL : geode::Modify<APSGJBGL, GJBaseGameLayer> {
 
 struct GLOBED_MODIFY_ATTR APSPauseLayer : geode::Modify<APSPauseLayer, PauseLayer> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(APSModule::get(), self,
-            "PauseLayer::customSetup"
-        );
+        APSModule::get().claimHooks(self);
     }
 
     $override
@@ -131,9 +124,7 @@ struct GLOBED_MODIFY_ATTR APSPauseLayer : geode::Modify<APSPauseLayer, PauseLaye
 
 struct GLOBED_MODIFY_ATTR APSPlayerObject : geode::Modify<APSPlayerObject, PlayerObject> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(APSModule::get(), self,
-            "PlayerObject::update"
-        );
+        APSModule::get().claimHooks(self);
     }
 
     $override

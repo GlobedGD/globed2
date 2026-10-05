@@ -5,6 +5,7 @@ Checks: >
   -bugprone-narrowing-conversions,
   -bugprone-macro-parentheses,
   -bugprone-crtp-constructor-accessibility,
+  -bugprone-throwing-static-initialization,
   performance-*,
   readability-const-return-type,
   readability-redundant-smartptr-get,

@@ -693,7 +693,5 @@ FMOD_GUID stringToGuid(std::string_view str) {
 }
 
 $on_mod(Loaded) {
-#ifdef GLOBED_VOICE_SUPPORT
     globed::AudioManager::get().preInitialize();
-#endif
 }

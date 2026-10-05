@@ -11,10 +11,7 @@ namespace globed {
 
 struct GLOBED_MODIFY_ATTR TPMBaseGameLayer : geode::Modify<TPMBaseGameLayer, GJBaseGameLayer> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(TwoPlayerModule::get(), self,
-            "GJBaseGameLayer::updateCamera",
-            "GJBaseGameLayer::update",
-        );
+        TwoPlayerModule::get().claimHooks(self);
     }
 
     $override

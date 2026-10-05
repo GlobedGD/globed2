@@ -89,10 +89,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelSelectLayer : geode::Modify<HookedLevelSele
     };
 
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "LevelSelectLayer::init",
-            "LevelSelectLayer::updatePageWithObject",
-        );
+        UIModule::get().claimHooks(self);
     }
 
     $override

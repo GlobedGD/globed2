@@ -21,10 +21,7 @@ struct GLOBED_MODIFY_ATTR SCPlayLayerHook : geode::Modify<SCPlayLayerHook, PlayL
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayLayer::addObject", -1000);
 
-        GLOBED_CLAIM_HOOKS(ScriptingModule::get(), self,
-            "PlayLayer::setupHasCompleted",
-            "PlayLayer::addObject",
-        );
+        ScriptingModule::get().claimHooks(self);
     }
 
     $override

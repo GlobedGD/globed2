@@ -7,9 +7,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-APSModule::APSModule() {}
-
-void APSModule::onModuleInit() {
+APSModule::APSModule() {
     this->setAutoEnableMode(AutoEnableMode::Level);
 }
 

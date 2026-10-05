@@ -3,19 +3,10 @@
 #include <Geode/Result.hpp>
 #include <Geode/utils/terminate.hpp>
 #include <Geode/loader/Mod.hpp>
+#include "../soft-link/Module.hpp"
 #include "../core/data/PlayerDisplayData.hpp"
 #include "../core/data/PlayerState.hpp"
 #include "../config.hpp"
-
-#define GLOBED_CLAIM_HOOKS(module, modify, ...) \
-    do { \
-        decltype(auto) __chmodule = (module);\
-        for (auto name : {__VA_ARGS__}) { \
-            if (auto h = self.getHook(name)) { \
-                __chmodule.claimHook(h.unwrap()); \
-            } else geode::log::error("Failed to claim hook '{}' for module {} ({}) ({}:{}): {}", name, __chmodule.name(), __chmodule.id(), __FILE__, __LINE__, h.unwrapErr()); \
-        } \
-    } while (0)
 
 namespace globed {
 
@@ -23,22 +14,6 @@ class Core;
 class RemotePlayer;
 class UserListPopup;
 struct GlobedGJBGL;
-
-enum class AutoEnableMode {
-    /// The module will never be automatically enabled. You must call `enable()` manually.
-    Never,
-    /// The module will be enabled when the game loads, and never disabled or re-enabled.
-    Launch,
-    /// The module will be enabled when the user connects to a server, and will be disabled when the user disconnects.
-    /// This is the default mode.
-    Server,
-    /// The module will be enabled when the user joins a level while connected to a server, and will be disabled when the user leaves the level or disconnects.
-    /// Useful for modules that only need to be active when in a level.
-    Level,
-
-    /// Chooses the default mode, currently `Server`.
-    Default = Server
-};
 
 class GLOBED_DLL Module {
 public:

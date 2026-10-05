@@ -47,8 +47,50 @@ You can take a look at other available functions in your intellisense. These are
 * `api::player` - functions that deal with specific players
 * `api::misc` - misc functions that might be useful for mods
 * `api::room` - room related functions
+* `api::module` - module registration functions (avoid using directly, see [Modules](#modules))
 
 This API is currently not very complete, and a fairly small subset of functions are available. If you want to use something not exposed here, use the Link API or make a PR or an issue telling us what should be added.
+
+## Modules
+
+Modules are a powerful way to organize your modifications and cut away some boilerplate you'd need be forced to write yourself otherwise. Some notable features of modules include:
+* Automatic toggling of the module (including its hooks/patches) on certain conditions: e.g. joining/leaving the level, connecting/disconnecting from Globed
+* Callbacks for various Globed and game related events: player join/leave/death, frame tick, respawn, etc.
+* Low amount of boilerplate to set up
+
+```cpp
+struct MyModule final : globed::SoftModule<MyModule> {
+    // A metadata struct must be provided in every module with some details.
+    static inline const ModuleMetadata metadata {
+        .name = "My module",
+        .id = "dankmeme.my-module",
+        .author = "dankmeme",
+    };
+
+    // Overriding this function so we know whenever someone joins the level
+    void onPlayerJoin(GlobedGJBGL* gjbgl, int accountId) override {
+        log::debug("hi {}", accountId);
+    }
+
+    // ...
+};
+
+// Claim hooks related to this module so they are only enabled when the module itself is
+class $modify(PlayLayer) {
+    static void onModify(auto& self) {
+        MyModule::get().claimHooks(self);
+    }
+
+    void destroyPlayer(PlayerObject*, GameObject*) {
+        // ...
+    }
+};
+```
+
+By default, modules (and their claimed hooks/patches) are automatically enabled when connecting to the Globed central server, and then disabled when disconnecting. This behavior can be changed (for example, making it so the mod can only be manually enabled) via `setAutoEnableMode`:
+```cpp
+MyModule::get().setAutoEnableMode(AutoEnableMode::Never);
+```
 
 ## Server Events
 

@@ -33,6 +33,11 @@ inline RoomSubtable* roomTable() {
     return nullptr;
 }
 
+inline ModuleSubtable* moduleTable() {
+    if (auto t = table()) return t->module;
+    return nullptr;
+}
+
 /// Returns whether globed is available and api functions can be used.
 /// If this returns false, return values of api functions are meaningless.
 inline bool available() {
@@ -486,5 +491,41 @@ inline std::string getName() {
 }
 
 } // namespace api::room
+
+namespace api::module {
+
+inline bool registerModule(ModuleVTable* vtable) {
+    if (auto t = moduleTable()) return t->register_(vtable);
+    return false;
+}
+
+inline bool isRegistered(std::string_view id) {
+    if (auto t = moduleTable()) return t->isRegistered(id);
+    return false;
+}
+
+inline bool isEnabled(std::string_view id) {
+    if (auto t = moduleTable()) return t->isEnabled(id);
+    return false;
+}
+
+inline Result<> setEnabled(std::string_view id, bool enabled) {
+    if (auto t = moduleTable()) return t->setEnabled(id, enabled);
+    return Err("Globed is not loaded or outdated");
+}
+
+inline void setAutoEnableMode(std::string_view id, AutoEnableMode mode) {
+    if (auto t = moduleTable()) return t->setAutoEnableMode(id, mode);
+}
+
+inline void claimHooks(std::string_view id, std::span<geode::Hook* const> hooks) {
+    if (auto t = moduleTable()) return t->claimHooks(id, hooks);
+}
+
+inline void claimPatches(std::string_view id, std::span<geode::Patch* const> patches) {
+    if (auto t = moduleTable()) return t->claimPatches(id, patches);
+}
+
+} // namespace api::module
 
 }

@@ -4,10 +4,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-ScriptingModule::ScriptingModule() {}
-
-void ScriptingModule::onModuleInit() {
-    log::info("Scripting module initialized");
+ScriptingModule::ScriptingModule() {
     this->setAutoEnableMode(AutoEnableMode::Level);
 }
 

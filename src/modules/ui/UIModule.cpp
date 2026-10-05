@@ -4,9 +4,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-UIModule::UIModule() {}
-
-void UIModule::onModuleInit() {
+UIModule::UIModule() {
     this->setAutoEnableMode(AutoEnableMode::Server);
 }
 

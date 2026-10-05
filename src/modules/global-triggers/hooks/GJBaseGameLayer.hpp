@@ -22,11 +22,7 @@ struct GLOBED_MODIFY_ATTR GTriggersGJBGL : geode::Modify<GTriggersGJBGL, GJBaseG
     };
 
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(GlobalTriggersModule::get(), self,
-            "GJBaseGameLayer::activateItemEditTrigger",
-            // "GJBaseGameLayer::activateItemCompareTrigger",
-            "GJBaseGameLayer::getItemValue",
-        );
+        GlobalTriggersModule::get().claimHooks(self);
     }
 
     static GTriggersGJBGL* get(GJBaseGameLayer* base = nullptr);

@@ -19,11 +19,7 @@ struct GLOBED_MODIFY_ATTR SCEditorHook : geode::Modify<SCEditorHook, LevelEditor
     };
 
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(ScriptingUIModule::get(), self,
-            "LevelEditorLayer::createObjectsFromSetup",
-            "LevelEditorLayer::createObject",
-            "LevelEditorLayer::updateObjectLabel",
-        );
+        ScriptingUIModule::get().claimHooks(self);
     }
 
     $override

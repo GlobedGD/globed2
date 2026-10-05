@@ -9,9 +9,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-GlobalTriggersModule::GlobalTriggersModule() {}
-
-void GlobalTriggersModule::onModuleInit() {
+GlobalTriggersModule::GlobalTriggersModule() {
     log::info("Global triggers module initialized");
     this->setAutoEnableMode(AutoEnableMode::Level);
 }

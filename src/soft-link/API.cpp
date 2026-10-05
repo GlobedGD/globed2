@@ -23,6 +23,7 @@ GameSubtable::GameSubtable() : VTable(sizeof(GameSubtable)) {}
 PlayerSubtable::PlayerSubtable() : VTable(sizeof(PlayerSubtable)) {}
 MiscSubtable::MiscSubtable() : VTable(sizeof(MiscSubtable)) {}
 RoomSubtable::RoomSubtable() : VTable(sizeof(RoomSubtable)) {}
+ModuleSubtable::ModuleSubtable() : VTable(sizeof(ModuleSubtable)) {}
 
 static NetSubtable* makeNetTable() {
     auto table = new NetSubtable;
@@ -322,6 +323,37 @@ static RoomSubtable* makeRoomTable() {
     return table;
 }
 
+static ModuleSubtable* makeModuleTable() {
+    auto table = new ModuleSubtable{};
+
+    GLOBED_VTABLE_INIT(table, register_, (ModuleVTable* vtable) {
+        return false;
+    });
+
+    GLOBED_VTABLE_INIT(table, isRegistered, (std::string_view id) {
+        return false;
+    });
+
+    GLOBED_VTABLE_INIT(table, isEnabled, (std::string_view id) {
+        return false;
+    });
+
+    GLOBED_VTABLE_INIT(table, setEnabled, (std::string_view id, bool enabled) -> Result<> {
+        return Ok();
+    });
+
+    GLOBED_VTABLE_INIT(table, setAutoEnableMode, (std::string_view id, AutoEnableMode mode) {
+    });
+
+    GLOBED_VTABLE_INIT(table, claimHooks, (std::string_view id, std::span<geode::Hook* const> hooks) {
+    });
+
+    GLOBED_VTABLE_INIT(table, claimPatches, (std::string_view id, std::span<geode::Patch* const> patches) {
+    });
+
+    return table;
+}
+
 Result<RootApiTable*> getRootTable() {
     static auto g_table = []{
         RootApiTable table {};
@@ -330,6 +362,7 @@ Result<RootApiTable*> getRootTable() {
         table.player = makePlayerTable();
         table.misc = makeMiscTable();
         table.room = makeRoomTable();
+        table.module = makeModuleTable();
         return table;
     }();
 

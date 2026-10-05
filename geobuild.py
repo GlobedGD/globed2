@@ -478,7 +478,8 @@ def main(build: Build):
 
     build.silence_warnings_for("kj")
     build.silence_warnings_for("capnp")
-    build.silence_warnings_for("opus")
+    if gc.voice:
+        build.silence_warnings_for("opus")
 
     # setup unity build
     if gc.release:

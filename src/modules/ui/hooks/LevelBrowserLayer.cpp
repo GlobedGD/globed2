@@ -26,9 +26,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelBrowserLayer : geode::Modify<HookedLevelBro
     };
 
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "LevelBrowserLayer::setupLevelBrowser",
-        );
+        UIModule::get().claimHooks(self);
     }
 
     static std::optional<GJGameLevel*> levelMapper(CCObject* obj) {

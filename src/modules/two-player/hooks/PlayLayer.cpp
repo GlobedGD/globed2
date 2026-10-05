@@ -12,10 +12,7 @@ struct GLOBED_MODIFY_ATTR TPPlayLayer : geode::Modify<TPPlayLayer, PlayLayer> {
         (void) self.setHookPriority("PlayLayer::destroyPlayer", -9999);
         (void) self.setHookPriority("PlayLayer::resetLevel", -999);
 
-        GLOBED_CLAIM_HOOKS(TwoPlayerModule::get(), self,
-            "PlayLayer::destroyPlayer",
-            "PlayLayer::resetLevel",
-        );
+        TwoPlayerModule::get().claimHooks(self);
     }
 
     $override

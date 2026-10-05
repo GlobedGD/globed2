@@ -24,10 +24,7 @@ struct GLOBED_MODIFY_ATTR SCEditorUIHook : geode::Modify<SCEditorUIHook, EditorU
     }
 
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(ScriptingUIModule::get(), self,
-            "EditorUI::init",
-            "EditorUI::editObject",
-        );
+        ScriptingUIModule::get().claimHooks(self);
     }
 
     $override
