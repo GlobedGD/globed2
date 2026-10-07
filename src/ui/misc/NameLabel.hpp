@@ -10,7 +10,7 @@
 
 namespace globed {
 
-class NameLabel : public cocos2d::CCMenu {
+class NameLabel : public cocos2d::CCNode {
 public:
     static NameLabel* create(const std::string& name, const char* font = "chatFont.fnt");
 
@@ -50,6 +50,8 @@ private:
     void resizeBadgeContainer();
     void onClick(geode::Button* btn);
     void updateLabelColors();
+
+    void onEnter();
 };
 
 }
