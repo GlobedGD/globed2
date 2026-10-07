@@ -113,12 +113,6 @@ void CoreImpl::onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) {
     });
 }
 
-void CoreImpl::onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {
-    this->forEachEnabled([&](Module& mod) {
-        mod.onUserlistSetup(container, accountId, myself, popup);
-    });
-}
-
 bool CoreImpl::shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) {
     bool should = false;
 

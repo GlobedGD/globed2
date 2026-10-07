@@ -24,6 +24,10 @@ TwoPlayerModule::TwoPlayerModule() {
     TwoPlayerUnlinkEvent::listen([this](const auto& msg, const auto& opts) {
         this->handleUnlinkEvent(msg, opts.sender);
     }).leak();
+
+    UserListPopupSetupEvent{}.listen([this](cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {
+        this->onUserlistSetup(container, accountId, myself, popup);
+    }).leak();
 }
 
 void TwoPlayerModule::onDisabled() {
@@ -74,38 +78,37 @@ void TwoPlayerModule::onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) 
     }
 }
 
-// TODO
-// void TwoPlayerModule::onUserlistSetup(CCNode* container, int accountId, bool myself, UserListPopup* popup) {
-//     if (myself) return;
+void TwoPlayerModule::onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {
+    if (myself) return;
 
-//     // if we are already linked, show only an unlink button on the linked player
-//     if (m_linkedPlayer) {
-//         if (accountId != *m_linkedPlayer) {
-//             return;
-//         }
+    // if we are already linked, show only an unlink button on the linked player
+    if (m_linkedPlayer) {
+        if (accountId != *m_linkedPlayer) {
+            return;
+        }
 
-//         Build<CCSprite>::createSpriteName("gj_linkBtnOff_001.png")
-//             .scale(0.8f)
-//             .intoMenuItem([this, popup] {
-//                 this->unlink();
-//                 popup->hardRefresh();
-//             })
-//             .id("2p-unlink")
-//             .parent(container);
+        Build<CCSprite>::createSpriteName("gj_linkBtnOff_001.png")
+            .scale(0.8f)
+            .intoMenuItem([this, popup] {
+                this->unlink();
+                popup->hardRefresh();
+            })
+            .id("2p-unlink")
+            .parent(container);
 
-//         return;
-//     }
+        return;
+    }
 
-//     // otherwise, show a link button on all players
+    // otherwise, show a link button on all players
 
-//     Build<CCSprite>::createSpriteName("gj_linkBtn_001.png")
-//         .scale(0.8f)
-//         .intoMenuItem([accountId, popup] {
-//             LinkRequestPopup::create(accountId, popup)->show();
-//         })
-//         .id("2p-unlink")
-//         .parent(container);
-// }
+    Build<CCSprite>::createSpriteName("gj_linkBtn_001.png")
+        .scale(0.8f)
+        .intoMenuItem([accountId, popup] {
+            LinkRequestPopup::create(accountId, popup)->show();
+        })
+        .id("2p-unlink")
+        .parent(container);
+}
 
 void TwoPlayerModule::onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {
     if (accountId == m_linkedPlayer) {

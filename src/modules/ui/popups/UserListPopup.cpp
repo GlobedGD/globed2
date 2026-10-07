@@ -333,12 +333,7 @@ protected:
         }
 
         // add custom buttons
-        CoreImpl::get().onUserlistSetup(
-            m_rightMenu,
-            m_accountId,
-            self,
-            m_popup
-        );
+        UserListPopupSetupEvent{}.send(m_rightMenu, m_accountId, self, m_popup);
 
         for (auto btn : m_rightMenu->getChildrenExt<CCNode>()) {
             if (btn == m_visualizer) continue;

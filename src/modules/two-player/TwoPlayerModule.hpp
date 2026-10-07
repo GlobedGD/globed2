@@ -37,7 +37,7 @@ private:
     bool m_isPlayer2 = false;
     bool m_ignoreNoclip = false;
     std::optional<int> m_linkAttempt;
-    std::shared_ptr<RemotePlayer> m_linkedRp; 
+    std::shared_ptr<RemotePlayer> m_linkedRp;
 
     friend SoftModule;
 
@@ -46,8 +46,6 @@ private:
     void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) override;
     void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) override;
     void onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) override;
-    // TODO this
-    // void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) override;
     void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) override;
     bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) override {
         return true;
@@ -57,6 +55,7 @@ private:
         return true;
     }
 
+    void onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup);
     void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) override;
     void onUpdate(GlobedGJBGL* gjbgl, float dt) override;
 

@@ -1,4 +1,4 @@
-#include <globed/core/Core.hpp>
+#include "Core.hpp"
 #include "CoreImpl.hpp"
 
 #ifdef QUNET_TLS_SUPPORT

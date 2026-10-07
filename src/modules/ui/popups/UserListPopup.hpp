@@ -9,6 +9,12 @@
 
 namespace globed {
 
+class UserListPopup;
+
+struct UserListPopupSetupEvent : public geode::Event<UserListPopupSetupEvent, bool(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup)> {
+    using Event::Event;
+};
+
 class UserListPopup : public BasePopup {
 public:
     static UserListPopup* create();
