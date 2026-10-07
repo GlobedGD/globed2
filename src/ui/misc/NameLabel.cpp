@@ -15,7 +15,7 @@ static constexpr float NAME_HEIGHT = 17.f;
 static constexpr float MAX_NAME_WIDTH = 140.f;
 
 bool NameLabel::init(const std::string& name, const char* font) {
-    if (!CCMenu::init()) return false;
+    if (!CCNode::init()) return false;
 
     m_font = font;
     m_shadow = false;
@@ -116,6 +116,16 @@ void NameLabel::updateSelfWidth() {
 
     if (m_labelButton) {
         m_labelButton->setScale(scale);
+    }
+}
+
+void NameLabel::onEnter() {
+    CCNode::onEnter();
+
+    if (m_labelButton) {
+        // TODO (v6): temporary fix for a prio bug in Button
+        SharedButtonHandler::get()->unregisterButton(m_labelButton);
+        CCTouchDispatcher::get()->removeDelegate(m_labelButton);
     }
 }
 
