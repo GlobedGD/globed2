@@ -50,8 +50,6 @@ private:
     void resizeBadgeContainer();
     void onClick(geode::Button* btn);
     void updateLabelColors();
-
-    void onEnter();
 };
 
 }
