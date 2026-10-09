@@ -119,16 +119,6 @@ void NameLabel::updateSelfWidth() {
     }
 }
 
-void NameLabel::onEnter() {
-    CCNode::onEnter();
-
-    if (m_labelButton) {
-        // TODO (v6): temporary fix for a prio bug in Button
-        SharedButtonHandler::get()->unregisterButton(m_labelButton);
-        CCTouchDispatcher::get()->removeDelegate(m_labelButton);
-    }
-}
-
 void NameLabel::onClick(geode::Button* btn) {
     if (m_callback) {
         m_callback(btn);
