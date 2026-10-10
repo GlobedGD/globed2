@@ -48,12 +48,20 @@ struct GLOBED_NOVTABLE SoftModule {
         });
     }
 
-    geode::Result<> enable() {
-        return globed::api::module::setEnabled(_id(), true);
+    void enable() {
+        this->runModuleOperation([] {
+            if (auto e = globed::api::module::setEnabled(_id(), true).err()) {
+                geode::log::error("Failed to enable module '{}': {}", _id(), e);
+            }
+        });
     }
 
-    geode::Result<> disable() {
-        return globed::api::module::setEnabled(_id(), false);
+    void disable() {
+        this->runModuleOperation([] {
+            if (auto e = globed::api::module::setEnabled(_id(), false).err()) {
+                geode::log::error("Failed to disable module '{}': {}", _id(), e);
+            }
+        });
     }
 
     void claimHook(geode::Hook* hook) {

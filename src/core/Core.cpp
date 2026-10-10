@@ -24,6 +24,8 @@ bool Core::addModule(std::shared_ptr<ModuleImpl> mod) {
     }
     log::info("Registered module {}", mod->id());
     m_modules.insert(it, {std::string{mod->id()}, std::move(mod)});
+    mod->onRegistered();
+
     return true;
 }
 
@@ -103,13 +105,13 @@ void Core::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
 }
 
 void Core::onLeaveLevel(GlobedGJBGL* gjbgl, bool editor) {
+    this->forEachEnabled([&](auto& mod) {
+        mod.onLeaveLevel(gjbgl, editor);
+    });
+
     log::trace("Disabling Level modules");
     this->disableIf([](const auto& mod) {
         return mod.getAutoEnableMode() == AutoEnableMode::Level;
-    });
-
-    this->forEachEnabled([&](auto& mod) {
-        mod.onLeaveLevel(gjbgl, editor);
     });
 }
 

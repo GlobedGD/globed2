@@ -68,6 +68,10 @@ Result<> ModuleImpl::disable() {
     return Ok();
 }
 
+void ModuleImpl::onRegistered() {
+    m_vtable->onRegistered();
+}
+
 void ModuleImpl::claimHooks(std::span<geode::Hook* const> hooks) {
     for (auto hook : hooks) {
         hook->setAutoEnable(false);

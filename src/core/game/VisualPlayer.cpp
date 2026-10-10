@@ -1065,8 +1065,3 @@ struct GLOBED_MODIFY_ATTR VPSchedulerHook : Modify<VPSchedulerHook, CCScheduler>
 // 1. bail out if the same mode already
 // 2. call switchedToMode (which toggles all modes off?)
 // 3. calls other stuff like updating frames, doing stuff with streaks/particles
-
-
-$on_mod(Loaded) {
-
-}

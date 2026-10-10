@@ -302,7 +302,7 @@ def main(build: Build):
     gc.modules.add("two-player")
     gc.modules.add("ui")
     gc.modules.add("collision")
-    gc.modules.add("active-player-switch")
+    gc.modules.add("switcheroo")
 
     # Add base sources
     src = config.project_dir / "src"

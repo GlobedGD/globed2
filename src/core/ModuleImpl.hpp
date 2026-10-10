@@ -19,6 +19,8 @@ public:
     Result<> enable();
     Result<> disable();
 
+    void onRegistered();
+
     void claimHooks(std::span<geode::Hook* const> hooks);
     void claimPatches(std::span<geode::Patch* const> patches);
 

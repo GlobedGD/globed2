@@ -37,7 +37,6 @@ void TwoPlayerModule::onDisabled() {
 }
 
 void TwoPlayerModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
-    log::debug("on join level");
     // if 2p mode is disabled, disable the module for this level
     if (!RoomManager::get().getSettings().twoPlayerMode) {
         (void) this->disable();
