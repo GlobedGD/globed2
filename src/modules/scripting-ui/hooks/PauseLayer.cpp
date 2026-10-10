@@ -16,9 +16,7 @@ namespace globed {
 
 struct GLOBED_MODIFY_ATTR SCPauseLayer : Modify<SCPauseLayer, PauseLayer> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(ScriptingUIModule::get(), self,
-            "PauseLayer::customSetup",
-        );
+        ScriptingUIModule::get().claimHooks(self);
     }
 
     $override

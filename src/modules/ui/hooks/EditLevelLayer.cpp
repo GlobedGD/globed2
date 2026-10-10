@@ -11,10 +11,7 @@ namespace globed {
 
 struct GLOBED_MODIFY_ATTR HookedEditLevelLayer : geode::Modify<HookedEditLevelLayer, EditLevelLayer> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "EditLevelLayer::onEdit",
-            "EditLevelLayer::onPlay",
-        );
+        UIModule::get().claimHooks(self);
 
         (void) self.setHookPriority("EditLevelLayer::onEdit", -100);
         (void) self.setHookPriority("EditLevelLayer::onPlay", -100);

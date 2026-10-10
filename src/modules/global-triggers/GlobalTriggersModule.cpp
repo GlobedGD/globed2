@@ -11,11 +11,6 @@ namespace globed {
 
 GlobalTriggersModule::GlobalTriggersModule() {}
 
-void GlobalTriggersModule::onModuleInit() {
-    log::info("Global triggers module initialized");
-    this->setAutoEnableMode(AutoEnableMode::Level);
-}
-
 void GlobalTriggersModule::queueCounterChange(const CounterChange& change) {
     CounterChangeEvent ev{};
     ev.rawType = static_cast<uint8_t>(change.type);

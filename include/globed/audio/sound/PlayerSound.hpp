@@ -4,6 +4,8 @@
 
 namespace globed {
 
+class RemotePlayer;
+
 /// Represents a sound tied to a RemotePlayer.
 /// The sound may either follow the target player or remain static at the position it was created at.
 class GLOBED_DLL PlayerSound : public Sound {

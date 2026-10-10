@@ -7,6 +7,7 @@ Checks: >
   -bugprone-narrowing-conversions,
   -bugprone-macro-parentheses,
   -bugprone-crtp-constructor-accessibility,
+  -bugprone-throwing-static-initialization,
   -bugprone-derived-method-shadowing-base-method,
   performance-*,
   -performance-unnecessary-value-param,

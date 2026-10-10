@@ -1,37 +1,29 @@
 #pragma once
 
-#include <globed/core/ModuleCrtp.hpp>
+#include <globed/core/Module.hpp>
 
 namespace globed {
 
-class APSModule : public ModuleCrtpBase<APSModule> {
+class APSModule : public SoftModule<APSModule> {
 public:
-    APSModule();
+    APSModule() {}
 
-    void onModuleInit();
+    static constexpr inline auto AUTO_ENABLE = AutoEnableMode::Level;
 
-    virtual std::string_view name() const override {
-        return "Active Player Switch";
-    }
+    static inline const ModuleMetadata metadata {
+        .id = "globed.switcheroo",
+        .name = "Switcheroo",
+        .author = "Globed",
+    };
 
-    virtual std::string_view id() const override {
-        return "globed.active-player-switch";
-    }
-
-    virtual std::string_view author() const override {
-        return "Globed";
-    }
-
-    virtual std::string_view description() const override {
-        return "";
-    }
 private:
+    friend SoftModule;
+
     void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) override;
     void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) override;
     void onUpdate(GlobedGJBGL* gjbgl, float dt) override;
     void onLocalPlayerDeath(GlobedGJBGL* gjbgl, bool real) override;
     void onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) override;
-
     bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) override {
         return true;
     }

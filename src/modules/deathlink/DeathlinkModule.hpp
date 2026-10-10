@@ -1,32 +1,24 @@
 #pragma once
 
-#include <globed/core/ModuleCrtp.hpp>
+#include <globed/core/Module.hpp>
 
 namespace globed {
 
-class DeathlinkModule : public ModuleCrtpBase<DeathlinkModule> {
+class DeathlinkModule : public SoftModule<DeathlinkModule> {
 public:
     DeathlinkModule();
 
-    void onModuleInit();
+    static constexpr inline auto AUTO_ENABLE = AutoEnableMode::Level;
 
-    virtual std::string_view name() const override {
-        return "Deathlink";
-    }
-
-    virtual std::string_view id() const override {
-        return "globed.deathlink";
-    }
-
-    virtual std::string_view author() const override {
-        return "Globed";
-    }
-
-    virtual std::string_view description() const override {
-        return "";
-    }
+    static inline const ModuleMetadata metadata {
+        .id = "globed.deathlink",
+        .name = "Deathlink",
+        .author = "Globed",
+    };
 
 private:
+    friend SoftModule;
+
     void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) override;
     void onPlayerDeath(GlobedGJBGL* gjbgl, RemotePlayer* player, const PlayerDeath& death) override;
     bool shouldSpeedUpNewBest(GlobedGJBGL* gjbgl) override {

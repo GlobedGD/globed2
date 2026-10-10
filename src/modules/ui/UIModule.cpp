@@ -6,8 +6,4 @@ namespace globed {
 
 UIModule::UIModule() {}
 
-void UIModule::onModuleInit() {
-    this->setAutoEnableMode(AutoEnableMode::Server);
-}
-
 }

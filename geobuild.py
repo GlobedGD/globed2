@@ -302,7 +302,7 @@ def main(build: Build):
     gc.modules.add("two-player")
     gc.modules.add("ui")
     gc.modules.add("collision")
-    gc.modules.add("active-player-switch")
+    gc.modules.add("switcheroo")
 
     # Add base sources
     src = config.project_dir / "src"
@@ -478,7 +478,8 @@ def main(build: Build):
 
     build.silence_warnings_for("kj")
     build.silence_warnings_for("capnp")
-    build.silence_warnings_for("opus")
+    if gc.voice:
+        build.silence_warnings_for("opus")
 
     # setup unity build
     if gc.release:

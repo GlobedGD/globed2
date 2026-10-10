@@ -5,6 +5,8 @@
 
 namespace globed {
 
+class RemotePlayer;
+
 class EmoteBubble : public cocos2d::CCNodeRGBA {
 public:
     static EmoteBubble* create();

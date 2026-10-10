@@ -1,6 +1,7 @@
 #pragma once
 
 #include <globed/util/singleton.hpp>
+#include <globed/core/data/PlayerIconData.hpp>
 #include <asp/thread/ThreadPool.hpp>
 #include <asp/time/Instant.hpp>
 #include <asp/sync/SpinLock.hpp>

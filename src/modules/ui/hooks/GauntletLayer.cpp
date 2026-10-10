@@ -21,10 +21,7 @@ struct GLOBED_MODIFY_ATTR HookedGauntletLayer : geode::Modify<HookedGauntletLaye
     };
 
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "GauntletLayer::init",
-            "GauntletLayer::loadLevelsFinished",
-        );
+        UIModule::get().claimHooks(self);
     }
 
     $override

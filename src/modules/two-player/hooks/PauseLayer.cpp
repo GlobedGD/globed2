@@ -16,9 +16,7 @@ struct GLOBED_MODIFY_ATTR TPHookedPauseLayer : geode::Modify<TPHookedPauseLayer,
     static void onModify(auto& self) {
         (void) self.setHookPriority("PauseLayer::onResume", -100000);
 
-        GLOBED_CLAIM_HOOKS(TwoPlayerModule::get(), self,
-            "PauseLayer::onResume",
-        );
+        TwoPlayerModule::get().claimHooks(self);
     }
 
     $override

@@ -7,6 +7,8 @@
 
 namespace globed {
 
+class RemotePlayer;
+
 class VoiceOverlay : public CCNode {
 public:
     static VoiceOverlay* create();

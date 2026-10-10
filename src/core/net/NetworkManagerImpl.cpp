@@ -10,7 +10,7 @@
 #include <globed/util/gd.hpp>
 #include <globed/util/scary.hpp>
 #include <util/SentryClient.hpp>
-#include <core/CoreImpl.hpp>
+#include <core/Core.hpp>
 #include "data/helpers.hpp"
 #include <bb_public.hpp>
 
@@ -1002,7 +1002,7 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnecte
     }
 
     FunctionQueue::get().queue([reconnecting, showPopup, message = std::move(message)] {
-        CoreImpl::get().onServerDisconnected();
+        Core::get().onServerDisconnected();
 
         if (showPopup) {
             if (reconnecting) {

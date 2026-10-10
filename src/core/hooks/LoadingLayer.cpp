@@ -1,7 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LoadingLayer.hpp>
 #include <globed/config.hpp>
-#include <core/CoreImpl.hpp>
+#include <core/Core.hpp>
 #include <core/preload/PreloadManager.hpp>
 #include <asp/time/SystemTime.hpp>
 
@@ -43,7 +43,7 @@ struct GLOBED_MODIFY_ATTR HookedLoadingLayer : Modify<HookedLoadingLayer, Loadin
 
         if (!m_fromRefresh) {
             log::debug("Loading modules..");
-            CoreImpl::get().onLaunch();
+            Core::get().onLaunch();
         }
 
         LoadingLayer::loadAssets();

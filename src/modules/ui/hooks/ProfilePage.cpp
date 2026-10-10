@@ -12,9 +12,7 @@ namespace globed {
 
 struct GLOBED_MODIFY_ATTR HookedProfilePage : geode::Modify<HookedProfilePage, ProfilePage> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "ProfilePage::loadPageFromUserInfo",
-        );
+        UIModule::get().claimHooks(self);
     }
 
     $override

@@ -33,11 +33,11 @@ struct VTable {
 protected:
     size_t m_size;
 
-    VTable(size_t size) : m_size(size) {}
+    constexpr VTable(size_t size) noexcept : m_size(size) {}
     VTable(const VTable&) = delete;
-    VTable(VTable&&) = delete;
     VTable& operator=(const VTable&) = delete;
-    VTable& operator=(VTable&&) = delete;
+    VTable(VTable&&) noexcept = default;
+    VTable& operator=(VTable&&) noexcept = default;
 };
 
 // #define GLOBED_VTABLE_INNER_FN(...) GEODE_INVOKE(GEODE_CONCAT(GLOBED_VTABLE_INNER_FN_, GEODE_NUMBER_OF_ARGS(__VA_ARGS__)), __VA_ARGS__)

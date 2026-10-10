@@ -12,9 +12,7 @@ namespace globed {
 
 struct GLOBED_MODIFY_ATTR TPPlayerObject : geode::Modify<TPPlayerObject, PlayerObject> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(TwoPlayerModule::get(), self,
-            "PlayerObject::update"
-        );
+        TwoPlayerModule::get().claimHooks(self);
     }
 
     $override

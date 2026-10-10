@@ -1,32 +1,22 @@
 #pragma once
 
-#include <globed/core/ModuleCrtp.hpp>
+#include <globed/core/Module.hpp>
 
 namespace globed {
 
-class UIModule : public ModuleCrtpBase<UIModule> {
+class UIModule : public SoftModule<UIModule> {
 public:
     UIModule();
 
-    void onModuleInit();
+    static constexpr inline auto AUTO_ENABLE = AutoEnableMode::Server;
 
-    virtual std::string_view name() const override {
-        return "UI Module";
-    }
-
-    virtual std::string_view id() const override {
-        return "globed.ui";
-    }
-
-    virtual std::string_view author() const override {
-        return "Globed";
-    }
-
-    virtual std::string_view description() const override {
-        return "";
-    }
-
-private:
+    static inline const ModuleMetadata metadata {
+        .id = "globed.ui",
+        .name = "UI Module",
+        .author = "Globed",
+    };
 };
 
 }
+
+// TODO: small refactor for ui module, prolly move out things that are hookless (the popups/ dir)

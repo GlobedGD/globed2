@@ -1,7 +1,7 @@
 #include "GJBaseGameLayer.hpp"
 #include <globed/util/gd.hpp>
 #include <globed/core/RoomManager.hpp>
-#include <core/CoreImpl.hpp>
+#include <core/Core.hpp>
 
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/CurrencyRewardLayer.hpp>
@@ -109,7 +109,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayerSpeedUpAnim : geode::Modify<HookedPlayL
 
         auto gjbgl = this->asBase();
         auto& rm = RoomManager::get();
-        bool speedUpAnim = obj != m_anticheatSpike && gjbgl->active() && CoreImpl::get().shouldSpeedUpNewBest(gjbgl);
+        bool speedUpAnim = obj != m_anticheatSpike && gjbgl->active() && Core::get().shouldSpeedUpNewBest(gjbgl);
 
         // g_diedAt = asp::time::Instant::now();
 

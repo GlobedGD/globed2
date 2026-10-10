@@ -22,19 +22,18 @@ TwoPlayerModule::TwoPlayerModule() {
     TwoPlayerUnlinkEvent::listen([this](const auto& msg, const auto& opts) {
         this->handleUnlinkEvent(msg, opts.sender);
     }).leak();
+
+    UserListPopupSetupEvent{}.listen([this](cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {
+        this->onUserlistSetup(container, accountId, myself, popup);
+    }).leak();
 }
 
-void TwoPlayerModule::onModuleInit() {
-    this->setAutoEnableMode(AutoEnableMode::Level);
-}
-
-Result<> TwoPlayerModule::onDisabled() {
+void TwoPlayerModule::onDisabled() {
     m_linkedPlayer.reset();
     m_ignoreNoclip = false;
     m_isPlayer2 = false;
     m_linkAttempt.reset();
     m_linkedRp = nullptr;
-    return Ok();
 }
 
 void TwoPlayerModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
@@ -77,7 +76,7 @@ void TwoPlayerModule::onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) 
     }
 }
 
-void TwoPlayerModule::onUserlistSetup(CCNode* container, int accountId, bool myself, UserListPopup* popup) {
+void TwoPlayerModule::onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {
     if (myself) return;
 
     // if we are already linked, show only an unlink button on the linked player

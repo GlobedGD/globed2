@@ -3,6 +3,7 @@
 #include <globed/soft-link/API.hpp>
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/RoomManager.hpp>
+#include <core/Core.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/preload/PreloadManager.hpp>
@@ -23,6 +24,7 @@ GameSubtable::GameSubtable() : VTable(sizeof(GameSubtable)) {}
 PlayerSubtable::PlayerSubtable() : VTable(sizeof(PlayerSubtable)) {}
 MiscSubtable::MiscSubtable() : VTable(sizeof(MiscSubtable)) {}
 RoomSubtable::RoomSubtable() : VTable(sizeof(RoomSubtable)) {}
+ModuleSubtable::ModuleSubtable() : VTable(sizeof(ModuleSubtable)) {}
 
 static NetSubtable* makeNetTable() {
     auto table = new NetSubtable;
@@ -322,6 +324,62 @@ static RoomSubtable* makeRoomTable() {
     return table;
 }
 
+static ModuleSubtable* makeModuleTable() {
+    auto table = new ModuleSubtable{};
+
+    GLOBED_VTABLE_INIT(table, register_, (ModuleVTable* vtable) {
+        auto res = ModuleImpl::create(vtable);
+        if (!res) {
+            log::warn("failed to create module: {}", res.unwrapErr());
+            return false;
+        }
+        return Core::get().addModule(res.unwrap());
+    });
+
+    GLOBED_VTABLE_INIT(table, isRegistered, (std::string_view id) {
+        return Core::get().findModule(id) != nullptr;
+    });
+
+    GLOBED_VTABLE_INIT(table, isEnabled, (std::string_view id) {
+        auto module = Core::get().findModule(id);
+        return module && module->isEnabled();
+    });
+
+    GLOBED_VTABLE_INIT(table, setEnabled, (std::string_view id, bool enabled) -> Result<> {
+        auto module = Core::get().findModule(id);
+        if (!module) {
+            return Err("module not found");
+        }
+        return enabled ? module->enable() : module->disable();
+    });
+
+    GLOBED_VTABLE_INIT(table, setAutoEnableMode, (std::string_view id, AutoEnableMode mode) {
+        auto module = Core::get().findModule(id);
+        if (module) module->setAutoEnableMode(mode);
+        else {
+            log::warn("setAutoEnableMode for '{}' failed: not found!", id);
+        }
+    });
+
+    GLOBED_VTABLE_INIT(table, claimHooks, (std::string_view id, std::span<geode::Hook* const> hooks) {
+        auto module = Core::get().findModule(id);
+        if (module) module->claimHooks(hooks);
+        else {
+            log::warn("claimHooks for '{}' failed: not found!", id);
+        }
+    });
+
+    GLOBED_VTABLE_INIT(table, claimPatches, (std::string_view id, std::span<geode::Patch* const> patches) {
+        auto module = Core::get().findModule(id);
+        if (module) module->claimPatches(patches);
+        else {
+            log::warn("claimPatches for '{}' failed: not found!", id);
+        }
+    });
+
+    return table;
+}
+
 Result<RootApiTable*> getRootTable() {
     static auto g_table = []{
         RootApiTable table {};
@@ -330,6 +388,7 @@ Result<RootApiTable*> getRootTable() {
         table.player = makePlayerTable();
         table.misc = makeMiscTable();
         table.room = makeRoomTable();
+        table.module = makeModuleTable();
         return table;
     }();
 

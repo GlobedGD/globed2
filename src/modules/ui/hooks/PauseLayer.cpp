@@ -27,17 +27,7 @@ struct GLOBED_MODIFY_ATTR UIHookedPauseLayer : Modify<UIHookedPauseLayer, PauseL
         (void) self.setHookPriority("PauseLayer::onRestart", -99999);
         (void) self.setHookPriority("PauseLayer::onRestartFull", -99999);
 
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "PauseLayer::customSetup",
-            "PauseLayer::onQuit",
-            "PauseLayer::onEdit",
-            "PauseLayer::goEdit",
-            "PauseLayer::onResume",
-            "PauseLayer::onNormalMode",
-            "PauseLayer::onPracticeMode",
-            "PauseLayer::onRestart",
-            "PauseLayer::onRestartFull",
-        );
+        UIModule::get().claimHooks(self);
     }
 
     struct Fields {

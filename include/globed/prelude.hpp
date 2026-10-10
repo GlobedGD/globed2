@@ -9,7 +9,6 @@
 #include "util/lazy.hpp"
 #include "core/SettingsManager.hpp"
 #include "core/PopupManager.hpp"
-#include "core/Core.hpp"
 #include "core/Constants.hpp"
 #include "core/actions.hpp"
 

@@ -8,9 +8,7 @@ namespace globed {
 
 struct GLOBED_MODIFY_ATTR HookedEndLevelLayer : geode::Modify<HookedEndLevelLayer, EndLevelLayer> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "EndLevelLayer::customSetup",
-        );
+        UIModule::get().claimHooks(self);
     }
 
     $override

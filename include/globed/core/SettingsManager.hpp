@@ -205,7 +205,7 @@ public:
 
 private:
     friend class SingletonBase;
-    friend class CoreImpl;
+    friend class Core;
     template <typename T>
     friend class SettingAccessor;
 

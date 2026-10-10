@@ -35,9 +35,7 @@ struct ObjectStringBuilder {
 
 struct GLOBED_MODIFY_ATTR SCGameManager : Modify<SCGameManager, GameManager> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(globed::ScriptingUIModule::get(), self,
-            "GameManager::stringForCustomObject",
-        );
+        globed::ScriptingUIModule::get().claimHooks(self);
     }
 
     $override

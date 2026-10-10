@@ -10,10 +10,7 @@ namespace globed {
 
 struct GLOBED_MODIFY_ATTR HookedLevelPage : Modify<HookedLevelPage, LevelPage> {
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "LevelPage::onPlay",
-            "LevelPage::onTheTower",
-        );
+        UIModule::get().claimHooks(self);
 
         (void) self.setHookPriority("LevelPage::onPlay", -100);
     }

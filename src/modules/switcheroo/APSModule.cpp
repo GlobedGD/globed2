@@ -7,12 +7,6 @@ using namespace geode::prelude;
 
 namespace globed {
 
-APSModule::APSModule() {}
-
-void APSModule::onModuleInit() {
-    this->setAutoEnableMode(AutoEnableMode::Level);
-}
-
 void APSModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
     if (!RoomManager::get().getSettings().switcheroo) {
         (void) this->disable();

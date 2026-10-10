@@ -1,38 +1,26 @@
 #pragma once
 
-#include <globed/core/ModuleCrtp.hpp>
+#include <globed/core/Module.hpp>
 #include "CounterChange.hpp"
 
 namespace globed {
 
-class GlobalTriggersModule : public ModuleCrtpBase<GlobalTriggersModule> {
+class GlobalTriggersModule : public SoftModule<GlobalTriggersModule> {
 public:
     GlobalTriggersModule();
 
-    void onModuleInit();
+    static constexpr inline auto AUTO_ENABLE = AutoEnableMode::Level;
 
-    virtual std::string_view name() const override {
-        return "Global Triggers";
-    }
-
-    virtual std::string_view id() const override {
-        return "globed.global-triggers";
-    }
-
-    virtual std::string_view author() const override {
-        return "Globed";
-    }
-
-    virtual std::string_view description() const override {
-        return "";
-    }
+    static inline const ModuleMetadata metadata {
+        .id = "globed.global-triggers",
+        .name = "Global Triggers",
+        .author = "Globed",
+    };
 
     void onPlayerJoin(GlobedGJBGL* gjbgl, int accountId) override;
     void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) override;
 
     void queueCounterChange(const CounterChange& change);
-
-private:
 };
 
 }

@@ -8,11 +8,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-DeathlinkModule::DeathlinkModule() = default;
-
-void DeathlinkModule::onModuleInit() {
-    this->setAutoEnableMode(AutoEnableMode::Level);
-}
+DeathlinkModule::DeathlinkModule() {}
 
 void DeathlinkModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
     // if deathlink is disabled, disable the module for this level
@@ -31,9 +27,7 @@ struct GLOBED_MODIFY_ATTR DLPlayLayer : geode::Modify<DLPlayLayer, PlayLayer> {
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayLayer::resetLevel", -999);
 
-        GLOBED_CLAIM_HOOKS(DeathlinkModule::get(), self,
-            "PlayLayer::resetLevel",
-        );
+        DeathlinkModule::get().claimHooks(self);
     }
 
     $override

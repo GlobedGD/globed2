@@ -27,12 +27,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
     };
 
     static void onModify(auto& self) {
-        GLOBED_CLAIM_HOOKS(UIModule::get(), self,
-            "LevelInfoLayer::init",
-            "LevelInfoLayer::onPlay",
-            "LevelInfoLayer::playStep3",
-            "LevelInfoLayer::tryCloneLevel",
-        );
+        UIModule::get().claimHooks(self);
     }
 
     $override
