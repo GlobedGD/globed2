@@ -9,6 +9,8 @@ class GlobalTriggersModule : public SoftModule<GlobalTriggersModule> {
 public:
     GlobalTriggersModule();
 
+    static constexpr inline auto AUTO_ENABLE = AutoEnableMode::Level;
+
     static inline const ModuleMetadata metadata {
         .id = "globed.global-triggers",
         .name = "Global Triggers",

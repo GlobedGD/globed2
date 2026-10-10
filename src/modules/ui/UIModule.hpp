@@ -8,6 +8,8 @@ class UIModule : public SoftModule<UIModule> {
 public:
     UIModule();
 
+    static constexpr inline auto AUTO_ENABLE = AutoEnableMode::Server;
+
     static inline const ModuleMetadata metadata {
         .id = "globed.ui",
         .name = "UI Module",

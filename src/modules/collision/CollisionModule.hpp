@@ -8,6 +8,8 @@ class CollisionModule final : public SoftModule<CollisionModule> {
 public:
     CollisionModule();
 
+    static constexpr inline auto AUTO_ENABLE = AutoEnableMode::Level;
+
     static inline const ModuleMetadata metadata {
         .id = "globed.collision",
         .name = "Collision",

@@ -1,7 +1,7 @@
 #include "GJBaseGameLayer.hpp"
 #include <globed/util/gd.hpp>
 #include <globed/core/RoomManager.hpp>
-#include <core/CoreImpl.hpp>
+#include <core/Core.hpp>
 #include <core/preload/PreloadManager.hpp>
 #include <core/patches.hpp>
 
@@ -104,7 +104,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
 
         auto& rm = RoomManager::get();
 
-        bool overrideReset = !rm.isInGlobal() && CoreImpl::get().wantsSyncReset();
+        bool overrideReset = !rm.isInGlobal() && Core::get().wantsSyncReset();
         bool oldReset = overrideReset ? gameVariable(GameVariable::FastRespawn) : false;
         bool realDeath = m_fields->m_setupWasCompleted && obj != m_anticheatSpike;
         bool originalTestMode = m_isTestMode;

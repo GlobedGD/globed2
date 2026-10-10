@@ -6,7 +6,9 @@ namespace globed {
 
 class APSModule : public SoftModule<APSModule> {
 public:
-    APSModule();
+    APSModule() {}
+
+    static constexpr inline auto AUTO_ENABLE = AutoEnableMode::Level;
 
     static inline const ModuleMetadata metadata {
         .id = "globed.switcheroo",

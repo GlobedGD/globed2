@@ -10,7 +10,7 @@
 #include <globed/util/gd.hpp>
 #include <globed/util/FunctionQueue.hpp>
 #include <globed/util/GameState.hpp>
-#include <core/CoreImpl.hpp>
+#include <core/Core.hpp>
 #include <core/preload/PreloadManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/game/SettingCache.hpp>
@@ -71,7 +71,7 @@ void GlobedGJBGL::Fields::cleanup() {
     m_active = false;
     m_cleanedUp = true; // don't do any extra cleanup if quitting
 
-    CoreImpl::get().onLeaveLevel(m_self, m_editor);
+    Core::get().onLeaveLevel(m_self, m_editor);
     RoomManager::get().leaveLevel();
 }
 
@@ -100,7 +100,7 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
 
     if (fields.m_active) {
         RoomManager::get().joinLevel(level);
-        CoreImpl::get().onJoinLevel(this, level, editor);
+        Core::get().onJoinLevel(this, level, editor);
     }
 
     // this should happen immediately after joining, otherwise we race on localhost
@@ -137,7 +137,7 @@ void GlobedGJBGL::setupPostInit() {
     // which fucks up some of our updates, so we have this flag that is set only after init actually completes.
     fields.m_initCompleted = true;
 
-    CoreImpl::get().onJoinLevelPostInit(this);
+    Core::get().onJoinLevelPostInit(this);
 }
 
 void GlobedGJBGL::setupNecessary() {
@@ -595,7 +595,7 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
         }
     }
 
-    CoreImpl::get().onPreUpdate(this, dt);
+    Core::get().onPreUpdate(this, dt);
 
     g_profilerFrame.postPreUpdateEnd = Instant::now();
 }
@@ -728,7 +728,7 @@ void GlobedGJBGL::selPostUpdate(float dt) {
         this->fixProgressBar(state.progress());
     }
 
-    CoreImpl::get().onUpdate(this, dt);
+    Core::get().onUpdate(this, dt);
 
     g_profilerFrame.postPostUpdateEnd = Instant::now();
 
@@ -1072,7 +1072,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     fields.m_players.emplace(playerId, std::move(rp));
     fields.m_interpolator.addPlayer(playerId);
 
-    CoreImpl::get().onPlayerJoin(this, playerId);
+    Core::get().onPlayerJoin(this, playerId);
 }
 
 void GlobedGJBGL::handlePlayerLeave(int playerId, bool removeFromMap) {
@@ -1090,7 +1090,7 @@ void GlobedGJBGL::handlePlayerLeave(int playerId, bool removeFromMap) {
 
     auto& player = fields.m_players.at(playerId);
     player->stopVoiceStream();
-    CoreImpl::get().onPlayerLeave(this, playerId);
+    Core::get().onPlayerLeave(this, playerId);
 
     if (removeFromMap) {
         fields.m_players.erase(playerId);
@@ -1110,7 +1110,7 @@ void GlobedGJBGL::handleLocalPlayerDeath(PlayerObject* obj) {
     fields.m_deathCount++;
     fields.m_lastLocalDeathReal = !fields.m_isFakingDeath;
 
-    CoreImpl::get().onLocalPlayerDeath(this, fields.m_lastLocalDeathReal);
+    Core::get().onLocalPlayerDeath(this, fields.m_lastLocalDeathReal);
 }
 
 void GlobedGJBGL::setPermanentSafeMode() {

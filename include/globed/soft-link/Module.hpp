@@ -10,6 +10,11 @@ concept ValidModuleType = requires(const T t) {
     { T::metadata } -> std::convertible_to<ModuleMetadata>;
 };
 
+template <typename T>
+concept ModuleOverridesAutoEnableType = requires(const T t) {
+    { T::AUTO_ENABLE } -> std::convertible_to<AutoEnableMode>;
+};
+
 template <typename Derived>
 struct SoftModuleAutoInit {
     SoftModuleAutoInit() {
@@ -38,7 +43,7 @@ struct GLOBED_NOVTABLE SoftModule {
     /// By default this is `Server`, which means the module is toggled whenever the user connects or disconnects from the Globed server.
     /// See other values of `AutoEnableMode` for more information.
     void setAutoEnableMode(AutoEnableMode mode) {
-        globed::api::waitForGlobed([mode] {
+        this->runModuleOperation([mode] {
             globed::api::module::setAutoEnableMode(_id(), mode);
         });
     }
@@ -51,12 +56,14 @@ struct GLOBED_NOVTABLE SoftModule {
         return globed::api::module::setEnabled(_id(), false);
     }
 
-    geode::Result<> claimHook(geode::Hook* hook) {
-        return claimHooks(std::span{&hook, 1});
+    void claimHook(geode::Hook* hook) {
+        claimHooks(std::span{&hook, 1});
     }
 
-    void claimHooks(std::span<geode::Hook* const> hooks) {
-        globed::api::module::claimHooks(_id(), hooks);
+    void claimHooks(std::vector<geode::Hook*> hooks) {
+        this->runModuleOperation([hooks = std::move(hooks)] {
+            globed::api::module::claimHooks(_id(), hooks);
+        });
     }
 
     // TODO (geode v6?): use modify.getAllHooks()
@@ -65,17 +72,20 @@ struct GLOBED_NOVTABLE SoftModule {
         std::vector<geode::Hook*> hooks;
         hooks.reserve(modify.m_hooks.size());
         for (auto& [k, v] : modify.m_hooks) {
+            v->setAutoEnable(false);
             hooks.push_back(v.get());
         }
-        return claimHooks(hooks);
+        return claimHooks(std::move(hooks));
     }
 
-    geode::Result<> claimPatch(geode::Patch* patch) {
+    void claimPatch(geode::Patch* patch) {
         return claimPatches(std::span{&patch, 1});
     }
 
-    void claimPatches(std::span<geode::Patch* const> patches) {
-        globed::api::module::claimPatches(_id(), patches);
+    void claimPatches(std::vector<geode::Patch*> patches) {
+        this->runModuleOperation([patches = std::move(patches)] {
+            globed::api::module::claimPatches(_id(), patches);
+        });
     }
 
     // -- Callbacks --
@@ -138,15 +148,34 @@ private:
     friend struct SoftModuleAutoInit<Derived>;
     friend Derived;
 
+    static inline std::vector<geode::Function<void()>> s_queuedOps;
+    static inline bool s_registered = false;
+
     SoftModule() = default;
 
     static void _register();
+    static void _doRegister();
     static inline const ModuleMetadata& _metadata() noexcept;
     static constexpr ModuleVTable* _vtable() noexcept;
     static std::string_view _id() noexcept {
         return _metadata().id;
     }
 
+    template <typename F>
+    static void runModuleOperation(F&& op) {
+        if (s_registered) {
+            op();
+        } else {
+            s_queuedOps.push_back(std::forward<F>(op));
+        }
+    }
+
+    static void runQueuedOps() {
+        for (auto& op : s_queuedOps) {
+            op();
+        }
+        s_queuedOps.clear();
+    }
 };
 
 
@@ -156,12 +185,32 @@ void SoftModule<Derived, Leak>::_register() {
 
     Derived::get(); // initialize the module
 
-    globed::api::waitForGlobed([] {
-        bool result = globed::api::module::registerModule(_vtable());
-        if (!result) {
-            geode::log::error("Failed to register module '{}' in Globed!", _id());
+    // wait until this mod is loaded (not Globed),
+    // allows us to avoid static init issues
+    geode::ModStateEvent(geode::ModEventType::Loaded, geode::Mod::get())
+        .listen([]() {
+            globed::api::waitForGlobed([] {
+                _doRegister();
+            });
+        })
+        .leak();
+}
+
+
+template <typename Derived, bool Leak>
+void SoftModule<Derived, Leak>::_doRegister() {
+    bool result = globed::api::module::registerModule(_vtable());
+    if (!result) {
+        geode::log::error("Failed to register module '{}' in Globed!", _id());
+    } else {
+        s_registered = true;
+
+        if constexpr (ModuleOverridesAutoEnableType<Derived>) {
+            globed::api::module::setAutoEnableMode(_id(), Derived::AUTO_ENABLE);
         }
-    });
+
+        runQueuedOps();
+    }
 }
 
 template <typename Derived, bool Leak>

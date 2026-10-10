@@ -7,7 +7,7 @@
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/game/Interpolator.hpp>
 #include <core/game/SettingCache.hpp>
-#include <core/CoreImpl.hpp>
+#include <core/Core.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -196,13 +196,13 @@ void RemotePlayer::update(const RemotePlayerUpdate& update) {
         if (!hideIcon) {
             this->handleDeath(*flags.death);
         }
-        CoreImpl::get().onPlayerDeath(GlobedGJBGL::get(), this, *flags.death);
+        Core::get().onPlayerDeath(GlobedGJBGL::get(), this, *flags.death);
         m_wasDead = true;
     }
 
     // if the player just respawned, call respawn handlers
     if (m_wasDead && !m_state.isDead) {
-        CoreImpl::get().onPlayerRespawn(GlobedGJBGL::get(), this);
+        Core::get().onPlayerRespawn(GlobedGJBGL::get(), this);
         m_wasDead = false;
     }
 

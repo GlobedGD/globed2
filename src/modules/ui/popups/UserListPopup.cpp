@@ -8,7 +8,7 @@
 #include <globed/core/RoomManager.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
-#include <core/CoreImpl.hpp>
+#include <core/Core.hpp>
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/misc/AudioVisualizer.hpp>
 #include <ui/menu/UserSettingsPopup.hpp>

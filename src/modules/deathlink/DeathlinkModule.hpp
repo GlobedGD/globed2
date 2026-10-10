@@ -8,6 +8,8 @@ class DeathlinkModule : public SoftModule<DeathlinkModule> {
 public:
     DeathlinkModule();
 
+    static constexpr inline auto AUTO_ENABLE = AutoEnableMode::Level;
+
     static inline const ModuleMetadata metadata {
         .id = "globed.deathlink",
         .name = "Deathlink",

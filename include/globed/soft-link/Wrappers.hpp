@@ -62,7 +62,12 @@ void waitForGlobed(F&& callback) {
 #ifdef GLOBED_BUILD
     callback();
 #else
-    if (geode::Loader::get()->isModLoaded("dankmeme.globed2")) {
+    static bool loaded = false;
+    if (!loaded) {
+        loaded = geode::Loader::get()->isModLoaded("dankmeme.globed2");
+    }
+
+    if (loaded) {
         callback();
     } else {
         auto mod = geode::Loader::get()->getInstalledMod("dankmeme.globed2");

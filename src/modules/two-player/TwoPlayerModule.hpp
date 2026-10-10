@@ -8,11 +8,13 @@
 namespace globed {
 
 class VisualPlayer;
+class UserListPopup;
 
 class TwoPlayerModule : public SoftModule<TwoPlayerModule> {
 public:
     TwoPlayerModule();
 
+    static constexpr inline auto AUTO_ENABLE = AutoEnableMode::Level;
     static inline const ModuleMetadata metadata {
         .id = "globed.two-player-mode",
         .name = "Two Player Mode",

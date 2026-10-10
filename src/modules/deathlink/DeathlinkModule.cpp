@@ -8,9 +8,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-DeathlinkModule::DeathlinkModule() {
-    this->setAutoEnableMode(AutoEnableMode::Level);
-}
+DeathlinkModule::DeathlinkModule() {}
 
 void DeathlinkModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
     // if deathlink is disabled, disable the module for this level
