@@ -61,14 +61,17 @@ Modules are a powerful way to organize your modifications and cut away some boil
 ```cpp
 struct MyModule final : globed::SoftModule<MyModule> {
     // A metadata struct must be provided in every module with some details.
-    static inline const ModuleMetadata metadata {
-        .name = "My module",
+    static inline const globed::ModuleMetadata metadata {
         .id = "dankmeme.my-module",
+        .name = "My module",
         .author = "dankmeme",
     };
 
+    // Optionally set *when* the module should enable its hooks, see explanation later
+    static constexpr inline auto AUTO_ENABLE = globed::AutoEnableMode::Level;
+
     // Overriding this function so we know whenever someone joins the level
-    void onPlayerJoin(GlobedGJBGL* gjbgl, int accountId) override {
+    void onPlayerJoin(globed::GlobedGJBGL* gjbgl, int accountId) override {
         log::debug("hi {}", accountId);
     }
 
@@ -87,8 +90,9 @@ class $modify(PlayLayer) {
 };
 ```
 
-By default, modules (and their claimed hooks/patches) are automatically enabled when connecting to the Globed central server, and then disabled when disconnecting. This behavior can be changed (for example, making it so the mod can only be manually enabled) via `setAutoEnableMode`:
+By default, modules (and their claimed hooks/patches) are automatically enabled when connecting to the Globed central server, and then disabled when disconnecting. This behavior can be changed (for example, making it so the mod can only be manually enabled) via `setAutoEnableMode` or via defining the static `AUTO_ENABLE` variable in your module.
 ```cpp
+// Never means the module is disabled by default, and you must manually call `enable()`
 MyModule::get().setAutoEnableMode(AutoEnableMode::Never);
 ```
 
