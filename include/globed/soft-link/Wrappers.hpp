@@ -43,8 +43,8 @@ inline UserSubtable* userTable() {
     return nullptr;
 }
 
-inline SettingsSubtable* settingsTable() {
-    if (auto t = table()) return t->settings;
+inline SettingSubtable* settingsTable() {
+    if (auto t = table()) return t->setting;
     return nullptr;
 }
 

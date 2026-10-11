@@ -27,7 +27,7 @@ MiscSubtable::MiscSubtable() : VTable(sizeof(MiscSubtable)) {}
 RoomSubtable::RoomSubtable() : VTable(sizeof(RoomSubtable)) {}
 ModuleSubtable::ModuleSubtable() : VTable(sizeof(ModuleSubtable)) {}
 UserSubtable::UserSubtable() : VTable(sizeof(UserSubtable)) {}
-SettingsSubtable::SettingsSubtable() : VTable(sizeof(SettingsSubtable)) {}
+SettingSubtable::SettingSubtable() : VTable(sizeof(SettingSubtable)) {}
 
 static NetSubtable* makeNetTable() {
     auto table = new NetSubtable;
@@ -412,8 +412,8 @@ static UserSubtable* makeUserTable() {
     return table;
 }
 
-static SettingsSubtable* makeSettingsTable() {
-    auto table = new SettingsSubtable{};
+static SettingSubtable* makeSettingsTable() {
+    auto table = new SettingSubtable{};
 
     GLOBED_VTABLE_INIT(table, hasSetting, (std::string_view key) {
         return SettingsManager::get().hasSetting(key);
@@ -464,7 +464,7 @@ Result<RootApiTable*> getRootTable() {
         table.room = makeRoomTable();
         table.module = makeModuleTable();
         table.user = makeUserTable();
-        table.settings = makeSettingsTable();
+        table.setting = makeSettingsTable();
         return table;
     }();
 

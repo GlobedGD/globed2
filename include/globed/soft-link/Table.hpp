@@ -154,8 +154,8 @@ struct UserSubtable : VTable {
 };
 
 /// Entire table since v2.3.0
-struct SettingsSubtable : VTable {
-    SettingsSubtable();
+struct SettingSubtable : VTable {
+    SettingSubtable();
 
     GLOBED_VTABLE_FUNC(hasSetting, bool, std::string_view key);
     GLOBED_VTABLE_FUNC(getBool, std::optional<bool>, std::string_view key);
@@ -179,7 +179,7 @@ struct RootApiTable {
     RoomSubtable* room = nullptr;
     ModuleSubtable* module = nullptr;
     UserSubtable* user = nullptr;
-    SettingsSubtable* settings = nullptr;
+    SettingSubtable* setting = nullptr;
     void* _reserved[64 - 8] = {nullptr};
 };
 

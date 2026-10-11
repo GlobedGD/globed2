@@ -1,6 +1,10 @@
-## v2.2.3
+## v2.3.0
 
-* Fix API functions not being available
+* Fix link button in levels not being clickable without Better Touch Prio mod
+* Expand soft-link API: add support for making Globed modules plus 2 new API namespaces
+* Fix API functions not being exported in the mod
+* Several other API fixes, including making `api::room` thread-safe
+* Fix potential corruption of textures during texture reload
 
 ## v2.2.2
 

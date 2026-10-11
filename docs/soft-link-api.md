@@ -48,6 +48,8 @@ You can take a look at other available functions in your intellisense. These are
 * `api::misc` - misc functions that might be useful for mods
 * `api::room` - room related functions
 * `api::module` - module registration functions (avoid using directly, see [Modules](#modules))
+* `api::user` - user related helpers, e.g. checking friend/blocked status
+* `api::setting` - functions to get/set Globed settings
 
 This API is currently not very complete, and a fairly small subset of functions are available. If you want to use something not exposed here, use the Link API or make a PR or an issue telling us what should be added.
 
