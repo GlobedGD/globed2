@@ -2,6 +2,7 @@
 
 #include <globed/soft-link/API.hpp>
 #include <globed/core/net/NetworkManager.hpp>
+#include <globed/core/FriendListManager.hpp>
 #include <globed/core/RoomManager.hpp>
 #include <core/Core.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
@@ -25,6 +26,8 @@ PlayerSubtable::PlayerSubtable() : VTable(sizeof(PlayerSubtable)) {}
 MiscSubtable::MiscSubtable() : VTable(sizeof(MiscSubtable)) {}
 RoomSubtable::RoomSubtable() : VTable(sizeof(RoomSubtable)) {}
 ModuleSubtable::ModuleSubtable() : VTable(sizeof(ModuleSubtable)) {}
+UserSubtable::UserSubtable() : VTable(sizeof(UserSubtable)) {}
+SettingsSubtable::SettingsSubtable() : VTable(sizeof(SettingsSubtable)) {}
 
 static NetSubtable* makeNetTable() {
     auto table = new NetSubtable;
@@ -179,18 +182,29 @@ static GameSubtable* makeGameTable() {
         return {};
     });
 
-    GLOBED_VTABLE_INIT(table, getPlayers, -> std::vector<std::shared_ptr<RemotePlayer>> {
+    GLOBED_VTABLE_INIT(table, getPlayers, () -> std::vector<std::shared_ptr<RemotePlayer>> {
         if (auto gjbgl = GlobedGJBGL::getActive()) {
             return asp::iter::values(gjbgl->m_fields->m_players).collect();
         }
         return {};
     });
 
-    GLOBED_VTABLE_INIT(table, getPlayerCount, -> size_t {
+    GLOBED_VTABLE_INIT(table, getPlayerCount, () -> size_t {
         if (auto gjbgl = GlobedGJBGL::getActive()) {
             return gjbgl->m_fields->m_players.size();
         }
         return 0;
+    });
+
+    GLOBED_VTABLE_INIT(table, warpToSession, (const WarpContext& ctx) {
+        globed::warpToSession(ctx);
+    });
+
+    GLOBED_VTABLE_INIT(table, warpToSession2, (int levelId) {
+        globed::warpToSession(WarpContext {
+            .session = RoomManager::get().makeSessionId(levelId),
+            .source = WarpSource::Manual
+        });
     });
 
     return table;
@@ -380,6 +394,66 @@ static ModuleSubtable* makeModuleTable() {
     return table;
 }
 
+static UserSubtable* makeUserTable() {
+    auto table = new UserSubtable{};
+
+    GLOBED_VTABLE_INIT(table, isFriend, (int accountId) {
+        return FriendListManager::get().isFriend(accountId);
+    });
+
+    GLOBED_VTABLE_INIT(table, isBlocked, (int accountId) {
+        return FriendListManager::get().isBlocked(accountId);
+    });
+
+    GLOBED_VTABLE_INIT(table, openModPanel, (int accountId) {
+        globed::openModPanel(accountId);
+    });
+
+    return table;
+}
+
+static SettingsSubtable* makeSettingsTable() {
+    auto table = new SettingsSubtable{};
+
+    GLOBED_VTABLE_INIT(table, hasSetting, (std::string_view key) {
+        return SettingsManager::get().hasSetting(key);
+    });
+
+    GLOBED_VTABLE_INIT(table, getBool, (std::string_view key) {
+        return setting<bool>(key).valueOpt();
+    });
+
+    GLOBED_VTABLE_INIT(table, getInt, (std::string_view key) {
+        return setting<int>(key).valueOpt();
+    });
+
+    GLOBED_VTABLE_INIT(table, getString, (std::string_view key) {
+        return setting<std::string>(key).valueOpt();
+    });
+
+    GLOBED_VTABLE_INIT(table, getRaw, (std::string_view key) {
+        return setting<matjson::Value>(key).valueOpt();
+    });
+
+    GLOBED_VTABLE_INIT(table, setBool, (std::string_view key, bool value) {
+        return setting<bool>(key).trySet(value);
+    });
+
+    GLOBED_VTABLE_INIT(table, setInt, (std::string_view key, int value) {
+        return setting<int>(key).trySet(value);
+    });
+
+    GLOBED_VTABLE_INIT(table, setString, (std::string_view key, std::string value) {
+        return setting<std::string>(key).trySet(std::move(value));
+    });
+
+    GLOBED_VTABLE_INIT(table, setRaw, (std::string_view key, matjson::Value value) {
+        return setting<matjson::Value>(key).trySet(std::move(value));
+    });
+
+    return table;
+}
+
 Result<RootApiTable*> getRootTable() {
     static auto g_table = []{
         RootApiTable table {};
@@ -389,6 +463,8 @@ Result<RootApiTable*> getRootTable() {
         table.misc = makeMiscTable();
         table.room = makeRoomTable();
         table.module = makeModuleTable();
+        table.user = makeUserTable();
+        table.settings = makeSettingsTable();
         return table;
     }();
 

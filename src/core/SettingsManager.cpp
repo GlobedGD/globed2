@@ -681,6 +681,10 @@ bool SettingsManager::hasSetting(uint64_t hash) {
     return m_settings.contains(hash);
 }
 
+bool SettingsManager::hasSetting(std::string_view key) {
+    return m_settings.contains(this->keyHash(key));
+}
+
 uint64_t SettingsManager::keyHash(std::string_view key) {
     uint64_t hash = 0xcbf29ce484222325;
     const char* pfx = "setting.";

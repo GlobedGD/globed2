@@ -8,6 +8,7 @@
 #include "../core/data/PlayerIconData.hpp"
 #include "../core/data/RoomSettings.hpp"
 #include "../core/data/RoomTeam.hpp"
+#include "../core/actions.hpp"
 #include "../core/SessionId.hpp"
 #include "ModuleDecl.hpp"
 
@@ -77,6 +78,10 @@ struct GameSubtable : VTable {
     GLOBED_VTABLE_FUNC(getPlayerIds, std::vector<int>);
     GLOBED_VTABLE_FUNC(getPlayers, std::vector<std::shared_ptr<RemotePlayer>>);
     GLOBED_VTABLE_FUNC(getPlayerCount, size_t);
+
+    // Since v2.3.0
+    GLOBED_VTABLE_FUNC(warpToSession, void, const WarpContext& ctx);
+    GLOBED_VTABLE_FUNC(warpToSession2, void, int levelId);
 };
 
 struct PlayerSubtable : VTable {
@@ -139,6 +144,31 @@ struct ModuleSubtable : VTable {
     GLOBED_VTABLE_FUNC(claimPatches, void, std::string_view id, std::span<geode::Patch* const> patches);
 };
 
+/// Entire table since v2.3.0
+struct UserSubtable : VTable {
+    UserSubtable();
+
+    GLOBED_VTABLE_FUNC(isFriend, bool, int accountId);
+    GLOBED_VTABLE_FUNC(isBlocked, bool, int accountId);
+    GLOBED_VTABLE_FUNC(openModPanel, void, int accountId);
+};
+
+/// Entire table since v2.3.0
+struct SettingsSubtable : VTable {
+    SettingsSubtable();
+
+    GLOBED_VTABLE_FUNC(hasSetting, bool, std::string_view key);
+    GLOBED_VTABLE_FUNC(getBool, std::optional<bool>, std::string_view key);
+    GLOBED_VTABLE_FUNC(getInt, std::optional<int>, std::string_view key);
+    GLOBED_VTABLE_FUNC(getString, std::optional<std::string>, std::string_view key);
+    GLOBED_VTABLE_FUNC(getRaw, std::optional<matjson::Value>, std::string_view key);
+
+    GLOBED_VTABLE_FUNC(setBool, bool, std::string_view key, bool value);
+    GLOBED_VTABLE_FUNC(setInt, bool, std::string_view key, int value);
+    GLOBED_VTABLE_FUNC(setString, bool, std::string_view key, std::string value);
+    GLOBED_VTABLE_FUNC(setRaw, bool, std::string_view key, matjson::Value value);
+};
+
 struct RootApiTable {
     RootApiTable(); // intentionally not dllexported
 
@@ -148,7 +178,9 @@ struct RootApiTable {
     MiscSubtable* misc = nullptr;
     RoomSubtable* room = nullptr;
     ModuleSubtable* module = nullptr;
-    void* _reserved[64 - 6] = {nullptr};
+    UserSubtable* user = nullptr;
+    SettingsSubtable* settings = nullptr;
+    void* _reserved[64 - 8] = {nullptr};
 };
 
 static_assert(sizeof(RootApiTable) == sizeof(void*) * 64);

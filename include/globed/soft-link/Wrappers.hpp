@@ -38,6 +38,16 @@ inline ModuleSubtable* moduleTable() {
     return nullptr;
 }
 
+inline UserSubtable* userTable() {
+    if (auto t = table()) return t->user;
+    return nullptr;
+}
+
+inline SettingsSubtable* settingsTable() {
+    if (auto t = table()) return t->settings;
+    return nullptr;
+}
+
 /// Returns whether globed is available and api functions can be used.
 /// If this returns false, return values of api functions are meaningless.
 inline bool available() {
@@ -308,6 +318,27 @@ inline size_t getPlayerCount() {
     return 0;
 }
 
+/// Warps the user to the given session (joins level and potentially reconnects to another server)
+/// Added in Globed v2.3.0
+inline void warpToSession(const WarpContext& ctx) {
+    if (auto t = table()) t->game->warpToSession(ctx);
+}
+
+/// Warps the user to the given session ID, counting as a manual warp.
+/// Added in Globed v2.3.0
+inline void warpToSession(SessionId id) {
+    api::game::warpToSession(WarpContext {
+        .session = id,
+        .source = WarpSource::Manual
+    });
+}
+
+/// Warps the user to the given level ID, counting as a manual warp.
+/// Added in Globed v2.3.0
+inline void warpToSession(int levelId) {
+    if (auto t = table()) t->game->warpToSession2(levelId);
+}
+
 } // namespace api::game
 
 namespace api::player {
@@ -497,6 +528,7 @@ inline std::string getName() {
 
 } // namespace api::room
 
+/// All functions added in Globed v2.3.0
 namespace api::module {
 
 inline bool registerModule(ModuleVTable* vtable) {
@@ -532,5 +564,72 @@ inline void claimPatches(std::string_view id, std::span<geode::Patch* const> pat
 }
 
 } // namespace api::module
+
+namespace api::user {
+
+inline bool isFriend(int accountId) {
+    if (auto t = userTable()) return t->isFriend(accountId);
+    return false;
+}
+
+inline bool isBlocked(int accountId) {
+    if (auto t = userTable()) return t->isBlocked(accountId);
+    return false;
+}
+
+inline void openModPanel(int accountId) {
+    if (auto t = userTable()) return t->openModPanel(accountId);
+}
+
+} // namespace api::user
+
+namespace api::settings {
+
+inline bool hasSetting(std::string_view key) {
+    if (auto t = settingsTable()) return t->hasSetting(key);
+    return false;
+}
+
+/// Get a setting by key (see globed::Setting namespace)
+/// Returns null if the setting is not found or Globed is not loaded.
+template <typename T>
+inline std::optional<T> get(std::string_view key) {
+    auto t = settingsTable();
+    if (!t) return std::nullopt;
+
+    if constexpr (std::is_same_v<T, bool>) {
+        return t->getBool(key);
+    } else if constexpr (std::is_same_v<T, int>) {
+        return t->getInt(key);
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        return t->getString(key);
+    } else if constexpr (std::is_same_v<T, matjson::Value>) {
+        return t->getRaw(key);
+    } else {
+        static_assert(!std::is_same_v<T, T>, "Unsupported type for settings::get");
+    }
+}
+
+/// Set a setting by key (see globed::Setting namespace)
+/// Returns false if the setting is not found, Globed is not loaded or validation fails.
+template <typename T>
+inline bool set(std::string_view key, T value) {
+    auto t = settingsTable();
+    if (!t) return false;
+
+    if constexpr (std::is_same_v<T, bool>) {
+        return t->setBool(key, value);
+    } else if constexpr (std::is_same_v<T, int>) {
+        return t->setInt(key, value);
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        return t->setString(key, value);
+    } else if constexpr (std::is_same_v<T, matjson::Value>) {
+        return t->setRaw(key, value);
+    } else {
+        static_assert(!std::is_same_v<T, T>, "Unsupported type for settings::set");
+    }
+}
+
+} // namespace api::settings
 
 }

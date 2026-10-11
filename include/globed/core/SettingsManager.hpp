@@ -36,8 +36,10 @@ public:
 
     operator T() const;
     T value() const;
+    std::optional<T> valueOpt() const;
 
     SettingAccessor& operator=(T value);
+    bool trySet(T value);
 
 private:
     uint64_t hash;
@@ -72,10 +74,9 @@ public:
     }
 
     template <typename T>
-    T getSettingRaw(uint64_t hash) {
+    std::optional<T> getSettingRawOpt(uint64_t hash) {
         if (!this->hasSetting(hash)) {
-            // internal error, means we used a wrong id somewhere
-            throw std::runtime_error(fmt::format("setting not found with hash {}", hash));
+            return std::nullopt;
         }
 
         auto set = m_settings.at(hash);
@@ -96,10 +97,19 @@ public:
     }
 
     template <typename T>
-    void setSettingRaw(uint64_t hash, T&& value) {
+    T getSettingRaw(uint64_t hash) {
+        if (auto s = this->getSettingRawOpt<T>(hash)) {
+            return *s;
+        }
+
+        // internal error, means we used a wrong id somewhere
+        throw std::runtime_error(fmt::format("setting not found with hash {}", hash));
+    }
+
+    template <typename T>
+    bool setSettingRawOpt(uint64_t hash, T&& value) {
         if (!this->hasSetting(hash)) {
-            // internal error, means we used a wrong id somewhere
-            geode::utils::terminate(fmt::format("setting not found with hash {}", hash));
+            return false;
         }
 
         matjson::Value val = std::forward<T>(value);
@@ -107,7 +117,7 @@ public:
         if (it != m_validators.end()) {
             if (!it->second(val)) {
                 geode::log::warn("Failed to save setting {}, validation failed: {}", m_fullKeys[hash], val.dump(matjson::NO_INDENTATION));
-                return;
+                return false;
             }
         }
 
@@ -127,11 +137,21 @@ public:
 
         auto& slot = m_saveSlots[m_activeSaveSlot];
         slot.set(m_fullKeys[hash], std::move(val));
+        return true;
+    }
+
+    template <typename T>
+    void setSettingRaw(uint64_t hash, T&& value) {
+        if (!this->setSettingRawOpt(hash, std::forward<T>(value))) {
+            // internal error, means we used a wrong id somewhere
+            geode::utils::terminate(fmt::format("setting not found or validation failed, hash {}", hash));
+        }
     }
 
     std::optional<std::pair<matjson::Value, matjson::Value>> getLimits(std::string_view key);
 
     bool hasSetting(uint64_t hash);
+    bool hasSetting(std::string_view key);
 
     /// Registers a new setting. This cannot be called after the SettingsManager is frozen,
     /// which happens at the end of the loading phase when the core is initialized.
@@ -267,6 +287,11 @@ T SettingAccessor<T>::value() const {
 }
 
 template <typename T>
+std::optional<T> SettingAccessor<T>::valueOpt() const {
+    return SettingsManager::get().getSettingRawOpt<T>(hash);
+}
+
+template <typename T>
 SettingAccessor<T>& SettingAccessor<T>::operator=(T value) {
 #ifdef GLOBED_DEBUG
     try {
@@ -279,6 +304,11 @@ SettingAccessor<T>& SettingAccessor<T>::operator=(T value) {
     SettingsManager::get().setSettingRaw<T>(hash, std::move(value));
 #endif
     return *this;
+}
+
+template <typename T>
+bool SettingAccessor<T>::trySet(T value) {
+    return SettingsManager::get().setSettingRawOpt<T>(hash, std::move(value));
 }
 
 
