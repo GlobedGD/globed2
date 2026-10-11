@@ -1,5 +1,5 @@
 #pragma once
-#include "API.hpp"
+#include "Wrappers.hpp"
 #include <Geode/loader/Log.hpp>
 #include "../core/data/PlayerState.hpp"
 

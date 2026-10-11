@@ -23,7 +23,7 @@ bool Core::addModule(std::shared_ptr<ModuleImpl> mod) {
         return false;
     }
     log::info("Registered module {}", mod->id());
-    m_modules.insert(it, {std::string{mod->id()}, std::move(mod)});
+    m_modules.insert(it, {std::string{mod->id()}, mod});
     mod->onRegistered();
 
     return true;

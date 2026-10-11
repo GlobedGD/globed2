@@ -1,5 +1,6 @@
 #pragma once
 #include "Wrappers.hpp"
+#include "Module.hpp"
 
 namespace globed::api::net {
 
