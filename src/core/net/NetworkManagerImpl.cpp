@@ -1145,17 +1145,11 @@ void NetworkManagerImpl::threadFlushLogger(bool central) {
 }
 
 Future<> NetworkManagerImpl::threadTryAuth() {
-    if (auto stoken = this->getUToken()) {
-        this->connInfo()->startedAuth();
-        this->sendCentralAuth(AuthKind::Utoken, *stoken);
-        co_return;
-    }
-
     // try argon / plain auth
     auto info = this->connInfo();
 
     if (!info->m_knownArgonUrl.empty()) {
-        (void) argon::overrideArgonServer(info->m_knownArgonUrl);
+        argon::overrideArgonServer(info->m_knownArgonUrl);
         log::debug("acquiring argon token with url {}", info->m_knownArgonUrl);
 
         info->startedAuth();
@@ -1174,7 +1168,7 @@ Future<> NetworkManagerImpl::threadTryAuth() {
             co_return;
         }
 
-        this->sendCentralAuth(AuthKind::Argon, *res);
+        this->sendCentralAuth(AuthKind::ArgonV2, *res);
     } else {
         info->startedAuth();
         info.unlock();
@@ -1223,21 +1217,9 @@ void NetworkManagerImpl::sendCentralAuth(AuthKind kind, const std::string& token
         }
 
         switch (kind) {
-            case AuthKind::Utoken: {
-                log::debug(
-                    "attempting login with user token {}",
-#ifdef GLOBED_DEBUG
-                    token
-#else
-                    "<redacted>"
-#endif
-                );
-                login.setUtoken(token);
-            } break;
-
-            case AuthKind::Argon: {
+            case AuthKind::ArgonV2: {
                 log::debug("attempting login with argon token ({})", accountId);
-                login.setArgon(token);
+                login.setArgonV2(token);
             } break;
 
             case AuthKind::Plain: {
@@ -1533,10 +1515,6 @@ std::string NetworkManagerImpl::getCentralIdent() {
     return hash;
 }
 
-void NetworkManagerImpl::clearAllUTokens() {
-    ValueManager::get().eraseWithPrefix("auth.last-utoken.");
-}
-
 std::string NetworkManagerImpl::getStoredModPassword() {
     if (!globed::setting<bool>("core.mod.remember-password")) {
         return "";
@@ -1704,23 +1682,6 @@ void NetworkManagerImpl::setViewedFeaturedLevel() {
     this->setLastFeaturedLevelId(this->getFeaturedLevel().value_or(FeaturedLevelMeta{}).levelId);
 }
 
-std::string NetworkManagerImpl::getUTokenKey() {
-    auto gjam = singleton<GJAccountManager>();
-    return fmt::format("auth.last-utoken.{}.{}-{}", this->getCentralIdent(), gjam->m_accountID, gjam->m_username);
-}
-
-std::optional<std::string> NetworkManagerImpl::getUToken() {
-    return globed::value<std::string>(this->getUTokenKey());
-}
-
-void NetworkManagerImpl::setUToken(std::string token) {
-    ValueManager::get().set(this->getUTokenKey(), std::move(token));
-}
-
-void NetworkManagerImpl::clearUToken() {
-    ValueManager::get().erase(this->getUTokenKey());
-}
-
 std::vector<uint8_t> NetworkManagerImpl::computeUident(int accountId) {
     static asp::Mutex<std::pair<int, std::vector<uint8_t>>> mtx;
 
@@ -1822,8 +1783,7 @@ void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reaso
 
     switch (reason) {
         case INVALID_USER_TOKEN: {
-            log::warn("Login failed: invalid user token, clearing token and trying to re-auth");
-            this->clearUToken();
+            log::warn("Login failed: invalid user token");
             m_workerNotify.notifyOne();
         } break;
 
@@ -2306,10 +2266,10 @@ void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, boo
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto login = msg.initLogin();
         login.setAccountId(g_argonData.accountId);
-        login.setToken(this->getUToken().value_or(""));
 
         {
             auto info = this->connInfo();
+            login.setSecret(info->m_sessionSecret);
             data::encode(info->m_icons, login.initIcons());
 
             auto& dict = info->m_gameDict.data;
@@ -2539,6 +2499,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
             auto msg = std::move(res).value();
 
+            info->m_sessionSecret = msg.secret;
             info->m_allRoles = msg.allRoles;
             info->m_userRoleIds = msg.userData.roleIds;
             info->m_established = true;
@@ -2556,10 +2517,6 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
             this->handleSuccessfulLogin(info);
             info.unlock();
-
-            if (!msg.userData.newToken.empty()) {
-                this->setUToken(msg.userData.newToken);
-            }
 
             this->invokeListeners(std::move(msg));
         } break;
@@ -2583,7 +2540,6 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
                 info->m_authenticating = false;
             }
 
-            this->clearUToken();
             m_workerNotify.notifyOne();
         } break;
 
@@ -2631,10 +2587,6 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
                 }
             }
             info.unlock();
-
-            if (!ud.newToken.empty()) {
-                this->setUToken(ud.newToken);
-            }
 
             this->invokeListeners(std::move(msg));
         } break;

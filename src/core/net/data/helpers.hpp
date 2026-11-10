@@ -722,6 +722,8 @@ $implDecode(msg::CentralLoginOkMessage, main::LoginOkMessage::Reader& reader) {
         msg.userData = std::move(*ext);
     }
 
+    msg.secret = reader.getSecretKey();
+
     return msg;
 }
 

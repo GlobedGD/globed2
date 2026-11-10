@@ -288,13 +288,6 @@ void SettingsLayer::addSettings() {
         );
 
         this->addSetting(ButtonSettingCell::create(
-            "Clear Auth Tokens",
-            "Deletes all stored authentication tokens for all servers.",
-            "Clear", [] {
-            NetworkManagerImpl::get().clearAllUTokens();
-        }, CELL_SIZE));
-
-        this->addSetting(ButtonSettingCell::create(
             "Clear Argon Token",
             "Deletes the stored Argon authentication token.",
             "Clear", [] {

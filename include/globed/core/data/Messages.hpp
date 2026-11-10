@@ -24,6 +24,7 @@ struct CentralLoginOkMessage {
     std::vector<UserRole> allRoles;
     std::optional<FeaturedLevelMeta> featuredLevel;
     ExtendedUserData userData;
+    uint64_t secret;
 };
 
 // Banned

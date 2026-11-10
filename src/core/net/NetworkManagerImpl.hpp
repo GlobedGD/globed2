@@ -122,6 +122,7 @@ struct ConnectionInfo {
     bool m_gameServersUpdated = true;
     bool m_established = false;
     bool m_authenticating = false;
+    uint64_t m_sessionSecret = 0;
     asp::Instant m_triedAuthAt;
     EventDictionary m_centralDict;
     std::deque<RawEvent> m_centralEventQueue;
@@ -242,8 +243,6 @@ public:
     /// Returns a unique identifier of the server (generated via hashing the server URL).
     /// Returns an empty string when not connected.
     std::string getCentralIdent();
-
-    void clearAllUTokens();
 
     /// Returns the stored moderator password or an empty string if not connected or no password is stored
     std::string getStoredModPassword();
@@ -391,7 +390,7 @@ public:
 
 private:
     enum AuthKind {
-        Utoken, Argon, Plain
+        Plain, ArgonV2
     };
 
     asp::WeakPtr<arc::Runtime> m_runtime;
@@ -439,11 +438,6 @@ private:
     void sendToCentral(geode::FunctionRef<void(CentralMessage::Builder&)>&& func);
     void sendToGame(geode::FunctionRef<void(GameMessage::Builder&)>&& func, bool reliable = true, bool uncompressed = false);
 
-    // Returns the user token for the current central server
-    std::string getUTokenKey();
-    std::optional<std::string> getUToken();
-    void setUToken(std::string token);
-    void clearUToken();
     std::vector<uint8_t> computeUident(int accountId);
 
     // Returns the last known featured level ID on this server
