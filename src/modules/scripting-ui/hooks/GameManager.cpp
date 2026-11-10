@@ -23,11 +23,7 @@ struct ObjectStringBuilder {
 
     std::string build() {
         _inner.push_back(';');
-#ifdef GEODE_IS_ANDROID
-        return _inner;
-#else
         return std::move(_inner);
-#endif
     }
 
     std::string _inner;
