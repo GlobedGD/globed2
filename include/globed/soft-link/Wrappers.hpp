@@ -456,11 +456,12 @@ inline std::optional<uint8_t> pickServerId() {
     return std::nullopt;
 }
 
-/// Returns the room settings, or nullptr if not in a room or the information is unavailable.
+/// Returns the room settings, or uninitialized value if mod isn't loaded.
+/// Not being in a room is considered being in the global room, so this will return a valid settings object if the mod is loaded.
 /// Added in Globed v2.2.0.
-inline RoomSettings* getSettings() {
+inline RoomSettings getSettings() {
     if (auto t = roomTable()) return t->getSettings();
-    return nullptr;
+    return {};
 }
 
 /// Returns the passcode of the room. This may not always be known.

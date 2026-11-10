@@ -287,12 +287,9 @@ static RoomSubtable* makeRoomTable() {
         return RoomManager::get().pickServerId();
     });
 
-    GLOBED_VTABLE_INIT(table, getSettings, () {
-        // keeping abi :)
-        // TODO (2.209) make it return non pointer
-        static thread_local RoomSettings settings;
-        settings = RoomManager::get().getSettings();
-        return &settings;
+    GLOBED_VTABLE_INIT(table, getSettings, () -> RoomSettings {
+        auto& rm = RoomManager::get();
+        return rm.getSettings();
     });
 
     GLOBED_VTABLE_INIT(table, getPasscode, () {

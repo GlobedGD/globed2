@@ -45,7 +45,6 @@ struct NetSubtable : VTable {
     GLOBED_VTABLE_FUNC(invalidateFriendList, void);
 
     GLOBED_VTABLE_FUNC(getFeaturedLevel, std::optional<FeaturedLevelMeta>);
-    void* _m_queueGameEvent = nullptr; // TODO (2.209): ABI
 
     // since v2.2.0
     GLOBED_VTABLE_FUNC(sendEvent, void, std::string_view id, std::vector<uint8_t> data, const EventOptions& options);
@@ -114,7 +113,7 @@ struct RoomSubtable : VTable {
     GLOBED_VTABLE_FUNC(isOwner, bool);
     GLOBED_VTABLE_FUNC(getOwner, int);
     GLOBED_VTABLE_FUNC(pickServerId, std::optional<uint8_t>);
-    GLOBED_VTABLE_FUNC(getSettings, RoomSettings*);
+    GLOBED_VTABLE_FUNC(getSettings, RoomSettings);
     GLOBED_VTABLE_FUNC(getPasscode, uint32_t);
     GLOBED_VTABLE_FUNC(getPinnedLevel, SessionId);
     GLOBED_VTABLE_FUNC(getCurrentWarpLevel, SessionId);
