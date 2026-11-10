@@ -9,19 +9,11 @@ PlayerSound::PlayerSound(FMOD::Sound* sound, std::weak_ptr<RemotePlayer> player,
     : Sound(sound), m_player(player), m_position(pos) {}
 
 Result<std::shared_ptr<PlayerSound>> PlayerSound::create(
-    const std::filesystem::path& path,
+    const asp::fs::Path& path,
     std::shared_ptr<RemotePlayer> player,
     bool paused
 ) {
-    return create(utils::string::pathToString(path).c_str(), player, paused);
-}
-
-Result<std::shared_ptr<PlayerSound>> PlayerSound::create(
-    const char* path,
-    std::shared_ptr<RemotePlayer> player,
-    bool paused
-) {
-    auto raw = createRaw(path).mapErr([](auto err) {
+    auto raw = createRaw(path.c_str()).mapErr([](auto err) {
         return fmt::format("createSound failed: {}", err);
     });
     auto s = std::make_shared<PlayerSound>(

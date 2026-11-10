@@ -11,10 +11,7 @@ public:
     Sound(FMOD::Sound* sound);
 
     /// Creates a sound from the given path, returns error on failure.
-    static Result<std::shared_ptr<Sound>> create(const std::filesystem::path& path, bool paused = false);
-
-    /// Creates a sound from the given path, returns error on failure.
-    static Result<std::shared_ptr<Sound>> create(const char* path, bool paused = false);
+    static Result<std::shared_ptr<Sound>> create(const asp::fs::Path& path, bool paused = false);
 
     /// Creates a sound from the given PCM data, returns error on failure.
     static Result<std::shared_ptr<Sound>> create(const float* pcm, size_t samples, int sampleRate, int channels, bool paused = false);

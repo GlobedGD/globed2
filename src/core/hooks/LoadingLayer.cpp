@@ -81,7 +81,7 @@ struct GLOBED_MODIFY_ATTR HookedLoadingLayer : Modify<HookedLoadingLayer, Loadin
     }
 
     void setLabelText(const char* text) {
-        auto label = static_cast<CCLabelBMFont*>(this->getChildByID("geode-small-label"));
+        auto label = static_cast<Label*>(this->getChildByID("geode-small-label"));
 
         if (label) {
             label->setString(text);

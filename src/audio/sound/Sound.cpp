@@ -18,12 +18,8 @@ static auto mapError(FMOD_RESULT result) {
 
 Sound::Sound(FMOD::Sound* sound) : m_sound(sound) {}
 
-Result<std::shared_ptr<Sound>> Sound::create(const std::filesystem::path& path, bool paused) {
-    return create(utils::string::pathToString(path).c_str(), paused);
-}
-
-Result<std::shared_ptr<Sound>> Sound::create(const char* path, bool paused) {
-    auto s = std::make_shared<Sound>(GEODE_UNWRAP(createRaw(path)));
+Result<std::shared_ptr<Sound>> Sound::create(const asp::fs::Path& path, bool paused) {
+    auto s = std::make_shared<Sound>(GEODE_UNWRAP(createRaw(path.c_str())));
     // pre emptively register the sound so stop() gets called
     s->registerSelf(s);
 
@@ -102,7 +98,7 @@ void Sound::stop() {
 Result<FMOD::Sound*> Sound::createRaw(const char* path) {
     FMOD::Sound* sound = nullptr;
     auto e = system()->createSound(
-        utils::string::pathToString(path).c_str(),
+        path,
         FMOD_DEFAULT | FMOD_NONBLOCKING,
         nullptr,
         &sound

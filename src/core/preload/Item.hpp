@@ -56,7 +56,7 @@ enum class SpriteFrameInitResult {
 
 struct PreloadItemState {
     PreloadItem m_item;
-    gd::string m_path;
+    std::string m_path;
     asp::SharedPtr<BatchPreloadState> m_batchState;
     geode::Ref<cocos2d::CCImage> m_image;
     geode::Ref<cocos2d::CCTexture2D> m_texture;
@@ -68,7 +68,7 @@ struct PreloadItemState {
     GLuint m_tex = 0;
     std::atomic<ItemStateEnum> m_state{ItemStateEnum::Initial};
 
-    PreloadItemState(PreloadItem item, gd::string path, asp::SharedPtr<BatchPreloadState> batchState)
+    PreloadItemState(PreloadItem item, std::string path, asp::SharedPtr<BatchPreloadState> batchState)
         : m_item(std::move(item)), m_path(std::move(path)), m_batchState(std::move(batchState)) {}
 
     // so, how's life?

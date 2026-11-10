@@ -46,11 +46,11 @@ struct HookedFileUtils : public cocos2d::CCFileUtils {
 #endif
     }
 
-    gd::string getPathForFilename(const gd::string& filename, const gd::string& resolutionDirectory, const gd::string& searchPath) {
+    std::string getPathForFilename(const std::string& filename, const std::string& resolutionDirectory, const std::string& searchPath) {
         return getPathForFilename2(filename, resolutionDirectory, searchPath);
     }
 
-    gd::string getPathForFilename2(std::string_view filename, std::string_view resolutionDirectory, std::string_view searchPath);
+    std::string getPathForFilename2(std::string_view filename, std::string_view resolutionDirectory, std::string_view searchPath);
 };
 
 std::string_view relativizeIconPath(std::string_view fullpath);

@@ -9,7 +9,7 @@ namespace globed {
 class GLOBED_DLL EmoteManager : public SingletonBase<EmoteManager> {
 public:
     void registerEmote(uint32_t id, std::string name);
-    void registerSfx(uint32_t id, const std::filesystem::path& name);
+    void registerSfx(uint32_t id, asp::fs::Path name);
 
     cocos2d::CCSprite* createEmote(uint32_t id);
     cocos2d::CCSprite* createFavoriteEmote(uint32_t id);
@@ -17,7 +17,7 @@ public:
     /// Returns the favorite emote by given index (from 0 to 7). Zero if not set.
     uint32_t getFavoriteEmote(uint32_t idx);
 
-    std::unordered_map<uint32_t, std::string>& getEmotes();
+    std::unordered_map<uint32_t, asp::fs::Path>& getEmotes();
     std::vector<uint32_t>& getSortedEmoteIds();
 
     /// Plays the emote SFX, returning a PlayerSound if player is non null
@@ -26,8 +26,8 @@ public:
     bool hasSfx(uint32_t id);
 
 protected:
-    std::unordered_map<uint32_t, std::string> m_emoteNames;
-    std::unordered_map<uint32_t, std::string> m_sfxPaths;
+    std::unordered_map<uint32_t, asp::fs::Path> m_emoteNames;
+    std::unordered_map<uint32_t, asp::fs::Path> m_sfxPaths;
     std::vector<uint32_t> m_sortedEmoteIds;
 
     friend class SingletonBase;

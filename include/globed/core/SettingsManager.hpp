@@ -237,7 +237,7 @@ private:
     std::unordered_map<uint64_t, std::vector<ListenCallback>, NoHashHasher<uint64_t>> m_callbacks;
     std::unordered_map<uint64_t, std::pair<matjson::Value, matjson::Value>, NoHashHasher<uint64_t>> m_limits;
 
-    std::filesystem::path m_slotDir;
+    asp::fs::Path m_slotDir;
     std::vector<matjson::Value> m_saveSlots;
     size_t m_activeSaveSlot = 0;
 

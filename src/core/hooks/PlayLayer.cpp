@@ -28,7 +28,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
     }
 
     $override
-    bool init(GJGameLevel* level, bool a, bool b) {
+    bool init(GJGameLevel* level, bool a) {
         auto gjbgl = this->asBase();
         gjbgl->setupPreInit(level, false);
 
@@ -38,7 +38,7 @@ struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayL
             gm->m_showProgressBar = true;
         }
 
-        if (!PlayLayer::init(level, a, b)) return false;
+        if (!PlayLayer::init(level, a)) return false;
 
         gjbgl->setupPostInit();
 

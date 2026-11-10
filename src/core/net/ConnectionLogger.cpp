@@ -24,7 +24,7 @@ void ConnectionLogger::resetInternal() {
         log::info("Dumping all connection logs to {}", m_curPath);
 
         if (auto err = asp::fs::write(m_curPath / "log.txt", m_curLog).err()) {
-            log::error("ConnectionLogger: failed to write log file: {}", err);
+            log::error("ConnectionLogger: failed to write log file: {}", *err);
         }
     }
 
@@ -35,7 +35,7 @@ void ConnectionLogger::resetInternal() {
     log::info("Setup logger at {}", m_curPath);
 }
 
-Future<> ConnectionLogger::setup(std::filesystem::path path) {
+Future<> ConnectionLogger::setup(asp::fs::Path path) {
     m_basePath = std::move(path);
 
     auto [pTx, pRx] = arc::mpsc::channel<PacketLog>(128);

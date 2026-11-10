@@ -28,7 +28,7 @@ class FireServerObject : public ExtendedObjectBase {
 public:
     FireServerObject();
 
-    void triggerObject(GJBaseGameLayer* p0, int p1, gd::vector<int> const* p2) override;
+    void triggerObject(GJBaseGameLayer* p0, int p1, std::vector<int> const* p2) override;
 
     std::optional<FireServerPayload> decodePayload();
     void encodePayload(const FireServerPayload& args);

@@ -17,7 +17,7 @@
 #include <kj/exception.h>
 #include <arc/future/Select.hpp>
 #include <arc/time/Sleep.hpp>
-#include <argon/argon.hpp>
+#include <dankmeme.argon/argon.hpp>
 #include <qunet/Pinger.hpp>
 #include <qunet/dns/Resolver.hpp>
 #include <qunet/util/algo.hpp>
@@ -228,7 +228,7 @@ namespace globed {
 const char* getIosTeamId();
 
 static Future<Result<std::string>> startArgonAuth() {
-    return argon::startAuth(g_argonData);
+    return argon::startAuth();
 }
 
 template <EventServer Server>
@@ -1155,7 +1155,7 @@ Future<> NetworkManagerImpl::threadTryAuth() {
     auto info = this->connInfo();
 
     if (!info->m_knownArgonUrl.empty()) {
-        (void) argon::setServerUrl(info->m_knownArgonUrl);
+        (void) argon::overrideArgonServer(info->m_knownArgonUrl);
         log::debug("acquiring argon token with url {}", info->m_knownArgonUrl);
 
         info->startedAuth();
@@ -1329,12 +1329,14 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
     FriendListManager::get().refresh();
 
     g_argonData = argon::getGameAccountData();
+    argon::overrideAccount(g_argonData);
+
     m_abortCause.lock()->first.clear();
     m_manualDisconnect.store(false, ::release);
 
 
     bool certVerification = globed::setting<bool>("core.dev.cert-verification");
-    argon::setCertVerification(certVerification);
+    argon::overrideCertVerification(certVerification);
 
     bool forceIpv4 = globed::setting<bool>("core.dev.net-use-ipv4");
     m_centralConn->setIpv6Enabled(!forceIpv4);
@@ -1740,7 +1742,7 @@ std::vector<uint8_t> NetworkManagerImpl::computeUident(int accountId) {
 #endif
     wd.v5 = strlen(wd.v4);
 
-    auto sdir = utils::string::pathToString(Mod::get()->getSaveDir());
+    auto sdir = Mod::get()->getSaveDir().string();
     wd.v6 = sdir.c_str();
     wd.v7 = sdir.size();
 

@@ -9,7 +9,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void HookedEffectGameObject::triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno) {
+void HookedEffectGameObject::triggerObject(GJBaseGameLayer* layer, int idk, std::vector<int> const* idunno) {
     if (m_collectibleIsPickupItem && globed::isWritableCustomItem(m_itemID)) {
         CounterChange change{(uint32_t) m_itemID, m_subtractCount ? -1 : 1, CounterChangeType::Add};
         GlobalTriggersModule::get().queueCounterChange(change);

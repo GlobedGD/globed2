@@ -3,6 +3,7 @@
 #include <globed/core/SettingsManager.hpp>
 #include <globed/util/FunctionQueue.hpp>
 #include <asp/fs.hpp>
+#include <asp/iter.hpp>
 #include <asp/sync/SpinLock.hpp>
 #include <asp/format.hpp>
 #include "FileUtils.hpp"
@@ -22,7 +23,6 @@
 
 using namespace asp::time;
 using namespace geode::prelude;
-namespace fs = std::filesystem;
 
 namespace globed {
 
@@ -201,8 +201,8 @@ void PreloadManager::loadNextBatch(PreloadOptions options) {
     }
 
     int remainingCost = asp::iter::from(m_loadQueue)
-        .map([](auto item) {
-            return item.get().iconType == IconType::DeathEffect ? 20 : 1;
+        .map([](auto& item) {
+            return item.iconType == IconType::DeathEffect ? 20 : 1;
         })
         .sum();
 
@@ -438,9 +438,9 @@ void PreloadManager::initSessionState() {
     m_sstate.preInitTime = Instant::now();
     m_sstate.texQuality = getTextureQuality();
 
-    fs::path resourceDir = dirs::getGameDir() / "Resources";
-    fs::path textureLdrUnzipped = dirs::getGeodeDir() / "unzipped" / "geode.texture-loader" / "resources";
-    fs::path highGraphicsFolder;
+    auto resourceDir = dirs::getGameDir() / "Resources";
+    auto textureLdrUnzipped = dirs::getGeodeDir() / "unzipped" / "geode.texture-loader" / "resources";
+    asp::fs::Path highGraphicsFolder;
 
     if (auto mod = Loader::get()->getLoadedMod("weebify.high-graphics-android")) {
         highGraphicsFolder = mod->getConfigDir(false) / Loader::get()->getGameVersion();
@@ -452,16 +452,16 @@ void PreloadManager::initSessionState() {
     size_t idx = 0;
     for (const auto& path : CCFileUtils::get()->getSearchPaths()) {
         std::string_view sv{path};
-        auto fspath = fs::path(sv);
+        auto fspath = asp::fs::Path(sv);
 
-        if (asp::fs::equivalent(fspath, highGraphicsFolder).unwrapOr(false)) {
+        if (fspath.equivalent(highGraphicsFolder)) {
             m_sstate.highTexturesIdx = idx;
         }
 
-        if (sv.find("geode.texture-loader") != sv.npos) {
+        if (sv.contains("geode.texture-loader")) {
             // this might be the unzipped/ folder, if so, ignore it
             // if the check failed, or if the path isn't equivalent to unzipped, count it as a texture pack folder
-            if (!asp::fs::equivalent(fspath, textureLdrUnzipped).unwrapOr(false)) {
+            if (!fspath.equivalent(textureLdrUnzipped)) {
                 m_sstate.hasTexturePack = true;
                 m_sstate.texturePackIndices.push_back(idx);
             }
@@ -476,7 +476,7 @@ void PreloadManager::initSessionState() {
             m_sstate.gameSearchPathIdx = idx;
         }
 #else
-        if (asp::fs::equivalent(fspath, resourceDir).unwrapOr(false)) {
+        if (fspath.equivalent(resourceDir)) {
             m_sstate.gameSearchPathIdx = idx;
         }
 #endif
@@ -596,7 +596,7 @@ static void appendToBuf(std::array<char, N>& buf, size_t& offset, std::string_vi
 }
 
 // this function scares me
-gd::string PreloadManager::fullPathForFilename(std::string_view input, bool ignoreSuffix) {
+std::string PreloadManager::fullPathForFilename(std::string_view input, bool ignoreSuffix) {
     auto& fu = HookedFileUtils::get();
 
     if (input.empty()) {
@@ -607,13 +607,13 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
     // we try to make this check as cheap as possible, so don't rely on std::filesystem or cocos
 #ifdef GEODE_IS_WINDOWS
     if (input.size() >= 3 && std::isalpha(input[0]) && input[1] == ':' && (input[2] == '/' || input[2] == '\\')) {
-        return gd::string{input};
+        return std::string{input};
     } else if (input.size() >= 2 && input[0] == '\\' && input[1] == '\\') {
-        return gd::string{input};
+        return std::string{input};
     }
 #else
     if (input.size() >= 1 && input[0] == '/') {
-        return gd::string{input.data(), input.size()};
+        return std::string{input.data(), input.size()};
     }
 #endif
 
@@ -680,7 +680,7 @@ gd::string PreloadManager::fullPathForFilename(std::string_view input, bool igno
 
     // try the real gd resource folder
 #ifdef GEODE_IS_DESKTOP
-    auto realResources = string::pathToString(dirs::getResourcesDir());
+    auto realResources = dirs::getResourcesDir().string();
     if (!realResources.empty()) {
         TRY_PATH(realResources);
     }

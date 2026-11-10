@@ -58,7 +58,7 @@ std::optional<asp::BoxedString> EventDictionary::lookup(uint32_t id) const {
 }
 
 std::optional<uint32_t> EventDictionary::lookupId(std::string_view name) const {
-    return asp::iter::from(mapping).enumerate().find([&](auto& el) {
+    return asp::iter::from(mapping).enumerate().find([&](auto el) {
         return el.second == name;
     }).transform([](auto el) {
         return el.first;

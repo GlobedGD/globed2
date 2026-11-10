@@ -93,7 +93,7 @@ static std::pair<
 
 #endif
 
-gd::string HookedFileUtils::getPathForFilename2(std::string_view filename, std::string_view resolutionDirectory, std::string_view searchPath) {
+std::string HookedFileUtils::getPathForFilename2(std::string_view filename, std::string_view resolutionDirectory, std::string_view searchPath) {
     std::string_view file = filename;
     std::string_view filePath;
 
@@ -110,9 +110,9 @@ gd::string HookedFileUtils::getPathForFilename2(std::string_view filename, std::
     buf.append(file);
 
     if (this->fileExists(buf.c_str())) {
-        return gd::string(buf.data(), buf.size());
+        return std::string(buf.data(), buf.size());
     }
-    return gd::string{};
+    return std::string{};
 #else
     // Apple quirks
     geode::utils::StringBuffer<512> fileBuf;

@@ -81,7 +81,7 @@ public:
     cocos2d::CCTexture2D* getCachedIcon(int iconType, int id);
     void setCachedIcon(int iconType, int id, cocos2d::CCTexture2D* texture);
 
-    gd::string fullPathForFilename(std::string_view input, bool ignoreSuffix = false);
+    std::string fullPathForFilename(std::string_view input, bool ignoreSuffix = false);
 
     /// Returns available system memory in bytes
     uint64_t getAvailableMemory();

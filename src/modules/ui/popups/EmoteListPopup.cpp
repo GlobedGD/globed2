@@ -7,6 +7,7 @@
 #include <Geode/ui/GeodeUI.hpp>
 #include <UIBuilder.hpp>
 #include <asp/time/Instant.hpp>
+#include <asp/iter.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;

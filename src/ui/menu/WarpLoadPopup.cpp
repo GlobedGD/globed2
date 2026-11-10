@@ -88,7 +88,7 @@ void WarpLoadPopup::onLoadedData(GJGameLevel* level) {
 
     // depending on whether open level is true or not, we should either open `LevelInfoLayer` or create a `PlayLayer`
     if (open) {
-        auto scene = PlayLayer::scene(level, false, false);
+        auto scene = PlayLayer::scene(level, false);
         replace ? globed::replaceScene(scene) : globed::pushScene(scene);
     } else {
         auto layer = LevelInfoLayer::create(level, false);

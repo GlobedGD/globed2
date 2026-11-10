@@ -35,7 +35,7 @@ GLOBED_DLL bool CCString_initHook(CCString* self, const char* format, va_list ar
         va_end(tmplist);
 
         fmt::format_int f{value};
-        self->m_sString = gd::string(f.data(), f.size());
+        self->m_sString = std::string(f.data(), f.size());
         return true;
     }
 
@@ -43,9 +43,9 @@ GLOBED_DLL bool CCString_initHook(CCString* self, const char* format, va_list ar
     int size = std::vsnprintf(nullptr, 0, format, args);
 
 #ifndef GEODE_IS_ANDROID
-    self->m_sString = gd::string(size, '\0');
+    self->m_sString = std::string(size, '\0');
 #else
-    self->m_sString = gd::string(std::string(size, '\0'));
+    self->m_sString = std::string(std::string(size, '\0'));
 #endif
 
     std::vsnprintf(self->m_sString.data(), self->m_sString.size() + 1, format, args);

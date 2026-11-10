@@ -72,7 +72,7 @@ static void forceWarp(WarpContext context) {
         // globed::replaceScene(PlayLayer::scene(classify.level, false, false));
     } else if (classify.kind == GameLevelKind::Tower) {
         // tower levels, always go straight to playlayer
-        globed::replaceScene(PlayLayer::scene(classify.level, false, false));
+        globed::replaceScene(PlayLayer::scene(classify.level, false));
     } else {
         // custom levels, show a loading popup
         auto popup = WarpLoadPopup::create(levelId, openLevel, false);
@@ -175,7 +175,7 @@ void openUserProfile(int accountId, int userId, std::string_view username) {
     bool myself = accountId == singleton<GJAccountManager>()->m_accountID;
 
     if (!myself) {
-        singleton<GameLevelManager>()->storeUserName(userId, accountId, gd::string(username.data(), username.size()));
+        singleton<GameLevelManager>()->storeUserName(userId, accountId, std::string(username.data(), username.size()));
     }
 
     ProfilePage::create(accountId, myself)->show();

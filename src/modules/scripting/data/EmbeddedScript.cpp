@@ -10,7 +10,7 @@ using namespace geode::prelude;
 
 static constexpr std::array EMBEDDED_SCRIPT_MAGIC = {'\xc4', '\x19', '\x7b', '\xfa'};
 
-static bool isEmbeddedScript(const gd::string& str) {
+static bool isEmbeddedScript(const std::string& str) {
     if (str.size() < EMBEDDED_SCRIPT_MAGIC.size()) {
         return false;
     }

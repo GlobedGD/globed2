@@ -206,7 +206,7 @@ void SetupEmbeddedScriptPopup::onClose(CCObject* obj) {
             globed::alertFormat("Error", "Failed to save script: {}", res.unwrapErr());
         } else {
             auto data = std::move(res).unwrap();
-            m_object->m_text = gd::string((const char*) data.data(), data.size());
+            m_object->m_text = std::string((const char*) data.data(), data.size());
         }
     }
 

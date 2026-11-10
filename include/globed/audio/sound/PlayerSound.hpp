@@ -14,14 +14,7 @@ public:
 
     /// Creates a sound from the given path, returns error on failure.
     static Result<std::shared_ptr<PlayerSound>> create(
-        const std::filesystem::path& path,
-        std::shared_ptr<RemotePlayer> player,
-        bool paused = false
-    );
-
-    /// Creates a sound from the given path, returns error on failure.
-    static Result<std::shared_ptr<PlayerSound>> create(
-        const char* path,
+        const asp::fs::Path& path,
         std::shared_ptr<RemotePlayer> player,
         bool paused = false
     );

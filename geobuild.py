@@ -20,9 +20,9 @@ import os
 
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v5.10.0"
-XTLS_VERSION = "e29f88a"
-QUNET_VERSION = "fc19fbe"
-SERVER_SHARED_VERSION = "00359d3"
+XTLS_VERSION = "v1.0.0"
+QUNET_VERSION = "v1.0.0"
+SERVER_SHARED_VERSION = "v7"
 CUE_VERSION = "e80ac94"
 
 if sys.version_info < (3, 12):
@@ -389,6 +389,7 @@ def main(build: Build):
         "version": ">=v1.13.1",
         "required": False
     })
+    build.add_geode_dep("dankmeme.argon", ">=v2.0.0-alpha.1")
 
     if 'scripting-ui' in gc.modules:
         build.add_geode_dep("alphalaneous.editortab_api", ">=2.1.0")
@@ -442,7 +443,7 @@ def main(build: Build):
         "XTLS_ENABLE_SOCKET": "ON",
         "XTLS_ENABLE_ARC_SOCKET": "ON",
     })
-    build.add_cpm_dep("dankmeme01/dbuf", "v1.1.0")
+    build.add_cpm_dep("dankmeme01/dbuf", "v1.2.0")
     build.add_cpm_dep("dankmeme01/qunet-cpp", QUNET_VERSION, {
         "QUNET_QUIC_SUPPORT": "ON" if gc.ext_transports else "OFF",
         "QUNET_WS_SUPPORT": "ON" if gc.ext_transports else "OFF",
@@ -457,9 +458,8 @@ def main(build: Build):
     build.add_cpm_dep("zeux/pugixml", "v1.16", link_name="pugixml-static", options = {
         "PUGIXML_NO_EXCEPTIONS": "ON",
     })
-    build.add_cpm_dep("GlobedGD/argon", "v1.5.1")
     build.add_cpm_dep("Prevter/sinaps", "b9c3434")
-    build.add_cpm_dep("stephenberry/glaze", "v8.0.0", link_name="glaze::glaze")
+    build.add_cpm_dep("stephenberry/glaze", "v9.1.0", link_name="glaze::glaze")
 
     if gc.voice:
         build.add_cpm_dep("xiph/opus", "v1.6.1", {

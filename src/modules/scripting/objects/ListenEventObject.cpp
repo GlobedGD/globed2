@@ -7,7 +7,7 @@ namespace globed {
 
 ListenEventObject::ListenEventObject() {}
 
-void ListenEventObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, gd::vector<int> const* p2) {
+void ListenEventObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, std::vector<int> const* p2) {
     auto bgl = SCBaseGameLayer::get(gjbgl);
 
     if (auto payload = this->decodePayload()) {

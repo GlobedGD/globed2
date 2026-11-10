@@ -222,7 +222,7 @@ void GlobedGJBGL::setupAssetLoading() {
 void GlobedGJBGL::setupAudio() {
     auto& am = AudioManager::get();
     am.stopAllOutputSources(); // preemptively
-    m_fields->m_audioInterval.setInterval(Duration::fromSecsF32(1.f / 30.f).value());
+    m_fields->m_audioInterval.setInterval(Duration::fromSecsF32(1.f / 30.f));
 
 #ifdef GLOBED_VOICE_CAN_TALK
     if (g_settings.voiceChat) {
@@ -587,7 +587,7 @@ void GlobedGJBGL::selPreUpdate(float tsdt) {
 
         if (tr != 0) {
             float val = 1.f / std::min<float>(240.f, tr);
-            auto interval = Duration::fromSecsF32(val).value();
+            auto interval = Duration::fromSecsF32(val);
             fields.m_sendInterval.setInterval(interval);
             fields.m_sendThrottledInterval.setInterval(interval * 8.f);
 
@@ -886,8 +886,8 @@ void GlobedGJBGL::sendPlayerLevelMeta(bool fullCheck) {
         // full check, include all players
         toCheck = asp::iter::keys(m_fields->m_players).collect();
     } else {
-        toCheck = asp::iter::from(m_fields->m_players).filterMap([](const auto& rw) -> std::optional<int> {
-            auto& [id, player] = rw.get();
+        toCheck = asp::iter::from(m_fields->m_players).filterMap([](auto& rw) -> std::optional<int> {
+            auto& [id, player] = rw;
             if (!player->getLevelMeta()) {
                 // this player has no meta initialized, we shall request it
                 return id;
@@ -1434,6 +1434,7 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
     fields.m_lastServerUpdate = fields.m_timeCounter;
 
     for (auto& player : message.players) {
+        log::debug("receive data for {}: {}", player.accountId, player.player1->position);
         if (player.accountId <= 0) continue;
 
         if (!fields.m_players.contains(player.accountId)) {

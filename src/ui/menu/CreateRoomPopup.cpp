@@ -68,7 +68,7 @@ bool CreateRoomPopup::init() {
         .parent(m_inputsWrapper)
         .intoNewChild(TextInput::create(roomNameWidth, "", "chatFont.fnt"))
         .with([&](TextInput* input) {
-            gd::string dname(defaultName());
+            std::string dname(defaultName());
 
             input->setCommonFilter(CommonFilter::Any);
             input->setMaxCharCount(32);

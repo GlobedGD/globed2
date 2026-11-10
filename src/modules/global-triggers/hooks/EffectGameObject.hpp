@@ -13,7 +13,7 @@ struct GLOBED_MODIFY_ATTR HookedEffectGameObject : geode::Modify<HookedEffectGam
     }
 
     $override
-    void triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno);
+    void triggerObject(GJBaseGameLayer* layer, int idk, std::vector<int> const* idunno);
 };
 
 }

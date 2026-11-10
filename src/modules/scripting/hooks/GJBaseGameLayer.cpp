@@ -442,7 +442,7 @@ void SCBaseGameLayer::addEventListener(const ListenEventPayload& obj) {
 }
 
 // class $modify(GJBaseGameLayer) {
-//     void spawnGroup(int group, bool ordered, double delay, gd::vector<int> const& remapKeys, int triggerID, int controlID) {
+//     void spawnGroup(int group, bool ordered, double delay, std::vector<int> const& remapKeys, int triggerID, int controlID) {
 //         log::debug("spawnGroup({}, {}, {}, {}, {}, {})", group, ordered, delay, remapKeys, triggerID, controlID);
 //         log::debug("{}", m_spawnRemapTriggers);
 //         GJBaseGameLayer::spawnGroup(group, ordered, delay, remapKeys, triggerID, controlID);

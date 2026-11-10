@@ -1,5 +1,6 @@
 #include "ProfilerOverlay.hpp"
 
+#include <asp/iter.hpp>
 #include <ui/Core.hpp>
 #include <cue/Util.hpp>
 #include <UIBuilder.hpp>
@@ -49,7 +50,7 @@ void ProfilerOverlay::redraw() {
     float xstep = m_drawSize.width / static_cast<float>(count);
 
     float maxTime = asp::iter::from(m_frames)
-        .map([](auto ref) { return ref.get().second.totalTime.template seconds<float>(); })
+        .map([](auto pair) { return pair.second.totalTime.template seconds<float>(); })
         .max()
         .value_or(0.f);
 

@@ -410,9 +410,9 @@ inline void setForceHide(RemotePlayer* player, bool hidden) {
 
 namespace api::misc {
 
-inline gd::string fullPathForFilename(std::string_view filename, bool ignoreSuffix) {
+inline std::string fullPathForFilename(std::string_view filename, bool ignoreSuffix) {
     if (auto t = table()) return t->misc->fullPathForFilename(filename, ignoreSuffix);
-    return gd::string{};
+    return std::string{};
 }
 
 } // namespace api::misc

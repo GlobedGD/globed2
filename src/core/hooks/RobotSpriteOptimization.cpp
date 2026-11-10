@@ -9,7 +9,7 @@ namespace globed {
 static CCString* createCCString(std::string_view data) {
     auto str = new CCString();
     str->autorelease();
-    str->m_sString = gd::string{data.data(), data.size()};
+    str->m_sString = std::string{data.data(), data.size()};
     return str;
 }
 
@@ -18,13 +18,13 @@ struct GLOBED_MODIFY_ATTR SAMHook : Modify<SAMHook, SpriteAnimationManager> {
         (void) self.setHookPriority("SpriteAnimationManager::storeAnimation", Priority::Replace);
     }
 
-    void storeAnimation(CCAnimate* action, CCAnimate* frames, gd::string name, int priority, spriteMode type, CCSpriteFrame* first) {
+    void storeAnimation(CCAnimate* action, CCAnimate* frames, std::string name, int priority, spriteMode type, CCSpriteFrame* first) {
         m_animateDict->setObject(action, name);
         m_frameDict->setObject(frames, name);
 
         StringBuffer<> firstbuf;
         firstbuf.append("{}_first", name);
-        m_frameDict->setObject(first, gd::string{firstbuf.data(), firstbuf.size()});
+        m_frameDict->setObject(first, std::string{firstbuf.data(), firstbuf.size()});
 
         StringBuffer<> typebuf;
         typebuf.append("{}", (int)type);

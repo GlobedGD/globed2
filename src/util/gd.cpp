@@ -15,7 +15,7 @@ void reorderDownloadedLevel(GJGameLevel* level) {
     // thank you cvolton :D
     // this is needed so the level appears at the top of the saved list (unless Manual Level Order is enabled)
 
-    CCDictionaryExt<gd::string, GJGameLevel*> levels = GameLevelManager::get()->m_onlineLevels;
+    CCDictionaryExt<std::string, GJGameLevel*> levels = GameLevelManager::get()->m_onlineLevels;
     bool putAtLowest = singleton<GameManager>()->getGameVariable("0084");
 
     auto iter = asp::iter::from(levels).map([](const auto& pair) {

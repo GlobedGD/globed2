@@ -77,7 +77,7 @@ struct GLOBED_MODIFY_ATTR APSPlayLayer : geode::Modify<APSPlayLayer, PlayLayer> 
     static APSPlayLayer* get(GJBaseGameLayer* gjbgl = nullptr);
 
     $override
-    bool init(GJGameLevel* level, bool a, bool b);
+    bool init(GJGameLevel* level, bool a);
 
     $override
     void destroyPlayer(PlayerObject* player, GameObject* obj);

@@ -102,7 +102,7 @@ struct PlayerSubtable : VTable {
 
 struct MiscSubtable : VTable {
     MiscSubtable();
-    GLOBED_VTABLE_FUNC(fullPathForFilename, gd::string, std::string_view, bool);
+    GLOBED_VTABLE_FUNC(fullPathForFilename, std::string, std::string_view, bool);
 };
 
 // Since v2.2.0 (entire table is null before)
@@ -191,7 +191,7 @@ static_assert(sizeof(RootApiTable) == sizeof(void*) * 64);
 
 #if !defined GLOBED_BUILD || defined GEODE_DEFINE_EVENT_EXPORTS
 #define GLOBED_SOFTLINK_API_EVENT_EXPORTED
-inline geode::Result<RootApiTable*> getRootTable() GEODE_EVENT_EXPORT(&getRootTable, ());
+GEODE_EVENT_EXPORT(geode::Result<RootApiTable*>, getRootTable, (), ());
 #else
 geode::Result<RootApiTable*> getRootTable();
 #endif

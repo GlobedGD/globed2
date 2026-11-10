@@ -124,7 +124,7 @@ void APSController::repushButtons() {
 }
 
 void APSController::rescheduleNextSwitch(float delayS) {
-    m_nextSwitch = asp::Instant::now() + *asp::Duration::fromSecs(delayS);
+    m_nextSwitch = asp::Instant::now() + asp::Duration::fromSecs(delayS);
 }
 
 std::optional<APSSwitchEvent> APSController::poll() {
@@ -141,7 +141,7 @@ std::optional<APSSwitchEvent> APSController::poll() {
         return APSSwitchEvent {
             player, SwitchType::Switch,
         };
-    } else if (!m_warned && untilSwitch < *asp::Duration::fromSecs(m_settings.m_warningDelay)) {
+    } else if (!m_warned && untilSwitch < asp::Duration::fromSecs(m_settings.m_warningDelay)) {
         // calculate player and show warning
         m_detNext = this->pickNextPlayer();
         m_warned = true;
@@ -160,7 +160,7 @@ void APSController::calculateNextSwitch() {
     float var = std::abs(m_settings.m_intervalVar);
     float base = std::abs(m_settings.m_interval);
     float untilNext = utils::random::generate<float>(base - var, base + var);
-    m_nextSwitch = asp::Instant::now() + *asp::Duration::fromSecs(untilNext);
+    m_nextSwitch = asp::Instant::now() + asp::Duration::fromSecs(untilNext);
 }
 
 int APSController::pickNextPlayer() {
@@ -214,8 +214,8 @@ void APSController::getAllPlayers() {
 
 // PlayLayer
 
-bool APSPlayLayer::init(GJGameLevel* level, bool a, bool b) {
-    if (!PlayLayer::init(level, a, b)) return false;
+bool APSPlayLayer::init(GJGameLevel* level, bool a) {
+    if (!PlayLayer::init(level, a)) return false;
 
     auto& fields = *m_fields.self();
     fields.m_myAccountId = GJAccountManager::get()->m_accountID;

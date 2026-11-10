@@ -27,8 +27,8 @@ void EmoteManager::registerEmote(uint32_t id, std::string name) {
     m_sortedEmoteIds.insert(pos, id);
 }
 
-void EmoteManager::registerSfx(uint32_t id, const std::filesystem::path& name) {
-    m_sfxPaths[id] = utils::string::pathToString(name);
+void EmoteManager::registerSfx(uint32_t id, asp::fs::Path name) {
+    m_sfxPaths[id] = std::move(name);
 }
 
 CCSprite* EmoteManager::createEmote(uint32_t id) {
@@ -59,7 +59,7 @@ uint32_t EmoteManager::getFavoriteEmote(uint32_t idx) {
     return globed::value<uint32_t>(fmt::format("core.ui.emote-slot-{}", idx)).value_or(0);
 }
 
-std::unordered_map<uint32_t, std::string>& EmoteManager::getEmotes() {
+std::unordered_map<uint32_t, asp::fs::Path>& EmoteManager::getEmotes() {
     return m_emoteNames;
 }
 
@@ -130,24 +130,32 @@ $on_game(Loaded) {
     }
 
     // register sfx
-    if (auto res = asp::fs::iterdir(Mod::get()->getResourcesDir())) {
-        for (auto& entry : *res) {
-            auto name = utils::string::pathToString(entry.path().filename());
+    auto res = asp::fs::iterDir(Mod::get()->getResourcesDir());
+    if (!res) {
+        log::warn("failed to iterate resource dir: {}", res.unwrapErr());
+        return;
+    }
 
-            if (!name.starts_with("emote_sfx_") || !name.ends_with(".ogg")) {
-                continue;
-            }
+    auto iter = std::move(res).unwrap();
+    for (auto r : iter) {
+        if (!r) continue;
+        auto& entry = r.unwrap();
 
-            // extract the number
-            size_t offset = sizeof("emote_sfx_") - 1;
-            size_t len = name.length() - offset - (sizeof(".ogg") - 1);
-            auto numStr = std::string_view{name}.substr(offset, len);
-            auto num = utils::numFromString<uint32_t>(numStr).unwrapOr((uint32_t)-1);
+        std::string_view name = entry.path.filename().value();
 
-            if (num == (uint32_t)-1) continue;
-
-            em.registerSfx(num, entry.path());
+        if (!name.starts_with("emote_sfx_") || !name.ends_with(".ogg")) {
+            continue;
         }
+
+        // extract the number
+        size_t offset = sizeof("emote_sfx_") - 1;
+        size_t len = name.length() - offset - (sizeof(".ogg") - 1);
+        auto numStr = std::string_view{name}.substr(offset, len);
+        auto num = utils::numFromString<uint32_t>(numStr).unwrapOr((uint32_t)-1);
+
+        if (num == (uint32_t)-1) continue;
+
+        em.registerSfx(num, entry.path);
     }
 
     log::debug("Added {} emotes in {}", em.getEmotes().size(), now.elapsed().toString());

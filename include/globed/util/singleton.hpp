@@ -17,12 +17,6 @@ GLOBED_DLL void scheduleUpdateFor(cocos2d::CCObject* obj);
 template <typename D>
 void singletonExportCheck();
 
-template <typename T>
-constexpr std::string_view getTypenameConstexpr() {
-    auto [p, size] = arc::getTypename<T>();
-    return {p, size};
-}
-
 template <typename Derived>
 class SingletonBase {
 public:
@@ -40,7 +34,7 @@ public:
         singletonExportCheck<Derived>();
 
         if (destructed) {
-            globed::destructedSingleton(globed::getTypenameConstexpr<Derived>());
+            globed::destructedSingleton(arc::getTypename<Derived>());
         }
 
         return instance;

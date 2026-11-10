@@ -23,7 +23,7 @@ struct GLOBED_MODIFY_ATTR SCEditorHook : geode::Modify<SCEditorHook, LevelEditor
     }
 
     $override
-    void createObjectsFromSetup(gd::string& p0) {
+    void createObjectsFromSetup(std::string& p0) {
         LevelEditorLayer::createObjectsFromSetup(p0);
 
         for (auto obj : CCArrayExt<GameObject>(m_objects)) {

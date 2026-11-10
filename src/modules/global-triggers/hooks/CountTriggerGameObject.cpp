@@ -7,7 +7,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-void HookedCountObject::triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno) {
+void HookedCountObject::triggerObject(GJBaseGameLayer* layer, int idk, std::vector<int> const* idunno) {
     if (m_objectID == 0x719 && globed::isWritableCustomItem(m_itemID)) {
         // gjbgl::addPickupTrigger reimpl
         auto gjbgl = GlobedGJBGL::get();

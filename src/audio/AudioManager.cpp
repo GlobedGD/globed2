@@ -10,6 +10,7 @@
 
 #include <fmod_errors.h>
 #include <Geode/utils/permission.hpp>
+#include <asp/iter.hpp>
 #include <arc/future/Select.hpp>
 #include <arc/time/Sleep.hpp>
 #include <arc/time/Interval.hpp>

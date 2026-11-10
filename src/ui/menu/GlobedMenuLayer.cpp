@@ -32,10 +32,11 @@
 #include <ui/misc/CellGradients.hpp>
 #include <ui/Core.hpp>
 
-#include <argon/argon.hpp>
+#include <dankmeme.argon/argon.hpp>
 #include <cue/RepeatingBackground.hpp>
 #include <UIBuilder.hpp>
-#include <geode.devtools/include/API.hpp>
+// TODO v6: wait for devtools release
+// #include <geode.devtools/include/API.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -44,12 +45,12 @@ namespace globed {
 
 namespace { namespace $unity {
 
-static CCSize g_listMenuSize{};
-static CCSize g_listSize{};
-static CCSize g_cellSize{};
-static float g_sideButtonSize = 0.f;
-static float g_sideButtonOffset = 0.f;
-static constexpr float CELL_HEIGHT = 27.f;
+CCSize g_listMenuSize{};
+CCSize g_listSize{};
+CCSize g_cellSize{};
+float g_sideButtonSize = 0.f;
+float g_sideButtonOffset = 0.f;
+constexpr float CELL_HEIGHT = 27.f;
 
 class PlayerCell : public PlayerListCell {
 public:
@@ -1234,10 +1235,11 @@ bool GlobedMenuLayer::shouldAutoRefresh(float dt) {
         }
     }
 
-    // don't refresh if devtools is open
-    if (devtools::isOpen()) {
-        return false;
-    }
+    // TODO v6
+    // // don't refresh if devtools is open
+    // if (devtools::isOpen()) {
+    //     return false;
+    // }
 
     return true;
 }

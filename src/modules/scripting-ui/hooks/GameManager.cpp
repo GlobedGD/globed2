@@ -21,7 +21,7 @@ struct ObjectStringBuilder {
     osgetter(y, 3);
 #undef osgetter
 
-    gd::string build() {
+    std::string build() {
         _inner.push_back(';');
 #ifdef GEODE_IS_ANDROID
         return _inner;
@@ -39,7 +39,7 @@ struct GLOBED_MODIFY_ATTR SCGameManager : Modify<SCGameManager, GameManager> {
     }
 
     $override
-    gd::string stringForCustomObject(int id) {
+    std::string stringForCustomObject(int id) {
         auto type = globed::classifyObjectId(id);
         using enum globed::ScriptObjectType;
 

@@ -15,7 +15,7 @@ struct GLOBED_MODIFY_ATTR HookedCountObject : geode::Modify<HookedCountObject, C
     }
 
     $override
-    void triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno);
+    void triggerObject(GJBaseGameLayer* layer, int idk, std::vector<int> const* idunno);
 };
 
 }

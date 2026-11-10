@@ -16,7 +16,7 @@
 
 #include <Geode/ui/GeodeUI.hpp>
 #include <UIBuilder.hpp>
-#include <argon/argon.hpp>
+#include <dankmeme.argon/argon.hpp>
 
 using namespace geode::prelude;
 

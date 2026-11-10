@@ -14,7 +14,7 @@ bool LoadingPopup::init() {
     m_circle->fadeIn();
     this->setClosable(false);
 
-    auto closeSpr = m_closeBtn->getNormalImage();
+    auto closeSpr = m_closeBtn->getDisplayNode();
     closeSpr->setScale(closeSpr->getScale() * 0.8f);
 
     return true;
@@ -22,7 +22,7 @@ bool LoadingPopup::init() {
 
 void LoadingPopup::setTitle(geode::ZStringView title) {
     BasePopup::setTitle(title, "goldFont.fnt", 0.65f, 14.f);
-    m_title->limitLabelWidth(m_size.width * 0.9f, 0.65f, 0.2f);
+    m_title->setLimitLabelWidth(m_size.width * 0.9f, 0.65f, 0.2f);
 }
 
 void LoadingPopup::forceClose() {

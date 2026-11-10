@@ -112,11 +112,6 @@ public:
     // play a sound and return the channel associated with it
     Result<FMOD::Channel*> playSound(FMOD::Sound* sound);
 
-    // create a sound from raw PCM data
-    Result<FMOD::Sound*> createSound(const float* pcm, size_t samples, int sampleRate = VOICE_TARGET_SAMPLERATE);
-    // create a sound from a filepath
-    Result<FMOD::Sound*> createSound(const std::filesystem::path& path);
-
     void setActiveRecordingDevice();
     void setActiveRecordingDevice(int deviceId);
     void setActiveRecordingDevice(std::string_view guid);

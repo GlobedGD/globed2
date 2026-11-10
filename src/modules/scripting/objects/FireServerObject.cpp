@@ -9,7 +9,7 @@ namespace globed {
 
 FireServerObject::FireServerObject() {}
 
-void FireServerObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, gd::vector<int> const* p2) {
+void FireServerObject::triggerObject(GJBaseGameLayer* gjbgl, int p1, std::vector<int> const* p2) {
     auto res = this->decodePayload();
     if (!res) {
         log::warn("Failed to decode FireServerObject payload! {}", this);

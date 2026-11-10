@@ -6,7 +6,7 @@
 #include <ui/menu/GlobedMenuLayer.hpp>
 #include <ui/menu/ConsentPopup.hpp>
 
-#include <argon/argon.hpp>
+#include <dankmeme.argon/argon.hpp>
 
 using namespace geode::prelude;
 
