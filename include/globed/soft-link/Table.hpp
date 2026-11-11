@@ -13,7 +13,7 @@
 #include "ModuleDecl.hpp"
 
 #include <Geode/utils/function.hpp>
-#include <Geode/loader/Dispatch.hpp>
+#include <Geode/loader/EventExport.hpp>
 
 namespace globed {
 

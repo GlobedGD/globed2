@@ -14,6 +14,7 @@ struct GLOBED_MODIFY_ATTR HookedLoadingLayer : Modify<HookedLoadingLayer, Loadin
     struct Fields {
         bool m_finished = false;
         SystemTime m_startedAt;
+        AsyncLoad::TaskGroup m_group;
     };
 
     static void onModify(auto& self) {
@@ -29,9 +30,10 @@ struct GLOBED_MODIFY_ATTR HookedLoadingLayer : Modify<HookedLoadingLayer, Loadin
         }
 
         m_fields->m_startedAt = SystemTime::now();
-        PreloadManager::get().enterContext(
+        m_fields->m_group = PreloadManager::get().enterContext(
             m_fromRefresh ? PreloadContext::Reloading : PreloadContext::Loading
         );
+
         this->setLabelText("Globed: preloading assets..");
         this->schedule(schedule_selector(HookedLoadingLayer::advanceLoad), 0.0f);
     }
@@ -51,8 +53,13 @@ struct GLOBED_MODIFY_ATTR HookedLoadingLayer : Modify<HookedLoadingLayer, Loadin
 
     void advanceLoad(float) {
         auto& pm = PreloadManager::get();
+        auto& group = m_fields->m_group;
 
-        if (!pm.shouldPreload()) {
+        size_t total = group.totalTasks();
+        size_t pending = group.pendingTasks();
+        size_t loaded = total - pending;
+
+        if (pending == 0) {
             this->unschedule(schedule_selector(HookedLoadingLayer::advanceLoad));
             this->finishLoading();
             return;
@@ -70,14 +77,9 @@ struct GLOBED_MODIFY_ATTR HookedLoadingLayer : Modify<HookedLoadingLayer, Loadin
             this->setLabelText(buf.c_str());
         };
 
-        pm.loadNextBatch(PreloadOptions {
-            .callback = [&](const PreloadProgress& prog) {
-                updateLabel(prog.totalLoaded, prog.totalCount);
-                return true;
-            }
-        });
+        updateLabel(loaded, total);
 
-        updateLabel(pm.getLoadedCount(), pm.getTotalCount());
+        AsyncLoad::ALManager::get().lendMainThread();
     }
 
     void setLabelText(const char* text) {

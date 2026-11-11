@@ -320,9 +320,6 @@ namespace Preload {
     inline constexpr auto Enabled = "core.preload.enabled";
     inline constexpr auto Defer = "core.preload.defer";
     inline constexpr auto ForcePreload = "core.preload.force-preload";
-    inline constexpr auto BatchSize = "core.preload.batch-size";
-    inline constexpr auto UsePbos = "core.preload.use-pbos";
-    inline constexpr auto UseDirectDecode = "core.preload.use-direct-decode";
 }
 
 namespace General {

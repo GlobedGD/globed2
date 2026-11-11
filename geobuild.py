@@ -32,6 +32,7 @@ if sys.version_info < (3, 12):
 class GlobedConfig:
     cpm_overrides: dict[str, Path] = field(default_factory=dict)
     cmake_vars : dict[str, str] = field(default_factory=dict)
+    install: bool = False
     debug: bool = False
     release: bool = False
     asan: bool = False
@@ -67,6 +68,7 @@ class GlobedConfig:
 
         if "build" in cfg and isinstance(cfg["build"], dict):
             build = cfg["build"]
+            out.install = get_or(build, "install", out.install)
             out.debug = get_or(build, "debug", out.debug)
             out.release = get_or(build, "release", out.release)
             out.oss = get_or(build, "oss", out.oss)
@@ -390,6 +392,7 @@ def main(build: Build):
         "required": False
     })
     build.add_geode_dep("dankmeme.argon", ">=v2.0.0-alpha.1")
+    build.add_geode_dep("dankmeme.async-load-api", ">=v1.0.0")
 
     if 'scripting-ui' in gc.modules:
         build.add_geode_dep("alphalaneous.editortab_api", ">=2.1.0")
@@ -481,6 +484,9 @@ def main(build: Build):
     if gc.voice:
         build.silence_warnings_for("opus")
 
+    if gc.install:
+        build.enable_hooks()
+
     # setup unity build
     if gc.release:
         setup_unity(build, gc)
@@ -499,3 +505,9 @@ def main(build: Build):
             build.check_for_updates()
         except ImportError:
             print("!! Warning: 'requests' module not found, cannot check for updates")
+
+
+def post_build(ctx: HookContext):
+    if ctx.platform.is_android() and adb.is_device_connected():
+        adb.install(ctx.build_dir / "dankmeme.globed2.geode")
+        adb.launch_game()

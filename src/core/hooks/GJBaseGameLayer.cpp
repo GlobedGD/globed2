@@ -192,28 +192,43 @@ static std::pair<CCNode*, Label*> createLoadingOverlay() {
 }
 
 void GlobedGJBGL::setupAssetLoading() {
+    log::info("Preloading assets (deferred)");
+
     auto& pm = PreloadManager::get();
-    pm.enterContext(PreloadContext::Level);
+    auto taskGroup = pm.enterContext(PreloadContext::Level);
+    size_t total = taskGroup.totalTasks();
 
-    if (pm.shouldPreload()) {
-        log::info("Preloading assets (deferred)");
+    log::debug("{} items submitted for preloading", total);
 
+    if (total > 0) {
         // show an overlay while the game is frozen and loading resources,
         // so that the user knows what's going on
         auto [ov, label] = createLoadingOverlay();
         CCScene::get()->addChild(ov, 1000);
+        auto dir = CCDirector::get();
 
         auto start = Instant::now();
-        pm.loadEverything(PreloadOptions {
-            .callback = [&](const PreloadProgress& prog) {
-                StringBuffer<> buf;
-                buf.append("Loading... ({} / {})", prog.totalLoaded, prog.totalCount);
-                label->setText(buf.str());
-                return true;
-            }
-        });
+        auto lastDraw = start;
 
-        log::info("Asset preloading took {} ({} items loaded)", start.elapsed().toString(), pm.getLoadedCount());
+        while (true) {
+            AsyncLoad::ALManager::get().lendMainThread();
+
+            size_t inFlight = taskGroup.pendingTasks();
+            if (inFlight == 0) break;
+
+            if (lastDraw.elapsed() > Duration::fromMillis(25)) {
+                label->setText(fmt::format("Loading... ({} / {})", total - inFlight, total));
+
+                dir->m_bPaused = true;
+                dir->drawScene();
+                dir->m_bPaused = false;
+                lastDraw = Instant::now();
+            } else {
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            }
+        }
+
+        log::info("Asset preloading took {} ({} items loaded)", start.elapsed(), total);
     }
 
     pm.exitContext();

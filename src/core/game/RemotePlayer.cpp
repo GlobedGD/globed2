@@ -29,13 +29,13 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
     auto start = asp::Instant::now();
 
     Build<VisualPlayer>::create(gameLayer, this, m_parentNode, false, playerId == 0)
-        .id(fmt::format("{}-player1", playerId).c_str())
+        .id(fmt::format("{}-player1", playerId))
         .parent(m_parentNode)
         .visible(false)
         .store(m_player1);
 
     Build<VisualPlayer>::create(gameLayer, this, m_parentNode, true, playerId == 0)
-        .id(fmt::format("{}-player2", playerId).c_str())
+        .id(fmt::format("{}-player2", playerId))
         .parent(m_parentNode)
         .visible(false)
         .store(m_player2);
@@ -89,21 +89,22 @@ void RemotePlayer::beginDataUpdate() {
     m_pendingIcons = m_data.icons;
     m_data.icons = DEFAULT_PLAYER_DATA.icons;
 
-    PreloadOptions options{};
-    options.blocking = false;
-    options.completionCallback = [wself = this->weak_from_this()] {
+    log::trace("load async for {}", this->displayData().accountId);
+    auto& pm = PreloadManager::get();
+    pm.loadIcons(*m_pendingIcons, [wself = this->weak_from_this()](auto result) {
         auto self = wself.lock();
         if (!self) return;
+
+        if (!result) {
+            log::warn("Loading icons for {} failed!: {}", self->displayData().accountId, result.unwrapErr());
+            return;
+        }
 
         log::trace("finished load async for {}", self->displayData().accountId);
         self->m_data.icons = *self->m_pendingIcons;
         self->m_pendingIcons.reset();
         self->doUpdateIcons();
-    };
-
-    log::trace("load async for {}", this->displayData().accountId);
-    auto& pm = PreloadManager::get();
-    pm.loadIcons(*m_pendingIcons, std::move(options));
+    });
 }
 
 void RemotePlayer::doUpdateIcons() {

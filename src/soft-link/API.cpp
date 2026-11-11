@@ -1,5 +1,7 @@
-#define GEODE_DEFINE_EVENT_EXPORTS
+#include <AsyncLoad/FileUtils.hpp>
+#include <core/preload/PreloadManager.hpp>
 
+#define GEODE_DEFINE_EVENT_EXPORTS
 #include <globed/soft-link/API.hpp>
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/FriendListManager.hpp>
@@ -7,7 +9,6 @@
 #include <core/Core.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
-#include <core/preload/PreloadManager.hpp>
 #include <asp/format.hpp>
 
 #ifndef GLOBED_SOFTLINK_API_EVENT_EXPORTED
@@ -257,7 +258,7 @@ static MiscSubtable* makeMiscTable() {
     auto table = new MiscSubtable;
 
     GLOBED_VTABLE_INIT(table, fullPathForFilename, (std::string_view filename, bool ignoreSuffix) {
-        return PreloadManager::get().fullPathForFilename(filename, ignoreSuffix);
+        return AsyncLoad::fullPathForFilename(filename, ignoreSuffix);
     });
 
     return table;

@@ -22,10 +22,6 @@ SettingsManager::SettingsManager() {
     this->registerSetting(Setting::Preload::Enabled, true);
     this->registerSetting(Setting::Preload::Defer, false);
     this->registerSetting(Setting::Preload::ForcePreload, false);
-    // hidden preload settings
-    this->registerSetting(Setting::Preload::BatchSize, 0);
-    this->registerSetting(Setting::Preload::UsePbos, true);
-    this->registerSetting(Setting::Preload::UseDirectDecode, true);
 
     // Various
     this->registerSetting(Setting::General::Autoconnect, true);

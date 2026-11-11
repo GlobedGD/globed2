@@ -40,16 +40,14 @@ void LazyPlayerIcon::updateIcons(const Icons& icons) {
     m_realIcons = icons;
     m_waiting = true;
 
-    PreloadOptions opts{};
-    opts.blocking = false;
-    opts.completionCallback = [wref = WeakRef{this}] {
+    PreloadManager::get().loadIcon(icons.type, icons.id, [wref = WeakRef{this}](auto result) {
         auto self = wref.lock();
         if (!self) return;
 
-        self->onLoaded();
-    };
-
-    PreloadManager::get().loadIcon(icons.type, icons.id, std::move(opts));
+        if (result) {
+            self->onLoaded();
+        }
+    });
 }
 
 void LazyPlayerIcon::onLoaded() {
