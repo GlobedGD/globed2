@@ -41,9 +41,11 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
         .store(m_player2);
 
     auto taken = start.elapsed();
-    log::trace("Created player in {}", taken);
-#ifdef GLOBED_DEBUG
-#endif
+    if (taken.millis() > 10) {
+        log::warn("lagspike alert: created player {} in {}", playerId, taken);
+    } else {
+        GLOBED_DEBUG_TRACE("created player {} in {}", playerId, taken);
+    }
 
     m_player1->m_remotePlayer = this;
     m_player2->m_remotePlayer = this;

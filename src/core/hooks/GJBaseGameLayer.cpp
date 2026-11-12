@@ -1449,7 +1449,7 @@ void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
     fields.m_lastServerUpdate = fields.m_timeCounter;
 
     for (auto& player : message.players) {
-        log::debug("receive data for {}: {}", player.accountId, player.player1->position);
+        // log::debug("receive data for {}: {}", player.accountId, player.player1->position);
         if (player.accountId <= 0) continue;
 
         if (!fields.m_players.contains(player.accountId)) {

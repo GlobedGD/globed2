@@ -30,4 +30,11 @@
 #endif
 
 #define GLOBED_MODIFY_ATTR GLOBED_DLL GLOBED_NOVTABLE
-#define GLOBED_API_EXT_FUNCTIONS
+
+#ifdef GLOBED_DEBUG
+# define GLOBED_DEBUG_LOG(...) ::geode::log::debug(__VA_ARGS__)
+# define GLOBED_DEBUG_TRACE(...) ::geode::log::trace(__VA_ARGS__)
+#else
+# define GLOBED_DEBUG_LOG(...) do {} while(0)
+# define GLOBED_DEBUG_TRACE(...) do {} while(0)
+#endif
