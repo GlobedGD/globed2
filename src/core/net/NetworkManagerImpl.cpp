@@ -29,6 +29,7 @@
 #ifdef GEODE_IS_ANDROID
 # include <jni.h>
 # include <Geode/cocos/platform/android/jni/JniHelper.h>
+# include <android/api-level.h>
 #endif
 #ifdef QUNET_TLS_SUPPORT
 # include <xtls/xtls.hpp>
@@ -1301,11 +1302,54 @@ LockedConnInfo NetworkManagerImpl::connInfo() const {
     return LockedConnInfo{m_connInfo.lock()};
 }
 
+/// Returns if the URL is using a private IP address (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+static bool isUrlLan(std::string_view url) {
+    auto protoEnd = url.find("://");
+    if (protoEnd != url.npos) {
+        url.remove_prefix(protoEnd + 3);
+    }
+
+    auto portPos = url.find(':');
+    if (portPos != url.npos) {
+        url.remove_suffix(url.size() - portPos);
+    }
+
+    if (auto ip = qsox::Ipv4Address::parse(url)) {
+        return ip.unwrap().isPrivate();
+    }
+
+    return false;
+}
+
+static bool shouldRequestLanPermission(std::string_view url) {
+#ifdef GEODE_IS_ANDROID
+    if (!isUrlLan(url)) return false;
+
+    int api = android_get_device_api_level();
+
+    // permission exists since api 36
+    return api >= 36 && !permission::getPermissionStatus(permission::Permission::AccessLocalNetwork);
+#else
+    return false;
+#endif
+}
+
 Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
     if (!m_centralConn) return Err("NetworkManagerImpl not yet initialized");
 
     if (!m_centralConn->disconnected()) {
         return Err("Already connected to central server");
+    }
+
+    if (shouldRequestLanPermission(url)) {
+        async::spawn(
+            arc::sleep(Duration::fromMillis(500)),
+            [] {
+                permission::requestPermission(permission::Permission::AccessLocalNetwork, [](bool granted) {});
+            }
+        );
+
+        return Err("Permission to access local network is required to connect to this server. Please grant the permission and try again.");
     }
 
     FriendListManager::get().refresh();

@@ -21,7 +21,7 @@ import os
 # minimum required geode, can be a commit or a tag
 REQUIRED_GEODE_VERSION = "v5.10.0"
 XTLS_VERSION = "v1.0.0"
-QUNET_VERSION = "v1.0.0"
+QUNET_VERSION = "v1.0.1"
 SERVER_SHARED_VERSION = "v7"
 CUE_VERSION = "e80ac94"
 

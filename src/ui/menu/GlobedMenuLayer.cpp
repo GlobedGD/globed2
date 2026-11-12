@@ -334,7 +334,10 @@ bool GlobedMenuLayer::init() {
             auto url = sm.getActiveServer().url;
 
             if (auto err = NetworkManager::get().connectCentral(url).err()) {
-                log::error("failed to connect to central server: {}", err);
+                globed::alert(
+                    "Globed Error",
+                    fmt::format("Failed to connect to server <cy>{}</c>:\n\n{}", url, *err)
+                );
                 return;
             }
         })
