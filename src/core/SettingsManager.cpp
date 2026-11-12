@@ -19,7 +19,7 @@ SettingsManager::SettingsManager() {
     this->loadSaveSlots();
 
     // Preload
-    this->registerSetting(Setting::Preload::Enabled, true);
+    this->registerSetting(Setting::Preload::Enabled, false);
     this->registerSetting(Setting::Preload::Defer, false);
     this->registerSetting(Setting::Preload::ForcePreload, false);
 
