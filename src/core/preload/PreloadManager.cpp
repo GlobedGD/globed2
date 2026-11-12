@@ -167,7 +167,7 @@ void PreloadManager::submitItem(AsyncLoad::TaskGroup& group, PreloadItem item, C
 AsyncLoad::TaskHandle PreloadManager::submitItemIndependent(PreloadItem item, Callback callback) {
     auto& alm = AsyncLoad::ALManager::get();
     return alm.loadSpritesheet(item.image, [this, cb = std::move(callback), iconType = item.iconType, iconId = item.iconId](auto result) mutable {
-        cb(this->onSheetLoaded(std::move(result), iconType, iconId));
+        if (cb) cb(this->onSheetLoaded(std::move(result), iconType, iconId));
     }, AsyncLoad::SpritesheetMergeBehavior::Never);
 }
 
