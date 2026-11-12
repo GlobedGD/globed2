@@ -81,7 +81,7 @@ void RemotePlayer::beginDataUpdate() {
     m_player2->updateDisplayData();
 
     // immediately update icons if everything has been preloaded or if they are defaults
-    bool preloaded = PreloadManager::get().iconsLoaded();
+    bool preloaded = PreloadManager::get().areAllIconsLoaded();
     if (preloaded || !m_dataInitialized) {
         this->doUpdateIcons();
         return;
@@ -93,6 +93,8 @@ void RemotePlayer::beginDataUpdate() {
 
     log::trace("load async for {}", this->displayData().accountId);
     auto& pm = PreloadManager::get();
+
+    // note: this can complete eagerly, immediately
     pm.loadIcons(*m_pendingIcons, [wself = this->weak_from_this()](auto result) {
         auto self = wself.lock();
         if (!self) return;

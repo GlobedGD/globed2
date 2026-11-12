@@ -21,7 +21,7 @@ CCTexture2D* HookedGameManager::loadIcon(int id, int type, int requestId) {
 
     auto texture = GameManager::loadIcon(id, type, -1);
     if (texture) {
-        pm.setCachedIcon((int) type, id, texture);
+        pm.setCachedIcon(type, id, texture);
     } else {
         log::warn("loadIcon returned a null texture, icon ID = {}, icon type = {}", id, type);
     }

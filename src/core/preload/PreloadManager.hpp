@@ -60,12 +60,17 @@ public:
     AsyncLoad::TaskGroup enterContext(PreloadContext context);
     void exitContext();
 
+    // Submits a task to load this item and pushes into group. May complete this task eagerly and add nothing to the group.
     void submitItem(AsyncLoad::TaskGroup& group, PreloadItem item, Callback callback = {});
+
+    // Unlike submitItem, this does not add the task into a group. It also may complete eagerly and return a null handle.
     AsyncLoad::TaskHandle submitItemIndependent(PreloadItem item, Callback callback = {});
 
     // Loads the given icons asynchronously
+    // This may complete eagerly, and invoke the callback immediately
     void loadIcons(PlayerIconData icons, Callback callback);
     // Loads the given icon asynchronously
+    // This may complete eagerly, and invoke the callback immediately
     void loadIcon(IconType ty, int icon, Callback callback);
 
     /// Returns whether all death effects have been loaded
@@ -73,7 +78,9 @@ public:
     /// Returns whether a specific death effect has been loaded
     bool deathEffectLoaded(int id);
     /// Returns whether all icons have been loaded
-    bool iconsLoaded();
+    bool areAllIconsLoaded();
+    /// Returns whether this icon has been loaded
+    bool isIconLoaded(IconType ty, int id);
 
     cocos2d::CCTexture2D* getCachedIcon(int iconType, int id);
     void setCachedIcon(int iconType, int id, geode::Ref<cocos2d::CCTexture2D> texture);
@@ -89,7 +96,7 @@ private:
 
     PreloadContext m_context = PreloadContext::None;
 
-    bool m_iconsLoaded = false;
+    bool m_allIconsLoaded = false;
     bool m_deathEffectsLoaded = false;
     asp::SpinLock<geode::utils::StringSet> m_loadedFrames;
     std::unordered_map<std::pair<int, int>, geode::Ref<cocos2d::CCTexture2D>, PairIntIntHash> m_loadedIcons;

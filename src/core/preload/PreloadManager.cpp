@@ -63,6 +63,10 @@ PreloadManager::PreloadManager() {}
 
 PreloadManager::~PreloadManager() {}
 
+static bool shouldLoadDeathEffects() {
+    return globed::setting<bool>(Setting::Player::DeathEffects) && !globed::setting<bool>(Setting::Player::DefaultDeathEffects);
+}
+
 AsyncLoad::TaskGroup PreloadManager::initLoadQueue() {
     auto memoryMb = this->getAvailableMemory() / 1024 / 1024;
     uint64_t mbForIcons = 300;
@@ -81,6 +85,7 @@ AsyncLoad::TaskGroup PreloadManager::initLoadQueue() {
 
     auto gm = globed::singleton<GameManager>();
     AsyncLoad::TaskGroup group;
+    group.setEagerDelivery(true);
 
     if (!globed::setting<bool>("core.preload.enabled") || Mod::get()->getSettingValue<bool>("force-no-preload")) {
         // preloading is disabled, skip everything
@@ -101,7 +106,7 @@ AsyncLoad::TaskGroup PreloadManager::initLoadQueue() {
 
     // Death effects
     // skip if death effects are disabled in settings / default death effects are enabled / low on ram
-    bool loadDe = globed::setting<bool>("core.player.death-effects") && !globed::setting<bool>("core.player.default-death-effects");
+    bool loadDe = shouldLoadDeathEffects();
     if (loadDe && !enoughForEffects) {
         log::warn("PreloadManager: skipping death effects due to low system memory ({} MB free)", memoryMb);
         loadDe = false;
@@ -115,8 +120,8 @@ AsyncLoad::TaskGroup PreloadManager::initLoadQueue() {
         }
     }
 
-    if (!m_iconsLoaded) {
-        m_iconsLoaded = true;
+    if (!m_allIconsLoaded) {
+        m_allIconsLoaded = true;
 
         auto addIcons = [&](IconType ty, int startIdx, int endIdx) {
             for (int id = startIdx; id <= endIdx; id++) {
@@ -156,18 +161,17 @@ AsyncLoad::TaskGroup PreloadManager::initLoadQueue() {
 }
 
 void PreloadManager::submitItem(AsyncLoad::TaskGroup& group, PreloadItem item, Callback callback) {
-    auto& alm = AsyncLoad::ALManager::get();
-
-    group.add(alm.loadSpritesheet(item.image, [this, cb = std::move(callback), iconType = item.iconType, iconId = item.iconId](auto result) mutable {
-        auto res = this->onSheetLoaded(std::move(result), iconType, iconId);
-        if (cb) cb(res);
-    }, AsyncLoad::SpritesheetMergeBehavior::Never));
+    auto task = this->submitItemIndependent(std::move(item), std::move(callback));
+    if (task) {
+        group.add(std::move(task));
+    }
 }
 
 AsyncLoad::TaskHandle PreloadManager::submitItemIndependent(PreloadItem item, Callback callback) {
     auto& alm = AsyncLoad::ALManager::get();
-    return alm.loadSpritesheet(item.image, [this, cb = std::move(callback), iconType = item.iconType, iconId = item.iconId](auto result) mutable {
-        if (cb) cb(this->onSheetLoaded(std::move(result), iconType, iconId));
+    return alm.loadSpritesheetEager(item.image, [this, cb = std::move(callback), iconType = item.iconType, iconId = item.iconId](auto result) mutable {
+        auto res = this->onSheetLoaded(std::move(result), iconType, iconId);
+        if (cb) cb(std::move(res));
     }, AsyncLoad::SpritesheetMergeBehavior::Never);
 }
 
@@ -205,10 +209,13 @@ Result<> PreloadManager::onSheetLoaded(Result<AsyncLoad::LoadedSpritesheet> resu
 void PreloadManager::loadIcons(PlayerIconData icons, Callback callback) {
     AsyncLoad::TaskGroup group;
     group.setFailBehavior(AsyncLoad::TaskGroupFailBehavior::Late);
+    group.setEagerDelivery(true);
 
     auto doPush = [&](IconType ty, int id) {
+        if (this->isIconLoaded(ty, id)) return;
+
         if (auto item = makeIconItem(ty, id)) {
-            group.add(this->submitItemIndependent(std::move(*item)));
+            this->submitItem(group, std::move(*item));
         }
     };
 
@@ -222,9 +229,8 @@ void PreloadManager::loadIcons(PlayerIconData icons, Callback callback) {
     doPush(IconType::Swing, icons.swing);
     doPush(IconType::Jetpack, icons.jetpack);
 
-    bool loadDeath = !m_deathEffectsLoaded && icons.deathEffect > 1;
-    if (loadDeath) {
-        group.add(this->submitItemIndependent(makeDeathEffectItem(icons.deathEffect)));
+    if (!this->deathEffectLoaded(icons.deathEffect) && shouldLoadDeathEffects()) {
+        this->submitItem(group, makeDeathEffectItem(icons.deathEffect));
     }
 
     group.close([cb = std::move(callback)](AsyncLoad::TaskGroupResult tgresult) mutable {
@@ -246,6 +252,11 @@ void PreloadManager::loadIcons(PlayerIconData icons, Callback callback) {
 
 void PreloadManager::loadIcon(IconType ty, int icon, Callback callback) {
     GLOBED_ASSERT(ty != IconType::DeathEffect);
+
+    if (this->isIconLoaded(ty, icon)) {
+        if (callback) callback(Ok());
+        return;
+    }
 
     if (auto item = makeIconItem(ty, icon)) {
         this->submitItemIndependent(std::move(*item), std::move(callback));
@@ -275,11 +286,20 @@ bool PreloadManager::deathEffectsLoaded() {
 }
 
 bool PreloadManager::deathEffectLoaded(int id) {
-    return m_deathEffectsLoaded || m_loadedDeathEffects.contains(id);
+    return id == 1 || m_deathEffectsLoaded || m_loadedDeathEffects.contains(id);
 }
 
-bool PreloadManager::iconsLoaded() {
-    return m_iconsLoaded;
+bool PreloadManager::areAllIconsLoaded() {
+    return m_allIconsLoaded;
+}
+
+bool PreloadManager::isIconLoaded(IconType ty, int id) {
+    if (m_allIconsLoaded) {
+        return true;
+    }
+
+    auto key = std::make_pair((int)ty, id);
+    return m_loadedIcons.contains(key);
 }
 
 CCTexture2D* PreloadManager::getCachedIcon(int iconType, int id) {
@@ -333,7 +353,7 @@ uint64_t PreloadManager::getAvailableMemory() {
 void PreloadManager::releaseTextures() {
     m_loadedIcons.clear();
     m_loadedFrames.lock()->clear();
-    m_iconsLoaded = false;
+    m_allIconsLoaded = false;
     m_deathEffectsLoaded = false;
     m_loadedDeathEffects.clear();
 }

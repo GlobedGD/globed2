@@ -10,7 +10,7 @@ namespace globed {
 static bool shouldSkipLoading(const cue::Icons& icons) {
     auto& pm = PreloadManager::get();
 
-    return pm.iconsLoaded() || pm.getCachedIcon((int)icons.type, icons.id);
+    return pm.areAllIconsLoaded() || pm.getCachedIcon((int)icons.type, icons.id);
 }
 
 bool LazyPlayerIcon::init(const Icons& icons) {
@@ -40,6 +40,7 @@ void LazyPlayerIcon::updateIcons(const Icons& icons) {
     m_realIcons = icons;
     m_waiting = true;
 
+    // note: this can complete eagerly, immediately
     PreloadManager::get().loadIcon(icons.type, icons.id, [wref = WeakRef{this}](auto result) {
         auto self = wref.lock();
         if (!self) return;
