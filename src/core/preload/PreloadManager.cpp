@@ -112,14 +112,6 @@ AsyncLoad::TaskGroup PreloadManager::initLoadQueue() {
         loadDe = false;
     }
 
-    if (!m_deathEffectsLoaded && loadDe) {
-        m_deathEffectsLoaded = true;
-
-        for (size_t i = 2; i < 21; i++) {
-            this->submitItem(group, makeDeathEffectItem(i));
-        }
-    }
-
     if (!m_allIconsLoaded) {
         m_allIconsLoaded = true;
 
@@ -153,6 +145,14 @@ AsyncLoad::TaskGroup PreloadManager::initLoadQueue() {
         //     m_loadQueue.emplace_back(asp::BoxedString::format("streak_{:02}_001.png", i));
         //     m_loadQueue.back().iconType = IconType::Special;
         // }
+    }
+
+    if (!m_deathEffectsLoaded && loadDe) {
+        m_deathEffectsLoaded = true;
+
+        for (size_t i = 2; i < 21; i++) {
+            this->submitItem(group, makeDeathEffectItem(i));
+        }
     }
 
     group.close([](auto) {});
