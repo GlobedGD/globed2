@@ -39,7 +39,7 @@ void InputPopup::show() {
 
     m_mySize.height = 120.f;
 
-    m_input->setWidth(m_mySize.width - 30.f);
+    m_input->setContentWidth(m_mySize.width - 30.f);
     m_input->setPosition(m_mySize.width / 2.f, m_mySize.height / 2.f + 5.f);
     m_input->setString(m_defaultText);
     m_submitBtn->setPosition(m_mySize.width / 2.f, 24.f);
