@@ -33,41 +33,7 @@ static inline bool lerpDebug() {
 
 }
 
-VisualPlayer::VisualPlayer() : PlayerObject(geode::ZeroConstructor, 0)
-{
-    // TODO: this is a very temp fix, complete this and bring this to geode bindings
-    // gobj incomplete
-    m_boxOffsetCalculated = true;
-    m_scaleX = 1.0f;
-    m_scaleY = 1.0f;
-    m_unk4C0 = -1;
-    m_unk4C4 = -1;
-    m_unk4C8 = -1;
-    m_unk4CC = -1;
-    m_unk50C = 1.0f;
-    m_defaultZLayer = ZLayer::T1;
-    m_pixelScaleX = 1.0f;
-    m_areaOpacityValue = 1.0f;
-
-    // pobj
-    m_lastCollisionBottom = -1;
-    m_lastCollisionTop = -1;
-    m_lastCollisionLeft = -1;
-    m_lastCollisionRight = -1;
-    m_unk50C = -1;
-    m_unk510 = -1;
-    new (&m_rotateObjectsRelated) decltype(m_rotateObjectsRelated)();
-    new (&m_potentialSlopeMap) decltype(m_potentialSlopeMap)();
-    m_rotateSpeed = 1.0f;
-    new (&m_usedRings) decltype(m_usedRings)();
-    m_playerSpeed = 0.9f;
-    m_platformerVelocityRelated = 1.0f;
-    new (&m_touchedRings) decltype(m_touchedRings)();
-    m_gravityMod = 1.0f;
-    new (&m_touchedForceIds) decltype(m_touchedForceIds)();
-    new (&m_holdingButtons) decltype(m_holdingButtons)();
-    new (&m_currentRobotAnimation) std::string("run");
-}
+VisualPlayer::VisualPlayer() {}
 
 bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* playerNode, bool isSecond, bool localPlayer) {
     using namespace $unity;
@@ -140,7 +106,7 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, RemotePlayer* rp, CCNode* pl
 
     if (lerpDebug() && !m_isLocalPlayer) {
         Build<CCDrawNode>::create()
-            .id(fmt::format("debug-trajectory"_spr).c_str())
+            .id(fmt::format("debug-trajectory"_spr))
             .parent(gameLayer->m_objectLayer)
             .store(m_playerTrajectory);
 
