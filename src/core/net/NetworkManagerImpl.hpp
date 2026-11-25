@@ -72,7 +72,6 @@ struct GameServerJoinRequest {
     SessionId id;
     uint8_t serverId;
     bool platformer;
-    bool editorCollab;
     bool triedConnecting = false;
 };
 
@@ -355,7 +354,7 @@ public:
     void sendAdminUpdateUser(int32_t accountId, const std::string& username, int16_t cube, uint16_t color1, uint16_t color2, uint16_t glowColor);
 
     // Both servers
-    void sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab = false);
+    void sendJoinSession(SessionId id, int author, bool platformer);
     void sendLeaveSession();
 
     void sendEvent(std::string_view id, std::vector<uint8_t> data, const EventOptions& options);
@@ -452,9 +451,9 @@ private:
     void handleLoginFailed(schema::main::LoginFailedReason reason);
     void showDisconnectCause(bool reconnecting, bool wasConnected);
 
-    void joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, uint8_t serverId, SessionId id, bool platformer, bool editorCollab);
-    void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false, bool editorCollab = false);
-    void sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab);
+    void joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, uint8_t serverId, SessionId id, bool platformer);
+    void sendGameLoginRequest(SessionId id = SessionId{}, bool platformer = false);
+    void sendGameJoinRequest(SessionId id, bool platformer);
 
     void registerEventWith(std::string_view id, EventEncoder& encoder);
 

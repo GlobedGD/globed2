@@ -12,57 +12,52 @@ namespace globed {
 
 GLOBED_EXPORT_SINGLETON(RoomManager, SingletonLeakBase<RoomManager>);
 
-std::optional<SessionId> RoomManager::getEditorCollabId(GJGameLevel* level) {
-    int64_t id = level->m_levelID;
-
-    SetupLevelIdEvent().send(level, &id);
-
-    if (id == level->m_levelID) {
-        return std::nullopt;
-    } else {
-        return SessionId{(uint64_t)id};
+LevelId RoomManager::getNamespacedLevelId(GJGameLevel* level) {
+    LevelId lid{};
+    ResolveLevelIdEvent().send(level, &lid);
+    if (lid.id != 0 || lid.ns != 0) {
+        // custom namespace by another mod
+        return lid;
     }
+
+    // editorcollab uses old event
+    int64_t id = level->m_levelID;
+    SetupLevelIdEvent().send(level, &id);
+    if (id != level->m_levelID) {
+        return LevelId::fromLegacyEC(id);
+    }
+
+    return LevelId::fromVanilla(level->m_levelID);
 }
 
 SessionId RoomManager::makeSessionId(int levelId) {
-    return SessionId::fromParts(this->pickServerId().value_or(0), this->getRoomId(), levelId);
+    return SessionId(LevelId::fromVanilla(levelId), this->pickServerId().value_or(0), this->getRoomId());
 }
 
 std::optional<uint8_t> RoomManager::pickServerId() {
     // depending on whether we are in a room or not, we need to either get the room's server ID or our preferred
     if (this->isInGlobal()) {
-        if (auto serverId = NetworkManagerImpl::get().getPreferredServer()) {
-            return *serverId;
-        } else {
-            return std::nullopt;
-        }
+        return NetworkManagerImpl::get().getPreferredServer();
     } else {
         auto state = m_state.lock();
         return state->m_settings.serverId;
     }
 }
 
-void RoomManager::joinLevel(int levelId, int author, bool platformer, bool editorCollab) {
+void RoomManager::joinLevel(LevelId levelId, int author, bool platformer) {
     auto& nm = NetworkManagerImpl::get();
 
     if (auto srv = this->pickServerId()) {
         // construct a session ID
-        auto id = SessionId::fromParts(*srv, this->getRoomId(), levelId);
-        nm.sendJoinSession(id, author, platformer, editorCollab);
+        auto id = SessionId(levelId, *srv, this->getRoomId());
+        nm.sendJoinSession(id, author, platformer);
     } else {
         log::warn("Failed to choose a server to join the level, no servers available");
     }
 }
 
-void RoomManager::joinLevel(GJGameLevel* level) {
-    auto eid = getEditorCollabId(level);
-
-    if (eid) {
-        auto& nm = NetworkManagerImpl::get();
-        nm.sendJoinSession(*eid, level->m_accountID, level->isPlatformer(), true);
-    } else {
-        this->joinLevel(level->m_levelID, level->m_accountID, level->isPlatformer(), false);
-    }
+void RoomManager::joinLevel(GJGameLevel* level, LevelId levelId) {
+    this->joinLevel(levelId, level->m_accountID, level->isPlatformer());
 }
 
 void RoomManager::leaveLevel() {
@@ -184,7 +179,7 @@ RoomManager::RoomManager() {
         state->m_settings = msg.settings;
         state->m_teams = msg.teams;
         state->m_roomOwner = msg.roomOwner;
-        state->m_pinnedLevel = SessionId{msg.pinnedLevel};
+        state->m_pinnedLevel = SessionId::fromVanilla{msg.pinnedLevel};
         state->m_roomName = msg.roomName;
         state->m_passcode = msg.passcode;
 

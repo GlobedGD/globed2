@@ -1168,4 +1168,11 @@ $implDecode(msg::KickedMessage, main::KickedMessage::Reader& reader) {
     return out;
 }
 
+/// Session ID
+
+$implEncode(const SessionId& id, shared::SessionId::Builder& data) {
+    data.set
+}
+
+
 }

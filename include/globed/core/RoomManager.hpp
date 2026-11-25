@@ -15,14 +15,14 @@ class GLOBED_DLL RoomManager : public SingletonLeakBase<RoomManager> {
 public:
     // helper funcs
 
-    static std::optional<SessionId> getEditorCollabId(GJGameLevel* level);
+    static LevelId getNamespacedLevelId(GJGameLevel* level);
     SessionId makeSessionId(int levelId);
     std::optional<uint8_t> pickServerId();
 
     // joining / leaving levels
 
-    void joinLevel(int levelId, int author, bool platformer, bool editorCollab);
-    void joinLevel(GJGameLevel* level);
+    void joinLevel(LevelId levelId, int author, bool platformer);
+    void joinLevel(GJGameLevel* level, LevelId levelId);
 
     void leaveLevel();
 

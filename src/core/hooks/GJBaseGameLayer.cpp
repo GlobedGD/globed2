@@ -85,10 +85,9 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
 
     // determine if mulitplayer should be active
 
-    auto ecId = RoomManager::get().getEditorCollabId(level);
-    bool isEditorCollab = ecId && ecId->asU64() && ecId->asU64() != (uint64_t)level->m_levelID;
+    auto levelId = RoomManager::get().getNamespacedLevelId(level);
 
-    fields.m_active = nm.isConnected() && (level->m_levelID != 0 || isEditorCollab);
+    fields.m_active = nm.isConnected() && !levelId.isZero();
     if (level->m_levelType == GJLevelType::Editor && !g_settings.editorEnabled) {
         fields.m_active = false;
     }
@@ -99,7 +98,7 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     nm.invalidateIcons();
 
     if (fields.m_active) {
-        RoomManager::get().joinLevel(level);
+        RoomManager::get().joinLevel(level, levelId);
         Core::get().onJoinLevel(this, level, editor);
     }
 

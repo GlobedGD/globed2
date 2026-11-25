@@ -22,7 +22,7 @@ import os
 REQUIRED_GEODE_VERSION = "v5.10.0"
 XTLS_VERSION = "v1.0.0"
 QUNET_VERSION = "v1.0.1"
-SERVER_SHARED_VERSION = "v7"
+SERVER_SHARED_VERSION = "v8"
 CUE_VERSION = "e80ac94"
 
 if sys.version_info < (3, 12):
@@ -435,7 +435,7 @@ def main(build: Build):
 
     ## Add cmake dependencies ##
 
-    build.add_cpm_dep("capnproto/capnproto", "v1.4.0", {
+    build.add_cpm_dep("capnproto/capnproto", "v1.5.0", {
         "CAPNP_LITE": "ON",
         "BUILD_TESTING": "OFF",
         "WITH_FIBERS": "OFF",

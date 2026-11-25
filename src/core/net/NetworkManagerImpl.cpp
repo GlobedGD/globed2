@@ -890,13 +890,13 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
                 m_gameConn->disconnect();
             } else if (gameEstablished) {
                 // connected to the same server as requested, simply send a join request
-                this->sendGameJoinRequest(cur->id, cur->platformer, cur->editorCollab);
+                this->sendGameJoinRequest(cur->id, cur->platformer);
                 lastReq = std::move(cur);
                 cur.reset();
             } else {
-                log::info("Sending login request to game server ({}, session {}) ..", cur->url, cur->id.asU64());
+                log::info("Sending login request to game server ({}, session {}) ..", cur->url, cur->id);
                 // connected but not yet logged in, send a login request
-                this->sendGameLoginRequest(cur->id, cur->platformer, cur->editorCollab);
+                this->sendGameLoginRequest(cur->id, cur->platformer);
                 lastReq = std::move(cur);
                 cur.reset();
             }
@@ -2304,8 +2304,8 @@ void NetworkManagerImpl::sendAdminUpdateUser(int32_t accountId, const std::strin
 
 // Game server messages
 
-void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, bool editorCollab) {
-    log::debug("sendGameLoginRequest(id = {}, platformer = {}, editorCollab = {}) ..", id.asU64(), platformer, editorCollab);
+void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer) {
+    log::debug("sendGameLoginRequest(id = {}, platformer = {}) ..", id, platformer);
 
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto login = msg.initLogin();
@@ -2322,23 +2322,21 @@ void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer, boo
 
         gatherUserSettings(login.initSettings());
 
-        if (id.asU64() != 0) {
-            login.setSessionId(id);
+        if (!id.isZero()) {
+            data::encode(id, login.initSession());
             login.setPasscode(RoomManager::get().getPasscode());
             login.setPlatformer(platformer);
-            login.setEditorCollab(editorCollab);
         }
     });
 }
 
-void NetworkManagerImpl::sendGameJoinRequest(SessionId id, bool platformer, bool editorCollab) {
-    log::debug("sendGameJoinRequest(id = {}, platformer = {}, editorCollab = {}) ..", id.asU64(), platformer, editorCollab);
+void NetworkManagerImpl::sendGameJoinRequest(SessionId id, bool platformer) {
+    log::debug("sendGameJoinRequest(id = {}, platformer = {}) ..", id, platformer);
 
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto join = msg.initJoinSession();
-        join.setSessionId(id);
+        data::encode(id, join.initSession());
         join.setPlatformer(platformer);
-        join.setEditorCollab(editorCollab);
         join.setPasscode(RoomManager::get().getPasscode());
     });
 }
@@ -2469,30 +2467,29 @@ void NetworkManagerImpl::registerEventWith(std::string_view id, EventEncoder& en
     }
 }
 
-void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platformer, bool editorCollab) {
+void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platformer) {
     auto info = this->connInfo();
     if (!info) {
         log::error("Cannot send join session, not connected");
         return;
     }
 
-    log::debug("Joining session with ID {} (editorcollab: {})", id.asU64(), editorCollab);
+    log::debug("Joining session with ID {}", id);
 
-    if (!editorCollab) {
+    if (auto lid = id.asLegacyVanillaId()) {
         this->sendToCentral([&](CentralMessage::Builder& msg) {
             auto joinSession = msg.initJoinSession();
-            joinSession.setSessionId(id);
+            joinSession.setSessionId(*lid);
             joinSession.setAuthorId(author);
         });
     }
 
     // find the game server
-    // TODO: editor collab levels are currently hardcoded to use server ID 0
-    uint8_t serverId = editorCollab ? 0 : id.serverId();
+    uint8_t serverId = id.serverId;
 
     for (auto& srv : info->m_gameServers) {
         if (srv.second.id == serverId) {
-            this->joinSessionWith(info, srv.second.url, serverId, id, platformer, editorCollab);
+            this->joinSessionWith(info, srv.second.url, serverId, id, platformer);
             return;
         }
     }
@@ -2502,13 +2499,12 @@ void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platform
     toastError("Globed: join failed, no server with ID {}", serverId);
 }
 
-void NetworkManagerImpl::joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, uint8_t serverId, SessionId id, bool platformer, bool editorCollab) {
+void NetworkManagerImpl::joinSessionWith(LockedConnInfo& info, std::string_view serverUrl, uint8_t serverId, SessionId id, bool platformer) {
     GameServerJoinRequest req;
     req.url = serverUrl;
     req.id = id;
     req.serverId = serverId;
     req.platformer = platformer;
-    req.editorCollab = editorCollab;
     (void) m_gameServerJoinTx->trySend(std::move(req));
 }
 
