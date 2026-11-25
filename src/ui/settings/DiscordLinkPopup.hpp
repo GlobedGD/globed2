@@ -7,7 +7,9 @@
 #include <ui/misc/LazyPlayerIcon.hpp>
 
 #include <Geode/ui/NineSlice.hpp>
+#include <Geode/utils/async.hpp>
 #include <cue/LoadingCircle.hpp>
+#include <dankmeme.argon/argon.hpp>
 
 namespace globed {
 
@@ -33,16 +35,19 @@ protected:
     bool m_activelyWaiting = false;
     bool m_linked = false;
 
-    MessageListener<msg::DiscordLinkStateMessage> m_stateListener;
-    MessageListener<msg::DiscordOauthUrlMessage> m_oauthListener;
-    MessageListener<msg::DiscordUnlinkResultMessage> m_unlinkListener;
+    geode::async::TaskHolder<std::optional<argon::discord::UserData>> m_stateTask;
+    geode::async::TaskHolder<geode::Result<std::string>> m_linkStartTask;
+    geode::async::TaskHolder<geode::Result<>> m_unlinkTask;
 
     bool init() override;
     void onClose(CCObject*) override;
 
-    void onStateLoaded(uint64_t id, const std::string& username, const std::string& avatarUrl);
+    void onStateLoaded(std::optional<argon::discord::UserData> data);
     // void onAttemptReceived(uint64_t id, const std::string& username, const std::string& avatarUrl);
+    void startOauthFlow();
+    void startUnlink();
     void onOauthUrlReceived(ZStringView url);
+    void notifyCentral();
 
     void addLinkingText();
 

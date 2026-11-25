@@ -11,6 +11,7 @@
 #include <cue/Util.hpp>
 
 using namespace geode::prelude;
+using namespace argon::discord;
 
 namespace globed {
 
@@ -116,33 +117,6 @@ bool DiscordLinkPopup::init() {
 
     m_background = cue::attachBackground(m_playerCard);
 
-    auto& nm = NetworkManagerImpl::get();
-
-    m_stateListener = nm.listen<msg::DiscordLinkStateMessage>([this](const auto& msg) {
-        this->onStateLoaded(msg.id, msg.username, msg.avatarUrl);
-    });
-
-    m_oauthListener = nm.listen<msg::DiscordOauthUrlMessage>([this](const auto& msg) {
-        this->onOauthUrlReceived(msg.url);
-    });
-
-    m_unlinkListener = nm.listen<msg::DiscordUnlinkResultMessage>([this](const auto& msg) {
-        if (msg.success) {
-            globed::alert(
-                "Unlink Successful",
-                "<cg>Your Discord account has been successfully unlinked!</c>"
-            );
-            this->onClose(nullptr);
-        } else {
-            globed::alertFormat(
-                "Unlink Failed",
-                "Failed to unlink your Discord account: <cy>{}</c>\n\nPlease contact the staff team if you need assistance.",
-                msg.error
-            );
-            this->onClose(nullptr);
-        }
-    });
-
     this->requestState(0.f);
     // this->onStateLoaded(612930885230002208, "dank_meme01", "https://cdn.discordapp.com/avatars/612930885230002208/57793059bc19ed4cc2c36ae1c321b423.png?size=1024");
 
@@ -153,10 +127,10 @@ void DiscordLinkPopup::onClose(CCObject*) {
     Popup::onClose(nullptr);
 }
 
-void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, const std::string& avatarUrl) {
-    m_linked = id != 0;
+void DiscordLinkPopup::onStateLoaded(std::optional<UserData> data) {
+    m_linked = data.has_value();
 
-    if (id == 0) {
+    if (!data.has_value()) {
         if (m_activelyWaiting) return;
 
         m_statusLabel->setString("Unlinked");
@@ -169,9 +143,7 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
         m_activeBtn = Build<ButtonSprite>::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .scale(0.95f)
             .intoMenuItem([this](auto btn) {
-                NetworkManagerImpl::get().sendRequestDiscordOauth();
-                cue::resetNode(m_activeBtn);
-                this->addLinkingText();
+                this->startOauthFlow();
             })
             .scaleMult(1.1f)
             .pos(this->fromBottom(26.f))
@@ -183,11 +155,16 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
         return;
     }
 
+    // if we just linked, notify central server about it
+    if (m_activelyWaiting) {
+        this->notifyCentral();
+    }
+
     m_activelyWaiting = false;
     this->unschedule(schedule_selector(DiscordLinkPopup::requestState));
 
-    if (!username.empty()) {
-        m_nameLabel->setString(username.c_str());
+    if (data->username) {
+        m_nameLabel->setString(data->username->c_str());
         m_statusLabel->setString("Linked");
         m_statusLabel->setColor(ccColor3B{ 69, 255, 23 });
     } else {
@@ -209,12 +186,12 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
     m_dataContainer->updateLayout();
 
     // only replace the avatar if we actually got a link
-    if (!avatarUrl.empty()) {
+    if (data->avatar_url) {
         m_playerIcon->setVisible(false);
         m_avatar = Build(LazySprite::create(ICON_SIZE))
             .parent(m_playerCard);
         m_avatar->setAutoResize(true);
-        m_avatar->loadFromUrl(convertAvatarUrl(avatarUrl));
+        m_avatar->loadFromUrl(convertAvatarUrl(data->avatar_url.value()));
         m_avatar->setLoadCallback([this](Result<> res) {
             if (res.isOk()) {
                 // nothing
@@ -239,9 +216,8 @@ void DiscordLinkPopup::onStateLoaded(uint64_t id, const std::string& username, c
                 "Are you sure you want to unlink your <cb>Discord</c> account? You may lose access to your roles and voice chat.",
                 "Cancel", "Ok",
                 [this, btn](auto) {
-                    NetworkManagerImpl::get().sendRequestDiscordUnlink();
                     btn->removeFromParent();
-                    this->startWaitingForUnlink();
+                    this->startUnlink();
                 }
             );
         })
@@ -271,6 +247,51 @@ void DiscordLinkPopup::addLinkingText() {
         .parent(m_waitingContainer);
 
     m_waitingContainer->updateLayout();
+}
+
+void DiscordLinkPopup::startOauthFlow() {
+    cue::resetNode(m_activeBtn);
+    this->addLinkingText();
+
+    m_linkStartTask.spawn(argon::discord::link(), [this](Result<std::string> result) {
+        if (result.isOk()) {
+            this->onOauthUrlReceived(result.unwrap());
+        } else {
+            globed::alertFormat(
+                "Globed Error",
+                "Failed to start the Discord linking process: <cy>{}</c>",
+                result.unwrapErr()
+            );
+            this->onClose(nullptr);
+        }
+    });
+}
+
+void DiscordLinkPopup::startUnlink() {
+    this->startWaitingForUnlink();
+
+    m_unlinkTask.spawn(argon::discord::unlink(), [this](Result<> result) {
+        if (result.isOk()) {
+            globed::alert(
+                "Unlink Successful",
+                "<cg>Your Discord account has been successfully unlinked!</c>"
+            );
+        } else {
+            globed::alertFormat(
+                "Globed Error",
+                "Error while unlinking: <cy>{}</c>",
+                result.unwrapErr()
+            );
+        }
+
+        this->notifyCentral();
+        this->onClose(nullptr);
+    });
+}
+
+void DiscordLinkPopup::notifyCentral() {
+    auto& nm = NetworkManagerImpl::get();
+    nm.sendRefreshDiscordState();
 }
 
 // void DiscordLinkPopup::onAttemptReceived(uint64_t id, const std::string& username, const std::string& avatarUrl) {
@@ -327,7 +348,22 @@ void DiscordLinkPopup::startWaitingForUnlink() {
 }
 
 void DiscordLinkPopup::requestState(float) {
-    NetworkManagerImpl::get().sendGetDiscordLinkState();
+    if (m_stateTask.isPending()) {
+        // do nothing while the current task completes
+        return;
+    }
+
+    m_stateTask.spawn([] -> arc::Future<std::optional<UserData>> {
+        auto result = co_await argon::discord::getLinkState();
+        if (result) {
+            co_return std::move(result).unwrap();
+        } else {
+            log::warn("Failed to get Discord link state: {}", result.unwrapErr());
+            co_return std::nullopt;
+        }
+    }, [this](std::optional<UserData> data) {
+        this->onStateLoaded(data);
+    });
 }
 
 DiscordLinkPopup* DiscordLinkPopup::create() {

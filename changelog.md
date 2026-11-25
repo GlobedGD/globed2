@@ -1,10 +1,13 @@
 ## v2.3.0
 
+* Geometry Dash v2.2091 support
+* Switch to the Async Load API mod for even faster loading of player icons & death effects
+* Switch to the Argon mod for authentication and linking of Discord accounts
 * Fix link button in levels not being clickable without Better Touch Prio mod
+* Fix potential corruption of textures during texture reload
 * Expand soft-link API: add support for making Globed modules plus 2 new API namespaces
 * Fix API functions not being exported in the mod
-* Several other API fixes, including making `api::room` thread-safe
-* Fix potential corruption of textures during texture reload
+* Several other API fixes, including making `api::room` thread-safe and the introduction of level ID namespaces
 
 ## v2.2.2
 

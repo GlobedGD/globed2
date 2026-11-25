@@ -315,11 +315,7 @@ public:
     void sendInvitePlayer(int32_t player);
     void sendUpdatePinnedLevel(uint64_t sid);
     void sendFetchCredits();
-    void sendGetDiscordLinkState();
-    void sendSetDiscordPairingState(bool state);
-    void sendRequestDiscordOauth();
-    void sendRequestDiscordUnlink();
-    void sendDiscordLinkConfirm(int64_t id, bool confirm);
+    void sendRefreshDiscordState();
     void sendGetFeaturedList(uint32_t page);
     void sendGetFeaturedLevel();
     void sendSendFeaturedLevel(

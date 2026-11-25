@@ -2067,36 +2067,9 @@ void NetworkManagerImpl::sendFetchCredits() {
     });
 }
 
-void NetworkManagerImpl::sendGetDiscordLinkState() {
+void NetworkManagerImpl::sendRefreshDiscordState() {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
-        msg.initGetDiscordLinkState();
-    });
-}
-
-void NetworkManagerImpl::sendSetDiscordPairingState(bool state) {
-    this->sendToCentral([&](CentralMessage::Builder& msg) {
-        auto m = msg.initSetDiscordPairingState();
-        m.setState(state);
-    });
-}
-
-void NetworkManagerImpl::sendRequestDiscordOauth() {
-    this->sendToCentral([&](CentralMessage::Builder& msg) {
-        msg.setRequestDiscordOauth();
-    });
-}
-
-void NetworkManagerImpl::sendRequestDiscordUnlink() {
-    this->sendToCentral([&](CentralMessage::Builder& msg) {
-        msg.setRequestDiscordUnlink();
-    });
-}
-
-void NetworkManagerImpl::sendDiscordLinkConfirm(int64_t id, bool confirm) {
-    this->sendToCentral([&](CentralMessage::Builder& msg) {
-        auto m = msg.initDiscordLinkConfirm();
-        m.setId(id);
-        m.setAccept(confirm);
+        msg.setRefreshDiscordState();
     });
 }
 
