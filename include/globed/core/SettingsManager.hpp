@@ -8,6 +8,8 @@
 #include <Geode/utils/terminate.hpp>
 #include <Geode/loader/Log.hpp>
 #include <Geode/utils/function.hpp>
+#include <unordered_set>
+#include <unordered_map>
 
 namespace globed {
 

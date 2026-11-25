@@ -43,7 +43,7 @@ constexpr inline PatchDef<0, 0> PATCH_EGO_GETSAVESTRING_START;
 
 // Call to GJGameLevel::savePercentage within destroyPlayer; the BL instruction
 // TODO: sigscan
-constexpr inline PatchDef<22081, 0xa196c> PATCH_SAVE_PERCENTAGE_CALL;
+constexpr inline PatchDef<22091, 0x7e314> PATCH_SAVE_PERCENTAGE_CALL;
 
 #elif defined GEODE_IS_INTEL_MAC
 

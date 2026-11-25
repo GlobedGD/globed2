@@ -50,7 +50,8 @@ set(lib_vars  "net_libs_cares" "net_libs_libcrypto" "net_libs_libssl" "net_libs_
 
 if (GLOBED_USE_WOLFSSL)
     CPMAddPackage(
-        URI "gh:wolfSSL/wolfssl@5.9.2-stable"
+        # TODO: 5.9.4 has broken building for x86 macOS, so temporarily use a recent commit until a new release is out
+        URI "gh:wolfSSL/wolfssl#cf9d95a"
         OPTIONS "WOLFSSL_QUIC ON"
                 "WOLFSSL_HARDEN OFF"
                 "WOLFSSL_OLD_TLS OFF"
