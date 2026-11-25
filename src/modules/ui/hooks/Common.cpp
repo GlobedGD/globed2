@@ -14,7 +14,7 @@ bool disallowLevelJoin(int levelId) {
 
     // allow if it's the same level
     auto curr = rm.getCurrentWarpLevel();
-    if (curr.levelId() == levelId) {
+    if (curr.isVanillaLevel(levelId)) {
         return false;
     }
 

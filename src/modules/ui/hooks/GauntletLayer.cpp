@@ -82,7 +82,8 @@ struct GLOBED_MODIFY_ATTR HookedGauntletLayer : geode::Modify<HookedGauntletLaye
             m_fields->m_levels.clear();
 
             for (const auto& [id, count] : packet.counts) {
-                m_fields->m_levels[id.levelId()] = count;
+                if (!id.isVanillaLevel()) continue;
+                m_fields->m_levels[id.level.id] = count;
             }
 
             this->refreshPlayerCounts();

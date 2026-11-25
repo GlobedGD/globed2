@@ -102,7 +102,8 @@ struct GLOBED_MODIFY_ATTR HookedLevelSelectLayer : geode::Modify<HookedLevelSele
         m_fields->m_listener = nm.listen<msg::PlayerCountsMessage>([this](auto packet) {
             m_fields->m_levels.clear();
             for (const auto& level : packet.counts) {
-                m_fields->m_levels[level.first.levelId()] = level.second;
+                if (!level.first.isVanillaLevel()) continue;
+                m_fields->m_levels[level.first.level.id] = level.second;
             }
 
             this->updatePlayerCounts();

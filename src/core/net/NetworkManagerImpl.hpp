@@ -355,7 +355,7 @@ public:
 
     // Both servers
     void sendJoinSession(SessionId id, int author, bool platformer);
-    void sendLeaveSession();
+    void sendLeaveSession(bool central = true, bool game = true);
 
     void sendEvent(std::string_view id, std::vector<uint8_t> data, const EventOptions& options);
     void registerEvent(std::string_view id, EventServer server);

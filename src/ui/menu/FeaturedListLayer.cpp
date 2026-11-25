@@ -94,7 +94,8 @@ bool FeaturedListLayer::init() {
         m_playerCounts.clear();
 
         for (auto& [k, v] : packet.counts) {
-            m_playerCounts[k.levelId()] = v;
+            if (!k.isVanillaLevel()) continue;
+            m_playerCounts[k.level.id] = v;
         }
     });
 

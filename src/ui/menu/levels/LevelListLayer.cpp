@@ -268,12 +268,12 @@ void LevelListLayer::onLoaded(const std::vector<std::pair<SessionId, uint16_t>>&
     auto myServer = RoomManager::get().pickServerId().value_or(0);
 
     for (const auto& level : levels) {
-        if (level.first == 0) continue;
+        if (level.first.isZero() || !level.first.isVanillaLevel()) continue;
 
         // filter out levels on a different server
         // for now we filter client-side, which is a waste of bandwidth,
         // but potentially in the future we could show levels from other servers too
-        if (level.first.serverId() != myServer) {
+        if (level.first.serverId != myServer) {
             continue;
         }
 
@@ -354,8 +354,8 @@ void LevelListLayer::continueLoading() {
     size_t hasCount = 0;
 
     for (auto id : m_allLevelIds) {
-        if (m_levelCache.contains(id.levelId())) {
-            if (this->isMatchingFilters(m_levelCache[id.levelId()])) {
+        if (m_levelCache.contains(id.level.id)) {
+            if (this->isMatchingFilters(m_levelCache[id.level.id])) {
                 hasCount++;
             }
         }
@@ -378,7 +378,7 @@ void LevelListLayer::finishLoading() {
     size_t reqMin = m_currentPage * m_pageSize;
 
     for (auto id : m_allLevelIds) {
-        int lid = id.levelId();
+        int lid = id.level.id;
 
         if (m_levelCache.contains(lid)) {
             if (this->isMatchingFilters(m_levelCache[lid])) {
@@ -450,7 +450,7 @@ bool LevelListLayer::loadNextBatch() {
     m_currentQuery.clear();
 
     for (auto id : m_allLevelIds) {
-        int lid = id.levelId();
+        int lid = id.level.id;
 
         if (m_levelCache.contains(lid) || m_failedQueries.contains(lid)) continue;
 
@@ -479,7 +479,7 @@ bool LevelListLayer::loadNextBatch() {
 std::optional<size_t> LevelListLayer::findPlayerCountForLevel(int levelId) {
     return asp::iter::from(m_playerCounts)
         .copied()
-        .find([&](const auto& pair) { return pair.first.levelId() == levelId; })
+        .find([&](const auto& pair) { return pair.first.isVanillaLevel(levelId); })
         .transform([](const auto& pair) { return pair.second; });
 }
 
@@ -687,6 +687,6 @@ static std::vector<std::pair<globed::SessionId, uint16_t>> getFakeLevels() {
     };
 
     return asp::iter::from(levels).copied().map([](auto pair) {
-        return std::make_pair(globed::SessionId{pair.first}, pair.second);
+        return std::make_pair(globed::SessionId::fromLegacy(pair.first), pair.second);
     }).collect<std::vector<std::pair<globed::SessionId, uint16_t>>>();
 }

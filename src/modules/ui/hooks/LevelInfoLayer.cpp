@@ -101,7 +101,7 @@ struct GLOBED_MODIFY_ATTR HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLa
             .intoMenuItem([this] {
                 globed::confirmPopup("Globed", "Are you sure you want to <cy>pin</c> this level to the <cg>current room</c>?", "Cancel", "Yes", [this](auto*) {
                     NetworkManagerImpl::get().sendUpdatePinnedLevel(
-                        RoomManager::get().makeSessionId(m_level->m_levelID).asU64()
+                        *RoomManager::get().makeSessionId(m_level->m_levelID).asLegacyVanillaId()
                     );
                 });
             })

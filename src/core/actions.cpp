@@ -49,9 +49,14 @@ static void forceWarp(WarpContext context) {
     }
 
     auto session = context.session;
-    log::debug("Warping to session {} (room: {}, level: {})", session.asU64(), session.roomId(), session.levelId());
+    if (session.level.ns != 0) {
+        log::warn("Cannot warp to non-vanilla level with ns {}", session.level.ns);
+        return;
+    }
 
-    auto levelId = session.levelId();
+    log::debug("Warping to session (server: {}, room: {}, ns: {}, level: {})", session.serverId, session.roomId, session.level.ns, session.level.id);
+
+    auto levelId = session.level.id;
     if (levelId == 0) {
         // level 0 means warp to main menu aka do nothing
         return;
@@ -59,7 +64,7 @@ static void forceWarp(WarpContext context) {
 
     // set temporary server override
     auto& nm= NetworkManagerImpl::get();
-    nm.setTemporaryServerOverride(session.serverId());
+    nm.setTemporaryServerOverride(session.serverId);
 
     // only open level for global
     bool openLevel = context.source == WarpSource::Global;
@@ -101,7 +106,7 @@ void warpToSession(WarpContext context) {
     // if warped by clicking on a person who's in a different server, ask if we want to switch servers
     if (context.source == WarpSource::Manual) {
         auto& nm = NetworkManagerImpl::get();
-        uint8_t targetServer = context.session.serverId();
+        uint8_t targetServer = context.session.serverId;
         auto currentServer = rm.pickServerId();
 
         bool showNotice = !globed::flag("core.flags.seen-warp-server-switch");
@@ -127,12 +132,12 @@ void warpToSession(WarpContext context) {
         }
     } else if (context.source == WarpSource::Room) {
         // if the room owner exited the room or joined the same level, do nothing
-        if (context.session.asU64() == 0) {
+        if (context.session.isZero()) {
             return;
         }
 
         auto gjbgl = GlobedGJBGL::get();
-        if (gjbgl && gjbgl->m_level && gjbgl->m_level->m_levelID == context.session.levelId()) {
+        if (gjbgl && gjbgl->m_level->m_levelID == (int)context.session.level.id) {
             return;
         }
 

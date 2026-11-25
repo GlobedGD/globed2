@@ -433,7 +433,7 @@ $implDecode(MinimalRoomPlayer, main::RoomPlayer::Reader& reader) {
 
 $implDecode(RoomPlayer, main::RoomPlayer::Reader& reader) {
     RoomPlayer out{decodeUnchecked<MinimalRoomPlayer>(reader)};
-    out.session = SessionId(reader.getSession());
+    out.session = SessionId::fromLegacy(reader.getSession());
     out.teamId = reader.getTeamId();
 
     if (reader.hasSpecialData()) {
@@ -831,7 +831,7 @@ $implDecode(msg::PlayerCountsMessage, main::PlayerCountsMessage::Reader& reader)
     out.counts.reserve(count);
 
     for (size_t i = 0; i < count; i++) {
-        out.counts.push_back({SessionId{levelIds[i]}, counts[i]});
+        out.counts.push_back({SessionId::fromLegacy(levelIds[i]), counts[i]});
     }
 
     return out;
@@ -864,7 +864,7 @@ $implDecode(msg::LevelListMessage, main::LevelListMessage::Reader& reader) {
     out.levels.reserve(count);
 
     for (size_t i = 0; i < count; i++) {
-        out.levels.push_back({SessionId{levelIds[i]}, counts[i]});
+        out.levels.push_back({SessionId::fromLegacy(levelIds[i]), counts[i]});
     }
 
     return out;
@@ -1171,8 +1171,18 @@ $implDecode(msg::KickedMessage, main::KickedMessage::Reader& reader) {
 /// Session ID
 
 $implEncode(const SessionId& id, shared::SessionId::Builder& data) {
-    data.set
+    data.setNamespace(id.level.ns);
+    data.setLevelId(id.level.id);
+    data.setServerId(id.serverId);
+    data.setRoomId(id.roomId);
 }
 
+$implDecode(SessionId, shared::SessionId::Reader& reader) {
+    return SessionId(
+        { reader.getLevelId(), reader.getNamespace() },
+        reader.getServerId(),
+        reader.getRoomId()
+    );
+}
 
 }

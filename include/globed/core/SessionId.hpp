@@ -1,6 +1,9 @@
 #pragma once
 #include "../util/hash.hpp"
 #include <stdint.h>
+#include <string>
+#include <optional>
+#include <fmt/format.h>
 
 namespace globed {
 
@@ -30,19 +33,25 @@ struct LevelId {
     bool isZero() const {
         return ns == 0 && id == 0;
     }
+
+    bool isVanillaLevel(int levelId) const {
+        return ns == 0 && id == (uint64_t)levelId;
+    }
+
+    bool isVanillaLevel() const {
+        return ns == 0;
+    }
+
+    bool operator==(const LevelId& other) const = default;
 };
 
 struct SessionId {
     SessionId() = default;
-    SessionId(LevelId level, uint8_t serverId, uint32_t roomId) : level(level), serverId(serverId), roomId(roomId) {}
-
-    // static SessionId fromLegacy(uint64_t value) {
-
-    // }
+    SessionId(LevelId level, uint8_t serverId, uint32_t roomId) : level(level), roomId(roomId), serverId(serverId) {}
 
     LevelId level;
-    uint32_t roomId;
-    uint8_t serverId;
+    uint32_t roomId = 0;
+    uint8_t serverId = 0;
 
     size_t hash() const {
         size_t seed = 1;
@@ -60,10 +69,32 @@ struct SessionId {
         return a | b | c;
     }
 
+    static SessionId fromLegacy(uint64_t value) {
+        uint8_t serverId = (value >> 56) & 0xff;
+        uint32_t roomId = (value >> 32) & 0x00ffffff;
+        uint32_t levelId = value & 0xffffffff;
+
+        return SessionId(LevelId::fromVanilla(levelId), serverId, roomId);
+    }
+
     bool isZero() const {
         return level.isZero() && roomId == 0 && serverId == 0;
     }
+
+    bool isVanillaLevel() const {
+        return level.isVanillaLevel();
+    }
+
+    bool isVanillaLevel(int levelId) const {
+        return level.isVanillaLevel(levelId);
+    }
+
+    bool operator==(const SessionId& other) const = default;
 };
+
+inline std::string format_as(const SessionId& sid) {
+    return fmt::format("SessionId(ns={}, id={}, room={}, server={})", sid.level.ns, sid.level.id, sid.roomId, sid.serverId);
+}
 
 }
 
@@ -71,7 +102,7 @@ namespace std {
     template <>
     struct hash<globed::SessionId> {
         static size_t operator()(const globed::SessionId& sid) {
-            return std::hash<uint64_t>{}(sid.hash());
+            return sid.hash();
         }
     };
 }

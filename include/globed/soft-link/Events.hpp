@@ -5,7 +5,11 @@
 
 namespace globed {
 
-struct [[deprecated("use ResolveLevelIdEvent")]] SetupLevelIdEvent : geode::Event<SetupLevelIdEvent, bool(GJGameLevel*, int64_t*)> {
+struct
+#ifndef globed2_EXPORTS
+[[deprecated("use ResolveLevelIdEvent")]]
+#endif
+SetupLevelIdEvent : geode::Event<SetupLevelIdEvent, bool(GJGameLevel*, int64_t*)> {
     using Event::Event;
 };
 

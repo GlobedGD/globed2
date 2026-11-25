@@ -22,7 +22,7 @@ import os
 REQUIRED_GEODE_VERSION = "v5.10.0"
 XTLS_VERSION = "v1.0.0"
 QUNET_VERSION = "v1.0.1"
-SERVER_SHARED_VERSION = "v8"
+SERVER_SHARED_VERSION = "v10"
 CUE_VERSION = "e80ac94"
 
 if sys.version_info < (3, 12):

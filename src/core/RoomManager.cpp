@@ -14,8 +14,8 @@ GLOBED_EXPORT_SINGLETON(RoomManager, SingletonLeakBase<RoomManager>);
 
 LevelId RoomManager::getNamespacedLevelId(GJGameLevel* level) {
     LevelId lid{};
-    ResolveLevelIdEvent().send(level, &lid);
-    if (lid.id != 0 || lid.ns != 0) {
+    bool accepted = ResolveLevelIdEvent().send(level, &lid);
+    if (accepted) {
         // custom namespace by another mod
         return lid;
     }
@@ -179,7 +179,7 @@ RoomManager::RoomManager() {
         state->m_settings = msg.settings;
         state->m_teams = msg.teams;
         state->m_roomOwner = msg.roomOwner;
-        state->m_pinnedLevel = SessionId::fromVanilla{msg.pinnedLevel};
+        state->m_pinnedLevel = SessionId::fromLegacy(msg.pinnedLevel);
         state->m_roomName = msg.roomName;
         state->m_passcode = msg.passcode;
 
@@ -219,12 +219,11 @@ RoomManager::RoomManager() {
     }, -10000);
 
     nm.listenGlobal<msg::PinnedLevelUpdatedMessage>([this](const auto& msg) {
-        m_state.lock()->m_pinnedLevel = SessionId{msg.id};
+        m_state.lock()->m_pinnedLevel = SessionId::fromLegacy(msg.id);
     }, -10000);
 
     nm.listenGlobal<msg::RoomWarpMessage>([this](const auto& msg) {
         m_state.lock()->m_currentWarpLevel = msg.sessionId;
-        log::debug("Current warp level {}", msg.sessionId.levelId());
         globed::warpToSession(WarpContext{ msg.sessionId, WarpSource::Room });
     }, -10000);
 }

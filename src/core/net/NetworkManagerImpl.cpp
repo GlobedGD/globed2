@@ -1938,7 +1938,7 @@ void NetworkManagerImpl::sendRequestPlayerCounts(std::span<const int> levels) {
     auto srv = rm.pickServerId().value_or(0);
 
     for (int level : levels) {
-        sessions.emplace_back(SessionId::fromParts(srv, rm.getRoomId(), level));
+        sessions.emplace_back(SessionId(LevelId::fromVanilla(level), srv, rm.getRoomId()));
     }
 
     return this->sendRequestPlayerCounts(std::span{sessions.data(), sessions.size()});
@@ -2324,6 +2324,7 @@ void NetworkManagerImpl::sendGameLoginRequest(SessionId id, bool platformer) {
 
         if (!id.isZero()) {
             data::encode(id, login.initSession());
+            login.setSessionId(id.asLegacyVanillaId().value_or(0));
             login.setPasscode(RoomManager::get().getPasscode());
             login.setPlatformer(platformer);
         }
@@ -2336,6 +2337,7 @@ void NetworkManagerImpl::sendGameJoinRequest(SessionId id, bool platformer) {
     this->sendToGame([&](GameMessage::Builder& msg) {
         auto join = msg.initJoinSession();
         data::encode(id, join.initSession());
+        join.setSessionId(id.asLegacyVanillaId().value_or(0));
         join.setPlatformer(platformer);
         join.setPasscode(RoomManager::get().getPasscode());
     });
@@ -2482,6 +2484,9 @@ void NetworkManagerImpl::sendJoinSession(SessionId id, int author, bool platform
             joinSession.setSessionId(*lid);
             joinSession.setAuthorId(author);
         });
+    } else {
+        // joining namespaced session, tell the central we are not in any session as they are only supported in game servers
+        this->sendLeaveSession(true, false);
     }
 
     // find the game server
@@ -2508,14 +2513,18 @@ void NetworkManagerImpl::joinSessionWith(LockedConnInfo& info, std::string_view 
     (void) m_gameServerJoinTx->trySend(std::move(req));
 }
 
-void NetworkManagerImpl::sendLeaveSession() {
-    this->sendToCentral([&](CentralMessage::Builder& msg) {
-        msg.initLeaveSession();
-    });
+void NetworkManagerImpl::sendLeaveSession(bool central, bool game) {
+    if (central) {
+        this->sendToCentral([&](CentralMessage::Builder& msg) {
+            msg.initLeaveSession();
+        });
+    }
 
-    this->sendToGame([&](GameMessage::Builder& msg) {
-        msg.initLeaveSession();
-    });
+    if (game) {
+        this->sendToGame([&](GameMessage::Builder& msg) {
+            msg.initLeaveSession();
+        });
+    }
 }
 
 Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) {
@@ -2729,14 +2738,14 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::WARP_PLAYER: {
             auto warpPlayer = msg.getWarpPlayer();
-            auto sessionId = SessionId{warpPlayer.getSession()};
+            auto sessionId = SessionId::fromLegacy(warpPlayer.getSession());
 
             this->invokeListeners(msg::WarpPlayerMessage{sessionId});
         } break;
 
         case CentralMessage::ROOM_WARP: {
             auto roomWarp = msg.getRoomWarp();
-            auto sessionId = SessionId{roomWarp.getSession()};
+            auto sessionId = SessionId::fromLegacy(roomWarp.getSession());
 
             this->invokeListeners(msg::RoomWarpMessage{sessionId});
         } break;

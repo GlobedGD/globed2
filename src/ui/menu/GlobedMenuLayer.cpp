@@ -142,7 +142,7 @@ protected:
         cue::resetNode(m_joinBtn);
         cue::resetNode(m_modBtn);
 
-        if (m_sessionId.asU64() != 0) {
+        if (!m_sessionId.isZero()) {
             // add button to join the session
             m_joinBtn = Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
                 .with([&](auto spr) { cue::rescaleToMatch(spr, BTN_SIZE); })
@@ -661,7 +661,7 @@ void GlobedMenuLayer::updatePlayerList(const std::vector<RoomPlayer>& players) {
 
 void GlobedMenuLayer::addPinnedLevelCell() {
     // if there is no pinned level, remove instead
-    auto id = RoomManager::get().getPinnedLevel().levelId();
+    auto id = RoomManager::get().getPinnedLevel().level.id;
     if (id == 0) {
         this->removePinnedLevelCell();
         return;
