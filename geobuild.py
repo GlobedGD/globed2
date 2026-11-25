@@ -388,7 +388,7 @@ def main(build: Build):
         "required": False,
     })
     build.add_geode_dep("geode.devtools", {
-        "version": ">=v1.13.1",
+        "version": ">=v1.15.0",
         "required": False
     })
     build.add_geode_dep("dankmeme.argon", ">=v2.0.0-alpha.1")

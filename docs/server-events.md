@@ -15,7 +15,7 @@ This functionality is offered on the **Fair Use** basis. If we detect unfaithful
 Below is an example of a basic skeleton for a server event
 ```cpp
 // not included by soft-link header!
-#include <dankmeme.globed2/include/globed/core/Event.hpp>
+#include <dankmeme.globed2/core/Event.hpp>
 
 // if you included dbuf, you can use it for easy binary serialization
 #include <dbuf/ByteWriter.hpp>

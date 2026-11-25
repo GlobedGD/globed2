@@ -17,12 +17,6 @@ First add Globed as a dependency in your mod's `mod.json`:
 }
 ```
 
-Then add the following line in your mod's `CMakeLists.txt` (if you don't know where, just put them at the bottom or below `setup_geode_mod`):
-
-```cmake
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/geode-deps/dankmeme.globed2/include)
-```
-
 ## Usage
 
 Unfortunately, as Globed is a large mod, most stuff is undocumented. You can try checking out various headers and the source code to figure out what you can do. Below is a bunch of examples of what else is possible with this API.
@@ -32,10 +26,10 @@ Unfortunately, as Globed is a large mod, most stuff is undocumented. You can try
 TODO: update this, very outdated
 
 ```cpp
-#include <globed/core/net/NetworkManager.hpp>
-#include <globed/core/net/MessageListener.hpp>
-#include <globed/core/data/Messages.hpp>
-#include <globed/util/format.hpp>
+#include <dankmeme.globed2/core/net/NetworkManager.hpp>
+#include <dankmeme.globed2/core/net/MessageListener.hpp>
+#include <dankmeme.globed2/core/data/Messages.hpp>
+#include <dankmeme.globed2/util/format.hpp>
 
 using namespace globed::msg;
 auto& nm = globed::NetworkManager::get();

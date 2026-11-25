@@ -123,8 +123,6 @@ AsyncLoad::TaskGroup PreloadManager::initLoadQueue() {
             }
         };
 
-        // TODO 2.209: all these ranges are 2.2081 !!!
-
         addIcons(IconType::Cube, 0, 485);
 
         // There are actually 169 ship icons, but for some reason, loading the last icon causes

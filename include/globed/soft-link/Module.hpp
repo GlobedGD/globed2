@@ -74,16 +74,9 @@ struct GLOBED_NOVTABLE SoftModule {
         });
     }
 
-    // TODO (geode v6?): use modify.getAllHooks()
     template <typename T> requires (!std::convertible_to<T&, std::span<geode::Hook* const>>)
     void claimHooks(T& modify) {
-        std::vector<geode::Hook*> hooks;
-        hooks.reserve(modify.m_hooks.size());
-        for (auto& [k, v] : modify.m_hooks) {
-            v->setAutoEnable(false);
-            hooks.push_back(v.get());
-        }
-        return claimHooks(std::move(hooks));
+        return claimHooks(modify.getAllHooks());
     }
 
     void claimPatch(geode::Patch* patch) {

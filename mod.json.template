@@ -140,6 +140,7 @@
             "include/globed/core/net/*.hpp",
             "include/globed/soft-link/*.hpp",
             "include/globed/util/*.hpp"
-        ]
+        ],
+        "include_strip_prefix": "include/globed/"
     }
 }

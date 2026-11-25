@@ -33,10 +33,9 @@
 #include <ui/Core.hpp>
 
 #include <dankmeme.argon/argon.hpp>
+#include <geode.devtools/API.hpp>
 #include <cue/RepeatingBackground.hpp>
 #include <UIBuilder.hpp>
-// TODO v6: wait for devtools release
-// #include <geode.devtools/include/API.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -1238,13 +1237,8 @@ bool GlobedMenuLayer::shouldAutoRefresh(float dt) {
         }
     }
 
-    // TODO v6
-    // // don't refresh if devtools is open
-    // if (devtools::isOpen()) {
-    //     return false;
-    // }
-
-    return true;
+    // don't refresh if devtools is open
+    return !devtools::isOpen();
 }
 
 void GlobedMenuLayer::onSettings() {

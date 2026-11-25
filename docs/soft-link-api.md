@@ -19,16 +19,10 @@ Add Globed as a dependency in your mod's `mod.json`:
 
 Completely optional, but the following line can be added to your `CMakeLists.txt` to make including headers easier:
 
-```cmake
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/geode-deps/dankmeme.globed2/include)
-```
-
 ## Usage
 
 ```cpp
-// One of the two, depending on whether you added the line of cmake above
-#include <dankmeme.globed2/include/globed/soft-link/API.hpp>
-#include <globed/soft-link/API.hpp>
+#include <dankmeme.globed2/soft-link/API.hpp>
 
 // Always check if the API is actually available (meaning Globed is loaded and is a compatible version)
 // If this returns false, all API functions will return meaningless results (0, "", Err, etc.)
@@ -103,6 +97,10 @@ MyModule::get().setAutoEnableMode(AutoEnableMode::Never);
 Server events are a feature of Globed that allows the client to send arbitrary data to the server, which may then be forwarded to other players. This is how Globed implements certain gamemodes (e.g. Switcheroo or 2 player mode) without actually hardcoding any functionality in the server!
 
 For more information on how they can be used, see [Server Events](./server-events.md) page.
+
+## Level Namespaces
+
+This is a feature added in v2.3.0 to support mods that add custom levels with own IDs (e.g. editor levels in Editor Collab). For more information, see [Level Namespaces](./level-namespaces.md) page.
 
 ## Backward / forward compatibility
 
