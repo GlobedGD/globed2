@@ -48,7 +48,7 @@ jobs:
     needs: ['build']
 
     steps:
-      - uses: geode-sdk/build-geode-mod-docker/merge@v1
+      - uses: geode-sdk/build-geode-mod-docker/merge@main
         id: build
         with:
           upload: true
