@@ -332,10 +332,8 @@ uint64_t PreloadManager::getAvailableMemory() {
         return static_cast<uint64_t>(vm_stats.free_count + vm_stats.external_page_count) * pageSize;
     }
 #else
-    std::ifstream meminfo("/proc/meminfo");
-    std::string linestr;
-    while (std::getline(meminfo, linestr)) {
-        std::string_view line{linestr};
+    auto content = asp::fs::readToString("/proc/meminfo").unwrapOrDefault();
+    for (auto line : asp::iter::lines(content)) {
         if (line.starts_with("MemAvailable:")) {
             line.remove_prefix(14);
             line = line.substr(line.find_first_not_of(" \t"));
