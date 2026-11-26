@@ -17,8 +17,6 @@ Add Globed as a dependency in your mod's `mod.json`:
 }
 ```
 
-Completely optional, but the following line can be added to your `CMakeLists.txt` to make including headers easier:
-
 ## Usage
 
 ```cpp

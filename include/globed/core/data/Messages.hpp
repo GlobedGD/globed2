@@ -267,6 +267,12 @@ struct DiscordUnlinkResultMessage {
     std::string error;
 };
 
+struct DiscordRefreshedMessage {
+    uint64_t id;
+    std::string username;
+    std::string avatarUrl;
+};
+
 // Featured level
 
 struct FeaturedLevelMessage {

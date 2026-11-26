@@ -1926,7 +1926,11 @@ void NetworkManagerImpl::sendRequestLevelList() {
 void NetworkManagerImpl::sendRequestPlayerCounts(std::span<const SessionId> sessions) {
     this->sendToCentral([&](CentralMessage::Builder& msg) {
         auto reqr = msg.initRequestPlayerCounts();
-        reqr.setLevels(kj::arrayPtr((const uint64_t*)sessions.data(), sessions.size()));
+        auto sessionIds = asp::iter::from(sessions)
+            .filterMap([](const SessionId& sid) { return sid.asLegacyVanillaId(); })
+            .collect();
+
+        reqr.setLevels(kj::arrayPtr(sessionIds.data(), sessionIds.size()));
     });
 }
 
@@ -2771,6 +2775,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
         case CentralMessage::DISCORD_UNLINK_RESULT: {
             this->invokeListeners(data::decodeUnchecked<msg::DiscordUnlinkResultMessage>(msg.getDiscordUnlinkResult()));
+        } break;
+
+        case CentralMessage::DISCORD_REFRESHED: {
+            this->invokeListeners(data::decodeUnchecked<msg::DiscordRefreshedMessage>(msg.getDiscordRefreshed()));
         } break;
 
         case CentralMessage::FEATURED_LEVEL: {

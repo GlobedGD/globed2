@@ -292,6 +292,7 @@ void DiscordLinkPopup::startUnlink() {
 void DiscordLinkPopup::notifyCentral() {
     auto& nm = NetworkManagerImpl::get();
     nm.sendRefreshDiscordState();
+    // TODO: maybe wait for this to finish?
 }
 
 // void DiscordLinkPopup::onAttemptReceived(uint64_t id, const std::string& username, const std::string& avatarUrl) {

@@ -2,7 +2,7 @@
 
 Some mods have the user join a level that is *not* a real level on the GD servers. For example, you might have a fangame mod that uses level ID 3 for one of the levels. When joining that level with Globed enabled, it will treat that level as the level ID 3 in the official servers, aka Polargeist, which is likely not what you want.
 
-You may be able to just use a random high number for your IDs, but that's obviously not scalable and often undesirable. For this, Globed v2.3.0 adds **Level Namespaces**: when you join a level you don't only use the level ID but also a unique **namespace ID** to distingish non-GD levels. When you join a level with ID 3 and namespace 1, you are no longer playing with people that are on Polargeist, since the namespace for GD levels is 0.
+You may be able to just use a random high number for your IDs, but that's obviously not scalable and often undesirable. For this, Globed v2.3.0 adds **Level Namespaces**: when you join a level you don't only use the level ID but also a unique **namespace ID** to distinguish non-GD levels. When you join a level with ID 3 and namespace 1, you are no longer playing with people that are on Polargeist, since the namespace for GD levels is 0.
 
 ## How to use
 
@@ -19,7 +19,7 @@ $on_mod(Loaded) {
         // Determine if this is our custom level that we want to override the ID for
 
         // How to do this is up to you, for example you could store a global flag or tag the GJGameLevel
-        // For sake of a simple example, we will assume that any level with ID 3 is our custom level
+        // For the sake of a simple example, we will assume that any level with ID 3 is our custom level
         if (level->m_levelID == 3) {
             // Override the values
             outId->ns = MY_NAMESPACE_ID;

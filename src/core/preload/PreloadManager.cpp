@@ -283,7 +283,7 @@ bool PreloadManager::deathEffectsLoaded() {
 }
 
 bool PreloadManager::deathEffectLoaded(int id) {
-    return id == 1 || m_deathEffectsLoaded || m_loadedDeathEffects.contains(id);
+    return id <= 1 || m_deathEffectsLoaded || m_loadedDeathEffects.contains(id);
 }
 
 bool PreloadManager::areAllIconsLoaded() {

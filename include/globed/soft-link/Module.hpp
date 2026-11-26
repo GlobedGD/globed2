@@ -69,6 +69,9 @@ struct GLOBED_NOVTABLE SoftModule {
     }
 
     void claimHooks(std::vector<geode::Hook*> hooks) {
+        for (auto hook : hooks) {
+            hook->setAutoEnable(false);
+        }
         this->runModuleOperation([hooks = std::move(hooks)] {
             globed::api::module::claimHooks(_id(), hooks);
         });
@@ -84,6 +87,9 @@ struct GLOBED_NOVTABLE SoftModule {
     }
 
     void claimPatches(std::vector<geode::Patch*> patches) {
+        for (auto patch : patches) {
+            patch->setAutoEnable(false);
+        }
         this->runModuleOperation([patches = std::move(patches)] {
             globed::api::module::claimPatches(_id(), patches);
         });

@@ -955,6 +955,16 @@ $implDecode(msg::DiscordUnlinkResultMessage, main::DiscordUnlinkResultMessage::R
     return out;
 }
 
+/// Discord refreshed
+
+$implDecode(msg::DiscordRefreshedMessage, main::DiscordRefreshedMessage::Reader& reader) {
+    msg::DiscordRefreshedMessage out{};
+    out.id = reader.getId();
+    out.username = reader.getUsername();
+    out.avatarUrl = reader.getAvatarUrl();
+    return out;
+}
+
 /// Featured level
 
 $implDecode(msg::FeaturedLevelMessage, main::FeaturedLevelMessage::Reader& reader) {
