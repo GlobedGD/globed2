@@ -959,6 +959,7 @@ Future<> NetworkManagerImpl::threadGameWorkerLoop() {
 void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnected) {
     bool manual = m_manualDisconnect.load(::acquire);
     bool showPopup = !manual;
+    bool authProblem = false;
 
     std::string_view messageStart = wasConnected ? "Connection lost" : "Failed to connect to the server";
     std::string message = fmt::format("{}: <cy>client initiated disconnect</c>", messageStart);
@@ -971,10 +972,11 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnecte
         }
     } else {
         auto abortCause = m_abortCause.lock();
+        authProblem = abortCause->authProblem;
 
-        if (!abortCause->first.empty()) {
-            message = fmt::format("Connection aborted: <cy>{}</c>", abortCause->first);
-            technicalError = abortCause->first;
+        if (!abortCause->reason.empty()) {
+            message = fmt::format("Connection aborted: <cy>{}</c>", abortCause->reason);
+            technicalError = abortCause->reason;
         } else {
             auto err = m_centralConn->lastError();
             if (err == qn::ConnectionError::Success) {
@@ -991,7 +993,7 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnecte
         }
 
         // if this was a silent abort, don't show a popup
-        if (abortCause->second) {
+        if (abortCause->silent) {
             showPopup = false;
         }
     }
@@ -1002,14 +1004,27 @@ void NetworkManagerImpl::showDisconnectCause(bool reconnecting, bool wasConnecte
         arc::spawn(SentryClient::get().reportCentralConnectionError(technicalError, !wasConnected));
     }
 
-    FunctionQueue::get().queue([reconnecting, showPopup, message = std::move(message)] {
+    FunctionQueue::get().queue([reconnecting, showPopup, authProblem, message = std::move(message)] {
         Core::get().onServerDisconnected();
 
         if (showPopup) {
             if (reconnecting) {
                 // if reconnecting, show a toast instead
                 globed::toastError("Globed: connection lost, reconnecting..");
+            } else if (authProblem) {
+                // auth problem, point them to refresh login
+
+                // hacky
+                bool hideFullError = message.contains("All authentication methods failed");
+                auto text = hideFullError ? "Authentication with Argon failed, likely because your session is <cr>invalid</c>.\n\n"
+                    "Do you want to try and <cy>Refresh Login</c>, which will likely fix this issue?"
+                    : message;
+
+                globed::confirmPopup("Authentication Error", text, "Cancel", "Refresh", [](auto) {
+                    AccountLoginLayer::create("")->show();
+                });
             } else {
+                // generic problem
                 auto alert = PopupManager::get().alert(
                     "Globed Error",
                     message
@@ -1165,7 +1180,10 @@ Future<> NetworkManagerImpl::threadTryAuth() {
                 res.unwrapErr()
             ));
 
-            this->abortConnection(fmt::format("failed to complete Argon auth: {}", res.unwrapErr()));
+            this->abortConnection(AbortCause {
+                .reason = fmt::format("Argon auth failed: {}", res.unwrapErr()),
+                .authProblem = true,
+            });
             co_return;
         }
 
@@ -1357,9 +1375,8 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
     g_argonData = argon::getGameAccountData();
     argon::overrideAccount(g_argonData);
 
-    m_abortCause.lock()->first.clear();
+    *m_abortCause.lock() = AbortCause{};
     m_manualDisconnect.store(false, ::release);
-
 
     bool certVerification = globed::setting<bool>("core.dev.cert-verification");
     argon::overrideCertVerification(certVerification);
@@ -1794,9 +1811,17 @@ void NetworkManagerImpl::onGameStateChanged(qn::ConnectionState state) {
 }
 
 void NetworkManagerImpl::abortConnection(std::string reason, bool silent) {
-    log::warn("aborting connection to central server: {}", reason);
+    this->abortConnection(AbortCause {
+        .reason = std::move(reason),
+        .silent = silent,
+        .authProblem = false,
+    });
+}
 
-    *m_abortCause.lock() = std::make_pair(std::move(reason), silent);
+void NetworkManagerImpl::abortConnection(AbortCause cause) {
+    log::warn("aborting connection to central server: {}", cause.reason);
+
+    *m_abortCause.lock() = std::move(cause);
     m_centralConn->disconnect();
     m_gameConn->disconnect();
 }

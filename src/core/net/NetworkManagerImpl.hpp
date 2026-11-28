@@ -388,6 +388,12 @@ private:
         Plain, ArgonV2
     };
 
+    struct AbortCause {
+        std::string reason;
+        bool silent;
+        bool authProblem;
+    };
+
     asp::WeakPtr<arc::Runtime> m_runtime;
     std::shared_ptr<qn::Connection> m_centralConn, m_gameConn;
     arc::Notify m_workerNotify, m_gameWorkerNotify;
@@ -404,7 +410,7 @@ private:
     asp::Mutex<std::optional<ConnectionInfo>> m_connInfo;
     std::string m_connectingCentralUrl;
     PlayerIconData m_connectingIcons;
-    asp::SpinLock<std::pair<std::string, bool>> m_abortCause;
+    asp::SpinLock<AbortCause> m_abortCause;
     std::atomic<bool> m_manualDisconnect{false};
 
     asp::Mutex<EventEncoder> m_gameEventEncoder;
@@ -443,6 +449,7 @@ private:
     void onGameStateChanged(qn::ConnectionState state);
 
     void abortConnection(std::string reason, bool silent = false);
+    void abortConnection(AbortCause cause);
     void handleSuccessfulLogin(LockedConnInfo& info);
     void handleLoginFailed(schema::main::LoginFailedReason reason);
     void showDisconnectCause(bool reconnecting, bool wasConnected);
