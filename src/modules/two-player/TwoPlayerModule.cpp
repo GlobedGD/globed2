@@ -39,7 +39,7 @@ void TwoPlayerModule::onDisabled() {
 void TwoPlayerModule::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
     // if 2p mode is disabled, disable the module for this level
     if (!RoomManager::get().getSettings().twoPlayerMode) {
-        (void) this->disable();
+        this->disable();
     } else {
         // safe mode is forced in 2 player mode
         log::info("2p mode - enabling safe mode for the level");
@@ -78,6 +78,7 @@ void TwoPlayerModule::onPlayerRespawn(GlobedGJBGL* gjbgl, RemotePlayer* player) 
 
 void TwoPlayerModule::onUserlistSetup(cocos2d::CCNode* container, int accountId, bool myself, UserListPopup* popup) {
     if (myself) return;
+    if (!this->isEnabled()) return;
 
     // if we are already linked, show only an unlink button on the linked player
     if (m_linkedPlayer) {
@@ -258,6 +259,8 @@ void TwoPlayerModule::linkSuccess(int id, bool player2) {
 }
 
 void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkEvent& event, int playerId) {
+    if (!this->isEnabled()) return;
+
     // are we already linked? if so, send an unlink if it's a different player (rejecting the link attempt)
     if (m_linkedPlayer) {
         if (*m_linkedPlayer != playerId) {
@@ -311,6 +314,8 @@ void TwoPlayerModule::handleLinkEvent(const TwoPlayerLinkEvent& event, int playe
 }
 
 void TwoPlayerModule::handleUnlinkEvent(const TwoPlayerUnlinkEvent& event, int playerId) {
+    if (!this->isEnabled()) return;
+
     if (m_linkedPlayer == playerId) {
         this->unlink(true);
         return;
